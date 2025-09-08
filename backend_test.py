@@ -201,10 +201,10 @@ class ZionCityAPITester:
         
         response = self.make_request('POST', 'auth/login', invalid_login)
         
-        if response and response.status_code == 401:
+        if response is not None and response.status_code == 401:
             self.log_test("Invalid login rejection", True, "Correctly rejected invalid credentials")
         else:
-            status = response.status_code if response else "No response"
+            status = response.status_code if response is not None else "No response"
             self.log_test("Invalid login rejection", False, f"Expected 401, got {status}")
 
     def test_get_user_profile(self):
