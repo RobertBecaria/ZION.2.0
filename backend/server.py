@@ -226,6 +226,30 @@ class OnboardingData(BaseModel):
     school_role: Optional[str] = None
     privacy_settings: Optional[PrivacySettings] = None
 
+class ChatGroupCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    group_type: str = "CUSTOM"
+    color_code: str = "#059669"
+    member_ids: List[str] = []
+
+class ChatMessageCreate(BaseModel):
+    group_id: str
+    content: str
+    message_type: str = "TEXT"
+    reply_to: Optional[str] = None
+
+class ScheduledActionCreate(BaseModel):
+    group_id: str
+    title: str
+    description: Optional[str] = None
+    action_type: str
+    scheduled_date: datetime
+    scheduled_time: Optional[str] = None
+    color_code: str = "#059669"
+    invitees: List[str] = []
+    location: Optional[str] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
