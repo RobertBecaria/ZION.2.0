@@ -691,6 +691,215 @@ async def get_user_families(current_user: User = Depends(get_current_user)):
     
     return {"families": families}
 
+# Chat Groups Management Endpoints
+@api_router.get("/chat-groups")
+async def get_user_chat_groups_endpoint(current_user: User = Depends(get_current_user)):
+    """Get all chat groups where user is a member"""
+    groups = await get_user_chat_groups(current_user.id)
+    return {"chat_groups": groups}
+
+@api_router.post("/chat-groups")
+async def create_chat_group(
+    group_data: ChatGroupCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new chat group"""
+    new_group = ChatGroup(
+        name=group_data.name,
+        description=group_data.description,
+        group_type=group_data.group_type,
+        admin_id=current_user.id,
+        color_code=group_data.color_code
+    )
+    
+    await db.chat_groups.insert_one(new_group.dict())
+    
+    # Add creator as admin member
+    admin_member = ChatGroupMember(
+        group_id=new_group.id,
+        user_id=current_user.id,
+        role="ADMIN"
+    )
+    await db.chat_group_members.insert_one(admin_member.dict())
+    
+    # Add other members
+    for member_id in group_data.member_ids:
+        if member_id != current_user.id:  # Don't add creator twice
+            member = ChatGroupMember(
+                group_id=new_group.id,
+                user_id=member_id,
+                role="MEMBER"
+            )
+            await db.chat_group_members.insert_one(member.dict())
+    
+    return {"message": "Chat group created successfully", "group_id": new_group.id}
+
+@api_router.get("/chat-groups/{group_id}/messages")
+async def get_chat_messages(
+    group_id: str,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get messages from a chat group"""
+    # Verify user is member of the group
+    membership = await db.chat_group_members.find_one({
+        "group_id": group_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not authorized to view this group")
+    
+    messages = await db.chat_messages.find(
+        {"group_id": group_id, "is_deleted": False}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Remove MongoDB _id fields and get user info for each message
+    for message in messages:
+        message.pop("_id", None)
+        # Get sender info
+        sender = await get_user_by_id(message["user_id"])
+        if sender:
+            message["sender"] = {
+                "id": sender.id,
+                "first_name": sender.first_name,
+                "last_name": sender.last_name
+            }
+    
+    # Reverse to show chronological order (oldest first)
+    messages.reverse()
+    
+    return {"messages": messages}
+
+@api_router.post("/chat-groups/{group_id}/messages")
+async def send_chat_message(
+    group_id: str,
+    message_data: ChatMessageCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Send a message to a chat group"""
+    # Verify user is member of the group
+    membership = await db.chat_group_members.find_one({
+        "group_id": group_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not authorized to send messages to this group")
+    
+    new_message = ChatMessage(
+        group_id=group_id,
+        user_id=current_user.id,
+        content=message_data.content,
+        message_type=message_data.message_type,
+        reply_to=message_data.reply_to
+    )
+    
+    await db.chat_messages.insert_one(new_message.dict())
+    
+    return {"message": "Message sent successfully", "message_id": new_message.id}
+
+# Scheduled Actions Endpoints
+@api_router.get("/chat-groups/{group_id}/scheduled-actions")
+async def get_scheduled_actions(
+    group_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get scheduled actions for a chat group"""
+    # Verify user is member of the group
+    membership = await db.chat_group_members.find_one({
+        "group_id": group_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not authorized to view this group")
+    
+    actions = await db.scheduled_actions.find({
+        "group_id": group_id
+    }).sort("scheduled_date", 1).to_list(100)
+    
+    # Remove MongoDB _id fields and get creator info
+    for action in actions:
+        action.pop("_id", None)
+        creator = await get_user_by_id(action["user_id"])
+        if creator:
+            action["creator"] = {
+                "id": creator.id,
+                "first_name": creator.first_name,
+                "last_name": creator.last_name
+            }
+    
+    return {"scheduled_actions": actions}
+
+@api_router.post("/chat-groups/{group_id}/scheduled-actions")
+async def create_scheduled_action(
+    group_id: str,
+    action_data: ScheduledActionCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a scheduled action for a chat group"""
+    # Verify user is member of the group
+    membership = await db.chat_group_members.find_one({
+        "group_id": group_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not authorized to create actions in this group")
+    
+    new_action = ScheduledAction(
+        group_id=group_id,
+        user_id=current_user.id,
+        title=action_data.title,
+        description=action_data.description,
+        action_type=action_data.action_type,
+        scheduled_date=action_data.scheduled_date,
+        scheduled_time=action_data.scheduled_time,
+        color_code=action_data.color_code,
+        invitees=action_data.invitees,
+        location=action_data.location
+    )
+    
+    await db.scheduled_actions.insert_one(new_action.dict())
+    
+    return {"message": "Scheduled action created successfully", "action_id": new_action.id}
+
+@api_router.put("/scheduled-actions/{action_id}/complete")
+async def complete_scheduled_action(
+    action_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a scheduled action as completed"""
+    action = await db.scheduled_actions.find_one({"id": action_id})
+    if not action:
+        raise HTTPException(status_code=404, detail="Scheduled action not found")
+    
+    # Verify user is member of the group or creator of the action
+    membership = await db.chat_group_members.find_one({
+        "group_id": action["group_id"],
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership and action["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to complete this action")
+    
+    await db.scheduled_actions.update_one(
+        {"id": action_id},
+        {"$set": {
+            "is_completed": True,
+            "updated_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Scheduled action marked as completed"}
+
 # Basic status endpoints
 @api_router.get("/")
 async def root():
