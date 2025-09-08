@@ -856,86 +856,29 @@ function Dashboard() {
           <div className="content-body">
             {activeModule === 'family' && (
               <div className="family-dashboard">
-                <div className="welcome-section">
-                  <h3>Добро пожаловать, {user.first_name}!</h3>
-                  <p>Управляйте расписанием семьи, отслеживайте здоровье и оставайтесь на связи</p>
-                </div>
-                
-                {getUserAffiliationsByType('SCHOOL').length > 0 && (
-                  <div className="contextual-section">
-                    <h4>Школьные события</h4>
-                    <p>Информация синхронизирована с {getUserAffiliationsByType('SCHOOL')[0].affiliation.name}</p>
-                  </div>
-                )}
-                
-                <div className="dashboard-grid">
-                  <div className="dashboard-card">
-                    <h4>Семейный календарь</h4>
-                    <p>Сегодня: 3 события</p>
-                    <div className="card-preview">
-                      <div className="event-item">
-                        <Calendar size={16} />
-                        <span className="event-time">14:00</span>
-                        <span className="event-title">Прием у врача - Анна</span>
-                      </div>
-                      <div className="event-item">
-                        <Calendar size={16} />
-                        <span className="event-time">16:30</span>
-                        <span className="event-title">Тренировка - Максим</span>
-                      </div>
-                      {getUserAffiliationsByType('SCHOOL').length > 0 && (
-                        <div className="event-item contextual">
-                          <Calendar size={16} />
-                          <span className="event-time">18:00</span>
-                          <span className="event-title">Родительское собрание - {getUserAffiliationsByType('SCHOOL')[0].affiliation.name}</span>
-                        </div>
-                      )}
-                    </div>
+                <div className="family-chat-container">
+                  {/* Left sidebar with chat groups */}
+                  <div className="chat-groups-sidebar">
+                    <ChatGroupList
+                      chatGroups={chatGroups}
+                      activeGroup={activeGroup}
+                      onGroupSelect={handleGroupSelect}
+                      onCreateGroup={handleCreateGroup}
+                      moduleColor={moduleColor}
+                      user={user}
+                    />
                   </div>
                   
-                  <div className="dashboard-card">
-                    <h4>Состояние семьи</h4>
-                    <p>Последние отметки самочувствия</p>
-                    <div className="health-indicators">
-                      <div className="health-item">
-                        <Heart size={16} />
-                        <span className="member-name">Анна</span>
-                        <span className="health-status good">😊 Отлично</span>
-                      </div>
-                      <div className="health-item">
-                        <Heart size={16} />
-                        <span className="member-name">Максим</span>
-                        <span className="health-status good">😊 Хорошо</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="dashboard-card">
-                    <h4>Сообщения семьи</h4>
-                    <p>3 новых сообщения</p>
-                    <div className="message-preview">
-                      <div className="message-item">
-                        <MessageCircle size={16} />
-                        <strong>Мама:</strong> Не забудьте про ужин в 19:00
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="dashboard-card">
-                    <h4>Геолокация</h4>
-                    <p>Местоположение семьи</p>
-                    <div className="location-status">
-                      <div className="location-item">
-                        <MapPin size={16} />
-                        <span className="member-name">Анна</span>
-                        <span className="location">Дома</span>
-                      </div>
-                      <div className="location-item">
-                        <MapPin size={16} />
-                        <span className="member-name">Максим</span>
-                        <span className="location">Школа</span>
-                      </div>
-                    </div>
+                  {/* Main chat area */}
+                  <div className="chat-area">
+                    <UniversalChatLayout
+                      activeGroup={activeGroup}
+                      chatGroups={chatGroups}
+                      onGroupSelect={handleGroupSelect}
+                      moduleColor={moduleColor}
+                      onCreateGroup={handleCreateGroup}
+                      user={user}
+                    />
                   </div>
                 </div>
               </div>
