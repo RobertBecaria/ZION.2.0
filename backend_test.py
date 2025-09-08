@@ -148,7 +148,8 @@ class ZionCityAPITester:
             success = "already registered" in data.get('detail', '').lower()
             self.log_test("Duplicate registration prevention", success, f"Error: {data.get('detail')}")
         else:
-            self.log_test("Duplicate registration prevention", False, f"Expected 400, got {response.status_code if response else 'No response'}")
+            status = response.status_code if response else "No response"
+            self.log_test("Duplicate registration prevention", False, f"Expected 400, got {status}")
 
     def test_user_login(self):
         """Test user login"""
