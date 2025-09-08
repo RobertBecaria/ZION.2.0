@@ -94,9 +94,10 @@ function AuthProvider({ children }) {
         return { success: true };
       } else {
         const error = await response.json();
-        return { success: false, error: error.detail };
+        return { success: false, error: error.detail || 'Registration failed' };
       }
     } catch (error) {
+      console.error('Registration error:', error);
       return { success: false, error: 'Network error' };
     }
   };
