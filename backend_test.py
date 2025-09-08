@@ -14,7 +14,7 @@ class ZionCityAPITester:
         self.custom_group_id = None
         self.tests_run = 0
         self.tests_passed = 0
-        self.test_user_email = f"test_user_{datetime.now().strftime('%Y%m%d_%H%M%S')}@zioncity.test"
+        self.test_user_email = f"test_user_{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com"
         self.test_user_data = {
             "email": self.test_user_email,
             "password": "testpass123",
