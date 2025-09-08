@@ -202,8 +202,7 @@ class ZionCityAPITester:
         response = self.make_request('POST', 'auth/login', invalid_login)
         
         if response and response.status_code == 401:
-            success = True
-            self.log_test("Invalid login rejection", success, "Correctly rejected invalid credentials")
+            self.log_test("Invalid login rejection", True, "Correctly rejected invalid credentials")
         else:
             status = response.status_code if response else "No response"
             self.log_test("Invalid login rejection", False, f"Expected 401, got {status}")
