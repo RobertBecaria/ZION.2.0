@@ -665,11 +665,11 @@ class ZionCityAPITester:
         # Test unauthorized access to messages
         response = self.make_request('GET', f'chat-groups/{fake_group_id}/messages', auth_required=True)
         
-        if response and response.status_code == 403:
+        if response is not None and response.status_code == 403:
             self.log_test("Unauthorized message access blocked", True, "Correctly blocked access to non-member group")
             auth_success = True
         else:
-            status = response.status_code if response else "No response"
+            status = response.status_code if response is not None else "No response"
             self.log_test("Unauthorized message access blocked", False, f"Expected 403, got {status}")
             auth_success = False
         
