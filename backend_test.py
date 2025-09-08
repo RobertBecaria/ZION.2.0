@@ -151,7 +151,7 @@ class ZionCityAPITester:
             except:
                 self.log_test("Duplicate registration prevention", True, f"Got 400 status as expected")
         else:
-            status = response.status_code if response else "No response"
+            status = response.status_code if response is not None else "No response"
             self.log_test("Duplicate registration prevention", False, f"Expected 400, got {status}")
 
     def test_user_login(self):
