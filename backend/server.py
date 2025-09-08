@@ -249,6 +249,10 @@ async def get_user_affiliations(user_id: str):
     for ua in user_affiliations:
         affiliation = await db.affiliations.find_one({"id": ua["affiliation_id"]})
         if affiliation:
+            # Remove MongoDB's _id field to avoid serialization issues
+            affiliation.pop("_id", None)
+            ua.pop("_id", None)
+            
             affiliations_data.append({
                 "id": ua["id"],
                 "user_role_in_org": ua["user_role_in_org"],
