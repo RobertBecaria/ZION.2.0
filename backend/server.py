@@ -349,6 +349,86 @@ async def find_or_create_affiliation(affiliation_data: AffiliationCreate) -> str
     await db.affiliations.insert_one(new_affiliation.dict())
     return new_affiliation.id
 
+async def create_auto_family_groups(user_id: str):
+    """Auto-create Family and Relatives groups for new users"""
+    user = await get_user_by_id(user_id)
+    if not user:
+        return
+    
+    # Create Family group
+    family_group = ChatGroup(
+        name=f"{user.first_name}'s Family",
+        description="Household family members",
+        group_type="FAMILY",
+        admin_id=user_id,
+        color_code="#059669"  # Family green
+    )
+    await db.chat_groups.insert_one(family_group.dict())
+    
+    # Add user as admin member
+    family_member = ChatGroupMember(
+        group_id=family_group.id,
+        user_id=user_id,
+        role="ADMIN"
+    )
+    await db.chat_group_members.insert_one(family_member.dict())
+    
+    # Create Relatives group
+    relatives_group = ChatGroup(
+        name=f"{user.first_name}'s Relatives",
+        description="Extended family and relatives",
+        group_type="RELATIVES",
+        admin_id=user_id,
+        color_code="#047857"  # Darker green for relatives
+    )
+    await db.chat_groups.insert_one(relatives_group.dict())
+    
+    # Add user as admin member
+    relatives_member = ChatGroupMember(
+        group_id=relatives_group.id,
+        user_id=user_id,
+        role="ADMIN"
+    )
+    await db.chat_group_members.insert_one(relatives_member.dict())
+    
+    return [family_group.id, relatives_group.id]
+
+async def get_user_chat_groups(user_id: str):
+    """Get all chat groups where user is a member"""
+    memberships = await db.chat_group_members.find({"user_id": user_id, "is_active": True}).to_list(100)
+    
+    groups = []
+    for membership in memberships:
+        group = await db.chat_groups.find_one({"id": membership["group_id"], "is_active": True})
+        if group:
+            # Remove MongoDB _id
+            group.pop("_id", None)
+            membership.pop("_id", None)
+            
+            # Get member count
+            member_count = await db.chat_group_members.count_documents({
+                "group_id": group["id"], 
+                "is_active": True
+            })
+            
+            # Get latest message
+            latest_message = await db.chat_messages.find_one(
+                {"group_id": group["id"], "is_deleted": False},
+                sort=[("created_at", -1)]
+            )
+            if latest_message:
+                latest_message.pop("_id", None)
+            
+            groups.append({
+                "group": group,
+                "user_role": membership["role"],
+                "member_count": member_count,
+                "latest_message": latest_message,
+                "joined_at": membership["joined_at"]
+            })
+    
+    return groups
+
 # === API ENDPOINTS ===
 
 @api_router.post("/auth/register", response_model=Token)
