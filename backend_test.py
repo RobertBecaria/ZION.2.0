@@ -55,6 +55,15 @@ class ZionCityAPITester:
                 response = requests.delete(url, headers=headers, timeout=30)
             
             print(f"   Request: {method} {url} -> Status: {response.status_code}")
+            
+            # Print response details for debugging 422 errors
+            if response.status_code == 422:
+                try:
+                    error_data = response.json()
+                    print(f"   422 Error Details: {error_data}")
+                except:
+                    print(f"   422 Error Text: {response.text}")
+            
             return response
         except requests.exceptions.RequestException as e:
             print(f"❌ Network error for {method} {url}: {str(e)}")
