@@ -117,6 +117,15 @@ class ZionCityAPITester:
                 try:
                     error_data = response.json()
                     error_msg = error_data.get('detail', f'Status: {response.status_code}')
+                    if response.status_code == 422:
+                        # Handle validation errors
+                        if 'detail' in error_data and isinstance(error_data['detail'], list):
+                            validation_errors = []
+                            for error in error_data['detail']:
+                                field = error.get('loc', ['unknown'])[-1]
+                                msg = error.get('msg', 'validation error')
+                                validation_errors.append(f"{field}: {msg}")
+                            error_msg = f"Validation errors: {', '.join(validation_errors)}"
                 except:
                     error_msg = f'Status: {response.status_code}'
             else:
