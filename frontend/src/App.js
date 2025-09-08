@@ -674,6 +674,57 @@ function Dashboard() {
     }
   }, [user]);
 
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Load chat groups when dashboard loads
+  useEffect(() => {
+    if (user) {
+      fetchChatGroups();
+    }
+  }, [user]);
+
+  const fetchChatGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat-groups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setChatGroups(data.chat_groups || []);
+        
+        // Auto-select first family group if available
+        const familyGroup = data.chat_groups?.find(g => g.group.group_type === 'FAMILY');
+        if (familyGroup && !activeGroup) {
+          setActiveGroup(familyGroup);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching chat groups:', error);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleGroupSelect = (groupData) => {
+    setActiveGroup(groupData);
+  };
+
+  const handleCreateGroup = () => {
+    fetchChatGroups(); // Refresh groups after creation
+  };
+
   if (showOnboarding) {
     return <OnboardingWizard onComplete={() => setShowOnboarding(false)} />;
   }
