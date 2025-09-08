@@ -143,7 +143,7 @@ class ZionCityAPITester:
         
         response = self.make_request('POST', 'auth/register', self.test_user_data)
         
-        if response and response.status_code == 400:
+        if response is not None and response.status_code == 400:
             try:
                 data = response.json()
                 success = "already registered" in data.get('detail', '').lower()
