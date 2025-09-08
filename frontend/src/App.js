@@ -864,7 +864,7 @@ function Dashboard() {
                       activeGroup={activeGroup}
                       onGroupSelect={handleGroupSelect}
                       onCreateGroup={handleCreateGroup}
-                      moduleColor={moduleColor}
+                      moduleColor={currentModule.color}
                       user={user}
                     />
                   </div>
