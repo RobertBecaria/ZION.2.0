@@ -1016,6 +1016,20 @@ function Dashboard() {
             </div>
           )}
 
+          {/* Chat Groups Widget - Show only when in Family module */}
+          {activeModule === 'family' && (
+            <div className="widget chat-groups-widget">
+              <ChatGroupList
+                chatGroups={chatGroups}
+                activeGroup={activeGroup}
+                onGroupSelect={handleGroupSelect}
+                onCreateGroup={handleCreateGroup}
+                moduleColor={currentModule.color}
+                user={user}
+              />
+            </div>
+          )}
+
           {/* Friends List Widget */}
           <div className="widget friends-widget">
             <div className="widget-header">
