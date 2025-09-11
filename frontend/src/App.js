@@ -978,8 +978,9 @@ function Dashboard() {
                 </div>
               </div>
             )}
-              </>
           </div>
+              </>
+            )}
         </main>
 
         {/* Right Sidebar - "World" Zone */}
