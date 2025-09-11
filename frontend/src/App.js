@@ -877,23 +877,101 @@ function Dashboard() {
               </div>
               
               <div className="content-body">
-                {activeModule === 'family' && (
-                  <div className="family-dashboard">
-                    <div className="family-chat-container">
-                      {/* Full width chat area */}
-                      <div className="chat-area">
-                        <UniversalChatLayout
-                          activeGroup={activeGroup}
-                          chatGroups={chatGroups}
-                          onGroupSelect={handleGroupSelect}
-                          moduleColor={currentModule.color}
-                          onCreateGroup={handleCreateGroup}
-                          user={user}
-                        />
-                      </div>
-                    </div>
+                {/* Content Navigation */}
+                <ContentNavigation
+                  activeView={activeView}
+                  onViewChange={setActiveView}
+                  moduleColor={currentModule.color}
+                  moduleName={currentModule.name}
+                  showCalendar={showCalendar}
+                  onCalendarToggle={() => setShowCalendar(!showCalendar)}
+                />
+
+                {/* Content Area with Split Layout */}
+                <div className="split-content-layout">
+                  {/* Main Content Area (70%) */}
+                  <div className="main-content-area">
+                    {activeModule === 'family' && (
+                      <>
+                        {activeView === 'wall' ? (
+                          <UniversalWall
+                            activeGroup={activeGroup}
+                            moduleColor={currentModule.color}
+                            moduleName={currentModule.name}
+                            user={user}
+                          />
+                        ) : (
+                          <UniversalChatLayout
+                            activeGroup={activeGroup}
+                            chatGroups={chatGroups}
+                            onGroupSelect={handleGroupSelect}
+                            moduleColor={currentModule.color}
+                            onCreateGroup={handleCreateGroup}
+                            user={user}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {activeModule === 'organizations' && (
+                      <>
+                        {activeView === 'wall' ? (
+                          <UniversalWall
+                            activeGroup={activeGroup}
+                            moduleColor={currentModule.color}
+                            moduleName={currentModule.name}
+                            user={user}
+                          />
+                        ) : (
+                          <UniversalChatLayout
+                            activeGroup={activeGroup}
+                            chatGroups={chatGroups}
+                            onGroupSelect={handleGroupSelect}
+                            moduleColor={currentModule.color}
+                            onCreateGroup={handleCreateGroup}
+                            user={user}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {(activeModule === 'news' || activeModule === 'journal' || 
+                      activeModule === 'services' || activeModule === 'marketplace' || 
+                      activeModule === 'finance' || activeModule === 'events') && (
+                      <>
+                        {activeView === 'wall' ? (
+                          <UniversalWall
+                            activeGroup={activeGroup}
+                            moduleColor={currentModule.color}
+                            moduleName={currentModule.name}
+                            user={user}
+                          />
+                        ) : (
+                          <UniversalChatLayout
+                            activeGroup={activeGroup}
+                            chatGroups={chatGroups}
+                            onGroupSelect={handleGroupSelect}
+                            moduleColor={currentModule.color}
+                            onCreateGroup={handleCreateGroup}
+                            user={user}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
-                )}
+
+                  {/* Events Panel (30%) */}
+                  <div className="events-panel-area">
+                    <UniversalEventsPanel
+                      activeGroup={activeGroup}
+                      moduleColor={currentModule.color}
+                      moduleName={currentModule.name}
+                      user={user}
+                      context={activeView}
+                    />
+                  </div>
+                </div>
+              </div>
 
             {activeModule === 'organizations' && (
               <div className="organizations-dashboard">
