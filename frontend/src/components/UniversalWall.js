@@ -150,6 +150,11 @@ function UniversalWall({
 
   return (
     <div className="universal-wall">
+      {/* Wall Header */}
+      <div className="wall-header">
+        <h2>Лента Новостей</h2>
+      </div>
+
       {/* Post Creation Section */}
       <div className="post-creation-section">
         <div className="post-creator">
@@ -157,20 +162,24 @@ function UniversalWall({
             <div className="user-avatar" style={{ backgroundColor: moduleColor }}>
               <User size={24} color="white" />
             </div>
-            <div className="creator-info">
-              <h4>{user?.first_name} {user?.last_name}</h4>
-              <p>Поделитесь новостями с {moduleName.toLowerCase()}</p>
-            </div>
+            <input
+              type="text"
+              placeholder="Что у Вас нового?"
+              className="post-input-placeholder"
+              onClick={() => document.querySelector('.post-textarea').focus()}
+              readOnly
+            />
           </div>
 
-          <form onSubmit={handlePostSubmit} className="post-form">
+          <form onSubmit={handlePostSubmit} className="post-form" style={{ display: newPost ? 'block' : 'none' }}>
             <textarea
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              placeholder={`Что нового в ${moduleName.toLowerCase()}?`}
+              placeholder={`Поделитесь новостями...`}
               className="post-textarea"
               rows={3}
               disabled={loading}
+              onFocus={() => setNewPost(' ')}
             />
             
             <div className="post-actions">
@@ -182,7 +191,6 @@ function UniversalWall({
                   title="Добавить изображение"
                 >
                   <Image size={20} />
-                  <span>Фото</span>
                 </button>
                 <button 
                   type="button" 
@@ -190,7 +198,6 @@ function UniversalWall({
                   title="Добавить файл"
                 >
                   <Paperclip size={20} />
-                  <span>Файл</span>
                 </button>
                 <button 
                   type="button" 
@@ -198,7 +205,6 @@ function UniversalWall({
                   title="Эмодзи"
                 >
                   <Smile size={20} />
-                  <span>Эмодзи</span>
                 </button>
               </div>
 
