@@ -538,6 +538,28 @@ body {
   color: white;
   text-align: right;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.clock-widget.clickable:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.calendar-icon {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.clock-widget:hover .calendar-icon {
+  opacity: 1;
 }
 
 .time {
