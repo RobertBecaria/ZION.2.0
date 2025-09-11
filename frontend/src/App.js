@@ -3,6 +3,9 @@ import './App.css';
 import UniversalChatLayout from './components/UniversalChatLayout';
 import ChatGroupList from './components/ChatGroupList';
 import UniversalCalendar from './components/UniversalCalendar';
+import UniversalWall from './components/UniversalWall';
+import ContentNavigation from './components/ContentNavigation';
+import UniversalEventsPanel from './components/UniversalEventsPanel';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
