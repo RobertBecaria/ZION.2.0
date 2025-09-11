@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import './App.css';
 import UniversalChatLayout from './components/UniversalChatLayout';
 import ChatGroupList from './components/ChatGroupList';
+import UniversalCalendar from './components/UniversalCalendar';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
