@@ -670,6 +670,7 @@ function Dashboard() {
   const [activeGroup, setActiveGroup] = useState(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [activeView, setActiveView] = useState('wall'); // 'wall' or 'chat'
   const { user, logout } = useAuth();
 
   // Check if user needs onboarding (no affiliations)
