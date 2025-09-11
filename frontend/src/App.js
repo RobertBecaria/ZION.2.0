@@ -980,7 +980,7 @@ function Dashboard() {
 
                   {/* Events Panel (30%) */}
                   <div className="events-panel-area">
-                    <UniversalEventsPanel
+                    <EnhancedEventsPanel
                       activeGroup={activeGroup}
                       moduleColor={currentModule.color}
                       moduleName={currentModule.name}
