@@ -651,7 +651,7 @@ body {
 
 /* Left Sidebar - "Me" Zone with Module Color Theming */
 .left-sidebar {
-  width: 280px;
+  width: 260px;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -661,6 +661,7 @@ body {
   border: 1px solid #E4E6EA;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .sidebar-header {
