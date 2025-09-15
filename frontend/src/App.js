@@ -754,7 +754,8 @@ function Dashboard() {
   });
 
   const sidebarTintStyle = {
-    backgroundColor: `${currentModule.color}08`
+    background: `linear-gradient(135deg, ${currentModule.color}05 0%, ${currentModule.color}02 100%)`,
+    borderLeft: `3px solid ${currentModule.color}`,
   };
 
   const getUserAffiliationsByType = (type) => {
