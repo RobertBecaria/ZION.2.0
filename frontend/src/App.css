@@ -2522,7 +2522,16 @@ body {
   }
 }
 
-/* Universal Chat Layout Styles */
+/* Universal Chat Layout - Full Width */
+.universal-chat-layout-full {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .universal-chat-layout {
   display: flex;
   height: 100%;
@@ -2556,6 +2565,29 @@ body {
   color: #6b7280;
   font-size: 1.1rem;
   margin-bottom: 2rem;
+}
+
+/* Chat Main Area - Full Width Version */
+.universal-chat-layout-full .chat-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.universal-chat-layout-full .messages-area {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.universal-chat-layout-full .message-input-area {
+  padding: 1rem 1.5rem;
+  background: white;
+  border-top: 1px solid #e2e8f0;
 }
 
 /* Chat Main Area (70%) */
