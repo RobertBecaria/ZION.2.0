@@ -797,13 +797,14 @@ body {
 
 /* Right Sidebar - "World" Zone with Module Color Theming */
 .right-sidebar {
-  width: 320px;
+  width: 280px;
   height: fit-content;
   position: sticky;
   top: 100px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
 /* Widget Styles */
