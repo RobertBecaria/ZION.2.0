@@ -1975,6 +1975,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   max-height: 600px;
+  width: 100%;
 }
 
 /* Panel Header */
@@ -1990,7 +1991,7 @@ select:focus {
 
 .panel-header h4 {
   color: #1C1E21;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
 }
@@ -2013,11 +2014,11 @@ select:focus {
   transform: scale(1.1);
 }
 
-/* Quick Actions */
+/* Quick Actions - Better Layout for 30% Width */
 .quick-actions {
   padding: 1.25rem 1.5rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   border-bottom: 1px solid #E4E6EA;
 }
@@ -2032,11 +2033,13 @@ select:focus {
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.5rem;
   font-weight: 500;
-  font-size: 0.9rem;
-  width: 100%;
-  text-align: left;
+  font-size: 0.85rem;
+  text-align: center;
+  min-height: 70px;
 }
 
 .quick-action-btn:hover {
@@ -2048,10 +2051,10 @@ select:focus {
 }
 
 .quick-action-btn span {
-  flex: 1;
+  line-height: 1.2;
 }
 
-/* Action Form */
+/* Action Form - Optimized for 30% Width */
 .action-form {
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #E4E6EA;
@@ -2150,7 +2153,7 @@ select:focus {
   cursor: not-allowed;
 }
 
-/* Actions List */
+/* Actions List - Optimized Layout */
 .actions-list {
   flex: 1;
   padding: 1.25rem 1.5rem;
@@ -2179,7 +2182,7 @@ select:focus {
   font-size: 0.8rem;
 }
 
-/* Action Items */
+/* Action Items - Better Layout for Wider Panel */
 .action-item {
   background: white;
   border: 1px solid #E4E6EA;
@@ -2213,7 +2216,7 @@ select:focus {
 
 .action-icon {
   flex-shrink: 0;
-  padding: 0.5rem;
+  padding: 0.5rem;  
   background: rgba(24, 119, 242, 0.1);
   border-radius: 8px;
   color: #1877F2;
@@ -2319,6 +2322,18 @@ select:focus {
   
   .actions-list {
     max-height: 200px;
+  }
+  
+  .quick-actions {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .quick-action-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: auto;
+    padding: 0.75rem;
   }
 }
 
