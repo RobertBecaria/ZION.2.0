@@ -2044,11 +2044,11 @@ select:focus {
   transform: scale(1.1);
 }
 
-/* Quick Actions - Better Layout for 30% Width */
+/* Quick Actions - Tile Style in Column Formation */
 .quick-actions {
   padding: 1.25rem 1.5rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   border-bottom: 1px solid #E4E6EA;
 }
@@ -2057,31 +2057,57 @@ select:focus {
   background: white;
   border: 1px solid #E4E6EA;
   color: #65676B;
-  padding: 0.875rem 1rem;
-  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-weight: 500;
-  font-size: 0.85rem;
-  text-align: center;
-  min-height: 70px;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: left;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #1877F2;
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
+.quick-action-btn:hover::before {
+  transform: scaleY(1);
 }
 
 .quick-action-btn:hover {
-  background: #F0F2F5;
+  background: #F8F9FA;
   border-color: #1877F2;
   color: #1877F2;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(24, 119, 242, 0.1);
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.15);
 }
 
 .quick-action-btn span {
-  line-height: 1.2;
+  flex: 1;
+  font-weight: 600;
+}
+
+.quick-action-btn svg {
+  flex-shrink: 0;
+  padding: 0.375rem;
+  background: rgba(24, 119, 242, 0.1);
+  border-radius: 8px;
+  color: #1877F2;
 }
 
 /* Action Form - Optimized for 30% Width */
