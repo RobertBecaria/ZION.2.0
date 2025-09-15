@@ -643,6 +643,7 @@ body {
   gap: 1.25rem;
   padding: 1.25rem;
   min-height: calc(100vh - 80px);
+  align-items: flex-start;
 }
 
 /* ============================================
