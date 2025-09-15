@@ -15,17 +15,6 @@ function UniversalChatLayout({
 }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [scheduledActions, setScheduledActions] = useState([]);
-  const [showActionForm, setShowActionForm] = useState(false);
-  const [actionForm, setActionForm] = useState({
-    title: '',
-    description: '',
-    action_type: 'REMINDER',
-    scheduled_date: '',
-    scheduled_time: '',
-    location: '',
-    invitees: []
-  });
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
