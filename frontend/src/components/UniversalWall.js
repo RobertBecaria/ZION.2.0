@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, Plus, Image, Smile, Heart, MessageCircle, Share2, 
-  MoreHorizontal, User, Calendar, Clock, MapPin, Paperclip
+  MoreHorizontal, User, Calendar, Clock, MapPin, Paperclip, X,
+  FileText, Upload
 } from 'lucide-react';
 
 function UniversalWall({ 
