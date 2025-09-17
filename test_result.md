@@ -376,8 +376,7 @@ metadata:
 test_plan:
   current_focus:
     - "Posts API with Media Support"
-  stuck_tasks:
-    - "Posts API with Media Support"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
