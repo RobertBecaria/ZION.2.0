@@ -1201,8 +1201,9 @@ function Dashboard() {
                     className={`module-filter-item ${selectedModuleFilter === 'all' ? 'active' : ''}`}
                     onClick={() => setSelectedModuleFilter('all')}
                   >
+                    <Grid size={16} style={{ color: '#6B7280' }} />
                     <div className="module-color-dot" style={{ backgroundColor: '#6B7280' }}></div>
-                    <span>Все файлы</span>
+                    <span>Все</span>
                     <span className="file-count">
                       {Object.values(mediaStats).reduce((total, module) => {
                         return total + (module.images?.length || 0) + (module.documents?.length || 0) + (module.videos?.length || 0);
@@ -1214,6 +1215,7 @@ function Dashboard() {
                     className={`module-filter-item ${selectedModuleFilter === 'family' ? 'active' : ''}`}
                     onClick={() => setSelectedModuleFilter('family')}
                   >
+                    <Users size={16} style={{ color: '#059669' }} />
                     <div className="module-color-dot" style={{ backgroundColor: '#059669' }}></div>
                     <span>Семья</span>
                     <span className="file-count">
@@ -1222,79 +1224,86 @@ function Dashboard() {
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'work' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('work')}
+                    className={`module-filter-item ${selectedModuleFilter === 'news' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('news')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#2563EB' }}></div>
-                    <span>Работа</span>
+                    <Newspaper size={16} style={{ color: '#1D4ED8' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#1D4ED8' }}></div>
+                    <span>Новости</span>
                     <span className="file-count">
-                      {(mediaStats.work?.images?.length || 0) + (mediaStats.work?.documents?.length || 0) + (mediaStats.work?.videos?.length || 0)}
+                      {(mediaStats.news?.images?.length || 0) + (mediaStats.news?.documents?.length || 0) + (mediaStats.news?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'education' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('education')}
+                    className={`module-filter-item ${selectedModuleFilter === 'journal' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('journal')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#7C3AED' }}></div>
-                    <span>Образование</span>
+                    <Book size={16} style={{ color: '#6D28D9' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#6D28D9' }}></div>
+                    <span>Журнал</span>
                     <span className="file-count">
-                      {(mediaStats.education?.images?.length || 0) + (mediaStats.education?.documents?.length || 0) + (mediaStats.education?.videos?.length || 0)}
+                      {(mediaStats.journal?.images?.length || 0) + (mediaStats.journal?.documents?.length || 0) + (mediaStats.journal?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'health' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('health')}
+                    className={`module-filter-item ${selectedModuleFilter === 'services' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('services')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#DC2626' }}></div>
-                    <span>Здоровье</span>
+                    <Briefcase size={16} style={{ color: '#B91C1C' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#B91C1C' }}></div>
+                    <span>Сервисы</span>
                     <span className="file-count">
-                      {(mediaStats.health?.images?.length || 0) + (mediaStats.health?.documents?.length || 0) + (mediaStats.health?.videos?.length || 0)}
+                      {(mediaStats.services?.images?.length || 0) + (mediaStats.services?.documents?.length || 0) + (mediaStats.services?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'government' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('government')}
+                    className={`module-filter-item ${selectedModuleFilter === 'organizations' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('organizations')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#EA580C' }}></div>
-                    <span>Госуслуги</span>
+                    <Building size={16} style={{ color: '#C2410C' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#C2410C' }}></div>
+                    <span>Организации</span>
                     <span className="file-count">
-                      {(mediaStats.government?.images?.length || 0) + (mediaStats.government?.documents?.length || 0) + (mediaStats.government?.videos?.length || 0)}
+                      {(mediaStats.organizations?.images?.length || 0) + (mediaStats.organizations?.documents?.length || 0) + (mediaStats.organizations?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'business' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('business')}
+                    className={`module-filter-item ${selectedModuleFilter === 'marketplace' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('marketplace')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#CA8A04' }}></div>
-                    <span>Бизнес</span>
+                    <ShoppingCart size={16} style={{ color: '#BE185D' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#BE185D' }}></div>
+                    <span>Маркетплейс</span>
                     <span className="file-count">
-                      {(mediaStats.business?.images?.length || 0) + (mediaStats.business?.documents?.length || 0) + (mediaStats.business?.videos?.length || 0)}
+                      {(mediaStats.marketplace?.images?.length || 0) + (mediaStats.marketplace?.documents?.length || 0) + (mediaStats.marketplace?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'community' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('community')}
+                    className={`module-filter-item ${selectedModuleFilter === 'finance' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('finance')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#4B5563' }}></div>
-                    <span>Сообщество</span>
+                    <DollarSign size={16} style={{ color: '#A16207' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#A16207' }}></div>
+                    <span>Финансы</span>
                     <span className="file-count">
-                      {(mediaStats.community?.images?.length || 0) + (mediaStats.community?.documents?.length || 0) + (mediaStats.community?.videos?.length || 0)}
+                      {(mediaStats.finance?.images?.length || 0) + (mediaStats.finance?.documents?.length || 0) + (mediaStats.finance?.videos?.length || 0)}
                     </span>
                   </button>
                   
                   <button 
-                    className={`module-filter-item ${selectedModuleFilter === 'personal' ? 'active' : ''}`}
-                    onClick={() => setSelectedModuleFilter('personal')}
+                    className={`module-filter-item ${selectedModuleFilter === 'events' ? 'active' : ''}`}
+                    onClick={() => setSelectedModuleFilter('events')}
                   >
-                    <div className="module-color-dot" style={{ backgroundColor: '#10B981' }}></div>
-                    <span>Личное</span>
+                    <Calendar size={16} style={{ color: '#7E22CE' }} />
+                    <div className="module-color-dot" style={{ backgroundColor: '#7E22CE' }}></div>
+                    <span>Мероприятия</span>
                     <span className="file-count">
-                      {(mediaStats.personal?.images?.length || 0) + (mediaStats.personal?.documents?.length || 0) + (mediaStats.personal?.videos?.length || 0)}
+                      {(mediaStats.events?.images?.length || 0) + (mediaStats.events?.documents?.length || 0) + (mediaStats.events?.videos?.length || 0)}
                     </span>
                   </button>
                 </div>
