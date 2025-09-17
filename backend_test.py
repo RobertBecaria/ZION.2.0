@@ -1081,6 +1081,22 @@ class ZionCityAPITester:
             # Test authorization and security
             self.test_chat_authorization()
             
+            # Phase 2: Media Upload Functionality Tests
+            print("\n🔥 PHASE 2: MEDIA UPLOAD FUNCTIONALITY TESTS")
+            print("=" * 60)
+            
+            # Test media upload API with different file types
+            self.test_media_upload_api()
+            
+            # Test media serving API
+            self.test_media_serving_api()
+            
+            # Test YouTube URL detection
+            self.test_youtube_url_detection()
+            
+            # Test posts API with media support
+            self.test_posts_with_media_api()
+            
             # Onboarding and affiliations tests
             onboarding_success = self.test_onboarding_flow()
             if onboarding_success:
