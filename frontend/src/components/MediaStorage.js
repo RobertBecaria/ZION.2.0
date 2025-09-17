@@ -139,24 +139,10 @@ const MediaStorage = ({
 
       {/* Filters and Search */}
       <div className="media-controls">
-        <div className="module-filters">
-          {Object.entries(modules).map(([key, module]) => (
-            <button
-              key={key}
-              className={`module-filter ${activeModuleFilter === key ? 'active' : ''}`}
-              style={{ 
-                borderColor: activeModuleFilter === key ? module.color : 'transparent',
-                color: activeModuleFilter === key ? module.color : '#6B7280'
-              }}
-              onClick={() => setActiveModuleFilter(key)}
-            >
-              <div 
-                className="module-color-dot" 
-                style={{ backgroundColor: module.color }}
-              />
-              {module.name}
-            </button>
-          ))}
+        <div className="controls-left">
+          <span className="active-filter">
+            Показано: <strong>{modules[selectedModuleFilter]?.name || 'Все'}</strong>
+          </span>
         </div>
 
         <div className="controls-right">
