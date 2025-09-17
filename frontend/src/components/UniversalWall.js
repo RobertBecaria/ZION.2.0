@@ -185,7 +185,7 @@ function UniversalWall({
 
     // Upload files immediately
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('zion_token');
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
         formData.append('file', file);
