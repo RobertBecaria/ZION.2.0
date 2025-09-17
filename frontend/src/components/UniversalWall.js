@@ -132,11 +132,12 @@ function UniversalWall({
         setUploadedMediaIds([]);
         document.querySelector('.post-form').style.display = 'none';
       } else {
-        throw new Error('Failed to create post');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(`Failed to create post: ${errorData.detail || response.statusText}`);
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      alert(`Failed to create post: ${error.message}`);
     } finally {
       setLoading(false);
     }
