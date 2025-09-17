@@ -151,6 +151,18 @@
       - working: true
         agent: "testing"
         comment: "✅ TESTED: NEW Media Storage API integration working perfectly - 1) GET /api/media with media_type and source_module filtering, 2) Proper authentication with Bearer token, 3) Module configuration with correct colors, 4) File type conversion (photos→image, documents→document, videos→video), 5) Search filtering by filename, 6) Date grouping and display, 7) File size formatting, 8) Module badge display with correct colors. All API calls successful and data properly displayed."
+
+  - task: "Media Storage Full-Width Layout Fix"
+    implemented: true
+    working: "NA"
+    file: "App.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FIXED LAYOUT ISSUE: User reported media storage not filling 100% of content area. Updated CSS: 1) .main-content-area.full-width now uses flex: 1 !important instead of just width, 2) .media-storage has width: 100% and proper box-shadow, 3) App.js correctly applies full-width class for media views. Media storage should now take full available width when accessed via 'Мои Фото', 'Мои Документы', or 'Мои Видео' sidebar links."
 ##   - task: "Task name"
 ##     implemented: true
 ##     working: true  # or false or "NA"
