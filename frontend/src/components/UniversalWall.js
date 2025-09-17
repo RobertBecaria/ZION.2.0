@@ -271,11 +271,47 @@ function UniversalWall({
             <textarea
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Поделитесь новостями..."
+              placeholder="Поделитесь новостями... (можно добавить YouTube ссылки)"
               className="post-textarea"
               rows={3}
               disabled={loading}
             />
+            
+            {/* File Previews */}
+            {selectedFiles.length > 0 && (
+              <div className="file-previews">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="file-preview">
+                    <div className="file-info">
+                      {file.type.startsWith('image/') ? (
+                        <Image size={16} />
+                      ) : (
+                        <FileText size={16} />
+                      )}
+                      <span className="file-name">{file.name}</span>
+                      <span className="file-size">
+                        ({(file.size / (1024 * 1024)).toFixed(1)}MB)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="remove-file-btn"
+                      onClick={() => removeSelectedFile(index)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {uploadingFiles.length > 0 && (
+              <div className="upload-progress">
+                <Upload size={16} />
+                <span>Загрузка файлов...</span>
+              </div>
+            )}
             
             <div className="post-actions">
               <div className="post-tools">
