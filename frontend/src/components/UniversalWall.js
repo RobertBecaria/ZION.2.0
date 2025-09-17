@@ -187,15 +187,26 @@ function UniversalWall({
     setSelectedFiles(prev => [...prev, ...files]);
     setUploadingFiles(files.map(f => f.name));
 
-    // Upload files immediately
+    // Upload files immediately with proper module tagging
     try {
       const token = localStorage.getItem('zion_token');
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
         formData.append('file', file);
         
-        // Add source module based on current context
-        const sourceModule = moduleName?.toLowerCase() || 'personal';
+        // Map module names to backend format
+        const moduleMapping = {
+          'Family': 'family',
+          'Organizations': 'work', 
+          'News': 'community',
+          'Journal': 'personal',
+          'Services': 'government',
+          'Marketplace': 'business',
+          'Finance': 'business',
+          'Events': 'community'
+        };
+        
+        const sourceModule = moduleMapping[moduleName] || 'personal';
         formData.append('source_module', sourceModule);
         formData.append('privacy_level', 'module');
 
