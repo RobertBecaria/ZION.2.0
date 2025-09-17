@@ -16,6 +16,8 @@ const MediaStorage = ({
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list'
   const [searchTerm, setSearchTerm] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
