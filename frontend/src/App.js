@@ -669,6 +669,7 @@ function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedModuleFilter, setSelectedModuleFilter] = useState('all');
+  const [mediaStats, setMediaStats] = useState({});
   const [chatGroups, setChatGroups] = useState([]);
   const [activeGroup, setActiveGroup] = useState(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
