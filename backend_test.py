@@ -928,19 +928,18 @@ class ZionCityAPITester:
         success_count = 0
         
         for i, test_case in enumerate(test_cases):
-            # Use form data for posts API
+            # Use mixed content: JSON for post_data and form data for media_file_ids
             import requests
             
             url = f"{self.base_url}/posts"
             headers = {'Authorization': f'Bearer {self.token}'}
             
-            # Send as form data with proper structure
-            form_data = {
-                'content': test_case["content"]
-            }
+            # Send JSON body with form data
+            json_data = {"content": test_case["content"]}
+            form_data = {"media_file_ids": []}  # Empty list for these tests
             
             try:
-                response = requests.post(url, data=form_data, headers=headers, timeout=30)
+                response = requests.post(url, json=json_data, data=form_data, headers=headers, timeout=30)
                 print(f"   Request: POST {url} -> Status: {response.status_code}")
                 
                 if response.status_code == 200:
