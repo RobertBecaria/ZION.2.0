@@ -693,10 +693,31 @@ function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Load chat groups when dashboard loads
+  // Fetch media statistics for right sidebar
+  const fetchMediaStats = async () => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/media/modules`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMediaStats(data.modules || {});
+      }
+    } catch (error) {
+      console.error('Error fetching media stats:', error);
+    }
+  };
+
+  // Load chat groups and fetch media stats when dashboard loads
   useEffect(() => {
     if (user) {
       fetchChatGroups();
+      fetchMediaStats();
     }
   }, [user]);
 
