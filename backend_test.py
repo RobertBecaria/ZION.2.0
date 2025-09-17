@@ -972,39 +972,49 @@ class ZionCityAPITester:
             self.log_test("Posts with media API", False, "No authentication token available")
             return False
         
-        # Test 1: Create post without media
-        post_data = {
-            "content": "This is a test post without media files."
+        # Test 1: Create post without media using form data
+        import requests
+        
+        url = f"{self.base_url}/posts"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        form_data = {
+            'content': 'This is a test post without media files.'
         }
         
-        response = self.make_request('POST', 'posts', post_data, auth_required=True)
-        
-        if response and response.status_code == 200:
-            data = response.json()
-            no_media_success = (
-                'id' in data and
-                'content' in data and
-                'author' in data and
-                'media_files' in data and
-                len(data['media_files']) == 0
-            )
-            self.log_test("Create post without media", no_media_success, f"Post ID: {data.get('id')}")
-        else:
-            error_msg = f"Status: {response.status_code}" if response else "No response"
-            self.log_test("Create post without media", False, error_msg)
+        try:
+            response = requests.post(url, data=form_data, headers=headers, timeout=30)
+            print(f"   Request: POST {url} -> Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                no_media_success = (
+                    'id' in data and
+                    'content' in data and
+                    'author' in data and
+                    'media_files' in data and
+                    len(data['media_files']) == 0
+                )
+                self.log_test("Create post without media", no_media_success, f"Post ID: {data.get('id')}")
+            else:
+                error_msg = f"Status: {response.status_code}"
+                if response.status_code == 422:
+                    try:
+                        error_data = response.json()
+                        error_msg += f", Details: {error_data}"
+                    except:
+                        pass
+                self.log_test("Create post without media", False, error_msg)
+                no_media_success = False
+        except Exception as e:
+            self.log_test("Create post without media", False, f"Request failed: {str(e)}")
             no_media_success = False
         
         # Test 2: Create post with media (if we have uploaded files)
         media_success = True
         if hasattr(self, 'uploaded_file_ids') and self.uploaded_file_ids:
-            # Use form data for media file IDs
-            import requests
-            
-            url = f"{self.base_url}/posts"
-            headers = {'Authorization': f'Bearer {self.token}'}
-            
             form_data = {
-                'post_data': json.dumps({"content": "This post has media attachments!"}),
+                'content': 'This post has media attachments!',
                 'media_file_ids': self.uploaded_file_ids[:2]  # Use first 2 uploaded files
             }
             
