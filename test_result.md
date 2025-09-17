@@ -102,7 +102,68 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Phase 1: Universal Chat Foundation - Implementing Family module with universal chat architecture. Split central content area into main chat area (70%) and scheduled actions panel (30%). Build chat groups auto-creation (Family/Relatives), custom group creation, messaging system, and scheduled actions with calendar integration."
+user_problem_statement: "Phase 2: Media Upload Functionality - Implementing media upload functionality for posts in the UniversalWall component. Support for PNG, JPG, GIF images, PDF, DOC, PPTX documents, multiple files per post, YouTube URL auto-detection and embed, with local file storage and standard file size limits (10MB images, 50MB documents)."
+
+backend:
+  - task: "Media File Models and Database Schema"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added MediaFile and Post models to server.py with file type validation, size limits, and YouTube URL support"
+
+  - task: "Media Upload API Endpoints"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added POST /api/media/upload endpoint with file validation (PNG, JPG, GIF, PDF, DOC, PPTX), GET /api/media/{file_id} for serving files, and local storage in uploads directory"
+
+  - task: "Posts API with Media Support"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added GET /api/posts and POST /api/posts endpoints with media file attachment support, YouTube URL auto-detection and extraction, multiple file upload support"
+
+  - task: "YouTube URL Detection Utility"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added extract_youtube_urls utility function to detect and extract YouTube URLs from post content with regex patterns for various YouTube URL formats"
+
+  - task: "File Storage and Validation System"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA" 
+        agent: "main"
+        comment: "Implemented local file storage system with user-specific directories, file type validation, size limits (10MB images, 50MB documents), and aiofiles for async file operations"
 
 backend:
   - task: "Chat Group Models and Database Schema"
