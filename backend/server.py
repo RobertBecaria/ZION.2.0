@@ -64,6 +64,29 @@ class VerificationLevel(str, Enum):
 
 # === CORE MODELS ===
 
+class MediaFile(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    original_filename: str
+    stored_filename: str
+    file_path: str
+    file_type: str  # "image", "document", "video"
+    mime_type: str
+    file_size: int  # in bytes
+    uploaded_by: str  # user_id
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Post(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    content: str
+    media_files: List[str] = []  # List of MediaFile IDs
+    youtube_urls: List[str] = []  # Extracted YouTube URLs
+    likes_count: int = 0
+    comments_count: int = 0
+    is_published: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
 class ChatGroup(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
