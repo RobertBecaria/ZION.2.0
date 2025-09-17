@@ -8,11 +8,12 @@ const MediaStorage = ({
   mediaType = 'photos', // 'photos', 'documents', 'videos'
   user,
   activeModule = 'personal',
-  moduleColor = '#059669'
+  moduleColor = '#059669',
+  selectedModuleFilter = 'all',
+  onModuleFilterChange
 }) => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeModuleFilter, setActiveModuleFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid', 'list'
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -44,7 +45,7 @@ const MediaStorage = ({
                       mediaType === 'videos' ? 'video' : null;
       
       if (fileType) params.append('media_type', fileType);
-      if (activeModuleFilter !== 'all') params.append('source_module', activeModuleFilter);
+      if (selectedModuleFilter !== 'all') params.append('source_module', selectedModuleFilter);
       
       const response = await fetch(`${backendUrl}/api/media?${params}`, {
         headers: {
@@ -70,7 +71,7 @@ const MediaStorage = ({
 
   useEffect(() => {
     fetchMedia();
-  }, [mediaType, activeModuleFilter]);
+  }, [mediaType, selectedModuleFilter]);
 
   // Filter files by search term
   const filteredFiles = mediaFiles.filter(file =>
