@@ -19,17 +19,17 @@ const MediaStorage = ({
   
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Module configuration with colors
+  // Module configuration with colors (matching the exact structure)
   const modules = {
     all: { name: 'Все', color: '#6B7280' },
     family: { name: 'Семья', color: '#059669' },
-    work: { name: 'Работа', color: '#2563EB' },
-    education: { name: 'Образование', color: '#7C3AED' },
-    health: { name: 'Здоровье', color: '#DC2626' },
-    government: { name: 'Госуслуги', color: '#EA580C' },
-    business: { name: 'Бизнес', color: '#CA8A04' },
-    community: { name: 'Сообщество', color: '#4B5563' },
-    personal: { name: 'Личное', color: '#10B981' }
+    news: { name: 'Новости', color: '#1D4ED8' },
+    journal: { name: 'Журнал', color: '#6D28D9' },
+    services: { name: 'Сервисы', color: '#B91C1C' },
+    organizations: { name: 'Организации', color: '#C2410C' },
+    marketplace: { name: 'Маркетплейс', color: '#BE185D' },
+    finance: { name: 'Финансы', color: '#A16207' },
+    events: { name: 'Мероприятия', color: '#7E22CE' }
   };
 
   // Fetch media files
