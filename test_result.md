@@ -372,19 +372,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Media File Models and Database Schema"
-    - "Media Upload API Endpoints"  
     - "Posts API with Media Support"
-    - "YouTube URL Detection Utility"
-    - "File Storage and Validation System"
-    - "UniversalWall Media Upload UI"
-    - "Media Display Components"
-    - "Posts API Integration"
-    - "Media Upload Styling"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Posts API with Media Support"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Phase 2 implementation complete. Added comprehensive media upload functionality including: Backend - MediaFile and Post models, media upload endpoints with file validation (PNG/JPG/GIF/PDF/DOC/PPTX), local storage system, YouTube URL auto-detection. Frontend - Updated UniversalWall with multiple file upload, file previews, media display components for images/documents/YouTube embeds, real API integration. Ready for backend testing to verify file upload, storage, and posts API functionality."
+  - agent: "testing"
+    message: "PHASE 2 BACKEND TESTING COMPLETE: Media upload functionality is 80% working. ✅ WORKING: Media upload API (PNG/JPG/PDF), file serving API, file storage system, YouTube URL detection, database models. ❌ CRITICAL ISSUE: Posts API parameter structure needs fixing - expects mixed JSON/form data but current implementation causes 422 validation errors. All core media functionality is solid, just need to fix posts API parameter handling."
