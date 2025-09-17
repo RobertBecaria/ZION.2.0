@@ -154,63 +154,78 @@ user_problem_statement: "Phase 2: Media Upload Functionality - Implementing medi
 backend:
   - task: "Media File Models and Database Schema"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added MediaFile and Post models to server.py with file type validation, size limits, and YouTube URL support"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: MediaFile and Post models working correctly. Database schema supports all required fields including file metadata, user associations, and YouTube URL storage. Models properly handle UUID generation and datetime fields."
 
   - task: "Media Upload API Endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added POST /api/media/upload endpoint with file validation (PNG, JPG, GIF, PDF, DOC, PPTX), GET /api/media/{file_id} for serving files, and local storage in uploads directory"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Media upload API fully functional. Successfully tested PNG, JPG, PDF uploads with proper file type validation, size limits, and user-specific directory storage (/app/backend/uploads/{user_id}/). File serving API correctly returns files with proper MIME types and handles 404 for non-existent files. Invalid file types (e.g., .txt) properly rejected with 400 status."
 
   - task: "Posts API with Media Support"
     implemented: true
-    working: "NA"
+    working: false
     file: "server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added GET /api/posts and POST /api/posts endpoints with media file attachment support, YouTube URL auto-detection and extraction, multiple file upload support"
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: Posts API has parameter structure mismatch. API expects PostCreate model as JSON body + media_file_ids as form data, but current implementation causes 422 validation errors. GET /api/posts works but returns empty list since no posts can be created. Need to fix API parameter handling for mixed JSON/form data requests."
 
   - task: "YouTube URL Detection Utility"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added extract_youtube_urls utility function to detect and extract YouTube URLs from post content with regex patterns for various YouTube URL formats"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: YouTube URL detection utility function working correctly. Successfully extracts and deduplicates URLs from various formats: youtube.com/watch?v=, youtu.be/, and youtube.com/embed/. Regex patterns properly handle different YouTube URL structures and return standardized format."
 
   - task: "File Storage and Validation System"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA" 
         agent: "main"
         comment: "Implemented local file storage system with user-specific directories, file type validation, size limits (10MB images, 50MB documents), and aiofiles for async file operations"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: File storage and validation system working perfectly. Files stored in user-specific directories (/app/backend/uploads/{user_id}/), proper file type validation (PNG/JPG/GIF/PDF/DOC/PPTX), size limits enforced, and async file operations functioning correctly. MediaFile records created in MongoDB with complete metadata."
 
 backend:
   - task: "Chat Group Models and Database Schema"
