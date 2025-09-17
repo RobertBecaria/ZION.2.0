@@ -1105,6 +1105,119 @@ async def upload_media_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
+@api_router.get("/media")
+async def get_user_media(
+    media_type: Optional[str] = None,  # "image", "document", "video"
+    source_module: Optional[str] = None,  # "family", "work", etc.
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's media files with optional filtering"""
+    
+    # Build query
+    query = {"uploaded_by": current_user.id}
+    
+    if media_type:
+        query["file_type"] = media_type
+    
+    if source_module:
+        query["source_module"] = source_module
+    
+    # Get media files
+    media_files = await db.media_files.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Remove MongoDB _id and add file_url
+    result = []
+    for media in media_files:
+        media.pop("_id", None)
+        media["file_url"] = f"/api/media/{media['id']}"
+        result.append(media)
+    
+    return {"media_files": result, "total": len(result)}
+
+@api_router.get("/media/modules")
+async def get_media_by_modules(current_user: User = Depends(get_current_user)):
+    """Get user's media organized by modules"""
+    
+    # Get all user's media
+    media_files = await db.media_files.find({"uploaded_by": current_user.id}).to_list(1000)
+    
+    # Organize by modules
+    modules = {}
+    for media in media_files:
+        media.pop("_id", None)
+        media["file_url"] = f"/api/media/{media['id']}"
+        
+        module = media.get("source_module", "personal")
+        if module not in modules:
+            modules[module] = {"images": [], "documents": [], "videos": []}
+        
+        file_type = media["file_type"]
+        if file_type == "image":
+            modules[module]["images"].append(media)
+        elif file_type == "document":
+            modules[module]["documents"].append(media)
+        else:
+            modules[module]["videos"].append(media)
+    
+    return {"modules": modules}
+
+@api_router.post("/media/collections")
+async def create_media_collection(
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    source_module: str = Form(default="personal"),
+    media_ids: List[str] = Form(default=[]),
+    privacy_level: str = Form(default="private"),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new media collection (album)"""
+    
+    # Validate media_ids belong to user
+    valid_media_ids = []
+    if media_ids:
+        for media_id in media_ids:
+            media = await db.media_files.find_one({
+                "id": media_id,
+                "uploaded_by": current_user.id
+            })
+            if media:
+                valid_media_ids.append(media_id)
+    
+    # Create collection
+    collection = MediaCollection(
+        user_id=current_user.id,
+        name=name,
+        description=description,
+        source_module=source_module,
+        media_ids=valid_media_ids,
+        privacy_level=privacy_level
+    )
+    
+    await db.media_collections.insert_one(collection.dict())
+    
+    return {"message": "Collection created successfully", "collection_id": collection.id}
+
+@api_router.get("/media/collections")
+async def get_user_collections(
+    source_module: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's media collections"""
+    
+    query = {"user_id": current_user.id}
+    if source_module:
+        query["source_module"] = source_module
+    
+    collections = await db.media_collections.find(query).sort("created_at", -1).to_list(100)
+    
+    # Remove MongoDB _id
+    for collection in collections:
+        collection.pop("_id", None)
+    
+    return {"collections": collections}
+
 @api_router.get("/media/{file_id}")
 async def get_media_file(file_id: str):
     """Serve uploaded media file - public access for image display"""
