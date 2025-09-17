@@ -2991,32 +2991,32 @@ select:focus {
   border-color: #059669;
 }
 
-.media-item[data-module="work"] {
-  border-color: #2563EB;
+.media-item[data-module="news"] {
+  border-color: #1D4ED8;
 }
 
-.media-item[data-module="education"] {
-  border-color: #7C3AED;
+.media-item[data-module="journal"] {
+  border-color: #6D28D9;
 }
 
-.media-item[data-module="health"] {
-  border-color: #DC2626;
+.media-item[data-module="services"] {
+  border-color: #B91C1C;
 }
 
-.media-item[data-module="government"] {
-  border-color: #EA580C;
+.media-item[data-module="organizations"] {
+  border-color: #C2410C;
 }
 
-.media-item[data-module="business"] {
-  border-color: #CA8A04;
+.media-item[data-module="marketplace"] {
+  border-color: #BE185D;
 }
 
-.media-item[data-module="community"] {
-  border-color: #4B5563;
+.media-item[data-module="finance"] {
+  border-color: #A16207;
 }
 
-.media-item[data-module="personal"] {
-  border-color: #10B981;
+.media-item[data-module="events"] {
+  border-color: #7E22CE;
 }
 
 .files-grid.list .media-item {
