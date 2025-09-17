@@ -1034,6 +1034,155 @@ async def complete_scheduled_action(
     
     return {"message": "Scheduled action marked as completed"}
 
+# Media Upload Endpoints
+@api_router.post("/media/upload", response_model=MediaUploadResponse)
+async def upload_media_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload a media file (image or document)"""
+    # Validate file
+    is_valid, error_message = validate_file(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_message)
+    
+    try:
+        # Save file and create record
+        media_file = await save_uploaded_file(file, current_user.id)
+        
+        # Store in database
+        media_dict = media_file.dict()
+        await db.media_files.insert_one(media_dict)
+        
+        return MediaUploadResponse(
+            id=media_file.id,
+            original_filename=media_file.original_filename,
+            file_type=media_file.file_type,
+            file_size=media_file.file_size,
+            file_url=f"/api/media/{media_file.id}"
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+
+@api_router.get("/media/{file_id}")
+async def get_media_file(file_id: str, current_user: User = Depends(get_current_user)):
+    """Serve uploaded media file"""
+    media_file = await db.media_files.find_one({"id": file_id})
+    if not media_file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_path = Path(media_file["file_path"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        path=file_path,
+        filename=media_file["original_filename"],
+        media_type=media_file["mime_type"]
+    )
+
+# Posts Endpoints
+@api_router.get("/posts", response_model=List[PostResponse])
+async def get_posts(
+    skip: int = 0,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Get posts feed"""
+    posts = await db.posts.find(
+        {"is_published": True}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Remove MongoDB _id and get additional info
+    result = []
+    for post in posts:
+        post.pop("_id", None)
+        
+        # Get author info
+        author = await get_user_by_id(post["user_id"])
+        post["author"] = {
+            "id": author.id,
+            "first_name": author.first_name,
+            "last_name": author.last_name
+        } if author else {}
+        
+        # Get media files info
+        media_files = []
+        for media_id in post.get("media_files", []):
+            media = await db.media_files.find_one({"id": media_id})
+            if media:
+                media.pop("_id", None)
+                media["file_url"] = f"/api/media/{media_id}"
+                media_files.append(media)
+        post["media_files"] = media_files
+        
+        result.append(PostResponse(**post))
+    
+    return result
+
+@api_router.post("/posts", response_model=PostResponse)
+async def create_post(
+    post_data: PostCreate,
+    media_file_ids: Optional[List[str]] = Form(default=[]),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new post with optional media attachments"""
+    
+    # Extract YouTube URLs from content
+    youtube_urls = extract_youtube_urls(post_data.content)
+    
+    # Validate media file IDs belong to current user
+    valid_media_ids = []
+    if media_file_ids:
+        for media_id in media_file_ids:
+            media = await db.media_files.find_one({
+                "id": media_id,
+                "uploaded_by": current_user.id
+            })
+            if media:
+                valid_media_ids.append(media_id)
+    
+    # Create post
+    new_post = Post(
+        user_id=current_user.id,
+        content=post_data.content,
+        media_files=valid_media_ids,
+        youtube_urls=youtube_urls
+    )
+    
+    await db.posts.insert_one(new_post.dict())
+    
+    # Prepare response with author info and media files
+    author_info = {
+        "id": current_user.id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name
+    }
+    
+    media_files = []
+    for media_id in valid_media_ids:
+        media = await db.media_files.find_one({"id": media_id})
+        if media:
+            media.pop("_id", None)
+            media["file_url"] = f"/api/media/{media_id}"
+            media_files.append(media)
+    
+    return PostResponse(
+        id=new_post.id,
+        user_id=new_post.user_id,
+        content=new_post.content,
+        author=author_info,
+        media_files=media_files,
+        youtube_urls=new_post.youtube_urls,
+        likes_count=new_post.likes_count,
+        comments_count=new_post.comments_count,
+        is_published=new_post.is_published,
+        created_at=new_post.created_at,
+        updated_at=new_post.updated_at
+    )
+
 # Basic status endpoints
 @api_router.get("/")
 async def root():
