@@ -306,6 +306,91 @@ class MediaUploadResponse(BaseModel):
 
 # === UTILITY FUNCTIONS ===
 
+# File upload settings
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+MAX_FILE_SIZE = {
+    "image": 10 * 1024 * 1024,  # 10MB
+    "document": 50 * 1024 * 1024,  # 50MB
+}
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif"}
+ALLOWED_DOCUMENT_TYPES = {
+    "application/pdf", 
+    "application/msword", 
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+}
+
+def extract_youtube_urls(text: str) -> List[str]:
+    """Extract YouTube URLs from text content"""
+    youtube_patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]+)',
+        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]+)'
+    ]
+    
+    urls = []
+    for pattern in youtube_patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            # Construct standard YouTube URL
+            urls.append(f"https://www.youtube.com/watch?v={match}")
+    
+    return list(set(urls))  # Remove duplicates
+
+def get_file_type(mime_type: str) -> str:
+    """Determine file type based on MIME type"""
+    if mime_type in ALLOWED_IMAGE_TYPES:
+        return "image"
+    elif mime_type in ALLOWED_DOCUMENT_TYPES:
+        return "document"
+    else:
+        return "unknown"
+
+def validate_file(file: UploadFile) -> tuple[bool, str]:
+    """Validate uploaded file"""
+    file_type = get_file_type(file.content_type)
+    
+    if file_type == "unknown":
+        return False, "Unsupported file type"
+    
+    # Check file size (we'll validate this during upload)
+    max_size = MAX_FILE_SIZE.get(file_type, 0)
+    if file.size and file.size > max_size:
+        return False, f"File too large. Max size: {max_size // (1024*1024)}MB"
+    
+    return True, "Valid file"
+
+async def save_uploaded_file(file: UploadFile, user_id: str) -> MediaFile:
+    """Save uploaded file to disk and create MediaFile record"""
+    # Create user-specific directory
+    user_dir = UPLOAD_DIR / user_id
+    user_dir.mkdir(exist_ok=True)
+    
+    # Generate unique filename
+    file_extension = Path(file.filename).suffix
+    stored_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = user_dir / stored_filename
+    
+    # Save file
+    async with aiofiles.open(file_path, 'wb') as f:
+        content = await file.read()
+        await f.write(content)
+    
+    # Create MediaFile record
+    media_file = MediaFile(
+        original_filename=file.filename,
+        stored_filename=stored_filename,
+        file_path=str(file_path),
+        file_type=get_file_type(file.content_type),
+        mime_type=file.content_type,
+        file_size=len(content),
+        uploaded_by=user_id
+    )
+    
+    return media_file
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
