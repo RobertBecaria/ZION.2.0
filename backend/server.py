@@ -73,7 +73,22 @@ class MediaFile(BaseModel):
     mime_type: str
     file_size: int  # in bytes
     uploaded_by: str  # user_id
+    source_module: str = "personal"  # "family", "work", "education", "health", "government", "business", "community", "personal"
+    privacy_level: str = "private"  # "private", "module", "public"
+    metadata: Dict[str, Any] = {}  # Additional metadata (dimensions, duration, etc.)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MediaCollection(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str
+    description: Optional[str] = None
+    source_module: str = "personal"
+    media_ids: List[str] = []  # List of MediaFile IDs
+    cover_media_id: Optional[str] = None
+    privacy_level: str = "private"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
 
 class Post(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
