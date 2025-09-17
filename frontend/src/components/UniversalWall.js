@@ -107,7 +107,7 @@ function UniversalWall({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('zion_token');
       
       // Create FormData for post creation
       const formData = new FormData();
