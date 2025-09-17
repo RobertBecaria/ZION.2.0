@@ -2693,8 +2693,10 @@ select:focus {
 
 /* Full-width main content for media views */
 .main-content-area.full-width {
+  flex: 1 !important;
   width: 100% !important;
   margin-right: 0;
+  max-width: none !important;
 }
 
 .main-content-area.full-width .media-storage {
