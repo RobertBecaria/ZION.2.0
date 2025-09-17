@@ -1353,8 +1353,8 @@ class ZionCityAPITester:
             # Test authorization and security
             self.test_chat_authorization()
             
-            # Phase 2: Media Upload Functionality Tests
-            print("\n🔥 PHASE 2: MEDIA UPLOAD FUNCTIONALITY TESTS")
+            # Phase 2: Media Upload Functionality Tests - FIXED POSTS API FOCUS
+            print("\n🔥 PHASE 2: MEDIA UPLOAD FUNCTIONALITY TESTS - FIXED POSTS API")
             print("=" * 60)
             
             # Test media upload API with different file types
@@ -1363,11 +1363,21 @@ class ZionCityAPITester:
             # Test media serving API
             self.test_media_serving_api()
             
-            # Test YouTube URL detection
-            self.test_youtube_url_detection()
+            # PRIMARY FOCUS: Test FIXED Posts API with Form data only
+            print("\n🎯 PRIMARY TESTING FOCUS: FIXED POSTS API WITH MEDIA SUPPORT")
+            print("=" * 60)
             
-            # Test posts API with media support
-            self.test_posts_with_media_api()
+            # Test the FIXED Posts API with Form data only
+            self.test_fixed_posts_api_with_media_support()
+            
+            # Test Posts Retrieval with media info
+            self.test_posts_retrieval_with_media()
+            
+            # Test Complete Media Workflow
+            self.test_complete_media_workflow()
+            
+            # Test YouTube URL Detection with specific formats
+            self.test_youtube_url_detection_formats()
             
             # Onboarding and affiliations tests
             onboarding_success = self.test_onboarding_flow()
