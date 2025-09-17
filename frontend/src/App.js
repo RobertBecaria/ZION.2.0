@@ -1202,7 +1202,11 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#6B7280' }}></div>
                     <span>Все файлы</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {Object.values(mediaStats).reduce((total, module) => {
+                        return total + (module.images?.length || 0) + (module.documents?.length || 0) + (module.videos?.length || 0);
+                      }, 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1211,7 +1215,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#059669' }}></div>
                     <span>Семья</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.family?.images?.length || 0) + (mediaStats.family?.documents?.length || 0) + (mediaStats.family?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1220,7 +1226,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#2563EB' }}></div>
                     <span>Работа</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.work?.images?.length || 0) + (mediaStats.work?.documents?.length || 0) + (mediaStats.work?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1229,7 +1237,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#7C3AED' }}></div>
                     <span>Образование</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.education?.images?.length || 0) + (mediaStats.education?.documents?.length || 0) + (mediaStats.education?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1238,7 +1248,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#DC2626' }}></div>
                     <span>Здоровье</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.health?.images?.length || 0) + (mediaStats.health?.documents?.length || 0) + (mediaStats.health?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1247,7 +1259,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#EA580C' }}></div>
                     <span>Госуслуги</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.government?.images?.length || 0) + (mediaStats.government?.documents?.length || 0) + (mediaStats.government?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1256,7 +1270,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#CA8A04' }}></div>
                     <span>Бизнес</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.business?.images?.length || 0) + (mediaStats.business?.documents?.length || 0) + (mediaStats.business?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1265,7 +1281,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#4B5563' }}></div>
                     <span>Сообщество</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.community?.images?.length || 0) + (mediaStats.community?.documents?.length || 0) + (mediaStats.community?.videos?.length || 0)}
+                    </span>
                   </button>
                   
                   <button 
@@ -1274,7 +1292,9 @@ function Dashboard() {
                   >
                     <div className="module-color-dot" style={{ backgroundColor: '#10B981' }}></div>
                     <span>Личное</span>
-                    <span className="file-count">0</span>
+                    <span className="file-count">
+                      {(mediaStats.personal?.images?.length || 0) + (mediaStats.personal?.documents?.length || 0) + (mediaStats.personal?.videos?.length || 0)}
+                    </span>
                   </button>
                 </div>
               </div>
