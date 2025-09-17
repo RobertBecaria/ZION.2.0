@@ -198,9 +198,13 @@ const MediaStorage = ({
         </div>
         
         <div className="header-actions">
-          <button className="action-btn primary">
+          <button 
+            className="action-btn primary" 
+            onClick={handleUploadClick}
+            disabled={uploading}
+          >
             <Upload size={18} />
-            Загрузить
+            {uploading ? 'Загружаем...' : 'Загрузить'}
           </button>
           <button className="action-btn">
             <FolderPlus size={18} />
