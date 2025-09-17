@@ -197,16 +197,16 @@ function UniversalWall({
         // Map module names to backend format
         const moduleMapping = {
           'Family': 'family',
-          'Organizations': 'work', 
-          'News': 'community',
-          'Journal': 'personal',
-          'Services': 'government',
-          'Marketplace': 'business',
-          'Finance': 'business',
-          'Events': 'community'
+          'Organizations': 'organizations', 
+          'News': 'news',
+          'Journal': 'journal',
+          'Services': 'services',
+          'Marketplace': 'marketplace',
+          'Finance': 'finance',
+          'Events': 'events'
         };
         
-        const sourceModule = moduleMapping[moduleName] || 'personal';
+        const sourceModule = moduleMapping[moduleName] || 'journal';
         formData.append('source_module', sourceModule);
         formData.append('privacy_level', 'module');
 
