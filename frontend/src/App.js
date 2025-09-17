@@ -852,14 +852,45 @@ function Dashboard() {
               <MessageCircle size={20} />
               <span>Мои Сообщения</span>
             </a>
-            <a href="#" className="nav-item">
-              <Video size={20} />
-              <span>Мои Видео</span>
-            </a>
-            <a href="#" className="nav-item">
-              <FileText size={20} />
-              <span>Мои Документы</span>
-            </a>
+            
+            {/* Media Storage Section */}
+            <div className="nav-section">
+              <span className="nav-section-title">Медиа Хранилище</span>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'media-photos' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('media-photos');
+                }}
+              >
+                <Image size={20} />
+                <span>Мои Фото</span>
+              </a>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'media-documents' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('media-documents');
+                }}
+              >
+                <FileText size={20} />
+                <span>Мои Документы</span>
+              </a>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'media-videos' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('media-videos');
+                }}
+              >
+                <Video size={20} />
+                <span>Мои Видео</span>
+              </a>
+            </div>
+            
             <a href="#" className="nav-item">
               <Settings size={20} />
               <span>Настройки</span>
