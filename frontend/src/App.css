@@ -2704,6 +2704,16 @@ select:focus {
   max-width: none;
 }
 
+/* Ensure split-content-layout doesn't restrict width for media views */
+.split-content-layout:has(.main-content-area.full-width) {
+  gap: 0;
+}
+
+.split-content-layout:has(.main-content-area.full-width) .main-content-area {
+  flex: 1 !important;
+  width: 100% !important;
+}
+
 .media-storage-header {
   display: flex;
   justify-content: space-between;
