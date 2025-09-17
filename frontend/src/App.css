@@ -2818,6 +2818,17 @@ select:focus {
   border-color: #1D4ED8;
 }
 
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn.primary:disabled:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+  transform: none;
+}
+
 /* Media Controls */
 .media-controls {
   display: flex;
