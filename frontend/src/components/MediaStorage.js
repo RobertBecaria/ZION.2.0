@@ -187,9 +187,9 @@ const MediaStorage = ({
             </div>
             <h3>Файлы не найдены</h3>
             <p>
-              {activeModuleFilter === 'all' 
+              {selectedModuleFilter === 'all' 
                 ? `У вас пока нет ${mediaType === 'photos' ? 'фотографий' : mediaType === 'documents' ? 'документов' : 'видео'}`
-                : `Нет файлов в разделе "${modules[activeModuleFilter]?.name}"`
+                : `Нет файлов в разделе "${modules[selectedModuleFilter]?.name}"`
               }
             </p>
             <button className="upload-btn" style={{ backgroundColor: moduleColor }}>
