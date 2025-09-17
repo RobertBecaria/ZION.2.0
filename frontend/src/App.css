@@ -2691,6 +2691,17 @@ select:focus {
   overflow: hidden;
 }
 
+/* Full-width main content for media views */
+.main-content-area.full-width {
+  width: 100% !important;
+  margin-right: 0;
+}
+
+.main-content-area.full-width .media-storage {
+  width: 100%;
+  max-width: none;
+}
+
 .media-storage-header {
   display: flex;
   justify-content: space-between;
