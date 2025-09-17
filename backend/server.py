@@ -1199,6 +1199,10 @@ async def health_check():
 # Include the router in the main app
 app.include_router(api_router)
 
+# Serve uploaded files
+# Mount uploads directory for serving static files
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
