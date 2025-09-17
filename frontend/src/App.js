@@ -1267,6 +1267,34 @@ function Dashboard() {
 
           {/* CHAT View - Chat-specific widgets */}
           {activeView === 'chat' && (
+            <>
+              {/* Chat Groups Widget */}
+              <div className="widget chat-groups-widget">
+                <div className="widget-header">
+                  <MessageCircle size={16} />
+                  <span>Активные чаты</span>
+                </div>
+                <div className="chat-groups-list">
+                  <div className="chat-group-item">
+                    <div className="group-avatar"></div>
+                    <div className="group-info">
+                      <span className="group-name">Семья</span>
+                      <span className="last-message">Привет всем! 👋</span>
+                    </div>
+                    <div className="unread-count">2</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Online Friends Widget */}
+              <div className="widget friends-widget">
+                <div className="widget-header">
+                  <Users size={16} />
+                  <span>Друзья онлайн</span>
+                </div>
+                <div className="friends-list">
+                  <div className="friend-item">
+                    <div className="friend-avatar"></div>
                     <div className="friend-info">
                       <span className="friend-name">Анна Петрова</span>
                       <span className="friend-status">В сети</span>
@@ -1280,50 +1308,6 @@ function Dashboard() {
                       <span className="friend-status">В сети</span>
                     </div>
                     <div className="status-indicator online"></div>
-                  </div>
-                  <div className="friend-item">
-                    <div className="friend-avatar"></div>
-                    <div className="friend-info">
-                      <span className="friend-name">Елена Сидорова</span>
-                      <span className="friend-status">В сети</span>
-                    </div>
-                    <div className="status-indicator online"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Popular Hashtags Widget */}
-              <div className="widget hashtags-widget">
-                <div className="widget-header">
-                  <Bell size={16} />
-                  <span>Популярное</span>
-                </div>
-                <div className="hashtags-list">
-                  <a href="#" className="hashtag" style={{ color: currentModule.color }}>#Community</a>
-                  <a href="#" className="hashtag" style={{ color: currentModule.color }}>#Agriculture</a>
-                  <a href="#" className="hashtag" style={{ color: currentModule.color }}>#Notice</a>
-                  <a href="#" className="hashtag" style={{ color: currentModule.color }}>#ZIONCITY</a>
-                </div>
-              </div>
-
-              {/* Wall Activity Widget */}
-              <div className="widget activity-widget">
-                <div className="widget-header">
-                  <MessageCircle size={16} />
-                  <span>Активность</span>
-                </div>
-                <div className="activity-stats">
-                  <div className="stat-item">
-                    <span className="stat-number">12</span>
-                    <span className="stat-label">Новых записей</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">5</span>
-                    <span className="stat-label">Лайков</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">8</span>
-                    <span className="stat-label">Комментариев</span>
                   </div>
                 </div>
               </div>
