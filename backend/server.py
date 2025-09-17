@@ -1236,6 +1236,24 @@ async def get_media_file(file_id: str):
         media_type=media_file["mime_type"]
     )
 
+@api_router.get("/media/{file_id}")
+async def get_media_file(file_id: str):
+    """Serve uploaded media file - public access for image display"""
+    media_file = await db.media_files.find_one({"id": file_id})
+    if not media_file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_path = Path(media_file["file_path"])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        path=file_path,
+        filename=media_file["original_filename"],
+        media_type=media_file["mime_type"]
+    )
+
 # Posts Endpoints
 @api_router.get("/posts", response_model=List[PostResponse])
 async def get_posts(
