@@ -173,17 +173,54 @@ function UniversalWall({
     });
   };
 
-  const handleImageUpload = () => {
-    fileInputRef.current?.click();
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setSelectedFiles(prev => [...prev, ...files]);
+    setUploadingFiles(files.map(f => f.name));
+
+    // Upload files immediately
+    try {
+      const token = localStorage.getItem('token');
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${backendUrl}/api/media/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          return result.id;
+        } else {
+          throw new Error(`Failed to upload ${file.name}`);
+        }
+      });
+
+      const uploadedIds = await Promise.all(uploadPromises);
+      setUploadedMediaIds(prev => [...prev, ...uploadedIds]);
+      
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('Some files failed to upload. Please try again.');
+    } finally {
+      setUploadingFiles([]);
+    }
   };
 
-  const handleFileSelect = (e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      // TODO: Handle file upload
-      console.log('Files selected:', files);
-      setShowImageUpload(false);
-    }
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setUploadedMediaIds(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFileInputClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
