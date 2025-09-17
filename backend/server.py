@@ -1053,17 +1053,42 @@ async def complete_scheduled_action(
 @api_router.post("/media/upload", response_model=MediaUploadResponse)
 async def upload_media_file(
     file: UploadFile = File(...),
+    source_module: str = Form(default="personal"),
+    privacy_level: str = Form(default="private"),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload a media file (image or document)"""
+    """Upload a media file (image, document, or video) with module tagging"""
     # Validate file
     is_valid, error_message = validate_file(file)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_message)
     
+    # Validate source_module
+    valid_modules = ["family", "work", "education", "health", "government", "business", "community", "personal"]
+    if source_module not in valid_modules:
+        source_module = "personal"
+    
+    # Validate privacy_level
+    valid_privacy = ["private", "module", "public"]
+    if privacy_level not in valid_privacy:
+        privacy_level = "private"
+    
     try:
         # Save file and create record
         media_file = await save_uploaded_file(file, current_user.id)
+        
+        # Update with module and privacy info
+        media_file.source_module = source_module
+        media_file.privacy_level = privacy_level
+        
+        # Add metadata based on file type
+        if media_file.file_type == "image":
+            # You could add image dimensions here using PIL
+            media_file.metadata = {"category": "image"}
+        elif media_file.file_type == "document":
+            media_file.metadata = {"category": "document"}
+        else:
+            media_file.metadata = {"category": "other"}
         
         # Store in database
         media_dict = media_file.dict()
