@@ -273,7 +273,10 @@ function RegistrationForm({ onSwitchToLogin }) {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="platform-logo">ZION.CITY</h1>
+          <div className="auth-logo-section">
+            <img src="/zion-logo.jpeg" alt="ZION.CITY Logo" className="auth-logo" />
+            <h1 className="platform-logo">ZION.CITY</h1>
+          </div>
           <p>Создайте аккаунт в цифровой экосистеме</p>
         </div>
         
