@@ -73,7 +73,11 @@ const MediaStorage = ({
                       mediaType === 'videos' ? 'video' : null;
       
       if (fileType) params.append('media_type', fileType);
-      if (selectedModuleFilter !== 'all') params.append('source_module', selectedModuleFilter);
+      if (selectedModuleFilter !== 'all') {
+        // Convert frontend module to backend module for API call
+        const backendModule = frontendToBackendModuleMap[selectedModuleFilter] || selectedModuleFilter;
+        params.append('source_module', backendModule);
+      }
       
       const response = await fetch(`${backendUrl}/api/media?${params}`, {
         headers: {
