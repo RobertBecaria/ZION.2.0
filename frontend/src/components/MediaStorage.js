@@ -267,7 +267,10 @@ const MediaStorage = ({
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: `${uploadProgress}%` }}
+              style={{ 
+                width: `${uploadProgress}%`,
+                backgroundColor: getCurrentFilterColor()
+              }}
             ></div>
           </div>
           <span className="progress-text">Загрузка файлов... {Math.round(uploadProgress)}%</span>
