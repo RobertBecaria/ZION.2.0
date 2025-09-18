@@ -986,6 +986,7 @@ function Dashboard() {
                         moduleColor={currentModule.color}
                         selectedModuleFilter={selectedModuleFilter}
                         onModuleFilterChange={setSelectedModuleFilter}
+                        onModuleCountsUpdate={setMediaStats}
                       />
                     ) : (
                       <>
