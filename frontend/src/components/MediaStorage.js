@@ -35,14 +35,15 @@ const MediaStorage = ({
   };
 
   // Frontend to Backend module mapping
+  // Backend valid modules: ["family", "work", "education", "health", "government", "business", "community", "personal"]
   const frontendToBackendModuleMap = {
-    'family': 'family',
+    'family': 'family',         // Family -> Family
     'news': 'community',        // News -> Community 
     'journal': 'personal',      // Journal -> Personal
     'services': 'business',     // Services -> Business
     'organizations': 'work',    // Organizations -> Work
     'marketplace': 'business',  // Marketplace -> Business
-    'finance': 'personal',      // Finance -> Personal (or could be 'business')
+    'finance': 'business',      // Finance -> Business
     'events': 'community'       // Events -> Community
   };
 
