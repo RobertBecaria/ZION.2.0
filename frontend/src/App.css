@@ -2682,6 +2682,26 @@ body {
   .comment-stats {
     gap: 0.5rem;
   }
+  
+  /* Mobile Post Form */
+  .post-form {
+    min-width: 95vw;
+    margin: 1rem;
+  }
+  
+  .composer-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .composer-placeholder {
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .post-composer {
+    padding: 0.875rem 1rem;
+  }
 }
 
 @keyframes pulse {
