@@ -208,6 +208,10 @@ const MediaStorage = ({
         <div className="header-actions">
           <button 
             className="action-btn primary" 
+            style={{ 
+              backgroundColor: getCurrentFilterColor(),
+              borderColor: getCurrentFilterColor()
+            }}
             onClick={handleUploadClick}
             disabled={uploading}
           >
