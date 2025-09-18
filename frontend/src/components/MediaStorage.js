@@ -371,7 +371,7 @@ const MediaStorage = ({
                       className="media-item" 
                       data-module={file.source_module}
                       style={{ 
-                        borderColor: modules[file.source_module]?.color || '#E5E7EB',
+                        borderColor: getDisplayModuleInfo(file.source_module).color,
                         borderWidth: '2px'
                       }}
                     >
