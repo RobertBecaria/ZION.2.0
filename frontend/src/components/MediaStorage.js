@@ -118,6 +118,14 @@ const MediaStorage = ({
     }
   };
 
+  // Get current filter color
+  const getCurrentFilterColor = () => {
+    if (selectedModuleFilter === 'all') {
+      return moduleColor; // Use active module color when "all" is selected
+    }
+    return modules[selectedModuleFilter]?.color || moduleColor;
+  };
+
   // Handle upload button click
   const handleUploadClick = () => {
     const fileInput = document.createElement('input');
