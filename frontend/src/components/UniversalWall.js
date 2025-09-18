@@ -37,16 +37,53 @@ function UniversalWall({
   const popularEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
   const allEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "👏", "🤔", "💯"];
 
+  const openLightbox = (imageUrl, postImages = [], imageIndex = 0) => {
+    setLightboxImage(imageUrl);
+    setLightboxImages(postImages);
+    setLightboxIndex(imageIndex);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+    setLightboxImages([]);
+    setLightboxIndex(0);
+  };
+
+  const nextImage = () => {
+    if (lightboxIndex < lightboxImages.length - 1) {
+      const newIndex = lightboxIndex + 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(lightboxImages[newIndex]);
+    }
+  };
+
+  const prevImage = () => {
+    if (lightboxIndex > 0) {
+      const newIndex = lightboxIndex - 1;
+      setLightboxIndex(newIndex);
+      setLightboxImage(lightboxImages[newIndex]);
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
     fetchNotifications();
     
-    // Add keyboard event listener for ESC key
+    // Add keyboard event listeners
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         const modal = document.querySelector('.modal-overlay');
         if (modal && modal.style.display === 'flex') {
           modal.style.display = 'none';
+        }
+        if (lightboxImage) {
+          closeLightbox();
+        }
+      } else if (lightboxImage) {
+        if (e.key === 'ArrowRight') {
+          nextImage();
+        } else if (e.key === 'ArrowLeft') {
+          prevImage();
         }
       }
     };
@@ -57,7 +94,7 @@ function UniversalWall({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeGroup]);
+  }, [activeGroup, lightboxImage, lightboxIndex, lightboxImages]);
 
   const fetchPosts = async () => {
     try {
