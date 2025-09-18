@@ -680,9 +680,15 @@ function UniversalWall({
                           className="preview-image"
                         />
                       ) : (
-                        <div className="preview-document">
-                          <FileText size={32} />
+                        <div 
+                          className="preview-document"
+                          style={{ background: getFileGradient(file) }}
+                        >
+                          {getFileIcon(file)}
                           <div className="document-name">{file.name}</div>
+                          <div className="document-size">
+                            {(file.size / (1024 * 1024)).toFixed(1)}MB
+                          </div>
                         </div>
                       )}
                       <button 
