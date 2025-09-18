@@ -141,6 +141,15 @@ const MediaStorage = ({
     return modules[selectedModuleFilter]?.color || moduleColor;
   };
 
+  // Map frontend module to backend module
+  const getBackendModule = (frontendModule) => {
+    if (frontendModule === 'all') {
+      // Map activeModule to backend if it exists in our mapping, otherwise use it directly
+      return frontendToBackendModuleMap[activeModule] || activeModule;
+    }
+    return frontendToBackendModuleMap[frontendModule] || frontendModule;
+  };
+
   // Handle upload button click
   const handleUploadClick = () => {
     const fileInput = document.createElement('input');
