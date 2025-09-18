@@ -1464,7 +1464,10 @@ async def create_post(
         comments_count=new_post.comments_count,
         is_published=new_post.is_published,
         created_at=new_post.created_at,
-        updated_at=new_post.updated_at
+        updated_at=new_post.updated_at,
+        user_liked=False,  # New post, so user hasn't liked it yet
+        user_reaction=None,  # New post, so no reaction yet
+        top_reactions=[]  # New post, so no reactions yet
     )
 
 # === SOCIAL FEATURES ENDPOINTS ===
