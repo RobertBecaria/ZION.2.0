@@ -549,9 +549,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Media Module Filter-Specific Upload Functionality"
-  stuck_tasks:
-    - "Media Module Filter-Specific Upload Functionality"
+    - "Media Module Tagging Display Fix"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
