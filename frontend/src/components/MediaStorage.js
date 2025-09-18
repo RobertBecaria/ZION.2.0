@@ -96,12 +96,14 @@ const MediaStorage = ({
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const sourceModule = selectedModuleFilter === 'all' ? activeModule : selectedModuleFilter;
-        console.log(`Uploading file ${file.name} with source_module: ${sourceModule}`);
+        const frontendModule = selectedModuleFilter === 'all' ? activeModule : selectedModuleFilter;
+        const backendModule = getBackendModule(frontendModule);
+        
+        console.log(`Uploading file ${file.name} - Frontend module: ${frontendModule}, Backend module: ${backendModule}`);
         
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('source_module', sourceModule);
+        formData.append('source_module', backendModule);
         formData.append('privacy_level', 'private');
         
         const response = await fetch(`${backendUrl}/api/media/upload`, {
