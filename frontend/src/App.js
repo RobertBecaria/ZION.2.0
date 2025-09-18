@@ -1225,7 +1225,7 @@ function Dashboard() {
                     <div className="module-color-dot" style={{ backgroundColor: '#059669' }}></div>
                     <span>Семья</span>
                     <span className="file-count">
-                      {(mediaStats.family?.images?.length || 0) + (mediaStats.family?.documents?.length || 0) + (mediaStats.family?.videos?.length || 0)}
+                      {mediaStats.family || 0}
                     </span>
                   </button>
                   
