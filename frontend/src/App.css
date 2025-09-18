@@ -1432,20 +1432,20 @@ body {
 .media-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .media-actions-label {
   font-size: 0.9rem;
   color: #65676B;
   font-weight: 600;
-  margin-right: 0.5rem;
+  margin-right: 0.25rem;
 }
 
 .media-btn {
   background: none;
   border: none;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 8px;
   cursor: pointer;
   color: #42B883;
@@ -1454,19 +1454,47 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
+  border: 1px solid #E4E6EA;
 }
 
 .media-btn:hover {
   background: #E8F5E8;
   color: #369870;
+  border-color: #42B883;
+  transform: translateY(-1px);
 }
 
 .media-btn.has-files {
   color: #1877F2;
+  border-color: #1877F2;
+  background: #E7F3FF;
 }
 
 .media-btn.has-files:hover {
-  background: #E7F3FF;
+  background: #D0E7FF;
+  color: #166FE5;
+}
+
+/* Document button specific styling */
+.media-btn:nth-child(3) {
+  color: #8B5CF6;
+}
+
+.media-btn:nth-child(3):hover {
+  background: #F3E8FF;
+  color: #7C3AED;
+  border-color: #8B5CF6;
+}
+
+.media-btn:nth-child(3).has-files {
+  color: #8B5CF6;
+  border-color: #8B5CF6;
+  background: #F3E8FF;
+}
+
+.media-btn:nth-child(3).has-files:hover {
+  background: #E9D5FF;
+  color: #7C3AED;
 }
 
 .submit-btn {
