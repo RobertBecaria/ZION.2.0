@@ -10,7 +10,8 @@ const MediaStorage = ({
   activeModule = 'personal',
   moduleColor = '#059669',
   selectedModuleFilter = 'all',
-  onModuleFilterChange
+  onModuleFilterChange,
+  onModuleCountsUpdate
 }) => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [loading, setLoading] = useState(false);
