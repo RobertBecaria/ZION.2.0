@@ -1162,12 +1162,7 @@ function Dashboard() {
                 <div className="stats-grid">
                   <div className="stat-item">
                     <span className="stat-number">
-                      {activeView === 'media-photos' 
-                        ? Object.values(mediaStats).reduce((total, module) => total + (module.images?.length || 0), 0)
-                        : activeView === 'media-documents'
-                        ? Object.values(mediaStats).reduce((total, module) => total + (module.documents?.length || 0), 0)
-                        : Object.values(mediaStats).reduce((total, module) => total + (module.videos?.length || 0), 0)
-                      }
+                      {mediaStats.all || 0}
                     </span>
                     <span className="stat-label">
                       {activeView === 'media-photos' && 'Фото'}
