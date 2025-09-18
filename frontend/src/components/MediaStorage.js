@@ -384,9 +384,9 @@ const MediaStorage = ({
                           />
                           <div 
                             className="module-badge" 
-                            style={{ backgroundColor: modules[file.source_module]?.color || '#6B7280' }}
+                            style={{ backgroundColor: getDisplayModuleInfo(file.source_module).color }}
                           >
-                            {modules[file.source_module]?.name || 'Unknown'}
+                            {getDisplayModuleInfo(file.source_module).name}
                           </div>
                         </div>
                       ) : (
@@ -394,9 +394,9 @@ const MediaStorage = ({
                           <FileText size={48} />
                           <div 
                             className="module-badge" 
-                            style={{ backgroundColor: modules[file.source_module]?.color || '#6B7280' }}
+                            style={{ backgroundColor: getDisplayModuleInfo(file.source_module).color }}
                           >
-                            {modules[file.source_module]?.name || 'Unknown'}
+                            {getDisplayModuleInfo(file.source_module).name}
                           </div>
                         </div>
                       )}
