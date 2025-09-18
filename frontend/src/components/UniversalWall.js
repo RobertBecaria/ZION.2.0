@@ -24,6 +24,9 @@ function UniversalWall({
   const [showEmojiPicker, setShowEmojiPicker] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const fileInputRef = useRef(null);
   
   // Get backend URL properly
