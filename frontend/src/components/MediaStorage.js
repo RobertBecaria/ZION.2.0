@@ -85,6 +85,12 @@ const MediaStorage = ({
       if (response.ok) {
         const data = await response.json();
         setMediaFiles(data.media_files || []);
+        
+        // Update module counts in parent
+        if (onModuleCountsUpdate && data.media_files) {
+          const updatedCounts = getModuleFileCountsFromData(data.media_files);
+          onModuleCountsUpdate(updatedCounts);
+        }
       } else {
         console.error('Failed to fetch media files');
         setMediaFiles([]);
