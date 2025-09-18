@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Send, Plus, Image, Smile, Heart, MessageCircle, Share2, 
   MoreHorizontal, User, Calendar, Clock, MapPin, Paperclip, X,
-  FileText, Upload
+  FileText, Upload, Edit3, Trash2, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 function UniversalWall({ 
@@ -17,89 +17,85 @@ function UniversalWall({
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadedMediaIds, setUploadedMediaIds] = useState([]);
+  const [showComments, setShowComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [newComment, setNewComment] = useState({});
+  const [editingComment, setEditingComment] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const fileInputRef = useRef(null);
   
   // Get backend URL properly
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Mock posts data for now - will be replaced with API calls
-  const mockPosts = [
-    {
-      id: '1',
-      user_id: user?.id || '1',
-      author: {
-        id: user?.id || '1',
-        first_name: user?.first_name || 'Анна',
-        last_name: user?.last_name || 'Петрова'
-      },
-      content: 'Отличная погода сегодня! Идем всей семьей в парк 🌞',
-      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-      likes_count: 5,
-      comments_count: 2,
-      is_liked: true,
-      images: []
-    },
-    {
-      id: '2',
-      user_id: '2',
-      author: {
-        id: '2',
-        first_name: 'Максим',
-        last_name: 'Иванов'
-      },
-      content: 'Готовлю ужин на всю семью. Что думаете о новом рецепте?',
-      created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
-      likes_count: 3,
-      comments_count: 4,
-      is_liked: false,
-      images: []
-    },
-    {
-      id: '3',
-      user_id: '3',
-      author: {
-        id: '3',
-        first_name: 'Елена',
-        last_name: 'Сидорова'
-      },
-      content: 'Дети справились с домашним заданием! Гордимся успехами 📚✨',
-      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      likes_count: 8,
-      comments_count: 1,
-      is_liked: true,
-      images: []
-    }
-  ];
+  // Popular emojis for quick reaction
+  const popularEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+  const allEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "👏", "🤔", "💯"];
 
-  // Fetch posts from API
+  useEffect(() => {
+    fetchPosts();
+    fetchNotifications();
+  }, [activeGroup]);
+
   const fetchPosts = async () => {
     try {
       const token = localStorage.getItem('zion_token');
       const response = await fetch(`${backendUrl}/api/posts`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
+        const postsData = await response.json();
+        setPosts(postsData);
       } else {
         console.error('Failed to fetch posts');
-        // Fallback to mock data for now
-        setPosts(mockPosts);
       }
     } catch (error) {
       console.error('Error fetching posts:', error);
-      // Fallback to mock data
-      setPosts(mockPosts);
     }
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, [activeGroup]);
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/notifications?unread_only=true`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const notificationsData = await response.json();
+        setNotifications(notificationsData);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const fetchComments = async (postId) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/posts/${postId}/comments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const commentsData = await response.json();
+        setComments(prev => ({
+          ...prev,
+          [postId]: commentsData
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
 
   const handlePostSubmit = async (e) => {
     e.preventDefault();
@@ -150,17 +146,178 @@ function UniversalWall({
   };
 
   const handleLike = async (postId) => {
-    // TODO: Implement like functionality
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          is_liked: !post.is_liked,
-          likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1
-        };
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Update post in local state
+        setPosts(posts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              user_liked: result.liked,
+              likes_count: result.liked ? post.likes_count + 1 : post.likes_count - 1
+            };
+          }
+          return post;
+        }));
       }
-      return post;
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const handleReaction = async (postId, emoji) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const formData = new FormData();
+      formData.append('emoji', emoji);
+
+      const response = await fetch(`${backendUrl}/api/posts/${postId}/reactions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        // Refresh posts to get updated reactions
+        fetchPosts();
+        setShowEmojiPicker(prev => ({
+          ...prev,
+          [postId]: false
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
+  const handleCommentSubmit = async (postId, content, parentCommentId = null) => {
+    if (!content.trim()) return;
+
+    try {
+      const token = localStorage.getItem('zion_token');
+      const formData = new FormData();
+      formData.append('content', content);
+      if (parentCommentId) {
+        formData.append('parent_comment_id', parentCommentId);
+      }
+
+      const response = await fetch(`${backendUrl}/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        // Refresh comments and post to get updated counts
+        await fetchComments(postId);
+        fetchPosts();
+        
+        // Clear comment input
+        setNewComment(prev => ({
+          ...prev,
+          [parentCommentId || postId]: ''
+        }));
+        setReplyingTo(null);
+      }
+    } catch (error) {
+      console.error('Error creating comment:', error);
+    }
+  };
+
+  const handleCommentLike = async (commentId) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh all comments to get updated like status
+        Object.keys(comments).forEach(postId => {
+          fetchComments(postId);
+        });
+      }
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
+  };
+
+  const handleCommentEdit = async (commentId, newContent) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const formData = new FormData();
+      formData.append('content', newContent);
+
+      const response = await fetch(`${backendUrl}/api/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        // Refresh comments
+        Object.keys(comments).forEach(postId => {
+          fetchComments(postId);
+        });
+        setEditingComment(null);
+      }
+    } catch (error) {
+      console.error('Error editing comment:', error);
+    }
+  };
+
+  const handleCommentDelete = async (commentId) => {
+    if (!window.confirm('Удалить комментарий?')) return;
+
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh comments and posts
+        Object.keys(comments).forEach(postId => {
+          fetchComments(postId);
+        });
+        fetchPosts();
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
+  const toggleComments = (postId) => {
+    setShowComments(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
     }));
+    
+    // Load comments if not already loaded
+    if (!comments[postId]) {
+      fetchComments(postId);
+    }
   };
 
   const formatTime = (dateString) => {
@@ -197,17 +354,17 @@ function UniversalWall({
         // Map module names to backend format
         const moduleMapping = {
           'Family': 'family',
-          'Organizations': 'organizations', 
-          'News': 'news',
-          'Journal': 'journal',
-          'Services': 'services',
-          'Marketplace': 'marketplace',
-          'Finance': 'finance',
-          'Events': 'events'
+          'Organizations': 'work',
+          'Services': 'business',
+          'News': 'community',
+          'Journal': 'personal',
+          'Marketplace': 'business',
+          'Finance': 'business',
+          'Events': 'community'
         };
         
-        const sourceModule = moduleMapping[moduleName] || 'journal';
-        formData.append('source_module', sourceModule);
+        const backendModule = moduleMapping[moduleName] || 'personal';
+        formData.append('source_module', backendModule);
         formData.append('privacy_level', 'module');
 
         const response = await fetch(`${backendUrl}/api/media/upload`, {
@@ -228,11 +385,10 @@ function UniversalWall({
 
       const uploadedIds = await Promise.all(uploadPromises);
       setUploadedMediaIds(prev => [...prev, ...uploadedIds]);
-      
+      setUploadingFiles([]);
     } catch (error) {
       console.error('Error uploading files:', error);
-      alert('Some files failed to upload. Please try again.');
-    } finally {
+      alert(`Upload failed: ${error.message}`);
       setUploadingFiles([]);
     }
   };
@@ -243,61 +399,172 @@ function UniversalWall({
   };
 
   const extractYouTubeId = (url) => {
-    const patterns = [
-      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
-      /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)/,
-      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) return match[1];
-    }
-    return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const handleFileInputClick = () => {
-    fileInputRef.current?.click();
+  const showPostForm = () => {
+    document.querySelector('.post-form').style.display = 'block';
   };
 
-  return (
-    <div className="universal-wall-full">
-      {/* Wall Header */}
-      <div className="wall-header">
-        <h2>Лента Новостей</h2>
+  const renderComment = (comment, postId, level = 0) => (
+    <div key={comment.id} className={`comment-item ${level > 0 ? 'comment-reply' : ''}`} style={{marginLeft: `${level * 20}px`}}>
+      <div className="comment-header">
+        <div className="comment-author">
+          <div className="author-avatar" style={{ backgroundColor: moduleColor }}>
+            <User size={16} color="white" />
+          </div>
+          <div className="comment-author-info">
+            <span className="comment-author-name">
+              {comment.author.first_name} {comment.author.last_name}
+            </span>
+            <span className="comment-time">{formatTime(comment.created_at)}</span>
+            {comment.is_edited && <span className="edited-label">(изменено)</span>}
+          </div>
+        </div>
+        
+        {comment.author.id === user?.id && (
+          <div className="comment-actions">
+            <button 
+              className="comment-action-btn"
+              onClick={() => setEditingComment(comment.id)}
+            >
+              <Edit3 size={14} />
+            </button>
+            <button 
+              className="comment-action-btn"
+              onClick={() => handleCommentDelete(comment.id)}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Post Creation Section */}
-      <div className="post-creation-section">
-        <div className="post-creator">
-          <div className="creator-header">
-            <div className="user-avatar" style={{ backgroundColor: moduleColor }}>
-              <User size={24} color="white" />
-            </div>
-            <input
-              type="text"
-              placeholder="Что у Вас нового?"
-              className="post-input-placeholder"
-              onClick={() => {
-                const textarea = document.querySelector('.post-textarea');
-                if (textarea) {
-                  textarea.style.display = 'block';
-                  textarea.focus();
-                }
-                document.querySelector('.post-form').style.display = 'block';
-              }}
-              readOnly
+      <div className="comment-content">
+        {editingComment === comment.id ? (
+          <div className="comment-edit-form">
+            <textarea
+              value={newComment[comment.id] || comment.content}
+              onChange={(e) => setNewComment(prev => ({
+                ...prev,
+                [comment.id]: e.target.value
+              }))}
+              className="comment-edit-input"
             />
+            <div className="comment-edit-actions">
+              <button 
+                className="btn-save"
+                onClick={() => handleCommentEdit(comment.id, newComment[comment.id] || comment.content)}
+              >
+                Сохранить
+              </button>
+              <button 
+                className="btn-cancel"
+                onClick={() => setEditingComment(null)}
+              >
+                Отмена
+              </button>
+            </div>
           </div>
+        ) : (
+          <p>{comment.content}</p>
+        )}
+      </div>
 
-          <form onSubmit={handlePostSubmit} className="post-form" style={{ display: 'none' }}>
+      <div className="comment-stats">
+        <button 
+          className={`comment-stat-btn ${comment.user_liked ? 'liked' : ''}`}
+          onClick={() => handleCommentLike(comment.id)}
+        >
+          <Heart size={14} fill={comment.user_liked ? moduleColor : 'none'} />
+          {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
+        </button>
+        <button 
+          className="comment-stat-btn"
+          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+        >
+          <MessageCircle size={14} />
+          Ответить
+        </button>
+      </div>
+
+      {/* Reply form */}
+      {replyingTo === comment.id && (
+        <div className="reply-form">
+          <textarea
+            value={newComment[comment.id] || ''}
+            onChange={(e) => setNewComment(prev => ({
+              ...prev,
+              [comment.id]: e.target.value
+            }))}
+            placeholder="Напишите ответ..."
+            className="reply-input"
+          />
+          <div className="reply-actions">
+            <button 
+              className="btn-reply"
+              onClick={() => handleCommentSubmit(postId, newComment[comment.id], comment.id)}
+            >
+              Ответить
+            </button>
+            <button 
+              className="btn-cancel"
+              onClick={() => setReplyingTo(null)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Nested replies */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="comment-replies">
+          {comment.replies.map(reply => renderComment(reply, postId, level + 1))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="universal-wall">
+      {/* Post Creation Form */}
+      <div className="wall-header">
+        <div className="post-composer">
+          <div className="post-input-placeholder" onClick={showPostForm}>
+            <div className="composer-avatar" style={{ backgroundColor: moduleColor }}>
+              <User size={20} color="white" />
+            </div>
+            <div className="composer-placeholder">
+              Что у Вас нового?
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hidden Post Creation Form */}
+      <div className="post-form" style={{ display: 'none' }}>
+        <form onSubmit={handlePostSubmit}>
+          <div className="form-header">
+            <h4>Создать запись</h4>
+            <button 
+              type="button" 
+              className="close-btn"
+              onClick={() => document.querySelector('.post-form').style.display = 'none'}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="form-body">
             <textarea
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Поделитесь новостями... (можно добавить YouTube ссылки)"
+              placeholder="Что у Вас нового?"
               className="post-textarea"
-              rows={3}
-              disabled={loading}
+              rows="3"
             />
             
             {/* File Previews */}
@@ -305,96 +572,73 @@ function UniversalWall({
               <div className="file-previews">
                 {selectedFiles.map((file, index) => (
                   <div key={index} className="file-preview">
-                    <div className="file-info">
-                      {file.type.startsWith('image/') ? (
-                        <Image size={16} />
-                      ) : (
-                        <FileText size={16} />
-                      )}
-                      <span className="file-name">{file.name}</span>
-                      <span className="file-size">
-                        ({(file.size / (1024 * 1024)).toFixed(1)}MB)
-                      </span>
-                    </div>
-                    <button
+                    {file.type.startsWith('image/') ? (
+                      <img 
+                        src={URL.createObjectURL(file)} 
+                        alt="Preview" 
+                        className="preview-image"
+                      />
+                    ) : (
+                      <div className="preview-document">
+                        <FileText size={24} />
+                        <span>{file.name}</span>
+                      </div>
+                    )}
+                    <button 
                       type="button"
                       className="remove-file-btn"
                       onClick={() => removeSelectedFile(index)}
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   </div>
                 ))}
               </div>
             )}
-
+            
             {/* Upload Progress */}
             {uploadingFiles.length > 0 && (
               <div className="upload-progress">
-                <Upload size={16} />
-                <span>Загрузка файлов...</span>
+                <p>Загружаем файлы...</p>
+                {uploadingFiles.map((filename, index) => (
+                  <div key={index} className="uploading-file">
+                    {filename}
+                  </div>
+                ))}
               </div>
             )}
-            
-            <div className="post-actions">
-              <div className="post-tools">
-                <button 
-                  type="button" 
-                  className="post-tool-btn"
-                  onClick={handleFileInputClick}
-                  title="Добавить изображение"
-                >
-                  <Image size={18} />
-                </button>
-                <button 
-                  type="button" 
-                  className="post-tool-btn"
-                  onClick={handleFileInputClick}
-                  title="Добавить файл"
-                >
-                  <Paperclip size={18} />
-                </button>
-                <button 
-                  type="button" 
-                  className="post-tool-btn"
-                  title="Эмодзи"
-                >
-                  <Smile size={18} />
-                </button>
-              </div>
-
-              <div className="post-submit-actions">
-                <button 
-                  type="button" 
-                  className="post-cancel-btn"
-                  onClick={() => {
-                    setNewPost('');
-                    document.querySelector('.post-form').style.display = 'none';
-                  }}
-                >
-                  Отмена
-                </button>
-                <button 
-                  type="submit" 
-                  className="post-submit-btn"
-                  style={{ backgroundColor: moduleColor }}
-                  disabled={!newPost.trim() || loading}
-                >
-                  {loading ? 'Публикуем...' : 'Опубликовать'}
-                </button>
-              </div>
+          </div>
+          
+          <div className="form-actions">
+            <div className="media-actions">
+              <button 
+                type="button" 
+                className="media-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title="Добавить изображение"
+              >
+                <Image size={20} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/gif,application/pdf,.doc,.docx,.ppt,.pptx"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
             </div>
-          </form>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/gif,application/pdf,.doc,.docx,.ppt,.pptx"
-            multiple
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-          />
-        </div>
+            
+            <button 
+              type="submit" 
+              className="submit-btn"
+              disabled={loading || !newPost.trim()}
+              style={{ backgroundColor: moduleColor }}
+            >
+              {loading ? 'Публикуем...' : 'Опубликовать'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Posts Feed */}
@@ -486,35 +730,151 @@ function UniversalWall({
                 )}
               </div>
 
+              {/* Post Stats */}
               <div className="post-stats">
-                <span className="stat-item">
-                  <Heart size={16} />
-                  {post.likes_count} отметок "Нравится"
-                </span>
-                <span className="stat-item">
-                  <MessageCircle size={16} />
-                  {post.comments_count} комментариев
-                </span>
+                <div className="stats-left">
+                  {post.likes_count > 0 && (
+                    <span className="stat-item">
+                      <Heart size={16} />
+                      {post.likes_count}
+                    </span>
+                  )}
+                  {post.top_reactions && post.top_reactions.length > 0 && (
+                    <div className="reactions-summary">
+                      {post.top_reactions.map((reaction, index) => (
+                        <span key={index} className="reaction-item">
+                          {reaction.emoji} {reaction.count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="stats-right">
+                  {post.comments_count > 0 && (
+                    <span 
+                      className="stat-item clickable"
+                      onClick={() => toggleComments(post.id)}
+                    >
+                      {post.comments_count} комментариев
+                    </span>
+                  )}
+                </div>
               </div>
 
+              {/* Post Actions Bar */}
               <div className="post-actions-bar">
                 <button 
-                  className={`post-action-btn ${post.is_liked ? 'liked' : ''}`}
+                  className={`post-action-btn ${post.user_liked ? 'liked' : ''}`}
                   onClick={() => handleLike(post.id)}
-                  style={{ color: post.is_liked ? moduleColor : undefined }}
+                  style={{ color: post.user_liked ? moduleColor : undefined }}
                 >
-                  <Heart size={18} fill={post.is_liked ? moduleColor : 'none'} />
+                  <Heart size={18} fill={post.user_liked ? moduleColor : 'none'} />
                   <span>Нравится</span>
                 </button>
-                <button className="post-action-btn">
+                
+                <button 
+                  className="post-action-btn"
+                  onClick={() => toggleComments(post.id)}
+                >
                   <MessageCircle size={18} />
                   <span>Комментировать</span>
                 </button>
-                <button className="post-action-btn">
-                  <Share2 size={18} />
-                  <span>Поделиться</span>
-                </button>
+                
+                <div className="emoji-picker-container">
+                  <button 
+                    className={`post-action-btn ${post.user_reaction ? 'reacted' : ''}`}
+                    onClick={() => setShowEmojiPicker(prev => ({
+                      ...prev,
+                      [post.id]: !prev[post.id]
+                    }))}
+                  >
+                    <Smile size={18} />
+                    <span>{post.user_reaction || 'Реакция'}</span>
+                  </button>
+                  
+                  {showEmojiPicker[post.id] && (
+                    <div className="emoji-picker">
+                      <div className="popular-emojis">
+                        {popularEmojis.map(emoji => (
+                          <button
+                            key={emoji}
+                            className="emoji-btn"
+                            onClick={() => handleReaction(post.id, emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="all-emojis">
+                        <details>
+                          <summary>Больше эмодзи</summary>
+                          <div className="emoji-grid">
+                            {allEmojis.filter(e => !popularEmojis.includes(e)).map(emoji => (
+                              <button
+                                key={emoji}
+                                className="emoji-btn"
+                                onClick={() => handleReaction(post.id, emoji)}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        </details>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Comments Section */}
+              {showComments[post.id] && (
+                <div className="comments-section">
+                  {/* Comment Input */}
+                  <div className="comment-input-container">
+                    <div className="comment-input-wrapper">
+                      <div className="comment-avatar" style={{ backgroundColor: moduleColor }}>
+                        <User size={16} color="white" />
+                      </div>
+                      <textarea
+                        value={newComment[post.id] || ''}
+                        onChange={(e) => setNewComment(prev => ({
+                          ...prev,
+                          [post.id]: e.target.value
+                        }))}
+                        placeholder="Напишите комментарий..."
+                        className="comment-input"
+                        rows="1"
+                      />
+                      <button 
+                        className="comment-submit-btn"
+                        onClick={() => handleCommentSubmit(post.id, newComment[post.id])}
+                        disabled={!newComment[post.id]?.trim()}
+                        style={{ color: moduleColor }}
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Comments List */}
+                  <div className="comments-list">
+                    {comments[post.id] ? (
+                      comments[post.id].length > 0 ? (
+                        comments[post.id].map(comment => renderComment(comment, post.id))
+                      ) : (
+                        <div className="no-comments">
+                          <MessageCircle size={24} color="#9ca3af" />
+                          <p>Пока нет комментариев</p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="loading-comments">
+                        <p>Загружаем комментарии...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))
         )}
