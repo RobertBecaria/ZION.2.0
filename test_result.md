@@ -549,7 +549,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Media Module Tagging Display Fix"
+    - "Media Module Filtering and File Counts Feature"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
