@@ -1213,19 +1213,55 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Fixed Post Composer Styles */
+.post-composer {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #E4E6EA;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.5rem;
+}
+
 .post-input-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.post-input-placeholder:hover {
+  background: #F8F9FA;
+}
+
+.composer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.composer-placeholder {
   flex: 1;
   padding: 0.875rem 1.25rem;
   border: 1px solid #E4E6EA;
   border-radius: 24px;
   background: #F0F2F5;
   font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
   color: #65676B;
+  transition: all 0.2s ease;
 }
 
-.post-input-placeholder:hover {
+.post-input-placeholder:hover .composer-placeholder {
   background: #E4E6EA;
 }
 
