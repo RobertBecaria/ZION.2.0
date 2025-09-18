@@ -165,6 +165,15 @@ const MediaStorage = ({
     return frontendToBackendModuleMap[frontendModule] || frontendModule;
   };
 
+  // Get display module info from backend module name
+  const getDisplayModuleInfo = (backendModuleName) => {
+    // First try to find the frontend module that maps to this backend module
+    const frontendModule = backendToFrontendModuleMap[backendModuleName] || backendModuleName;
+    
+    // Return the module info from the modules object
+    return modules[frontendModule] || { name: 'Unknown', color: '#6B7280' };
+  };
+
   // Handle upload button click
   const handleUploadClick = () => {
     const fileInput = document.createElement('input');
