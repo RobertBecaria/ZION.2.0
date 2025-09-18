@@ -1285,7 +1285,7 @@ function Dashboard() {
                     <div className="module-color-dot" style={{ backgroundColor: '#BE185D' }}></div>
                     <span>Маркетплейс</span>
                     <span className="file-count">
-                      {(mediaStats.marketplace?.images?.length || 0) + (mediaStats.marketplace?.documents?.length || 0) + (mediaStats.marketplace?.videos?.length || 0)}
+                      {mediaStats.marketplace || 0}
                     </span>
                   </button>
                   
