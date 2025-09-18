@@ -713,7 +713,48 @@ function Dashboard() {
       
       if (response.ok) {
         const data = await response.json();
-        setMediaStats(data.modules || {});
+        
+        // Convert nested structure to simple counts
+        const simpleCounts = {};
+        let totalCount = 0;
+        
+        // Backend to Frontend module mapping
+        const backendToFrontendModuleMap = {
+          'family': 'family',
+          'community': 'news',
+          'personal': 'journal',
+          'business': 'services',
+          'work': 'organizations',
+          'education': 'journal',
+          'health': 'journal',
+          'government': 'organizations'
+        };
+        
+        // Initialize all frontend modules with 0
+        const frontendModules = ['family', 'news', 'journal', 'services', 'organizations', 'marketplace', 'finance', 'events'];
+        frontendModules.forEach(module => {
+          simpleCounts[module] = 0;
+        });
+        
+        // Count files from backend modules
+        if (data.modules) {
+          Object.entries(data.modules).forEach(([backendModule, moduleData]) => {
+            const frontendModule = backendToFrontendModuleMap[backendModule] || backendModule;
+            const moduleCount = (moduleData.images?.length || 0) + 
+                              (moduleData.documents?.length || 0) + 
+                              (moduleData.videos?.length || 0);
+            
+            if (simpleCounts.hasOwnProperty(frontendModule)) {
+              simpleCounts[frontendModule] += moduleCount;
+            }
+            totalCount += moduleCount;
+          });
+        }
+        
+        // Set total count
+        simpleCounts['all'] = totalCount;
+        
+        setMediaStats(simpleCounts);
       }
     } catch (error) {
       console.error('Error fetching media stats:', error);
