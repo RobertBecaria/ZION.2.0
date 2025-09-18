@@ -1355,6 +1355,43 @@ async def get_posts(
                 media_files.append(media)
         post["media_files"] = media_files
         
+        # Get social features data
+        post_id = post["id"]
+        
+        # Check if current user liked this post
+        user_like = await db.post_likes.find_one({
+            "post_id": post_id,
+            "user_id": current_user.id
+        })
+        post["user_liked"] = bool(user_like)
+        
+        # Get user's reaction to this post
+        user_reaction = await db.post_reactions.find_one({
+            "post_id": post_id,
+            "user_id": current_user.id
+        })
+        post["user_reaction"] = user_reaction["emoji"] if user_reaction else None
+        
+        # Get top reactions (limit to top 5 most common)
+        reactions_pipeline = [
+            {"$match": {"post_id": post_id}},
+            {"$group": {
+                "_id": "$emoji",
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"count": -1}},
+            {"$limit": 5}
+        ]
+        
+        reactions_cursor = db.post_reactions.aggregate(reactions_pipeline)
+        top_reactions = []
+        async for reaction in reactions_cursor:
+            top_reactions.append({
+                "emoji": reaction["_id"],
+                "count": reaction["count"]
+            })
+        post["top_reactions"] = top_reactions
+        
         result.append(PostResponse(**post))
     
     return result
