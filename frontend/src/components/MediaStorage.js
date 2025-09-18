@@ -34,6 +34,18 @@ const MediaStorage = ({
     events: { name: 'Мероприятия', color: '#7E22CE' }
   };
 
+  // Frontend to Backend module mapping
+  const frontendToBackendModuleMap = {
+    'family': 'family',
+    'news': 'community',        // News -> Community 
+    'journal': 'personal',      // Journal -> Personal
+    'services': 'business',     // Services -> Business
+    'organizations': 'work',    // Organizations -> Work
+    'marketplace': 'business',  // Marketplace -> Business
+    'finance': 'personal',      // Finance -> Personal (or could be 'business')
+    'events': 'community'       // Events -> Community
+  };
+
   // Fetch media files
   const fetchMedia = async () => {
     setLoading(true);
