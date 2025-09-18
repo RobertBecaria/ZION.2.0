@@ -598,15 +598,18 @@ test_plan:
 
   - task: "Media Module Filtering and File Counts Feature"
     implemented: true
-    working: "NA"
+    working: true
     file: "components/MediaStorage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "NEW FEATURE IMPLEMENTATION: Enhanced filtering functionality where clicking on a filter shows only files tagged for that specific filter, and display file counts for each filter in the right sidebar. Implemented: 1) Enhanced Filtering Logic - Updated filteredFiles in MediaStorage to filter by both search term AND selected module filter, 2) Module File Counting - Added getModuleFileCounts() and getModuleFileCountsFromData() functions to calculate file counts per module, 3) Real-time Count Updates - MediaStorage now calls onModuleCountsUpdate callback to update parent component with current counts, 4) Simplified Count Display - Updated App.js to use simple count structure {family: 2, news: 3, journal: 1, all: 6} instead of complex nested structure, 5) Dynamic Statistics - Right sidebar now shows real file counts for each module filter. Module Filter Logic: When selectedModuleFilter === 'all' shows all files, when specific module selected shows only files where backend module maps to that frontend module using backendToFrontendModuleMap."
+      - working: true
+        agent: "testing"
+        comment: "🎉 MEDIA MODULE FILTERING AND FILE COUNTS FEATURE FULLY TESTED AND WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: 1) CRITICAL BUG FIXED: Fixed React error where nested media statistics object was being rendered directly - updated App.js fetchMediaStats to convert backend nested structure to simple counts, 2) FILTERING LOGIC FIXED: Fixed MediaStorage fetchMedia to always fetch all files and filter on frontend (instead of backend filtering) to handle multiple backend modules mapping to one frontend module, 3) ALL FILTER FUNCTIONALITY: ✅ Shows all 7 files correctly with diverse module badges (Семья: 2, Журнал: 3, Сервисы: 1, Организации: 1), 4) SPECIFIC MODULE FILTERS: ✅ FAMILY shows 2 files with 'Семья' badges, ✅ JOURNAL shows 3 files with 'Журнал' badges, ✅ SERVICES shows 1 file with 'Сервисы' badge, ✅ ORGANIZATIONS shows 1 file with 'Организации' badge, 5) FILE COUNT ACCURACY: ✅ Right sidebar shows accurate counts matching actual file distribution, ✅ Total count consistency verified (badge count matches sidebar count), 6) UPLOAD BUTTON COLORS: ✅ Correctly change based on selected filter - FAMILY=Green(rgb(5,150,105)), SERVICES=Red(rgb(185,28,28)), JOURNAL=Purple(rgb(109,40,217)), 7) STATISTICS WIDGET: ✅ Shows correct total files (7), sections with files (4), total sections (8), albums (0), 8) REAL-TIME UPDATES: ✅ All counts and statistics update correctly when switching between filters. The complete Media Module Filtering and File Counts Feature is production-ready and working as intended!"
 agent_communication:
   - agent: "main"
     message: "Phase 2 implementation complete. Added comprehensive media upload functionality including: Backend - MediaFile and Post models, media upload endpoints with file validation (PNG/JPG/GIF/PDF/DOC/PPTX), local storage system, YouTube URL auto-detection. Frontend - Updated UniversalWall with multiple file upload, file previews, media display components for images/documents/YouTube embeds, real API integration. Ready for backend testing to verify file upload, storage, and posts API functionality."
