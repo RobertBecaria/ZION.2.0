@@ -1261,7 +1261,7 @@ function Dashboard() {
                     <div className="module-color-dot" style={{ backgroundColor: '#B91C1C' }}></div>
                     <span>Сервисы</span>
                     <span className="file-count">
-                      {(mediaStats.services?.images?.length || 0) + (mediaStats.services?.documents?.length || 0) + (mediaStats.services?.videos?.length || 0)}
+                      {mediaStats.services || 0}
                     </span>
                   </button>
                   
