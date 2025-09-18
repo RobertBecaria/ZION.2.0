@@ -201,10 +201,22 @@ const MediaStorage = ({
     fetchMedia();
   }, [mediaType, selectedModuleFilter]);
 
-  // Filter files by search term
-  const filteredFiles = mediaFiles.filter(file =>
-    file.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter files by search term and selected module
+  const filteredFiles = mediaFiles.filter(file => {
+    // Filter by search term
+    const matchesSearch = file.original_filename.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filter by selected module
+    if (selectedModuleFilter === 'all') {
+      return matchesSearch; // Show all files when "all" is selected
+    }
+    
+    // Get the frontend module name that corresponds to this file's backend module
+    const fileFrontendModule = backendToFrontendModuleMap[file.source_module] || file.source_module;
+    const matchesModule = fileFrontendModule === selectedModuleFilter;
+    
+    return matchesSearch && matchesModule;
+  });
 
   // Group files by date
   const groupedFiles = filteredFiles.reduce((groups, file) => {
