@@ -38,6 +38,7 @@ function UniversalWall({
   const allEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "👏", "🤔", "💯"];
 
   const openLightbox = (imageUrl, postImages = [], imageIndex = 0) => {
+    console.log('Opening lightbox with:', imageUrl, postImages, imageIndex);
     setLightboxImage(imageUrl);
     setLightboxImages(postImages);
     setLightboxIndex(imageIndex);
