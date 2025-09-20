@@ -1130,6 +1130,21 @@ function UniversalWall({
           </div>
         </div>
       )}
+      
+      {/* Debug info - remove after testing */}
+      {lightboxImage && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'red',
+          color: 'white',
+          padding: '10px',
+          zIndex: 3000
+        }}>
+          Lightbox Active: {lightboxImage ? 'YES' : 'NO'}
+        </div>
+      )}
     </div>
   );
 }
