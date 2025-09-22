@@ -352,6 +352,8 @@ class PostResponse(BaseModel):
     id: str
     user_id: str
     content: str
+    source_module: str = "family"
+    target_audience: str = "module"
     author: Dict[str, Any]  # User info
     media_files: List[Dict[str, Any]] = []  # MediaFile info
     youtube_urls: List[str] = []
