@@ -1161,6 +1161,14 @@ body {
    UNIVERSAL WALL (MEETMAX-INSPIRED POSTS)
 ============================================ */
 
+/* Universal Wall Container */
+.universal-wall {
+  margin-top: 0;
+  padding-top: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
 .universal-wall-full {
   display: flex;
   flex-direction: column;
