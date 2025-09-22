@@ -68,7 +68,7 @@ function UniversalWall({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeGroup]);
+  }, [activeGroup, activeModule]); // Re-fetch posts when activeModule changes
 
   const fetchPosts = async () => {
     try {
