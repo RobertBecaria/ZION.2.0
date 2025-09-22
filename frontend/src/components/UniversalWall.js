@@ -160,7 +160,14 @@ function UniversalWall({
 
       if (response.ok) {
         const newPostData = await response.json();
-        setPosts([newPostData, ...posts]);
+        
+        // Only add the new post to current state if it belongs to the current module
+        if (newPostData.source_module === activeModule) {
+          setPosts([newPostData, ...posts]);
+        }
+        
+        // Alternative approach: Always refetch posts to ensure consistency
+        // fetchPosts();
         
         // Reset form state
         setNewPost('');
