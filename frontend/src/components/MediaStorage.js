@@ -23,6 +23,17 @@ const MediaStorage = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  
+  // Use the shared lightbox hook
+  const {
+    lightboxImage,
+    lightboxImages,
+    lightboxIndex,
+    openLightbox,
+    closeLightbox,
+    nextImage,
+    prevImage
+  } = useLightbox();
 
   // Module configuration with colors (matching the exact structure)
   const modules = {
