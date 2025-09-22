@@ -47,34 +47,6 @@ function UniversalWall({
   const popularEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
   const allEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡", "🔥", "👏", "🤔", "💯"];
 
-  const openLightbox = (imageUrl, postImages = [], imageIndex = 0) => {
-    setLightboxImage(imageUrl);
-    setLightboxImages(postImages);
-    setLightboxIndex(imageIndex);
-  };
-
-  const closeLightbox = () => {
-    setLightboxImage(null);
-    setLightboxImages([]);
-    setLightboxIndex(0);
-  };
-
-  const nextImage = () => {
-    if (lightboxIndex < lightboxImages.length - 1) {
-      const newIndex = lightboxIndex + 1;
-      setLightboxIndex(newIndex);
-      setLightboxImage(lightboxImages[newIndex]);
-    }
-  };
-
-  const prevImage = () => {
-    if (lightboxIndex > 0) {
-      const newIndex = lightboxIndex - 1;
-      setLightboxIndex(newIndex);
-      setLightboxImage(lightboxImages[newIndex]);
-    }
-  };
-
   useEffect(() => {
     fetchPosts();
     fetchNotifications();
