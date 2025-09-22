@@ -1463,7 +1463,8 @@ async def get_posts(
 @api_router.post("/posts", response_model=PostResponse)
 async def create_post(
     content: str = Form(...),
-    source_module: str = Form(default="personal"),
+    source_module: str = Form(default="family"),  # Default to family module
+    target_audience: str = Form(default="module"),  # Default to module audience
     media_file_ids: List[str] = Form(default=[]),
     current_user: User = Depends(get_current_user)
 ):
@@ -1492,10 +1493,12 @@ async def create_post(
                 )
                 valid_media_ids.append(media_id)
     
-    # Create post
+    # Create post with module information
     new_post = Post(
         user_id=current_user.id,
         content=content,
+        source_module=source_module,
+        target_audience=target_audience,
         media_files=valid_media_ids,
         youtube_urls=youtube_urls
     )
@@ -1521,6 +1524,8 @@ async def create_post(
         id=new_post.id,
         user_id=new_post.user_id,
         content=new_post.content,
+        source_module=new_post.source_module,
+        target_audience=new_post.target_audience,
         author=author_info,
         media_files=media_files,
         youtube_urls=new_post.youtube_urls,
