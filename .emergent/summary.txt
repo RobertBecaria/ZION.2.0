@@ -1,9 +1,20 @@
 <analysis>
-The AI engineer successfully enhanced the ZION.CITY platform by implementing several key features and bug fixes. Initially, the focus was on refining the Media Storage module's layout to occupy 100% of the content area, involving intricate CSS adjustments to override flex properties in . Following this, a user-provided logo was seamlessly integrated into both the login/registration pages and the top navigation bar, complete with responsive styling. Critical bug fixes were then addressed in the Media module: first, enabling non-functional upload buttons by adding event handlers and state management in , and subsequently resolving module tagging inconsistencies. A significant challenge was a frontend-to-backend module name mismatch, which was rectified with explicit mapping functions. Finally, the media filtering and real-time file count display were implemented, allowing users to filter media by module and view corresponding counts, thereby completing a comprehensive media management system.
+The AI engineer successfully extended the ZION.CITY platform by first implementing a comprehensive social features suite. This involved adding , , , and  models to the FastAPI backend (), alongside new API endpoints for these interactions. The  model was updated to reflect user's like status and comments count. On the frontend,  was refactored to integrate these new backend capabilities, including nested comments, emoji support, and real-time updates, complemented by extensive CSS styling in .
+
+Following this, a significant UI/UX enhancement addressed a user-reported misalignment in the post input box. The AI refined the CSS for the post composer, transforming it into a cleaner, more functional popup modal with improved file attachment features, including distinct buttons for images/videos and documents, and intelligent file type previews.
+
+Finally, an interactive image lightbox, inspired by a Meetmax reference, was implemented. This feature allows users to click on post images to view them full-screen with navigation, download, and keyboard controls. Debugging revealed the lightbox functionality was correct but untested due to the absence of image-containing posts, which the AI communicated to the user for validation.
 </analysis>
 
 <product_requirements>
-The ZION.CITY platform aims to be a comprehensive digital ecosystem for community management in the Kherson region, featuring user authentication, role-based access, and a Master Shell UI with various modules. Recent developments focused on enhancing media handling. Users needed to upload images (PNG, JPG, GIF) and documents (PDF, DOC, PPTX) to  posts, supporting multiple files and YouTube embeds, with local server storage and size limits (10MB images, 50MB documents). A dedicated Медиа Хранилище (Media Storage) module was required, accessible from the left sidebar with Мои Фото, Мои Документы, Мои Видео options. This module needed auto-indexing of media based on 8 core application modules (Family, Work, etc.), displaying media with module-specific color coding and tags. A dynamic right sidebar for filtering by module, including Все файлы (All Files), and a statistics widget showing file counts per module were also essential. Privacy settings were to be inherited from the source module.
+The ZION.CITY platform aims to be a comprehensive digital ecosystem for community management in the Kherson region. Initial requirements included user authentication, role-based access, and a Master Shell UI. Recent work focused on robust media handling, enabling users to upload images (PNG, JPG, GIF) and documents (PDF, DOC, PPTX) to  posts, supporting multiple files and YouTube embeds, with local server storage and size limits (10MB images, 50MB documents). A Медиа Хранилище (Media Storage) module was implemented for auto-indexing, displaying media with module-specific color coding/tags, and offering dynamic filtering by module with real-time file counts.
+
+Subsequently, the user requested Enhanced Social Features for UniversalWall including:
+1.  Comments with nested replies and editing capabilities.
+2.  Likes and comments visibility adhering to original post's privacy settings.
+3.  Emoji support in posts and comments (6 default, with an option to open a window for more).
+4.  A document attachment button in the post input box.
+5.  An image lightbox/modal that opens when a user clicks on a picture in a post, allowing full-size viewing with navigation and download options, later refined to match a Meetmax style.
 </product_requirements>
 
 <key_technical_concepts>
@@ -11,52 +22,52 @@ The ZION.CITY platform aims to be a comprehensive digital ecosystem for communit
 -   **React**: JavaScript frontend for dynamic UI.
 -   **MongoDB**: NoSQL database for flexible data storage.
 -   **JWT**: Secure authentication.
--   **Tailwind CSS & Custom CSS**: Styling, responsive design, module color-coding.
+-   **Tailwind CSS & Custom CSS**: Styling, responsive design, module color-coding, modal animations.
 -   ** & **: Backend file handling.
--   ****: Icon library.
+-   ****: Icon library for UI elements.
 -   **Context-Aware Rendering**: Dynamic UI based on view/module.
 -   **Form Data Handling**: File uploads via .
+-   **UUIDs**: Used for database IDs for JSON serialization.
 </key_technical_concepts>
 
 <code_architecture>
 
 -   :
-    -   **Importance**: Core FastAPI application, handling authentication, posts, and media.
-    -   **Changes Made**: Extended  model for media/YouTube. Introduced  and  models. Added endpoints for media upload (), serving (, authentication removed), retrieving files (), and module stats (). Logic for saving/removing files locally and extracting YouTube IDs. Backend module validation ().
+    -   **Importance**: Core FastAPI application, handles authentication, posts, and media. Now also manages social interactions.
+    -   **Changes Made**:
+        -   **New Models**: Introduced , , ,  Pydantic models to manage social interactions.
+        -   **New Endpoints**: Added API routes for liking/unliking posts, creating/retrieving/updating/deleting comments, and adding reactions.
+        -   **Model Enhancements**:  model updated to include fields like , , , and a list of  models.
+        -   **Endpoint Logic**: Modified  and  to fetch and include social interaction data.
 -   :
     -   **Importance**: Python dependencies.
-    -   **Changes Made**: Added .
+    -   **Changes Made**: Previously added . No new changes mentioned in this trajectory.
 -   :
     -   **Importance**: Main frontend application shell, managing global state and routing.
-    -   **Changes Made**:
-        -   **Media Storage Integration**: Added state (, , , , ) to control Media Storage UI. Updated sidebar navigation to include Медиа Хранилище and its sub-options. Conditional rendering to show  component and dynamic right sidebar widgets (, ) when in media views.
-        -   **Authentication Fix**: Corrected token access to .
-        -   **Logo Integration**: Modified , , and top navigation bar () to display the new system logo ().
-        -   **Filtering/Counts**: Passes  callback to  to receive real-time module file counts, which are then used to update right sidebar filter buttons and the statistics widget. Removed complex storage size calculation from statistics.
+    -   **Changes Made**: No direct changes in this trajectory, but it orchestrates the rendering of components like  which have seen significant updates.
 -   :
     -   **Importance**: Global styling.
     -   **Changes Made**:
-        -   **Media Storage Layout**: Added and modified styles (e.g., , ) to ensure media storage fills the entire content area.
-        -   **Module Styling**: Extensive styles for color-coding module borders and tags, matching the 9 defined modules.
-        -   **Logo Styling**: Added , ,  styles for the new system logo, including responsive adjustments ().
-        -   **Upload Progress**: Styles for , .
-        -   **Disabled Buttons**: Styles for .
+        -   **Social Features Styling**: Added extensive CSS for likes, comments, reactions, and notification UI elements.
+        -   **Post Composer Fixes**: Refined styles for , , and related elements to fix alignment, spacing, and create a cleaner modal-style post input box.
+        -   **Document Attachment Styling**: Added specific styles for the new document attachment button, file type badges, and gradient previews.
+        -   **Image Lightbox Styling**: Introduced styles for the image lightbox modal, including overlay, header, navigation controls, download/close buttons, animations, and responsiveness, matching a Meetmax-inspired design.
 -   :
-    -   **Importance**: Social feed and post creation.
-    -   **Changes Made**: Added state for file selection (), YouTube URL (), and .  modified to send  including text, files, and . UI updated to include file input, media previews, and display of various media types.
--   : **(NEW FILE)**
-    -   **Importance**: Dedicated media management component.
+    -   **Importance**: Social feed and post creation component. Now central to social interactions and media viewing.
     -   **Changes Made**:
-        -   **Structure**: Tabs for Фото, Документы, Видео. Fetches and displays media items based on  and .
-        -   **Upload Functionality**: Implemented file selection,  (to ),  state, and connected upload buttons. Includes file type validation.
-        -   **Module Mapping**: Added  and  for accurate module tagging during upload and display. Functions  and  were created and used.
-        -   **Dynamic Styling**: Upload buttons, empty state icons, and progress bars dynamically change color based on the  using .
-        -   **Filtering & Counts**: Implemented client-side filtering of  based on . Added  and calls  callback (received from ) whenever media files change, providing real-time file counts per module.
-
--   : **(NEW FILE)**
+        -   **Social Features Integration**: Implemented logic for displaying likes, comments (including nested replies), and reactions, interacting with the new backend API endpoints. Added state for managing these interactions.
+        -   **Post Composer Enhancement**: Transformed the post creation input into a modal, enhancing its UI, functionality, and responsiveness.
+        -   **File Attachment**: Added a separate document attachment button with distinct file type handling, icons, and gradient previews for various document types.
+        -   **Image Lightbox**: Implemented an interactive image lightbox modal. This includes:
+            -    function to display clicked images in full size.
+            -   State management (, , ).
+            -   Navigation (prev/next image, keyboard support for ESC and arrow keys).
+            -   Download and close buttons.
+            -   Display of image counter.
+            -   Integration with the post's media display to make images clickable.
+-   :
     -   **Importance**: Stores the system logo image.
-    -   **Changes Made**: New file, downloaded from user-provided URL.
-
+    -   **Changes Made**: No new changes mentioned in this trajectory.
 </code_architecture>
 
 <pending_tasks>
@@ -65,22 +76,17 @@ The ZION.CITY platform aims to be a comprehensive digital ecosystem for communit
 -   Verification System (organization/government verification, badge system).
 -   Advanced Data Synchronization (conflict resolution, real-time propagation, audit trails).
 -   Media storage to Journal section for sharing across platforms.
--   Enhanced features for  (e.g., social interactions like likes/comments).
+-   Enhanced features for  (e.g., social interactions like likes/comments) - *partially implemented, but emoji is pending*.
 </pending_tasks>
 
 <current_work>
-The ZION.CITY application now features a robust media upload and module-aware storage system. The Медиа Хранилище (Media Storage) module is fully functional:
--   It occupies 100% of the main content area when active, thanks to CSS adjustments in  (e.g.,  for ).
--   The system logo () has been integrated into the , , and the top navigation bar within , with corresponding responsive styles in .
--   The upload buttons within the  component now work correctly. Users can select and upload various file types (images, documents, videos), with a progress indicator showing upload status.
--   A critical bug regarding media tagging has been resolved. Files uploaded via specific filters (e.g., 'NEWS', 'SERVICES') are now correctly tagged and stored in the backend using an accurate mapping between frontend and backend module names ( in ). Files no longer appear as Unknown.
--   The upload buttons, empty state icons, and progress bars dynamically display colors corresponding to the currently selected module filter, enhancing user feedback.
--   The media filtering functionality is fully operational. Clicking on a module filter (e.g., Семья, Журнал) in the right sidebar now correctly displays only the files tagged for that specific module.
--   Real-time file counts for each module are displayed next to their respective filter buttons in the right sidebar. These counts dynamically update as files are uploaded or filtered, providing an accurate overview of media distribution across modules. The statistics widget also reflects these updated counts.
+The ZION.CITY application has significantly expanded its social and media interaction capabilities. The  now supports robust social features, including a fully functional backend for likes, comments (with nested replies), and reactions, integrated with the frontend. Users can now engage with posts in a dynamic way, with privacy settings inherited from the original post.
 
-The application's media management is stable, visually consistent, and user-friendly, providing a polished experience for handling various media types within a module-based structure.
+The post creation experience has been modernized. The previous off input box has been transformed into a clean, functional, and responsive popup modal. This modal features separate, visually distinct buttons for attaching images/videos and documents, each with smart file type detection and enhanced file previews using color-coded badges and gradients. File size display for documents is also supported.
+
+Most recently, an interactive image lightbox has been implemented for posts. Clicking on an image in a post now opens a full-screen, Meetmax-style modal with a blurred background, clear header (title, download, close buttons), and navigation controls (arrows, keyboard support). This provides an improved viewing experience for images. However, testing for this feature revealed that while the code is correct, there are currently no posts with images in the application to fully demonstrate and validate its functionality to the user. The AI engineer has removed debug code and advised the user on how to test it by creating a post with an image.
 </current_work>
 
 <optional_next_step>
-No explicit next step has been requested as the user confirmed, Yes everything is great!.
+Create a test post with an image to demonstrate the image lightbox functionality for the user.
 </optional_next_step>
