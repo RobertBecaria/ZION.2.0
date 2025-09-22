@@ -1381,12 +1381,20 @@ async def get_media_file(file_id: str):
 async def get_posts(
     skip: int = 0,
     limit: int = 20,
+    module: str = "family",  # Module to filter posts by
     current_user: User = Depends(get_current_user)
 ):
-    """Get posts feed"""
-    posts = await db.posts.find(
-        {"is_published": True}
-    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    """Get posts feed filtered by module and user connections"""
+    
+    # Get connected users based on module
+    connected_users = await get_module_connections(current_user.id, module)
+    
+    # Query posts from connected users in the specified module
+    posts = await db.posts.find({
+        "is_published": True,
+        "source_module": module,
+        "user_id": {"$in": connected_users}
+    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
     # Remove MongoDB _id and get additional info
     result = []
