@@ -641,7 +641,21 @@ test_plan:
       - working: true
         agent: "testing"
         comment: "🎉 MEDIA MODULE FILTERING AND FILE COUNTS FEATURE FULLY TESTED AND WORKING! ✅ COMPREHENSIVE TESTING COMPLETED: 1) CRITICAL BUG FIXED: Fixed React error where nested media statistics object was being rendered directly - updated App.js fetchMediaStats to convert backend nested structure to simple counts, 2) FILTERING LOGIC FIXED: Fixed MediaStorage fetchMedia to always fetch all files and filter on frontend (instead of backend filtering) to handle multiple backend modules mapping to one frontend module, 3) ALL FILTER FUNCTIONALITY: ✅ Shows all 7 files correctly with diverse module badges (Семья: 2, Журнал: 3, Сервисы: 1, Организации: 1), 4) SPECIFIC MODULE FILTERS: ✅ FAMILY shows 2 files with 'Семья' badges, ✅ JOURNAL shows 3 files with 'Журнал' badges, ✅ SERVICES shows 1 file with 'Сервисы' badge, ✅ ORGANIZATIONS shows 1 file with 'Организации' badge, 5) FILE COUNT ACCURACY: ✅ Right sidebar shows accurate counts matching actual file distribution, ✅ Total count consistency verified (badge count matches sidebar count), 6) UPLOAD BUTTON COLORS: ✅ Correctly change based on selected filter - FAMILY=Green(rgb(5,150,105)), SERVICES=Red(rgb(185,28,28)), JOURNAL=Purple(rgb(109,40,217)), 7) STATISTICS WIDGET: ✅ Shows correct total files (7), sections with files (4), total sections (8), albums (0), 8) REAL-TIME UPDATES: ✅ All counts and statistics update correctly when switching between filters. The complete Media Module Filtering and File Counts Feature is production-ready and working as intended!"
+  - task: "Image Lightbox Functionality Testing"
+    implemented: true
+    working: "NA"
+    file: "components/UniversalWall.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "LIGHTBOX TESTING SETUP: Created test post with image to validate existing lightbox functionality. The image lightbox modal was previously implemented with Meetmax-style design including: 1) Full-screen overlay with blurred background, 2) Navigation controls (prev/next arrows, keyboard support), 3) Download and close buttons, 4) Image counter display, 5) ESC key and click-outside-to-close functionality. Test post created with ID: 78645c7c-9dfd-4b3f-b174-912adcc2f455, Media ID: 610bc087-8c2e-48d6-a341-7fde715c83f6, User: test@example.com. Need comprehensive frontend testing to verify lightbox opens correctly when clicking on post images, all controls work properly, and overall functionality matches the Meetmax-inspired design requirements."
+
 agent_communication:
+  - agent: "main"
+    message: "LIGHTBOX TESTING SETUP: Created test post with image (ID: 78645c7c-9dfd-4b3f-b174-912adcc2f455) for validating existing lightbox functionality. The interactive image lightbox was previously implemented with full-screen modal, navigation controls, download/close buttons, and keyboard support. Ready for comprehensive frontend testing to verify all lightbox features work correctly when clicking on post images."
   - agent: "main"
     message: "Phase 2 implementation complete. Added comprehensive media upload functionality including: Backend - MediaFile and Post models, media upload endpoints with file validation (PNG/JPG/GIF/PDF/DOC/PPTX), local storage system, YouTube URL auto-detection. Frontend - Updated UniversalWall with multiple file upload, file previews, media display components for images/documents/YouTube embeds, real API integration. Ready for backend testing to verify file upload, storage, and posts API functionality."
   - agent: "testing"
