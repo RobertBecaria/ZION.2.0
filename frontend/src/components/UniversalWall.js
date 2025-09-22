@@ -855,18 +855,20 @@ function UniversalWall({
                     {post.media_files.map((media, index) => (
                       <div key={index} className="media-item">
                         {media.file_type === 'image' ? (
-                          <div className="image-container">
+                          <div 
+                            className="image-container"
+                            onClick={() => {
+                              const postImages = post.media_files
+                                .filter(m => m.file_type === 'image')
+                                .map(m => `${backendUrl}${m.file_url}`);
+                              const imageIndex = postImages.indexOf(`${backendUrl}${media.file_url}`);
+                              openLightbox(`${backendUrl}${media.file_url}`, postImages, imageIndex);
+                            }}
+                          >
                             <img 
                               src={`${backendUrl}${media.file_url}`}
                               alt={media.original_filename}
                               className="media-image clickable-image"
-                              onClick={() => {
-                                const postImages = post.media_files
-                                  .filter(m => m.file_type === 'image')
-                                  .map(m => `${backendUrl}${m.file_url}`);
-                                const imageIndex = postImages.indexOf(`${backendUrl}${media.file_url}`);
-                                openLightbox(`${backendUrl}${media.file_url}`, postImages, imageIndex);
-                              }}
                             />
                             <div className="image-overlay">
                               <ZoomIn size={20} color="white" />
