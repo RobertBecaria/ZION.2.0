@@ -73,7 +73,7 @@ function UniversalWall({
   const fetchPosts = async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${backendUrl}/api/posts`, {
+      const response = await fetch(`${backendUrl}/api/posts?module=${activeModule}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
