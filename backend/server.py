@@ -1480,6 +1480,98 @@ async def accept_family_invitation(
     
     return {"message": "Invitation accepted successfully"}
 
+@api_router.post("/family-invitations/{invitation_id}/decline")
+async def decline_family_invitation(
+    invitation_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Decline family invitation"""
+    invitation = await db.family_invitations.find_one({"id": invitation_id})
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    # Check if invitation is for current user
+    if invitation["invited_user_email"] != current_user.email:
+        raise HTTPException(status_code=403, detail="This invitation is not for you")
+    
+    if invitation["status"] != "PENDING":
+        raise HTTPException(status_code=400, detail="Invitation is no longer valid")
+    
+    # Check if invitation has expired
+    expires_at = invitation.get("expires_at")
+    if expires_at:
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+        elif expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Invitation has expired")
+    
+    # Update invitation status
+    await db.family_invitations.update_one(
+        {"id": invitation_id},
+        {"$set": {
+            "status": "DECLINED",
+            "responded_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Invitation declined successfully"}
+
+@api_router.get("/family-invitations/received")
+async def get_received_invitations(
+    current_user: User = Depends(get_current_user)
+):
+    """Get invitations received by current user"""
+    invitations = await db.family_invitations.find({
+        "invited_user_email": current_user.email,
+        "is_active": True
+    }).sort("sent_at", -1).to_list(50)
+    
+    # Enrich with family and sender information
+    enriched_invitations = []
+    for invitation in invitations:
+        # Get family info
+        family = await db.family_profiles.find_one({"id": invitation["family_id"]})
+        # Get sender info
+        sender = await db.users.find_one({"id": invitation["invited_by_user_id"]})
+        
+        if family and sender:
+            enriched_invitation = {
+                **invitation,
+                "family_name": family["family_name"],
+                "invited_by_name": f"{sender['first_name']} {sender['last_name']}"
+            }
+            enriched_invitations.append(enriched_invitation)
+    
+    return {"invitations": enriched_invitations}
+
+@api_router.get("/family-invitations/sent")
+async def get_sent_invitations(
+    current_user: User = Depends(get_current_user)
+):
+    """Get invitations sent by current user"""
+    invitations = await db.family_invitations.find({
+        "invited_by_user_id": current_user.id,
+        "is_active": True
+    }).sort("sent_at", -1).to_list(50)
+    
+    # Enrich with family information
+    enriched_invitations = []
+    for invitation in invitations:
+        # Get family info
+        family = await db.family_profiles.find_one({"id": invitation["family_id"]})
+        
+        if family:
+            enriched_invitation = {
+                **invitation,
+                "family_name": family["family_name"]
+            }
+            enriched_invitations.append(enriched_invitation)
+    
+    return {"invitations": enriched_invitations}
+
 # Helper function for family access
 async def get_user_family_ids(user_id: str) -> List[str]:
     """Get list of family IDs user belongs to"""
