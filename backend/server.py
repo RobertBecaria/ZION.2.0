@@ -1158,48 +1158,293 @@ async def get_user_affiliations_endpoint(current_user: User = Depends(get_curren
     affiliations = await get_user_affiliations(current_user.id)
     return {"affiliations": affiliations}
 
-# Family Management Endpoints
-@api_router.post("/families", response_model=FamilyProfile)
-async def create_family(
-    family_name: str,
-    description: Optional[str] = None,
+# === FAMILY PROFILE SYSTEM API ENDPOINTS ===
+
+@api_router.post("/family-profiles", response_model=FamilyProfileResponse)
+async def create_family_profile(
+    family_data: FamilyProfileCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new family"""
+    """Create a new family profile"""
+    # Only adults can create family profiles
+    if current_user.role == UserRole.CHILD:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only adults can create family profiles"
+        )
+    
+    # Create family profile
     new_family = FamilyProfile(
-        family_name=family_name,
-        creator_id=current_user.id,
-        description=description
+        **family_data.dict(),
+        creator_id=current_user.id
     )
     
-    await db.families.insert_one(new_family.dict())
+    await db.family_profiles.insert_one(new_family.dict())
     
     # Add creator as family admin
     family_member = FamilyMember(
         family_id=new_family.id,
         user_id=current_user.id,
-        family_role=FamilyRole.CREATOR
+        family_role=FamilyRole.CREATOR,
+        invitation_accepted=True  # Creator automatically accepts
     )
     await db.family_members.insert_one(family_member.dict())
     
-    return new_family
+    # Return response with user membership info
+    response_data = new_family.dict()
+    response_data.update({
+        "is_user_member": True,
+        "user_role": FamilyRole.CREATOR,
+        "subscription_status": None
+    })
+    
+    return FamilyProfileResponse(**response_data)
 
-@api_router.get("/families")
-async def get_user_families(current_user: User = Depends(get_current_user)):
-    """Get families where user is a member"""
-    family_memberships = await db.family_members.find({"user_id": current_user.id, "is_active": True}).to_list(100)
+@api_router.get("/family-profiles")
+async def get_user_family_profiles(current_user: User = Depends(get_current_user)):
+    """Get family profiles where user is a member"""
+    family_memberships = await db.family_members.find({
+        "user_id": current_user.id, 
+        "is_active": True,
+        "invitation_accepted": True
+    }).to_list(100)
     
     families = []
     for membership in family_memberships:
-        family = await db.families.find_one({"id": membership["family_id"]})
+        family = await db.family_profiles.find_one({"id": membership["family_id"]})
         if family:
-            families.append({
-                "family": family,
-                "role": membership["family_role"],
-                "joined_at": membership["joined_at"]
-            })
+            family_response = FamilyProfileResponse(**family)
+            family_response.is_user_member = True
+            family_response.user_role = FamilyRole(membership["family_role"])
+            families.append(family_response)
     
-    return {"families": families}
+    return {"family_profiles": families}
+
+@api_router.get("/family-profiles/{family_id}", response_model=FamilyProfileResponse)
+async def get_family_profile(
+    family_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get specific family profile"""
+    family = await db.family_profiles.find_one({"id": family_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+    
+    # Check if user has access
+    membership = await db.family_members.find_one({
+        "family_id": family_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    subscription = await db.family_subscriptions.find_one({
+        "subscriber_family_id": {"$in": await get_user_family_ids(current_user.id)},
+        "target_family_id": family_id,
+        "is_active": True,
+        "status": "ACTIVE"
+    })
+    
+    # Check access permissions
+    if not membership and not subscription and family["is_private"]:
+        raise HTTPException(status_code=403, detail="Access denied to private family profile")
+    
+    family_response = FamilyProfileResponse(**family)
+    if membership:
+        family_response.is_user_member = True
+        family_response.user_role = FamilyRole(membership["family_role"])
+    elif subscription:
+        family_response.subscription_status = subscription["status"]
+    
+    return family_response
+
+@api_router.put("/family-profiles/{family_id}")
+async def update_family_profile(
+    family_id: str,
+    update_data: FamilyProfileUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update family profile (admin only)"""
+    # Check if user is admin
+    membership = await db.family_members.find_one({
+        "family_id": family_id,
+        "user_id": current_user.id,
+        "family_role": {"$in": [FamilyRole.CREATOR.value, FamilyRole.ADMIN.value]},
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only family admins can update family profiles")
+    
+    # Update family profile
+    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.family_profiles.update_one(
+        {"id": family_id},
+        {"$set": update_dict}
+    )
+    
+    return {"message": "Family profile updated successfully"}
+
+@api_router.post("/family-profiles/{family_id}/invite")
+async def invite_family_member(
+    family_id: str,
+    invitation_data: FamilyMemberInvite,
+    current_user: User = Depends(get_current_user)
+):
+    """Send invitation to join family (admin only)"""
+    # Check if user is admin
+    membership = await db.family_members.find_one({
+        "family_id": family_id,
+        "user_id": current_user.id,
+        "family_role": {"$in": [FamilyRole.CREATOR.value, FamilyRole.ADMIN.value]},
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only family admins can send invitations")
+    
+    # Check if family exists
+    family = await db.family_profiles.find_one({"id": family_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="Family profile not found")
+    
+    # Check if user is already invited or a member
+    existing_invitation = await db.family_invitations.find_one({
+        "family_id": family_id,
+        "invited_user_email": invitation_data.invited_user_email,
+        "status": "PENDING",
+        "is_active": True
+    })
+    
+    if existing_invitation:
+        raise HTTPException(status_code=400, detail="Invitation already sent to this email")
+    
+    # Check if user already exists in system
+    invited_user = await db.users.find_one({"email": invitation_data.invited_user_email})
+    invited_user_id = invited_user["id"] if invited_user else None
+    
+    # Create invitation
+    invitation = FamilyInvitation(
+        family_id=family_id,
+        invited_by_user_id=current_user.id,
+        invited_user_email=invitation_data.invited_user_email,
+        invited_user_id=invited_user_id,
+        invitation_type=invitation_data.invitation_type,
+        relationship_to_family=invitation_data.relationship_to_family,
+        message=invitation_data.message,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7)  # 7-day expiry
+    )
+    
+    await db.family_invitations.insert_one(invitation.dict())
+    
+    # TODO: Send email notification here
+    
+    return {"message": "Invitation sent successfully", "invitation_id": invitation.id}
+
+@api_router.get("/family-profiles/{family_id}/members")
+async def get_family_members(
+    family_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get family members (members only)"""
+    # Check if user has access
+    membership = await db.family_members.find_one({
+        "family_id": family_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        # Check subscription access
+        subscription = await db.family_subscriptions.find_one({
+            "subscriber_family_id": {"$in": await get_user_family_ids(current_user.id)},
+            "target_family_id": family_id,
+            "is_active": True,
+            "status": "ACTIVE"
+        })
+        
+        if not subscription:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get family members
+    family_memberships = await db.family_members.find({
+        "family_id": family_id,
+        "is_active": True,
+        "invitation_accepted": True
+    }).to_list(100)
+    
+    members = []
+    for member in family_memberships:
+        user = await db.users.find_one({"id": member["user_id"]})
+        if user:
+            member_response = FamilyMemberResponse(
+                **member,
+                user_first_name=user["first_name"],
+                user_last_name=user["last_name"],
+                user_avatar_url=user.get("avatar_url")
+            )
+            members.append(member_response)
+    
+    return {"family_members": members}
+
+@api_router.post("/family-invitations/{invitation_id}/accept")
+async def accept_family_invitation(
+    invitation_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Accept family invitation"""
+    invitation = await db.family_invitations.find_one({"id": invitation_id})
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    # Check if invitation is for current user
+    if invitation["invited_user_email"] != current_user.email:
+        raise HTTPException(status_code=403, detail="This invitation is not for you")
+    
+    if invitation["status"] != "PENDING":
+        raise HTTPException(status_code=400, detail="Invitation is no longer valid")
+    
+    # Check if invitation has expired
+    if invitation.get("expires_at") and invitation["expires_at"] < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Invitation has expired")
+    
+    # Create family membership
+    family_member = FamilyMember(
+        family_id=invitation["family_id"],
+        user_id=current_user.id,
+        family_role=FamilyRole.ADMIN if invitation["invitation_type"] == "ADMIN" else FamilyRole.ADULT_MEMBER,
+        relationship_to_family=invitation.get("relationship_to_family"),
+        invitation_accepted=True
+    )
+    await db.family_members.insert_one(family_member.dict())
+    
+    # Update invitation status
+    await db.family_invitations.update_one(
+        {"id": invitation_id},
+        {"$set": {
+            "status": "ACCEPTED",
+            "responded_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    # Update family member count
+    await db.family_profiles.update_one(
+        {"id": invitation["family_id"]},
+        {"$inc": {"member_count": 1}}
+    )
+    
+    return {"message": "Invitation accepted successfully"}
+
+# Helper function for family access
+async def get_user_family_ids(user_id: str) -> List[str]:
+    """Get list of family IDs user belongs to"""
+    family_memberships = await db.family_members.find({
+        "user_id": user_id,
+        "is_active": True,
+        "invitation_accepted": True
+    }).to_list(100)
+    return [membership["family_id"] for membership in family_memberships]
 
 # Chat Groups Management Endpoints
 @api_router.get("/chat-groups")
