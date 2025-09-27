@@ -370,7 +370,10 @@ const FamilyProfilePage = ({ familyId, currentUser, onBack, onInviteMember }) =>
               </h3>
               
               {isUserMember && (userRole === 'CREATOR' || userRole === 'ADMIN') && (
-                <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <button 
+                  onClick={() => onInviteMember && onInviteMember(familyId, familyProfile.family_name)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
                   <UserPlus className="w-4 h-4" />
                   <span>Пригласить</span>
                 </button>
