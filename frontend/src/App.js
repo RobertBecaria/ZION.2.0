@@ -1166,8 +1166,8 @@ function Dashboard() {
                     )}
                   </div>
 
-                  {/* Events Panel (30%) - Hide when in media views */}
-                  {!(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos') && (
+                  {/* Events Panel (30%) - Hide when in media or family profile views */}
+                  {!(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view') && (
                     <div className="events-panel-area">
                       <UniversalEventsPanel
                         activeGroup={activeGroup}
