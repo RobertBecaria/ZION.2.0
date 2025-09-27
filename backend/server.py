@@ -245,23 +245,6 @@ class User(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
 
-class Family(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    admin_id: str  # The family administrator
-    description: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    is_active: bool = True
-
-class FamilyMember(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    family_id: str
-    user_id: str
-    family_role: str = "MEMBER"  # ADMIN, MEMBER, CHILD
-    joined_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    is_active: bool = True
-
 # === FAMILY PROFILE SYSTEM MODELS ===
 
 class FamilyRole(str, Enum):
@@ -281,6 +264,30 @@ class FamilyPostPrivacy(str, Enum):
     PUBLIC = "PUBLIC"         # Visible to all subscribed families
     FAMILY_ONLY = "FAMILY_ONLY"  # Visible only to family members
     ADMIN_ONLY = "ADMIN_ONLY"     # Visible only to family admins
+
+class Family(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    admin_id: str  # The family administrator
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class FamilyMember(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    family_id: str
+    user_id: str
+    family_role: FamilyRole = FamilyRole.ADULT_MEMBER
+    
+    # Relationship context
+    relationship_to_family: Optional[str] = None  # "Father", "Mother", "Son", "Daughter", etc.
+    is_primary_resident: bool = True  # Lives at the family address
+    
+    # Member status
+    invitation_accepted: bool = False  # Has confirmed household membership
+    joined_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
 
 class FamilyProfile(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
