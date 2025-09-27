@@ -1431,8 +1431,16 @@ async def accept_family_invitation(
         raise HTTPException(status_code=400, detail="Invitation is no longer valid")
     
     # Check if invitation has expired
-    if invitation.get("expires_at") and invitation["expires_at"] < datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail="Invitation has expired")
+    expires_at = invitation.get("expires_at")
+    if expires_at:
+        # Handle both timezone-aware and naive datetimes
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+        elif expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Invitation has expired")
     
     # Create family membership
     family_member = FamilyMember(
