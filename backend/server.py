@@ -324,7 +324,7 @@ class FamilyInvitation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     family_id: str
     invited_by_user_id: str  # Who sent the invitation
-    invited_user_email: str  # Email of person being invited
+    invited_user_email: EmailStr  # Email of person being invited
     invited_user_id: Optional[str] = None  # If user already exists in system
     
     # Invitation details
