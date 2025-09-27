@@ -968,6 +968,33 @@ function Dashboard() {
                 <span>Мои Видео</span>
               </a>
             </div>
+
+            {/* Family Profiles Section */}
+            <div className="nav-section">
+              <span className="nav-section-title">Семейные Профили</span>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'family-profiles' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('family-profiles');
+                }}
+              >
+                <Users size={20} />
+                <span>Мои Семьи</span>
+              </a>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'family-create' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('family-create');
+                }}
+              >
+                <UserPlus size={20} />
+                <span>Создать Семью</span>
+              </a>
+            </div>
             
             <a href="#" className="nav-item">
               <Settings size={20} />
