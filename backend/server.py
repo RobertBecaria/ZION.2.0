@@ -1567,10 +1567,16 @@ async def get_sent_invitations(
     # Enrich with family information
     enriched_invitations = []
     for invitation in invitations:
+        # Remove MongoDB _id field
+        invitation.pop("_id", None)
+        
         # Get family info
         family = await db.family_profiles.find_one({"id": invitation["family_id"]})
         
         if family:
+            # Remove MongoDB _id field
+            family.pop("_id", None)
+            
             enriched_invitation = {
                 **invitation,
                 "family_name": family["family_name"]
