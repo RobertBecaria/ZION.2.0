@@ -1090,6 +1090,14 @@ function Dashboard() {
                         familyId={selectedFamilyId}
                         currentUser={user}
                         onBack={() => setActiveView('family-profiles')}
+                        onInviteMember={(familyId, familyName) => {
+                          setSelectedFamilyForInvitation({ id: familyId, name: familyName });
+                          setShowInvitationModal(true);
+                        }}
+                      />
+                    ) : activeView === 'family-invitations' ? (
+                      <InvitationManager
+                        currentUser={user}
                       />
                     ) : /* Media Storage Views - Full Width */
                     (activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos') ? (
