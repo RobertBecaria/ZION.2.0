@@ -951,6 +951,17 @@ function Dashboard() {
             >
               ➕ Создать Семью
             </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'family-invitations' ? 'primary' : 'secondary'}`}
+              style={{ 
+                backgroundColor: activeView === 'family-invitations' ? '#42B883' : undefined,
+                color: activeView === 'family-invitations' ? 'white' : undefined
+              }}
+              onClick={() => setActiveView('family-invitations')}
+            >
+              📧 Приглашения
+            </button>
           </div>
 
           <nav className="sidebar-nav">
