@@ -1053,9 +1053,9 @@ async def create_family(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new family"""
-    new_family = Family(
-        name=family_name,
-        admin_id=current_user.id,
+    new_family = FamilyProfile(
+        family_name=family_name,
+        creator_id=current_user.id,
         description=description
     )
     
