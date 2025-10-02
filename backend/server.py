@@ -244,6 +244,18 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login: Optional[datetime] = None
+    
+    # NEW FAMILY SYSTEM FIELDS
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_country: Optional[str] = None
+    address_postal_code: Optional[str] = None
+    marriage_status: Optional[str] = None  # SINGLE, MARRIED, DIVORCED, WIDOWED
+    spouse_user_id: Optional[str] = None
+    spouse_name: Optional[str] = None
+    spouse_phone: Optional[str] = None
+    profile_completed: bool = False
 
 # === FAMILY PROFILE SYSTEM MODELS ===
 
