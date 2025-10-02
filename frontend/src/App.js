@@ -7,12 +7,9 @@ import UniversalWall from './components/UniversalWall';
 import ContentNavigation from './components/ContentNavigation';
 import UniversalEventsPanel from './components/UniversalEventsPanel';
 import MediaStorage from './components/MediaStorage';
-import FamilyProfileCreation from './components/FamilyProfileCreation';
-import FamilyProfilePage from './components/FamilyProfilePage';
-import FamilyProfileList from './components/FamilyProfileList';
-import FamilyPostComposer from './components/FamilyPostComposer';
-import FamilyInvitationModal from './components/FamilyInvitationModal';
-import InvitationManager from './components/InvitationManager';
+// NEW FAMILY SYSTEM COMPONENTS
+import ProfileCompletionModal from './components/ProfileCompletionModal';
+import FamilyTriggerFlow from './components/FamilyTriggerFlow';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
