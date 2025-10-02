@@ -1197,6 +1197,92 @@ async def get_user_chat_groups(user_id: str):
     
     return groups
 
+# === NEW FAMILY SYSTEM HELPER FUNCTIONS ===
+
+async def find_matching_family_units(address_street: str, address_city: str, address_country: str, last_name: str, phone: Optional[str] = None) -> List[Dict]:
+    """Intelligent matching system to find existing family units"""
+    matches = []
+    
+    # Build query - must match address + last name
+    query = {
+        "address_street": {"$regex": f".*{address_street}.*", "$options": "i"},
+        "address_city": {"$regex": f".*{address_city}.*", "$options": "i"},
+        "address_country": {"$regex": f".*{address_country}.*", "$options": "i"},
+        "family_surname": {"$regex": f".*{last_name}.*", "$options": "i"},
+        "is_active": True
+    }
+    
+    family_units = await db.family_units.find(query).to_list(10)
+    
+    for family_unit in family_units:
+        family_unit.pop("_id", None)
+        
+        # Calculate match score
+        match_score = 0
+        if family_unit.get("address_street", "").lower() == address_street.lower():
+            match_score += 1
+        if family_unit.get("family_surname", "").lower() == last_name.lower():
+            match_score += 1
+        if phone and family_unit.get("creator_id"):
+            # Check if any family member has matching phone
+            creator = await db.users.find_one({"id": family_unit["creator_id"]})
+            if creator and creator.get("phone") == phone:
+                match_score += 1
+        
+        if match_score >= 2:  # At least 2 out of 3 criteria
+            matches.append({
+                "family_unit": family_unit,
+                "match_score": match_score
+            })
+    
+    # Sort by match score descending
+    matches.sort(key=lambda x: x["match_score"], reverse=True)
+    return matches
+
+async def get_user_family_units(user_id: str) -> List[str]:
+    """Get list of family unit IDs user belongs to"""
+    memberships = await db.family_unit_members.find({
+        "user_id": user_id,
+        "is_active": True
+    }).to_list(100)
+    return [m["family_unit_id"] for m in memberships]
+
+async def is_family_unit_head(user_id: str, family_unit_id: str) -> bool:
+    """Check if user is head of family unit"""
+    membership = await db.family_unit_members.find_one({
+        "family_unit_id": family_unit_id,
+        "user_id": user_id,
+        "role": FamilyUnitRole.HEAD.value,
+        "is_active": True
+    })
+    return membership is not None
+
+async def get_family_unit_heads(family_unit_ids: List[str]) -> List[str]:
+    """Get user IDs of all family unit heads"""
+    heads = []
+    for family_unit_id in family_unit_ids:
+        memberships = await db.family_unit_members.find({
+            "family_unit_id": family_unit_id,
+            "role": FamilyUnitRole.HEAD.value,
+            "is_active": True
+        }).to_list(10)
+        for m in memberships:
+            heads.append(m["user_id"])
+    return heads
+
+async def check_vote_majority(join_request_id: str) -> bool:
+    """Check if join request has majority approval"""
+    join_request = await db.family_join_requests.find_one({"id": join_request_id})
+    if not join_request:
+        return False
+    
+    votes = join_request.get("votes", [])
+    approve_count = sum(1 for v in votes if v["vote"] == VoteChoice.APPROVE.value)
+    
+    return approve_count >= join_request.get("votes_required", 0)
+
+# === END NEW FAMILY SYSTEM HELPER FUNCTIONS ===
+
 # === API ENDPOINTS ===
 
 @api_router.post("/auth/register", response_model=Token)
