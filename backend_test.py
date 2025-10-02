@@ -1507,7 +1507,7 @@ class ZionCityAPITester:
         response = self.make_request('POST', f'family-units/{family_unit_id}/posts', post_data, auth_required=True)
         if response and response.status_code == 200:
             data = response.json()
-            post_id = data.get("post_id")
+            post_id = data.get("id")
             success = post_id is not None
             self.log_test("Family unit post creation", success, f"Post ID: {post_id}")
         else:
