@@ -270,7 +270,20 @@ frontend:
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Phase 2: Media Upload Functionality - Implementing media upload functionality for posts in the UniversalWall component. Support for PNG, JPG, GIF images, PDF, DOC, PPTX documents, multiple files per post, YouTube URL auto-detection and embed, with local file storage and standard file size limits (10MB images, 50MB documents)."
+user_problem_statement: "Phase 4: Complete Family Profile System Rebuild - Implementing NODE and SUPER NODE architecture for intelligent family management. Auto-create family profiles by default, intelligent matching system by address+last name+phone, family unit (NODE) and household (SUPER NODE) structure, voting system for family joins (majority approval), posts on behalf of family units with visibility filters (FAMILY_ONLY, HOUSEHOLD_ONLY, PUBLIC)."
+
+backend:
+  - task: "New Family System Backend Implementation - Phase 4"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "PHASE 4 NEW FAMILY SYSTEM BACKEND IMPLEMENTATION: Complete rebuild of family profile system with NODE/SUPER NODE architecture including: 1) Extended User Model - Added address fields (street, city, state, country, postal_code), marriage status (SINGLE, MARRIED, DIVORCED, WIDOWED), spouse references (spouse_user_id, spouse_name, spouse_phone), profile_completed flag for onboarding tracking, 2) New Data Models - FamilyUnit (NODE) for nuclear families with address and member tracking, FamilyUnitMember junction table with roles (HEAD, SPOUSE, CHILD, PARENT), HouseholdProfile (SUPER NODE) for multiple families at same address, FamilyJoinRequest with voting system (votes array, total_voters, votes_required for majority), FamilyUnitPost with visibility levels (FAMILY_ONLY, HOUSEHOLD_ONLY, PUBLIC), 3) Intelligent Matching System - find_matching_family_units() function matches by address + last name + phone with scoring (1-3 points), sorts by match_score descending, requires minimum 2/3 criteria match, 4) Helper Functions - get_user_family_units() retrieves user's family units, is_family_unit_head() checks if user is family head, get_family_unit_heads() gets all heads for voting, check_vote_majority() calculates approval threshold, 5) API Endpoints - PUT /api/users/profile/complete for profile questionnaire, GET /api/family-units/check-match for intelligent matching, POST /api/family-units to create new family unit (NODE), GET /api/family-units/my-units to list user's families, POST /api/family-units/{id}/join-request for join requests, POST /api/family-join-requests/{id}/vote for voting system, GET /api/family-join-requests/pending for heads to review requests, POST /api/family-units/{id}/posts to create family posts, GET /api/family-units/{id}/posts to view family feed, 6) Database Collections - family_units, family_unit_members, family_join_requests, household_profiles, family_unit_posts with proper indexes and relationships. Ready for comprehensive backend testing."
 
 backend:
   - task: "Family Invitation System Backend Implementation - Phase 3A"
