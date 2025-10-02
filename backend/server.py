@@ -3262,6 +3262,441 @@ async def mark_all_notifications_read(
     
     return {"message": "All notifications marked as read"}
 
+# === NEW FAMILY SYSTEM API ENDPOINTS ===
+
+@api_router.put("/users/profile/complete")
+async def complete_user_profile(
+    profile_data: ProfileCompletionRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Complete user profile with address and marriage info for family system"""
+    update_data = {
+        "address_street": profile_data.address_street,
+        "address_city": profile_data.address_city,
+        "address_state": profile_data.address_state,
+        "address_country": profile_data.address_country,
+        "address_postal_code": profile_data.address_postal_code,
+        "marriage_status": profile_data.marriage_status.value,
+        "spouse_name": profile_data.spouse_name,
+        "spouse_phone": profile_data.spouse_phone,
+        "profile_completed": True,
+        "updated_at": datetime.now(timezone.utc)
+    }
+    
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Profile completed successfully", "profile_completed": True}
+
+@api_router.get("/family-units/check-match")
+async def check_family_match(
+    current_user: User = Depends(get_current_user)
+):
+    """Check for matching family units based on user's address and last name"""
+    if not current_user.profile_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Please complete your profile first"
+        )
+    
+    # Find matching families
+    matches = await find_matching_family_units(
+        address_street=current_user.address_street or "",
+        address_city=current_user.address_city or "",
+        address_country=current_user.address_country or "",
+        last_name=current_user.last_name,
+        phone=current_user.phone
+    )
+    
+    matching_results = []
+    for match in matches:
+        family_unit = match["family_unit"]
+        matching_results.append(MatchingFamilyResult(
+            family_unit_id=family_unit["id"],
+            family_name=family_unit["family_name"],
+            family_surname=family_unit["family_surname"],
+            address=AddressModel(
+                street=family_unit.get("address_street"),
+                city=family_unit.get("address_city"),
+                state=family_unit.get("address_state"),
+                country=family_unit.get("address_country"),
+                postal_code=family_unit.get("address_postal_code")
+            ),
+            member_count=family_unit["member_count"],
+            match_score=match["match_score"]
+        ))
+    
+    return {
+        "matches_found": len(matching_results) > 0,
+        "matches": matching_results
+    }
+
+@api_router.post("/family-units", response_model=FamilyUnitResponse)
+async def create_family_unit(
+    family_data: FamilyUnitCreateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new family unit (NODE)"""
+    if not current_user.profile_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Please complete your profile first"
+        )
+    
+    # Create family unit
+    new_family_unit = FamilyUnit(
+        family_name=family_data.family_name,
+        family_surname=family_data.family_surname,
+        address_street=current_user.address_street,
+        address_city=current_user.address_city,
+        address_state=current_user.address_state,
+        address_country=current_user.address_country,
+        address_postal_code=current_user.address_postal_code,
+        creator_id=current_user.id,
+        node_type=NodeType.NODE
+    )
+    
+    await db.family_units.insert_one(new_family_unit.dict())
+    
+    # Add creator as family unit HEAD
+    family_member = FamilyUnitMember(
+        family_unit_id=new_family_unit.id,
+        user_id=current_user.id,
+        role=FamilyUnitRole.HEAD
+    )
+    await db.family_unit_members.insert_one(family_member.dict())
+    
+    # If user is married and spouse exists, add them
+    if current_user.marriage_status == MarriageStatus.MARRIED.value and current_user.spouse_user_id:
+        spouse_member = FamilyUnitMember(
+            family_unit_id=new_family_unit.id,
+            user_id=current_user.spouse_user_id,
+            role=FamilyUnitRole.SPOUSE
+        )
+        await db.family_unit_members.insert_one(spouse_member.dict())
+        # Update member count
+        await db.family_units.update_one(
+            {"id": new_family_unit.id},
+            {"$inc": {"member_count": 1}}
+        )
+    
+    return FamilyUnitResponse(
+        id=new_family_unit.id,
+        family_name=new_family_unit.family_name,
+        family_surname=new_family_unit.family_surname,
+        address=AddressModel(
+            street=new_family_unit.address_street,
+            city=new_family_unit.address_city,
+            state=new_family_unit.address_state,
+            country=new_family_unit.address_country,
+            postal_code=new_family_unit.address_postal_code
+        ),
+        node_type=new_family_unit.node_type,
+        parent_household_id=new_family_unit.parent_household_id,
+        member_count=new_family_unit.member_count,
+        is_user_member=True,
+        user_role=FamilyUnitRole.HEAD,
+        created_at=new_family_unit.created_at
+    )
+
+@api_router.get("/family-units/my-units")
+async def get_my_family_units(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all family units user belongs to"""
+    family_unit_ids = await get_user_family_units(current_user.id)
+    
+    family_units = []
+    for family_unit_id in family_unit_ids:
+        family_unit = await db.family_units.find_one({"id": family_unit_id})
+        if family_unit:
+            family_unit.pop("_id", None)
+            
+            # Get user's role
+            membership = await db.family_unit_members.find_one({
+                "family_unit_id": family_unit_id,
+                "user_id": current_user.id,
+                "is_active": True
+            })
+            
+            family_units.append(FamilyUnitResponse(
+                id=family_unit["id"],
+                family_name=family_unit["family_name"],
+                family_surname=family_unit["family_surname"],
+                address=AddressModel(
+                    street=family_unit.get("address_street"),
+                    city=family_unit.get("address_city"),
+                    state=family_unit.get("address_state"),
+                    country=family_unit.get("address_country"),
+                    postal_code=family_unit.get("address_postal_code")
+                ),
+                node_type=NodeType(family_unit["node_type"]),
+                parent_household_id=family_unit.get("parent_household_id"),
+                member_count=family_unit["member_count"],
+                is_user_member=True,
+                user_role=FamilyUnitRole(membership["role"]) if membership else None,
+                created_at=family_unit["created_at"]
+            ))
+    
+    return {"family_units": family_units}
+
+@api_router.post("/family-units/{family_unit_id}/join-request")
+async def create_join_request(
+    family_unit_id: str,
+    request_data: JoinRequestCreateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a join request to an existing family unit"""
+    # Check if family unit exists
+    target_family = await db.family_units.find_one({"id": family_unit_id})
+    if not target_family:
+        raise HTTPException(status_code=404, detail="Family unit not found")
+    
+    # Check if user already belongs to this family
+    existing_membership = await db.family_unit_members.find_one({
+        "family_unit_id": family_unit_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    if existing_membership:
+        raise HTTPException(status_code=400, detail="You are already a member of this family")
+    
+    # Get all family unit heads who need to vote
+    family_unit_heads = await get_family_unit_heads([family_unit_id])
+    total_voters = len(family_unit_heads)
+    votes_required = (total_voters // 2) + 1  # Majority
+    
+    # Get user's own family unit (if any)
+    user_family_units = await get_user_family_units(current_user.id)
+    requesting_family_unit_id = user_family_units[0] if user_family_units else None
+    
+    # Create join request
+    join_request = FamilyJoinRequest(
+        requesting_user_id=current_user.id,
+        requesting_family_unit_id=requesting_family_unit_id,
+        target_family_unit_id=family_unit_id,
+        request_type="JOIN_FAMILY",
+        message=request_data.message,
+        total_voters=total_voters,
+        votes_required=votes_required
+    )
+    
+    await db.family_join_requests.insert_one(join_request.dict())
+    
+    return {
+        "message": "Join request created successfully",
+        "join_request_id": join_request.id,
+        "total_voters": total_voters,
+        "votes_required": votes_required
+    }
+
+@api_router.post("/family-join-requests/{join_request_id}/vote")
+async def vote_on_join_request(
+    join_request_id: str,
+    vote_data: VoteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Vote on a family join request"""
+    # Get join request
+    join_request = await db.family_join_requests.find_one({"id": join_request_id})
+    if not join_request:
+        raise HTTPException(status_code=404, detail="Join request not found")
+    
+    if join_request["status"] != JoinRequestStatus.PENDING.value:
+        raise HTTPException(status_code=400, detail="Join request is no longer pending")
+    
+    # Check if user is a family unit head of target family
+    target_family_id = join_request.get("target_family_unit_id")
+    if not target_family_id:
+        raise HTTPException(status_code=400, detail="Invalid join request")
+    
+    is_head = await is_family_unit_head(current_user.id, target_family_id)
+    if not is_head:
+        raise HTTPException(status_code=403, detail="Only family unit heads can vote")
+    
+    # Check if user already voted
+    existing_votes = join_request.get("votes", [])
+    for vote in existing_votes:
+        if vote["user_id"] == current_user.id:
+            raise HTTPException(status_code=400, detail="You have already voted")
+    
+    # Add vote
+    new_vote = {
+        "user_id": current_user.id,
+        "family_unit_id": target_family_id,
+        "vote": vote_data.vote.value,
+        "voted_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.family_join_requests.update_one(
+        {"id": join_request_id},
+        {"$push": {"votes": new_vote}}
+    )
+    
+    # Check if majority reached
+    majority_reached = await check_vote_majority(join_request_id)
+    
+    if majority_reached:
+        # Approve join request
+        await db.family_join_requests.update_one(
+            {"id": join_request_id},
+            {"$set": {
+                "status": JoinRequestStatus.APPROVED.value,
+                "resolved_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        # Add user to family unit
+        new_member = FamilyUnitMember(
+            family_unit_id=target_family_id,
+            user_id=join_request["requesting_user_id"],
+            role=FamilyUnitRole.CHILD  # Default role, can be updated later
+        )
+        await db.family_unit_members.insert_one(new_member.dict())
+        
+        # Update member count
+        await db.family_units.update_one(
+            {"id": target_family_id},
+            {"$inc": {"member_count": 1}}
+        )
+        
+        return {
+            "message": "Join request approved and user added to family",
+            "status": "APPROVED"
+        }
+    
+    return {
+        "message": "Vote recorded successfully",
+        "status": "PENDING"
+    }
+
+@api_router.get("/family-join-requests/pending")
+async def get_pending_join_requests(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all pending join requests for families where user is a head"""
+    # Get user's family units where they are head
+    user_family_units = await get_user_family_units(current_user.id)
+    head_family_units = []
+    
+    for family_unit_id in user_family_units:
+        if await is_family_unit_head(current_user.id, family_unit_id):
+            head_family_units.append(family_unit_id)
+    
+    # Get pending join requests for these families
+    join_requests = await db.family_join_requests.find({
+        "target_family_unit_id": {"$in": head_family_units},
+        "status": JoinRequestStatus.PENDING.value,
+        "is_active": True
+    }).sort("created_at", -1).to_list(50)
+    
+    # Enrich with user and family info
+    enriched_requests = []
+    for request in join_requests:
+        request.pop("_id", None)
+        
+        # Get requesting user info
+        requesting_user = await db.users.find_one({"id": request["requesting_user_id"]})
+        if requesting_user:
+            request["requesting_user_name"] = f"{requesting_user['first_name']} {requesting_user['last_name']}"
+        
+        # Get target family info
+        target_family = await db.family_units.find_one({"id": request["target_family_unit_id"]})
+        if target_family:
+            request["target_family_name"] = target_family["family_name"]
+        
+        enriched_requests.append(request)
+    
+    return {"join_requests": enriched_requests}
+
+@api_router.post("/family-units/{family_unit_id}/posts", response_model=dict)
+async def create_family_unit_post(
+    family_unit_id: str,
+    post_data: FamilyUnitPostCreateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a post on behalf of family unit"""
+    # Check if user is member of family unit
+    membership = await db.family_unit_members.find_one({
+        "family_unit_id": family_unit_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="You are not a member of this family unit")
+    
+    # Create family post
+    family_post = FamilyUnitPost(
+        family_unit_id=family_unit_id,
+        posted_by_user_id=current_user.id,
+        content=post_data.content,
+        media_files=post_data.media_files,
+        visibility=post_data.visibility
+    )
+    
+    await db.family_unit_posts.insert_one(family_post.dict())
+    
+    # Get family unit info
+    family_unit = await db.family_units.find_one({"id": family_unit_id})
+    
+    return {
+        "id": family_post.id,
+        "family_unit_id": family_post.family_unit_id,
+        "family_name": family_unit["family_name"] if family_unit else None,
+        "posted_by_user_id": family_post.posted_by_user_id,
+        "posted_by_name": f"{current_user.first_name} {current_user.last_name}",
+        "content": family_post.content,
+        "visibility": family_post.visibility.value,
+        "created_at": family_post.created_at,
+        "message": f"Posted on behalf of {family_unit['family_name'] if family_unit else 'family'}"
+    }
+
+@api_router.get("/family-units/{family_unit_id}/posts")
+async def get_family_unit_posts(
+    family_unit_id: str,
+    current_user: User = Depends(get_current_user),
+    limit: int = 20,
+    offset: int = 0
+):
+    """Get posts for a family unit"""
+    # Check access permissions
+    membership = await db.family_unit_members.find_one({
+        "family_unit_id": family_unit_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get posts
+    posts = await db.family_unit_posts.find({
+        "family_unit_id": family_unit_id,
+        "is_published": True
+    }).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+    
+    # Enrich with author and family info
+    enriched_posts = []
+    for post in posts:
+        post.pop("_id", None)
+        
+        author = await db.users.find_one({"id": post["posted_by_user_id"]})
+        family_unit = await db.family_units.find_one({"id": family_unit_id})
+        
+        if author and family_unit:
+            enriched_posts.append({
+                **post,
+                "author_name": f"{author['first_name']} {author['last_name']}",
+                "family_name": family_unit["family_name"]
+            })
+    
+    return {"posts": enriched_posts, "total": len(enriched_posts)}
+
+# === END NEW FAMILY SYSTEM API ENDPOINTS ===
+
 # Basic status endpoints
 @api_router.get("/")
 async def root():
