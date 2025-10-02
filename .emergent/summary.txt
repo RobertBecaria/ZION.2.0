@@ -1,93 +1,87 @@
 <analysis>
-The AI engineer successfully enhanced the ZION.CITY platform, initially by implementing social features (likes, comments, reactions) and an image lightbox. A user-reported bug regarding the lightbox's modal display was fixed by adjusting click handlers and CSS. This led to a refactor into a shared  hook and  component, ensuring universal image lightbox functionality across  and .
+The trajectory details the development process for a social application named ZION.CITY, starting from resolving a user login issue and transitioning into a major feature implementation. The initial task involved debugging a login failure for user , which was traced back to an incorrect password. The investigation required examining the FastAPI backend authentication logic in  and querying the MongoDB database directly.
 
-Next, section-specific content for the  was implemented, starting with the Family section. This involved backend filtering, frontend updates, and module-aware post creation. A persistent bug where Family posts disappeared was addressed through multiple debugging cycles, revealing issues with frontend state management (fixed by refetching posts), session expiration, and a critical CSS layout error in . The final complex bug involved Robert Becaria's family posts with media not showing, which was ultimately traced to missing family connections, old post metadata, and a malformed MongoDB query that required careful re-testing and credential resets. All issues were confirmed resolved by the user.
+Following the login fix, the user requested a significant enhancement: a Family Profile system. This feature allows households to create a shared profile, which others can subscribe to via an invite-only system. The development was structured into phases. Phase 1 focused on building the backend infrastructure, involving the creation of new Pydantic models (, , ) and comprehensive API endpoints in . This phase concluded with successful backend testing, which identified and fixed a minor datetime bug.
+
+Phase 2 involved building the corresponding frontend components in React. New files like  and  were created, and major integrations were made into  for routing, state management, and navigation. This phase included two critical debugging cycles based on user feedback: fixing an invisible sidebar section title via CSS adjustments in  and relocating the navigation for better visibility.
+
+Phase 3 began with implementing the Family Invitation System. This involved adding new backend endpoints and creating frontend components like  and . This phase also included backend testing, which corrected email validation and MongoDB serialization issues. The trajectory concludes after initial frontend tests confirm the UI for the invitation system is in place and functional, awaiting final user validation before proceeding to the next part of Phase 3.
 </analysis>
 
 <product_requirements>
-The ZION.CITY platform aims to be a comprehensive digital ecosystem for community management in the Kherson region. Core features include user authentication, role-based access, and a Master Shell UI. Media handling was implemented for  posts, supporting image (PNG, JPG, GIF) and document (PDF, DOC, PPTX) uploads, multiple files, YouTube embeds, local storage, and size limits (10MB images, 50MB documents). A Медиа Хранилище (Media Storage) module auto-indexes and displays media with module-specific tags and dynamic filtering.
+The ZION.CITY platform requires a Family Profile system to enhance its community features. This system should exist alongside individual user profiles, allowing a household to create a single, shared profile (e.g., The Johnson Family).
 
-Recent enhancements focused on Enhanced Social Features for UniversalWall:
-1.  Comments with nested replies and editing capabilities.
-2.  Likes and comments visibility adhering to original post's privacy settings.
-3.  Emoji support in posts and comments.
-4.  A document attachment button in the post input box.
-5.  An interactive image lightbox/modal (Meetmax-style) for full-size viewing, navigation, and download.
-Further, the Universal Wall should display content strictly related to the active section (e.g., Family section only shows family posts, visible according to permissions based on connections). This was prioritized for the Family section first, with content creation also isolated by section.
+**Core Requirements:**
+1.  **Dual System:** Family profiles should supplement, not replace, individual user posts within the Family section.
+2.  **Creation & Admin:** Any adult user can create a family profile. Their spouse is automatically made a co-admin. Multiple adult members can be admins.
+3.  **Membership:** Membership is confirmed via an in-platform invitation system. Members must accept an invitation to join a household profile.
+4.  **Privacy & Discovery:** Family profiles are private by default and discoverable only through invitations. Invited users and their immediate family gain access to the profile's public feed.
+5.  **Content Control:** Children's posts are private to the family by default. Parents (admins) can approve a child's post to make it public.
+6.  **Profile Features:** Dedicated family profile pages should function as mini-websites, including a member directory, family statistics (e.g., member count, established date), and a wall for shared content like announcements, photo albums, events, milestones, and business updates.
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI**: Python backend for API, file serving, and MongoDB interactions.
--   **React**: JavaScript frontend for dynamic UI.
--   **MongoDB**: NoSQL database for flexible data storage using UUIDs.
--   **JWT**: Secure authentication for API calls.
--   **Custom CSS**: Extensive styling for components, modals, and responsive design.
--   ** & **: Backend file handling.
--   ****: Icon library for UI elements.
--   **React Hooks/Context**: For shared state management (e.g., ).
+- **Backend:** FastAPI for the REST API, Pydantic for data modeling and validation.
+- **Frontend:** React for the user interface, utilizing hooks for state management.
+- **Database:** MongoDB for flexible, NoSQL data storage, using UUIDs as primary identifiers.
+- **Authentication:** JWT for securing API endpoints.
+- **Styling:** Custom CSS for component styling, following a specific design language.
+- **Libraries:**  for UI icons,  and  for file handling.
 </key_technical_concepts>
 
 <code_architecture>
+The application follows a standard monolithic repository structure with a separate frontend and backend.
 
--   :
-    -   **Importance**: Core FastAPI application for posts, auth, media, and social interactions.
-    -   **Changes Made**:
-        -   **Social Features**: Added , , ,  models and API endpoints.  model updated for social data.
-        -   **Module Filtering**: Modified  to filter by  and user connections ().
-        -   **Post Creation**: Updated  to store  and .
-        -   **Helper Functions**: Added  and  for fetching related users.
-        -   **Bug Fixes**: Addressed  comparison errors and ensured MongoDB  operator was correctly formatted. Updated old posts with missing module metadata.
--   : Python dependencies.
--   :
-    -   **Importance**: Main application shell.
-    -   **Changes Made**: Passes  prop to  based on current route for module-specific content display.
--   :
-    -   **Importance**: Global styling.
-    -   **Changes Made**:
-        -   Extensive styling for social features and post composer.
-        -   **Lightbox Styling**: Added styles for the Meetmax-inspired lightbox modal.
-        -   **Layout Fix**: Added  class with  to resolve spacing issues that pushed posts down.
-        -   Added styles for media storage images (hover effects).
--   :
-    -   **Importance**: Social feed and post creation.
-    -   **Changes Made**:
-        -   Integrated  hook and  component. Removed old, isolated lightbox logic.
-        -    now sends  to the backend.
-        -    now includes  in new posts and *refetches* posts after creation for consistency (bug fix).
-        -    dependencies updated to react to  changes.
-        -   Click handler for images moved to parent container for lightbox activation (bug fix).
--   : **NEW FILE**
-    -   **Importance**: Provides reusable lightbox state management and logic.
-    -   **Summary**: Encapsulates , ,  states, , , ,  functions, and keyboard event listeners.
--   : **NEW FILE**
-    -   **Importance**: Renders the universal lightbox UI.
-    -   **Summary**: Displays the full-screen image, navigation, download, and close buttons with blurred background.
--   :
-    -   **Importance**: Manages and displays user media.
-    -   **Changes Made**: Integrated  hook and  component to enable full-screen image viewing for all images within the storage.
--   : System logo image.
+
+
+-   ****
+    -   **Importance**: This is the single core file for the entire backend, containing all API logic, database models, and authentication.
+    -   **Changes Made**: Heavily modified to support the Family Profile system. New Pydantic models were added (, , , , , ). Numerous new API endpoints were created for CRUD operations on these models, including creating families, sending/accepting invitations, managing members, and posting on a family wall. The  function was updated to support the new data structure, fixing a bug where users couldn't see their own posts.
+
+-   ****
+    -   **Importance**: The main entry point and container for the React application. It manages routing, global state, and the overall layout.
+    -   **Changes Made**: Significantly updated to integrate the Family Profile feature. New state variables () were introduced to handle navigation within the new section. It now imports and renders the new family-related components based on user actions. The sidebar navigation was modified twice: first to add a new section, and second to relocate the navigation buttons to a more prominent position for better UX, based on user feedback.
+
+-   ****
+    -   **Importance**: Contains all global and component-specific styles for the application.
+    -   **Changes Made**: A large block of CSS was added to style the new family profile components, including forms, pages, lists, and modals. A critical fix was applied to the  class, changing its color and font-weight to make it visible after a user reported it was missing.
+
+-   **** (New Files)
+    -   **Importance**: These new components encapsulate the entire user-facing functionality for the Family Profile system.
+    -   **Files Created**:
+        -   : A form for creating a new family profile.
+        -   : The dedicated page for viewing a family's profile.
+        -   : A view to list and manage the families a user belongs to.
+        -   : A component for creating posts on a family's wall.
+        -   : A modal for sending invitations to join a family.
+        -   : A UI for managing sent and received invitations.
 </code_architecture>
 
 <pending_tasks>
--   Advanced Permission Granularity (field-level privacy controls).
--   Full Temporal Logic & Alumni Features (alumni networks, previous employer recommendations).
--   Verification System (organization/government verification, badge system).
--   Advanced Data Synchronization (conflict resolution, real-time propagation, audit trails).
--   Media storage to Journal section for sharing across platforms.
--   Emoji support in posts and comments (6 default, with an option to open a window for more).
+The following features for the Family Profile system were planned as part of Phase 3 but have not been implemented yet:
+- **Family Subscription System:** Allow families to subscribe to other families' public updates.
+- **Enhanced Family Profile Pages:** Implement the family member directory, milestones timeline, and photo albums.
+- **Advanced Family Posts:** Implement the child post approval workflow and other rich content types.
+- **Notifications & Integration:** Integrate family activities into the main notification system and the .
 </pending_tasks>
 
 <current_work>
-The ZION.CITY application has significantly matured with robust social features and a comprehensive media viewing experience. The  now contextually displays posts based on the active module (e.g., Family, Organizations), with an initial focus on the Family section. This includes backend filtering that leverages user connections and module-aware post creation. A universal, Meetmax-style image lightbox has been refactored into a reusable hook and component, integrated into both the  and  modules, allowing users to click on any image for full-screen viewing, navigation, and download.
+The most recent work focused on implementing Phase 3A: the **Family Invitation System**.
 
-Most recently, several critical bugs were resolved:
-1.  **Posts Disappearing on Module Switch**: Fixed by ensuring the frontend refetches module-specific posts after creation, preventing a mix of posts from different modules in the state.
-2.  **Family Posts Not Showing (Layout Issue)**: Resolved a CSS bug where the  container was missing essential  and  rules, causing posts to be pushed far down the page and appear invisible until scrolling.
-3.  **Robert Becaria Family Posts with Media Not Appearing**: This complex issue was resolved by correcting Robert's family connections in the database, updating old posts with necessary  and  metadata, and confirming proper MongoDB query construction after authentication issues.
+**Backend:**
+The work involved adding new API endpoints to  to handle the full invitation lifecycle:
+- An endpoint to send an invitation to a user to join a family.
+- Endpoints to list pending sent and received invitations for a user.
+- Endpoints to accept or decline a pending invitation.
+Backend testing was performed, which uncovered and fixed issues with email validation (switching to ) and MongoDB serialization errors caused by the  field. The backend is now considered stable for this feature.
 
-The application now ensures that posts in the Family section appear correctly with images, are isolated to relevant users, and can be viewed universally via the lightbox. The user has confirmed that all reported issues are resolved.
+**Frontend:**
+The following components were created and integrated:
+- : A modal form to search for a user by email and send them an invitation with a specific role.
+- : A page with tabs to view and manage Received and Sent invitations.
+These components were integrated into the application's main file, , with a new Приглашения (Invitations) button added to the sidebar. The  was updated to include a button that triggers the invitation modal. Initial frontend tests confirmed that the new UI elements are rendering correctly and navigation is functional. The system is now awaiting final user validation of the end-to-end flow.
 </current_work>
 
 <optional_next_step>
-None. The last task was concluded and confirmed by the user.
+Confirm with the user that the Family Invitation System is working as expected, and then ask which feature from the remaining Phase 3 options they would like to prioritize next.
 </optional_next_step>

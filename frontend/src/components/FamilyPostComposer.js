@@ -68,7 +68,7 @@ const FamilyPostComposer = ({ familyId, familyName, userRole, onClose, onPostCre
 
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://family-connect-20.preview.emergentagent.com';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://famiconnect.preview.emergentagent.com';
       
       // If user is a child and tries to post publicly, force it to family-only
       let postData = { ...formData };

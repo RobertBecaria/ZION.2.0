@@ -9,7 +9,7 @@ import tempfile
 import os
 
 class NewMediaStorageSystemTester:
-    def __init__(self, base_url="https://family-connect-20.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://famiconnect.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

@@ -35,7 +35,7 @@ const FamilyProfileCreation = ({ onBack, onFamilyCreated }) => {
 
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://family-connect-20.preview.emergentagent.com';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://famiconnect.preview.emergentagent.com';
       
       const response = await fetch(`${backendUrl}/api/family-profiles`, {
         method: 'POST',
