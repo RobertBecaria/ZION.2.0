@@ -1126,26 +1126,10 @@ function Dashboard() {
                     ) : (
                       <>
                         {activeModule === 'family' && (
-                          <>
-                            {activeView === 'wall' ? (
-                              <UniversalWall
-                                activeGroup={activeGroup}
-                                moduleColor={currentModule.color}
-                                moduleName={currentModule.name}
-                                activeModule={activeModule}
-                                user={user}
-                              />
-                            ) : (
-                              <UniversalChatLayout
-                                activeGroup={activeGroup}
-                                chatGroups={chatGroups}
-                                onGroupSelect={handleGroupSelect}
-                                moduleColor={currentModule.color}
-                                onCreateGroup={handleCreateGroup}
-                                user={user}
-                              />
-                            )}
-                          </>
+                          <FamilyTriggerFlow
+                            user={user}
+                            onUpdateUser={handleUpdateUser}
+                          />
                         )}
 
                         {activeModule === 'organizations' && (
