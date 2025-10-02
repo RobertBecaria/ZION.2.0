@@ -691,6 +691,13 @@ function Dashboard() {
   
   const { user, logout } = useAuth();
 
+  // Check if user needs to complete profile for family system
+  useEffect(() => {
+    if (user && activeModule === 'family' && !user.profile_completed) {
+      setShowProfileCompletionModal(true);
+    }
+  }, [user, activeModule]);
+
   // Check if user needs onboarding (no affiliations)
   useEffect(() => {
     if (user && (!user.affiliations || user.affiliations.length === 0)) {
