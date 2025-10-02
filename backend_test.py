@@ -1318,6 +1318,248 @@ class ZionCityAPITester:
         
         return success_count == len(test_cases)
 
+    def test_new_family_system_comprehensive(self):
+        """Test the complete new family system with NODE & SUPER NODE architecture"""
+        print("\n🏠 Testing New Family System - Phase 4...")
+        
+        # Store test data
+        family_unit_id = None
+        join_request_id = None
+        second_user_token = None
+        second_user_id = None
+        
+        # Test 1: Profile Completion Flow
+        print("\n1️⃣ Testing Profile Completion Flow...")
+        profile_data = {
+            "address_street": "123 Test Street",
+            "address_city": "Test City", 
+            "address_state": "Test State",
+            "address_country": "Test Country",
+            "address_postal_code": "12345",
+            "marriage_status": "MARRIED",
+            "spouse_name": "Test Spouse",
+            "spouse_phone": "+1234567890"
+        }
+        
+        response = self.make_request('PUT', 'users/profile/complete', profile_data, auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            success = data.get("profile_completed") == True
+            self.log_test("Profile completion", success, f"Profile completed: {data.get('profile_completed')}")
+        else:
+            self.log_test("Profile completion", False, f"Status: {response.status_code if response else 'No response'}")
+            return  # Can't continue without completed profile
+        
+        # Test 2: Intelligent Matching System
+        print("\n2️⃣ Testing Intelligent Matching System...")
+        response = self.make_request('GET', 'family-units/check-match', auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            matches = data.get("matches", [])
+            success = isinstance(matches, list)  # Should return empty list initially
+            self.log_test("Intelligent matching", success, f"Found {len(matches)} matches")
+        else:
+            self.log_test("Intelligent matching", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 3: Family Unit Creation (NODE)
+        print("\n3️⃣ Testing Family Unit Creation (NODE)...")
+        family_data = {
+            "family_name": "Test Family",
+            "family_surname": "TestSurname"
+        }
+        
+        response = self.make_request('POST', 'family-units', family_data, auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            family_unit_id = data.get("id")
+            success = (
+                family_unit_id is not None and
+                data.get("family_name") == "Test Family" and
+                data.get("family_surname") == "TestSurname" and
+                data.get("member_count") == 1 and
+                data.get("is_user_member") == True and
+                data.get("user_role") == "HEAD"
+            )
+            self.log_test("Family unit creation", success, f"Family ID: {family_unit_id}, Role: {data.get('user_role')}")
+        else:
+            self.log_test("Family unit creation", False, f"Status: {response.status_code if response else 'No response'}")
+            return  # Can't continue without family unit
+        
+        # Test 4: Get User's Family Units
+        print("\n4️⃣ Testing Get User's Family Units...")
+        response = self.make_request('GET', 'family-units/my-units', auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            family_units = data.get("family_units", [])
+            success = (
+                len(family_units) >= 1 and
+                any(fu.get("id") == family_unit_id for fu in family_units)
+            )
+            self.log_test("Get user family units", success, f"Found {len(family_units)} family units")
+        else:
+            self.log_test("Get user family units", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 5: Create Second User for Join Request Testing
+        print("\n5️⃣ Creating Second User for Join Request Testing...")
+        second_user_data = {
+            "email": f"second_user_{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com",
+            "password": "testpass123",
+            "first_name": "Second",
+            "last_name": "User",
+            "phone": "+1987654321"
+        }
+        
+        response = self.make_request('POST', 'auth/register', second_user_data)
+        if response and response.status_code == 200:
+            data = response.json()
+            second_user_token = data.get('access_token')
+            second_user_id = data.get('user', {}).get('id')
+            success = second_user_token is not None and second_user_id is not None
+            self.log_test("Second user creation", success, f"User ID: {second_user_id}")
+        else:
+            self.log_test("Second user creation", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        # Complete profile for second user (same address for matching)
+        print("\n6️⃣ Completing Second User Profile...")
+        # Temporarily switch token
+        original_token = self.token
+        self.token = second_user_token
+        
+        response = self.make_request('PUT', 'users/profile/complete', profile_data, auth_required=True)
+        if response and response.status_code == 200:
+            self.log_test("Second user profile completion", True, "Profile completed")
+        else:
+            self.log_test("Second user profile completion", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 6: Family Join Request System
+        print("\n7️⃣ Testing Family Join Request System...")
+        join_data = {
+            "target_family_unit_id": family_unit_id,
+            "message": "Please let me join your family"
+        }
+        
+        response = self.make_request('POST', f'family-units/{family_unit_id}/join-request', join_data, auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            join_request_id = data.get("join_request_id")
+            success = (
+                join_request_id is not None and
+                data.get("status") == "PENDING" and
+                data.get("total_voters") >= 1 and
+                data.get("votes_required") >= 1
+            )
+            self.log_test("Family join request", success, f"Request ID: {join_request_id}, Status: {data.get('status')}")
+        else:
+            self.log_test("Family join request", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Switch back to original user (family head) for voting
+        self.token = original_token
+        
+        # Test 7: Pending Join Requests
+        print("\n8️⃣ Testing Pending Join Requests...")
+        response = self.make_request('GET', 'family-join-requests/pending', auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            requests = data.get("join_requests", [])
+            success = (
+                len(requests) >= 1 and
+                any(req.get("id") == join_request_id for req in requests)
+            )
+            self.log_test("Pending join requests", success, f"Found {len(requests)} pending requests")
+        else:
+            self.log_test("Pending join requests", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 8: Voting System
+        print("\n9️⃣ Testing Voting System...")
+        if join_request_id:
+            vote_data = {"vote": "APPROVE"}
+            
+            response = self.make_request('POST', f'family-join-requests/{join_request_id}/vote', vote_data, auth_required=True)
+            if response and response.status_code == 200:
+                data = response.json()
+                success = (
+                    data.get("vote_recorded") == True and
+                    data.get("majority_reached") == True  # Should auto-approve with 1 voter
+                )
+                self.log_test("Voting system", success, f"Vote recorded: {data.get('vote_recorded')}, Majority: {data.get('majority_reached')}")
+            else:
+                self.log_test("Voting system", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 9: Verify Member Added to Family
+        print("\n🔟 Verifying Member Added to Family...")
+        response = self.make_request('GET', 'family-units/my-units', auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            family_units = data.get("family_units", [])
+            target_family = next((fu for fu in family_units if fu.get("id") == family_unit_id), None)
+            success = target_family and target_family.get("member_count") == 2
+            self.log_test("Member count verification", success, f"Member count: {target_family.get('member_count') if target_family else 'N/A'}")
+        else:
+            self.log_test("Member count verification", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 10: Family Unit Posts
+        print("\n1️⃣1️⃣ Testing Family Unit Posts...")
+        post_data = {
+            "content": "This is a test family post",
+            "visibility": "FAMILY_ONLY"
+        }
+        
+        response = self.make_request('POST', f'family-units/{family_unit_id}/posts', post_data, auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            post_id = data.get("post_id")
+            success = post_id is not None
+            self.log_test("Family unit post creation", success, f"Post ID: {post_id}")
+        else:
+            self.log_test("Family unit post creation", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 11: Get Family Posts
+        print("\n1️⃣2️⃣ Testing Get Family Posts...")
+        response = self.make_request('GET', f'family-units/{family_unit_id}/posts', auth_required=True)
+        if response and response.status_code == 200:
+            data = response.json()
+            posts = data.get("posts", [])
+            success = len(posts) >= 1
+            self.log_test("Get family posts", success, f"Found {len(posts)} posts")
+        else:
+            self.log_test("Get family posts", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 12: Error Handling - Try to create family without completed profile
+        print("\n1️⃣3️⃣ Testing Error Handling...")
+        
+        # Create a third user without completing profile
+        third_user_data = {
+            "email": f"third_user_{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com",
+            "password": "testpass123",
+            "first_name": "Third",
+            "last_name": "User"
+        }
+        
+        response = self.make_request('POST', 'auth/register', third_user_data)
+        if response and response.status_code == 200:
+            third_user_token = response.json().get('access_token')
+            
+            # Try to create family without completing profile
+            temp_token = self.token
+            self.token = third_user_token
+            
+            response = self.make_request('POST', 'family-units', family_data, auth_required=True)
+            success = response and response.status_code == 400  # Should fail
+            self.log_test("Error handling - incomplete profile", success, f"Status: {response.status_code if response else 'No response'}")
+            
+            self.token = temp_token
+        
+        # Test 13: Try to vote twice (should fail)
+        print("\n1️⃣4️⃣ Testing Double Vote Prevention...")
+        if join_request_id:
+            vote_data = {"vote": "APPROVE"}
+            response = self.make_request('POST', f'family-join-requests/{join_request_id}/vote', vote_data, auth_required=True)
+            success = response and response.status_code == 400  # Should fail
+            self.log_test("Double vote prevention", success, f"Status: {response.status_code if response else 'No response'}")
+        
+        print("\n✅ New Family System Comprehensive Testing Complete!")
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting ZION.CITY API Tests...")
