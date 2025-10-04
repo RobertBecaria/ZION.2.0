@@ -1168,10 +1168,12 @@ function Dashboard() {
                     ) : (
                       <>
                         {activeModule === 'family' && (
-                          <FamilyTriggerFlow
-                            user={user}
-                            onUpdateUser={handleUpdateUser}
-                          />
+                          <ErrorBoundary>
+                            <FamilyTriggerFlow
+                              user={user}
+                              onUpdateUser={handleUpdateUser}
+                            />
+                          </ErrorBoundary>
                         )}
 
                         {activeModule === 'organizations' && (
