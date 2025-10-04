@@ -21,6 +21,14 @@ const FamilyTriggerFlow = ({ user, onUpdateUser }) => {
     try {
       const token = localStorage.getItem('zion_token');
       
+      if (!token) {
+        console.error('No auth token found');
+        setError('Ошибка авторизации');
+        setStep('create');
+        setLoading(false);
+        return;
+      }
+      
       // First, check if user already has family units
       const myUnitsResponse = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/family-units/my-units`,
@@ -31,10 +39,28 @@ const FamilyTriggerFlow = ({ user, onUpdateUser }) => {
 
       if (myUnitsResponse.ok) {
         const data = await myUnitsResponse.json();
-        if (data.family_units && data.family_units.length > 0) {
-          setUserFamilyUnits(data.family_units);
-          setSelectedFamily(data.family_units[0]);
-          setStep('dashboard');
+        
+        // Validate data structure
+        if (data && data.family_units && Array.isArray(data.family_units) && data.family_units.length > 0) {
+          // Filter valid family units only
+          const validUnits = data.family_units.filter(unit => 
+            unit && unit.id && unit.family_name && unit.family_surname
+          );
+          
+          if (validUnits.length > 0) {
+            setUserFamilyUnits(validUnits);
+            setSelectedFamily(validUnits[0]);
+            setStep('dashboard');
+            setLoading(false);
+            return;
+          }
+        }
+      } else if (myUnitsResponse.status === 400) {
+        // Profile not completed - this is expected
+        const errorData = await myUnitsResponse.json().catch(() => ({}));
+        if (errorData.detail && errorData.detail.includes('profile')) {
+          setError('Пожалуйста, завершите профиль');
+          setStep('create');
           setLoading(false);
           return;
         }
@@ -50,16 +76,20 @@ const FamilyTriggerFlow = ({ user, onUpdateUser }) => {
 
       if (matchResponse.ok) {
         const matchData = await matchResponse.json();
-        if (matchData.matches_found && matchData.matches.length > 0) {
+        if (matchData && matchData.matches_found && Array.isArray(matchData.matches) && matchData.matches.length > 0) {
           setMatches(matchData.matches);
           setStep('matches');
         } else {
           setStep('create');
         }
+      } else if (matchResponse.status === 400) {
+        // Profile not completed - show create form
+        setStep('create');
       } else {
         setStep('create');
       }
     } catch (err) {
+      console.error('Error checking family status:', err);
       setError('Ошибка при проверке семейного статуса');
       setStep('create');
     } finally {
