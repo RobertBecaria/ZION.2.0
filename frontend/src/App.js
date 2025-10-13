@@ -1193,6 +1193,11 @@ function Dashboard() {
                         onModuleFilterChange={setSelectedModuleFilter}
                         onModuleCountsUpdate={setMediaStats}
                       />
+                    ) : /* MY INFO Module Views */
+                    activeView === 'my-info' ? (
+                      <MyInfoPage />
+                    ) : activeView === 'my-documents' ? (
+                      <MyDocumentsPage />
                     ) : (
                       <>
                         {activeModule === 'family' && (
