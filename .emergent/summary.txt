@@ -1,72 +1,71 @@
 <analysis>
-The trajectory details a significant pivot from incremental feature development to a complete architectural redesign of the ZION.CITY Family Profile system. Initially, work focused on fixing a login issue and then implementing Phase 1 (backend) and Phase 2 (frontend) of a basic Family Profile and Phase 3A (invitations). However, the user then proposed an automated, hierarchical NODE/SUPER NODE family experience. This led to a decision to rebuild the entire Family module from scratch. The AI engineered the new backend with updated models, helper functions, and API endpoints, followed by a comprehensive frontend rebuild involving numerous new components, state management in , and extensive CSS. A critical red screen bug, caused by old family data incompatible with the new  component, was identified by the , fixed with error handling and an , and subsequently validated through successful backend and frontend automated testing. Documentation updates were also provided.
+The trajectory details a comprehensive evolution of the ZION.CITY platform. It began with the initial development and significant redesign of the Family Profile system, pivoting to a hierarchical NODE/SUPER NODE architecture. This phase included extensive backend and frontend work, culminating in fixing a critical red screen bug related to old family data with an . Subsequently, the focus shifted to introducing a MY INFO module. This involved defining new product requirements, implementing new backend models and API endpoints, creating dedicated frontend components, and integrating them into . The final stages involved iterative UI/UX enhancements, including fixing a persistent profile completion modal, adjusting page layouts for full-width content, resolving a blurry modal issue, and implementing a visually distinct privacy gadget in the sidebar for the MY INFO and MY DOCUMENTS sections. Each step was thoroughly tested and verified with screenshots.
 </analysis>
 
 <product_requirements>
-The ZION.CITY platform aims to implement a robust Family Profile system to complement individual user profiles. Initially, the goal was a shared profile with invite-only access, content control (child post approval), and dedicated pages. However, the requirements evolved significantly towards a more automated and hierarchical system:
+The ZION.CITY platform initially aimed for a Family Profile system with automated creation, intelligent matching (based on address/name), and a hierarchical NODE/SUPER NODE structure (Family Unit, Household). It required membership approval, address integration for family features, and privacy controls.
 
-1.  **Automated Creation**: A family profile (NODE) is implicitly created or triggered when a user engages with the family section, prompting for necessary address and marriage information.
-2.  **Intelligent Matching**: The system should proactively find existing family profiles based on address, last name, and potentially phone numbers. If a match is found, the user requests to join rather than creating a duplicate.
-3.  **Hierarchical Structure (NODE/SUPER NODE)**:
-    *   **Family Unit (NODE)**: Represents a nuclear family (e.g., John & Mary Smith, or Son Mike & Wife Sarah). Posts are made on behalf of this unit.
-    *   **Household (SUPER NODE)**: Represents multiple Family Units residing at the same address (e.g., The Smith Household containing John's family, Mike's family, and Grandparents).
-4.  **Membership & Approval**: New members (individuals or entire family units joining a Household) require a majority vote from existing family unit heads.
-5.  **Address Integration**: An address field is required for user profiles, though not mandatory for signup, it's essential for family features.
-6.  **Privacy & Filtering**: Posts can be filtered to be visible only to specific family members or units, preventing unnecessary clutter.
-7.  **Complete Redesign**: The user explicitly requested rebuilding the entire Family module from scratch to align with the new NODE/SUPER NODE architecture and Single Source of Truth data philosophy.
+More recently, the focus expanded to a MY INFO module, serving as a centralized Single Source of Truth for all user personal data across 8 platform sections. Key requirements include:
+1.  **Data Centralization**: Replace existing user data with a single hub for consistent data.
+2.  **User Control & Privacy**: All data is private, encrypted, requires user approval for external requests, with full audit logging.
+3.  **Name Management**: Support Alias for display and Legal Name for official documents.
+4.  **Personal Information**: Capture Date of Birth, multiple phone numbers (with country support), Residency and Legal Addresses.
+5.  **MY DOCUMENTS Section**: Allow users to upload and manage various document types (Passport, Traveling Passport, Driver's License) with specific data fields, visible only to the user, and explicitly not appearing in photo galleries.
+6.  **Extensibility**: Designed for future API integrations and additional data types (e.g., school/work history).
 </product_requirements>
 
 <key_technical_concepts>
--   **Backend**: FastAPI for REST API, Pydantic for data validation, MongoDB for NoSQL storage, UUIDs for identifiers, JWT for authentication,  and ISO strings for date handling.
--   **Frontend**: React with hooks for UI and state management, React Error Boundaries for fault tolerance.
--   **Architecture**: NODE/SUPER NODE hierarchical structure for family units and households.
--   **Utilities**: Custom CSS for styling,  for debugging.
+-   **Backend**: FastAPI for REST APIs, Pydantic for data validation, MongoDB for storage (using UUIDs, not ObjectIDs), JWT for authentication, timezone-aware .
+-   **Frontend**: React with hooks for UI/state, React Error Boundaries for fault tolerance, custom CSS for styling.
+-   **Architecture**: NODE/SUPER NODE for family hierarchy, Single Source of Truth for user data.
+-   **Debugging**:  used for complex bug resolution.
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a monolithic repository structure with distinct frontend and backend directories.
+The application uses a monolithic repository structure with  and  directories.
 
 
 
 -   ****
     -   **Importance**: Centralizes all backend API logic, database models, and authentication.
-    -   **Changes Made**: Completely refactored the Family Profile system. New Pydantic models (e.g., for , , ) and corresponding enums were introduced to support the NODE/SUPER NODE architecture. Extensive new API endpoints were added for intelligent matching, creating family units, managing household memberships, and handling join requests. Old family-related models and endpoints were either modified or deprecated in favor of the new structure. Helper functions for family logic were also added.
+    -   **Changes Made**: Extended  Pydantic model with , , . Introduced new Pydantic models (, , , , , , , ) and corresponding API endpoints (, , , ) for the MY INFO module. Updated  and ,  endpoints to include , , . Fixed a duplicate  function.
 -   ****
     -   **Importance**: Main entry point, managing routing, global state, and application layout.
-    -   **Changes Made**: Heavily updated to integrate the new family system. New React states (e.g., , ) were added. It now imports and orchestrates the new family components, particularly  and . Old family-related components are no longer directly rendered. An  component was wrapped around the  to gracefully handle unexpected runtime errors, specifically addressing a bug related to old family data.
+    -   **Changes Made**: Integrated new  and  components. Updated state management () and  to use  from  to avoid page reloads. Added navigation items for МОЯ ИНФОРМАЦИЯ and МОИ ДОКУМЕНТЫ to the sidebar. Modified main content rendering to conditionally display  or . Updated content area width logic to initially render MY INFO pages full-width, then reverted to standard layout to accommodate a new custom sidebar gadget ().
 -   ****
     -   **Importance**: Contains global and component-specific styling.
-    -   **Changes Made**: A substantial amount of new CSS was appended to style the newly created family-related components (e.g., forms, dashboards, cards, modals) to match the application's design language.
--   **** (New Files)
-    -   **Importance**: These new components encapsulate the user-facing functionality for the rebuilt Family Profile system.
-    -   **Files Created**:
-        -   : Guides users to input necessary address and marriage status for family features.
-        -   : Manages the overall flow of family interaction (profile completion, matching, creation, dashboard display).
-        -   : UI for showing potential family matches based on user input.
-        -   : Form for users to create a new Family Unit.
-        -   : Displays the dashboard and content for a user's associated Family Unit.
-        -   : Displays incoming or outgoing requests to join families/households.
-        -   : A reusable component for displaying compact family profile information.
-        -   : Displays the content wall specific to a Family Unit or Household.
+    -   **Changes Made**: Added substantial new CSS for , , and related elements (forms, cards, modal overlays). Specifically, 's  was removed to fix a blurry modal issue. New styles for the  were added, including gradient backgrounds and information styling.
+-   ****
+    -   **Importance**: Modal for initial profile data collection.
+    -   **Changes Made**: Updated  prop to correctly pass collected data.
+-   **** (New File)
+    -   **Importance**: Handles user's personal information (name, DOB, phone, addresses, marriage status).
+    -   **Changes Made**: Created with forms for various personal details. Later modified to remove bottom info notes to prepare for sidebar gadget integration.
+-   **** (New File)
+    -   **Importance**: Manages user's uploaded documents (passports, driver's licenses).
+    -   **Changes Made**: Created with UI for displaying and adding documents. Later modified to remove bottom info notes to prepare for sidebar gadget integration.
 </code_architecture>
 
 <pending_tasks>
 -   **Family Subscription System**: Allow families to subscribe to other families' public updates.
--   **Enhanced Family Profile Pages**: Implement the family member directory, milestones timeline, and photo albums for the new NODE/SUPER NODE structure.
--   **Advanced Family Posts**: Implement the child post approval workflow and other rich content types within the new architecture.
--   **Notifications & Integration**: Integrate family activities into the main notification system and the .
+-   **Enhanced Family Profile Pages**: Implement member directory, milestones, photo albums for NODE/SUPER NODE.
+-   **Advanced Family Posts**: Implement child post approval workflow and rich content types.
+-   **Notifications & Integration**: Integrate family activities into the main notification system and .
+-   **Document OCR**: Implement optical character recognition for document scans.
+-   **External API Integration**: Define API endpoints, user approval, and audit logging for external services to request user info.
+-   **Document Upload Implementation**: Fully implement the frontend upload functionality within  using the existing media system.
 </pending_tasks>
 
 <current_work>
-The immediate work focused on a complete rebuild of the Family Profile system, including both backend and frontend, based on the new NODE/SUPER NODE architecture.
-**Backend**: New Pydantic models for , , and related entities were integrated into . Corresponding helper functions for intelligent matching and API endpoints for managing this new hierarchical structure were also added. Backend testing initially showed a 96.7% pass rate.
-**Frontend**: A new set of React components (, , , , , , , ) was developed.  was significantly refactored to integrate these new components, manage state related to the family flow (e.g., profile completion), and append new CSS to .
+The immediate work involved developing and refining the MY INFO module. On the **backend**, new Pydantic models for user documents and an extended  model were implemented in , along with API endpoints for managing personal info and documents. Crucially,  and ,  endpoints were updated to return the  flag and other user data, which was essential for frontend logic.
 
-A critical bug was reported by the user (red screen when clicking the family button). This was debugged, and the  identified the root cause: an incompatibility between the user's existing old system family data (6 memberships) and the  component's expectation of new system data. The fix involved adding robust error handling within  for the  API call and wrapping the  component in  with a React  for graceful failure.
-
-Finally, comprehensive backend and frontend automated testing was performed, confirming a 77.1% success rate for backend tests (27/35 passed, backend working correctly) and successful frontend and e2e tests, indicating that the rebuilt Family Module and the bug fix are now functional and stable.
+On the **frontend**, new components  and  were created.  was refactored to integrate these components, adding navigation links, and managing state. A key fix addressed the  continuously popping up by ensuring the  flag was correctly updated via  upon completion, preventing unnecessary modal displays. UI/UX improvements included:
+1.  Initially setting MY INFO pages to take 100% content width by hiding the  sidebar.
+2.  Later, reverting the full-width setting and resolving a blurry modal issue by removing the  from the  CSS.
+3.  Finally, creating and integrating a distinct yellow-gradient privacy gadget into the right sidebar of both MY INFO and MY DOCUMENTS pages, providing contextual information about data privacy and document handling, improving aesthetic and functional layout.
+All implemented features and fixes have been visually verified with screenshots and backend API tests.
 </current_work>
 
 <optional_next_step>
-The immediate task of fixing the red screen error and validating the new Family Profile system via comprehensive testing is concluded. The next step is to await the user's explicit instructions for further development.
+Implement the frontend document upload functionality within  using the existing media upload system.
 </optional_next_step>

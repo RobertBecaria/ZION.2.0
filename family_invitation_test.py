@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 import uuid
 
 class FamilyInvitationSystemTester:
-    def __init__(self, base_url="https://kin-connect-9.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://myinfo-portal.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

@@ -74,7 +74,7 @@ const FamilyInvitationModal = ({
 
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://kin-connect-9.preview.emergentagent.com';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://myinfo-portal.preview.emergentagent.com';
       
       const response = await fetch(`${backendUrl}/api/family-profiles/${familyId}/invite`, {
         method: 'POST',

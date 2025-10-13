@@ -5,7 +5,7 @@ import json
 
 def test_family_profile_system():
     """Simple test of Family Profile System core functionality"""
-    base_url = "https://kin-connect-9.preview.emergentagent.com/api"
+    base_url = "https://myinfo-portal.preview.emergentagent.com/api"
     
     # Login
     print("🔍 Testing login...")
