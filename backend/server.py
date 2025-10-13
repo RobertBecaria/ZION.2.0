@@ -1484,7 +1484,15 @@ async def login_user(login_data: UserLogin):
         is_verified=user.is_verified,
         privacy_settings=user.privacy_settings,
         created_at=user.created_at,
-        affiliations=affiliations
+        affiliations=affiliations,
+        # Family system fields
+        address_street=user.address_street,
+        address_city=user.address_city,
+        address_state=user.address_state,
+        address_country=user.address_country,
+        address_postal_code=user.address_postal_code,
+        marriage_status=user.marriage_status,
+        profile_completed=user.profile_completed
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)
