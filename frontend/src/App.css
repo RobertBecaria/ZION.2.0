@@ -3864,7 +3864,7 @@ select:focus {
 }
 
 .event-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #1A5E3B;
   margin: 0 0 12px 0;
@@ -3872,7 +3872,7 @@ select:focus {
 }
 
 .event-description {
-  font-size: 14px;
+  font-size: 15px;
   color: #4A4A4A;
   line-height: 1.6;
   margin: 0 0 16px 0;
