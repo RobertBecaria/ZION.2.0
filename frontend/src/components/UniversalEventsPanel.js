@@ -182,42 +182,42 @@ function UniversalEventsPanel({
   };
 
   return (
-    <div className="universal-events-panel">
-      <div className="panel-header" style={{ borderBottomColor: moduleColor }}>
-        <h4>{getContextTitle()}</h4>
+    <div className="universal-events-panel family-events-redesign">
+      {/* Tabs - Скоро / Все события */}
+      <div className="events-tabs">
         <button 
-          className="create-action-btn"
-          onClick={() => setShowActionForm(!showActionForm)}
-          style={{ color: moduleColor }}
+          className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
+          onClick={() => setActiveTab('upcoming')}
+          style={{ 
+            backgroundColor: activeTab === 'upcoming' ? '#4CAF50' : 'transparent',
+            color: activeTab === 'upcoming' ? 'white' : '#1A5E3B'
+          }}
         >
-          <Plus size={20} />
+          Скоро
         </button>
-      </div>
-
-      {/* Quick Action Buttons */}
-      <div className="quick-actions">
-        {getQuickActions().map((action) => {
-          const IconComponent = action.icon;
-          return (
-            <button 
-              key={action.type}
-              className="quick-action-btn"
-              onClick={() => {
-                setActionForm({ ...actionForm, action_type: action.type, title: action.title });
-                setShowActionForm(true);
-              }}
-              style={{ borderColor: moduleColor, color: moduleColor }}
-            >
-              <IconComponent size={16} />
-              <span>{action.title}</span>
-            </button>
-          );
-        })}
+        <button 
+          className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+          style={{ 
+            backgroundColor: activeTab === 'all' ? '#4CAF50' : 'transparent',
+            color: activeTab === 'all' ? 'white' : '#1A5E3B'
+          }}
+        >
+          Все события
+        </button>
+        <button 
+          className="create-event-btn"
+          onClick={() => setShowActionForm(!showActionForm)}
+          style={{ backgroundColor: '#4CAF50' }}
+        >
+          <Plus size={16} />
+          Создать событие
+        </button>
       </div>
 
       {/* Action Creation Form */}
       {showActionForm && (
-        <div className="action-form">
+        <div className="action-form-card">
           <form onSubmit={createScheduledAction}>
             <div className="form-group">
               <input
@@ -268,70 +268,101 @@ function UniversalEventsPanel({
               <button 
                 type="submit" 
                 className="btn-create"
-                style={{ backgroundColor: moduleColor }}
                 disabled={loading}
+                style={{ backgroundColor: '#4CAF50' }}
               >
-                Создать
+                {loading ? 'Создание...' : 'Создать'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Scheduled Actions List */}
-      <div className="actions-list">
+      {/* Event Cards List */}
+      <div className="events-card-list">
         {scheduledActions.length === 0 ? (
-          <div className="empty-actions">
-            <Calendar size={32} color="#9ca3af" />
+          <div className="empty-events-state">
+            <Calendar size={48} color="#A5D6A7" />
             <p>Нет запланированных событий</p>
-            <small>Создайте первое событие</small>
+            <small>Создайте первое событие для вашей семьи</small>
           </div>
         ) : (
-          scheduledActions.map((action) => (
-            <div
-              key={action.id}
-              className={`action-item ${action.is_completed ? 'completed' : ''}`}
-              style={{ borderLeftColor: action.color_code || moduleColor }}
-            >
-              <div className="action-header">
-                <div className="action-icon" style={{ color: action.color_code || moduleColor }}>
-                  {getActionIcon(action.action_type)}
+          scheduledActions
+            .filter(action => {
+              if (activeTab === 'upcoming') {
+                const eventDate = new Date(action.scheduled_date);
+                const now = new Date();
+                return eventDate >= now && !action.is_completed;
+              }
+              return true;
+            })
+            .map((action) => (
+              <div
+                key={action.id}
+                className={`event-card ${action.is_completed ? 'completed' : ''}`}
+              >
+                {/* Event Image/Icon Header */}
+                <div className="event-card-header" style={{ background: `linear-gradient(135deg, ${moduleColor} 0%, #4CAF50 100%)` }}>
+                  <div className="event-icon-large">
+                    {getActionIcon(action.action_type)}
+                  </div>
                 </div>
-                <div className="action-details">
-                  <h5>{action.title}</h5>
-                  <div className="action-meta">
-                    <div className="detail-item">
-                      <Calendar size={12} />
-                      <span>{formatDate(action.scheduled_date)}</span>
-                    </div>
+
+                {/* Event Content */}
+                <div className="event-card-content">
+                  <div className="event-time">
+                    <Clock size={14} />
+                    <span>{formatTimeAgo(action.scheduled_date)}</span>
+                  </div>
+                  
+                  <h3 className="event-title">{action.title}</h3>
+                  
+                  {action.description && (
+                    <p className="event-description">{action.description}</p>
+                  )}
+
+                  <div className="event-meta-info">
                     {action.scheduled_time && (
-                      <div className="detail-item">
-                        <Clock size={12} />
+                      <div className="meta-item">
+                        <Clock size={14} />
                         <span>{action.scheduled_time}</span>
                       </div>
                     )}
                     {action.location && (
-                      <div className="detail-item">
-                        <MapPin size={12} />
+                      <div className="meta-item">
+                        <MapPin size={14} />
                         <span>{action.location}</span>
                       </div>
                     )}
                   </div>
+
+                  {/* Interaction Buttons */}
+                  <div className="event-actions">
+                    <button className="event-action-btn">
+                      <ThumbsUp size={16} />
+                      <span>46</span>
+                    </button>
+                    <button className="event-action-btn">
+                      <MessageCircle size={16} />
+                      <span>12</span>
+                    </button>
+                    <button className="event-action-btn">
+                      <Share2 size={16} />
+                      <span>Поделиться</span>
+                    </button>
+                    {!action.is_completed && (
+                      <button
+                        onClick={() => completeAction(action.id)}
+                        className="join-event-btn"
+                        style={{ backgroundColor: '#4CAF50' }}
+                      >
+                        Присоединиться
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => completeAction(action.id)}
-                  className={`complete-btn ${action.is_completed ? 'completed' : ''}`}
-                  disabled={action.is_completed}
-                >
-                  <CheckCircle size={16} />
-                </button>
               </div>
-              {action.description && (
-                <p className="action-description">{action.description}</p>
-              )}
-              <div className="action-type">{action.action_type}</div>
-            </div>
-          ))
+            ))
         )}
       </div>
     </div>
