@@ -431,6 +431,14 @@ class UserResponse(BaseModel):
     privacy_settings: PrivacySettings
     created_at: datetime
     affiliations: Optional[List[Dict[str, Any]]] = []
+    # Family system fields
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_country: Optional[str] = None
+    address_postal_code: Optional[str] = None
+    marriage_status: Optional[str] = None
+    profile_completed: bool = False
 
 class AffiliationCreate(BaseModel):
     name: str
