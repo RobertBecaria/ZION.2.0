@@ -1869,15 +1869,15 @@ body {
 
 .author-info h5 {
   color: #1C1E21;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   margin: 0 0 0.125rem 0;
   line-height: 1.2;
 }
 
 .post-time {
   color: #65676B;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .post-menu-btn {
@@ -1901,8 +1901,8 @@ body {
 
 .post-content p {
   color: #1C1E21;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
   margin: 0;
 }
 
