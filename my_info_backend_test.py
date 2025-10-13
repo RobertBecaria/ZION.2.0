@@ -603,9 +603,10 @@ class MyInfoModuleAPITester:
         success_count = 0
         total_tests = 3
         
-        # Test 1: 404 for non-existent document ID
+        # Test 1: 404 for non-existent document ID (using update endpoint since there's no GET single document)
         fake_document_id = str(uuid.uuid4())
-        response = self.make_request('GET', f'my-documents/{fake_document_id}', auth_required=True)
+        update_data = {"document_number": "test"}
+        response = self.make_request('PUT', f'my-documents/{fake_document_id}', update_data, auth_required=True)
         
         if response and response.status_code == 404:
             success_count += 1
