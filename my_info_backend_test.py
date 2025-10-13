@@ -526,18 +526,19 @@ class MyInfoModuleAPITester:
                 # Verify scan upload was successful
                 success = (
                     'scan_file_id' in data and
-                    'scan_file_url' in data and
+                    'scan_url' in data and
                     data.get('scan_file_id') is not None and
-                    data.get('scan_file_url') is not None
+                    data.get('scan_url') is not None and
+                    data.get('message') == 'Scan uploaded successfully'
                 )
                 
                 if success:
                     self.log_test("Upload document scan", True, f"Scan uploaded successfully")
                     print(f"   Scan File ID: {data.get('scan_file_id')}")
-                    print(f"   Scan File URL: {data.get('scan_file_url')}")
+                    print(f"   Scan URL: {data.get('scan_url')}")
                     return True
                 else:
-                    self.log_test("Upload document scan", False, "Invalid scan upload response")
+                    self.log_test("Upload document scan", False, f"Invalid scan upload response: {data}")
             else:
                 error_msg = f"Status: {response.status_code}" if response else "No response"
                 self.log_test("Upload document scan", False, error_msg)
