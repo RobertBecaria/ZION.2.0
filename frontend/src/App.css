@@ -3907,13 +3907,13 @@ select:focus {
   background: none;
   border: none;
   color: #65676B;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -3921,24 +3921,26 @@ select:focus {
 .event-action-btn:hover {
   background: #F3F4F6;
   color: #1A5E3B;
+  transform: scale(1.05);
 }
 
 .join-event-btn {
   background: #4CAF50;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 12px 24px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   transition: all 0.2s ease;
   margin-left: auto;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .join-event-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
 }
 
 /* Empty State */
