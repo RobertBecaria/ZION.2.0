@@ -126,6 +126,21 @@ function UniversalEventsPanel({
     });
   };
 
+  const formatTimeAgo = (dateString) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = eventDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Сегодня';
+    if (diffDays === 1) return 'Завтра';
+    if (diffDays > 1) return `Через ${diffDays} дней`;
+    if (diffDays === -1) return 'Вчера';
+    if (diffDays < -1) return `${Math.abs(diffDays)} дней назад`;
+    
+    return formatDate(dateString);
+  };
+
   const getActionIcon = (actionType) => {
     switch (actionType) {
       case 'REMINDER':
