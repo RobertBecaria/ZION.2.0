@@ -101,6 +101,9 @@ const FamilyPostComposer = ({ familyUnit, user, onPostCreated }) => {
             type="submit"
             className="btn-primary btn-post"
             disabled={!content.trim() || posting}
+            style={{ background: '#4CAF50' }}
+            onMouseOver={(e) => !e.target.disabled && (e.target.style.background = '#45a049')}
+            onMouseOut={(e) => !e.target.disabled && (e.target.style.background = '#4CAF50')}
           >
             <Send size={18} />
             {posting ? 'Публикация...' : 'Опубликовать'}
