@@ -135,7 +135,7 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
           {familyProfiles.map((family) => (
             <div key={family.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
               {/* Family Cover */}
-              <div className="h-32 bg-gradient-to-r from-green-400 to-green-600 relative">
+              <div className="h-32 relative" style={{ background: 'linear-gradient(135deg, #30A67E 0%, #4CAF50 100%)' }}>
                 {family.family_photo_url ? (
                   <img 
                     src={family.family_photo_url} 
@@ -143,7 +143,7 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-r from-green-400 to-green-600" />
+                  <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, #30A67E 0%, #4CAF50 100%)' }} />
                 )}
                 
                 {/* Privacy Indicator */}
