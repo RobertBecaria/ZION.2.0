@@ -217,7 +217,10 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => onViewFamily(family.id)}
-                    className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+                    className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+                    style={{ background: '#E8F5E9', color: '#1A5E3B' }}
+                    onMouseOver={(e) => e.target.style.background = '#C8E6C9'}
+                    onMouseOut={(e) => e.target.style.background = '#E8F5E9'}
                   >
                     <Eye className="w-4 h-4" />
                     <span className="text-sm font-medium">Просмотр</span>
