@@ -3803,6 +3803,252 @@ async def get_family_unit_posts(
 
 # === END NEW FAMILY SYSTEM API ENDPOINTS ===
 
+# === MY INFO MODULE API ENDPOINTS ===
+
+@api_router.get("/my-info", response_model=MyInfoResponse)
+async def get_my_info(current_user: User = Depends(get_current_user)):
+    """Get complete MY INFO data for current user"""
+    return MyInfoResponse(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        middle_name=current_user.middle_name,
+        name_alias=current_user.name_alias,
+        phone=current_user.phone,
+        date_of_birth=current_user.date_of_birth,
+        address_street=current_user.address_street,
+        address_city=current_user.address_city,
+        address_state=current_user.address_state,
+        address_country=current_user.address_country,
+        address_postal_code=current_user.address_postal_code,
+        marriage_status=current_user.marriage_status,
+        spouse_name=current_user.spouse_name,
+        spouse_phone=current_user.spouse_phone,
+        profile_completed=current_user.profile_completed,
+        additional_user_data=current_user.additional_user_data,
+        created_at=current_user.created_at,
+        updated_at=current_user.updated_at
+    )
+
+@api_router.put("/my-info", response_model=MyInfoResponse)
+async def update_my_info(
+    info_update: MyInfoUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update MY INFO data"""
+    update_data = {}
+    
+    if info_update.name_alias is not None:
+        update_data["name_alias"] = info_update.name_alias
+    
+    if info_update.additional_user_data is not None:
+        # Merge with existing additional_user_data
+        existing_data = current_user.additional_user_data or {}
+        existing_data.update(info_update.additional_user_data)
+        update_data["additional_user_data"] = existing_data
+    
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": update_data}
+        )
+    
+    # Fetch updated user
+    updated_user = await get_user_by_id(current_user.id)
+    return MyInfoResponse(
+        id=updated_user.id,
+        email=updated_user.email,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        middle_name=updated_user.middle_name,
+        name_alias=updated_user.name_alias,
+        phone=updated_user.phone,
+        date_of_birth=updated_user.date_of_birth,
+        address_street=updated_user.address_street,
+        address_city=updated_user.address_city,
+        address_state=updated_user.address_state,
+        address_country=updated_user.address_country,
+        address_postal_code=updated_user.address_postal_code,
+        marriage_status=updated_user.marriage_status,
+        spouse_name=updated_user.spouse_name,
+        spouse_phone=updated_user.spouse_phone,
+        profile_completed=updated_user.profile_completed,
+        additional_user_data=updated_user.additional_user_data,
+        created_at=updated_user.created_at,
+        updated_at=updated_user.updated_at
+    )
+
+@api_router.get("/my-documents", response_model=List[UserDocumentResponse])
+async def get_my_documents(current_user: User = Depends(get_current_user)):
+    """Get all documents for current user"""
+    documents = await db.user_documents.find({
+        "user_id": current_user.id,
+        "is_active": True
+    }).to_list(100)
+    
+    # Enrich with scan file URLs
+    enriched_docs = []
+    for doc in documents:
+        doc.pop("_id", None)
+        scan_url = None
+        if doc.get("scan_file_id"):
+            # Get file URL from media system
+            scan_url = f"/uploads/{current_user.id}/{doc['scan_file_id']}"
+        
+        enriched_docs.append(UserDocumentResponse(
+            **doc,
+            scan_file_url=scan_url
+        ))
+    
+    return enriched_docs
+
+@api_router.post("/my-documents", response_model=UserDocumentResponse)
+async def create_document(
+    document: UserDocumentCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new document"""
+    new_doc = UserDocument(
+        user_id=current_user.id,
+        document_type=document.document_type,
+        country=document.country,
+        document_number=document.document_number,
+        document_data=document.document_data
+    )
+    
+    await db.user_documents.insert_one(new_doc.dict())
+    
+    return UserDocumentResponse(
+        **new_doc.dict(),
+        scan_file_url=None
+    )
+
+@api_router.put("/my-documents/{document_id}", response_model=UserDocumentResponse)
+async def update_document(
+    document_id: str,
+    document_update: UserDocumentUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update an existing document"""
+    # Verify document belongs to user
+    existing_doc = await db.user_documents.find_one({
+        "id": document_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not existing_doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Build update data
+    update_data = {"updated_at": datetime.now(timezone.utc)}
+    
+    if document_update.country is not None:
+        update_data["country"] = document_update.country
+    
+    if document_update.document_number is not None:
+        update_data["document_number"] = document_update.document_number
+    
+    if document_update.document_data is not None:
+        # Merge with existing document_data
+        existing_data = existing_doc.get("document_data", {})
+        existing_data.update(document_update.document_data)
+        update_data["document_data"] = existing_data
+    
+    await db.user_documents.update_one(
+        {"id": document_id},
+        {"$set": update_data}
+    )
+    
+    # Fetch updated document
+    updated_doc = await db.user_documents.find_one({"id": document_id})
+    updated_doc.pop("_id", None)
+    
+    scan_url = None
+    if updated_doc.get("scan_file_id"):
+        scan_url = f"/uploads/{current_user.id}/{updated_doc['scan_file_id']}"
+    
+    return UserDocumentResponse(
+        **updated_doc,
+        scan_file_url=scan_url
+    )
+
+@api_router.delete("/my-documents/{document_id}")
+async def delete_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a document (soft delete)"""
+    result = await db.user_documents.update_one(
+        {
+            "id": document_id,
+            "user_id": current_user.id,
+            "is_active": True
+        },
+        {
+            "$set": {
+                "is_active": False,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    return {"message": "Document deleted successfully"}
+
+@api_router.post("/my-documents/{document_id}/upload-scan")
+async def upload_document_scan(
+    document_id: str,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload scan for a document"""
+    # Verify document belongs to user
+    existing_doc = await db.user_documents.find_one({
+        "id": document_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not existing_doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Validate file
+    is_valid, message = validate_file(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    
+    # Save file using existing media system
+    media_file = await save_uploaded_file(file, current_user.id)
+    media_file.source_module = "my_documents"
+    media_file.privacy_level = "private"  # Documents are always private
+    
+    # Save to database
+    await db.media_files.insert_one(media_file.dict())
+    
+    # Update document with scan reference
+    await db.user_documents.update_one(
+        {"id": document_id},
+        {
+            "$set": {
+                "scan_file_id": media_file.id,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    return {
+        "message": "Scan uploaded successfully",
+        "scan_file_id": media_file.id,
+        "scan_url": f"/uploads/{current_user.id}/{media_file.stored_filename}"
+    }
+
+# === END MY INFO MODULE API ENDPOINTS ===
+
 # Basic status endpoints
 @api_router.get("/")
 async def root():
