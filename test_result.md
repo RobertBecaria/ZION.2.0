@@ -285,7 +285,20 @@ frontend:
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Phase 4: Complete Family Profile System Rebuild - Implementing NODE and SUPER NODE architecture for intelligent family management. Auto-create family profiles by default, intelligent matching system by address+last name+phone, family unit (NODE) and household (SUPER NODE) structure, voting system for family joins (majority approval), posts on behalf of family units with visibility filters (FAMILY_ONLY, HOUSEHOLD_ONLY, PUBLIC)."
+user_problem_statement: "MY INFO MODULE - MVP Implementation: Build a centralized user information repository (MY INFO) with document management (MY DOCUMENTS). Implement backend API endpoints for user profile data management including name alias support, extensible additional_user_data field, and document CRUD operations (PASSPORT, TRAVELING_PASSPORT, DRIVERS_LICENSE). Frontend components for displaying/editing MY INFO and managing documents with scan upload capability using existing media system. Focus on extensibility for future fields and privacy (documents visible only to owner)."
+
+backend:
+  - task: "MY INFO Module Backend Implementation - MVP"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "MY INFO MODULE BACKEND MVP IMPLEMENTATION: Complete backend system for centralized user information management including: 1) Extended User Model - Added name_alias field for display name (vs legal name), additional_user_data Dict field for future extensibility (allows dynamic field additions), leveraged existing Family Phase 4 fields (address, marriage_status, spouse info), 2) UserDocument Model - New Pydantic model for legal documents with DocumentType enum (PASSPORT, TRAVELING_PASSPORT, DRIVERS_LICENSE), country and document_number base fields, extensible document_data Dict for document-specific fields (series, issued_by, issue_date, expiry_date, categories, etc.), scan_file_id reference to existing media system, 3) API Endpoints Implemented - GET /api/my-info returns complete user profile with all fields including alias and additional_user_data, PUT /api/my-info updates name_alias and merges additional_user_data, GET /api/my-documents lists user's documents with scan URLs, POST /api/my-documents creates new document with flexible data structure, PUT /api/my-documents/{id} updates document with data merging, DELETE /api/my-documents/{id} soft-deletes document, POST /api/my-documents/{id}/upload-scan uploads document scan using existing media system, 4) Response Models - MyInfoResponse with complete user data structure, UserDocumentResponse with scan_file_url enrichment, proper datetime handling and UUID generation, 5) Extensibility Features - Dict-based additional_user_data allows adding new user fields without schema migration, Dict-based document_data supports country-specific document fields, extensible for future document types, 6) Privacy & Security - All documents private by default (is_active soft delete), scan files use existing media system with private privacy_level, proper user authentication required for all endpoints, users can only access their own documents, 7) Integration - Leverages existing media upload system for document scans, uses existing User model fields from Family Phase 4, MongoDB collection 'user_documents' for document storage, proper error handling with 404/400/403 status codes. Ready for comprehensive backend testing with curl or testing agent."
 
 backend:
   - task: "New Family System Backend Implementation - Phase 4"
