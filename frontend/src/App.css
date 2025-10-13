@@ -3747,17 +3747,17 @@ select:focus {
 .events-tabs {
   display: flex;
   gap: 12px;
-  padding: 16px;
+  padding: 20px;
   background: #F8F8F8;
   border-radius: 12px 12px 0 0;
   border-bottom: 1px solid #E4E6EA;
 }
 
 .tab-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -3766,27 +3766,28 @@ select:focus {
 
 .tab-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
 }
 
 .create-event-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
   color: white;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: all 0.2s ease;
   flex: 1.5;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .create-event-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
 }
 
 /* Action Form Card */
