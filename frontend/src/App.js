@@ -896,7 +896,7 @@ function Dashboard() {
   }
 
   const modules = [
-    { key: 'family', name: 'Семья', color: '#059669' },
+    { key: 'family', name: 'Семья', color: '#30A67E' },
     { key: 'news', name: 'Новости', color: '#1D4ED8' },
     { key: 'journal', name: 'Журнал', color: '#6D28D9' },
     { key: 'services', name: 'Сервисы', color: '#B91C1C' },
