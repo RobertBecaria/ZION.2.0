@@ -734,7 +734,7 @@ function Dashboard() {
   // NEW FAMILY SYSTEM STATES
   const [showProfileCompletionModal, setShowProfileCompletionModal] = useState(false);
   
-  const { user, logout } = useAuth();
+  const { user, logout, refreshProfile } = useAuth();
 
   // Check if user needs to complete profile for family system
   useEffect(() => {
