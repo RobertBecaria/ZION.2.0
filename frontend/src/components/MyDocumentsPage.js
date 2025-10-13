@@ -661,22 +661,64 @@ const MyDocumentsPage = () => {
                   <div className="document-scan">
                     {doc.scan_file_url ? (
                       <div className="scan-preview">
-                        <img src={`${BACKEND_URL}${doc.scan_file_url}`} alt="Скан документа" />
+                        <div className="scan-image-wrapper">
+                          <img src={`${BACKEND_URL}${doc.scan_file_url}`} alt="Скан документа" />
+                          <button 
+                            className="btn-replace-scan"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload size={16} />
+                            Заменить скан
+                          </button>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*,.pdf"
+                          style={{ display: 'none' }}
+                          onChange={(e) => handleFileSelect(doc.id, e)}
+                        />
                       </div>
                     ) : (
                       <div className="upload-area">
-                        <Upload size={24} />
-                        <p>Загрузить скан документа</p>
-                        <input
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) handleUploadScan(doc.id, file);
-                          }}
-                          disabled={uploadingFile === doc.id}
-                        />
-                        {uploadingFile === doc.id && <p className="uploading">Загрузка...</p>}
+                        {uploadingFile === doc.id ? (
+                          <div className="upload-progress-container">
+                            <div className="upload-spinner"></div>
+                            <p className="uploading">Загрузка... {uploadProgress[doc.id] || 0}%</p>
+                            <div className="progress-bar">
+                              <div 
+                                className="progress-fill"
+                                style={{ width: `${uploadProgress[doc.id] || 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="upload-icon-wrapper">
+                              <div className="upload-icon-bg">
+                                <Upload size={32} />
+                              </div>
+                            </div>
+                            <h4>Загрузить скан документа</h4>
+                            <p className="upload-hint">PDF, JPG, PNG или GIF (макс. 10MB)</p>
+                            <label className="btn-upload">
+                              <File size={16} />
+                              Выбрать файл
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,.pdf"
+                                onChange={(e) => handleFileSelect(doc.id, e)}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
+                            {uploadError && (
+                              <div className="upload-error">
+                                <AlertCircle size={16} />
+                                {uploadError}
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
