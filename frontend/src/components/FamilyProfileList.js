@@ -92,7 +92,10 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
         
         <button
           onClick={onCreateFamily}
-          className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="flex items-center space-x-2 px-6 py-3 text-white rounded-lg transition-colors"
+          style={{ background: '#4CAF50' }}
+          onMouseOver={(e) => e.target.style.background = '#45a049'}
+          onMouseOut={(e) => e.target.style.background = '#4CAF50'}
         >
           <Plus className="w-5 h-5" />
           <span>Создать семейный профиль</span>
