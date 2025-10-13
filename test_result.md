@@ -288,6 +288,21 @@ frontend:
 user_problem_statement: "MY INFO MODULE - MVP Implementation: Build a centralized user information repository (MY INFO) with document management (MY DOCUMENTS). Implement backend API endpoints for user profile data management including name alias support, extensible additional_user_data field, and document CRUD operations (PASSPORT, TRAVELING_PASSPORT, DRIVERS_LICENSE). Frontend components for displaying/editing MY INFO and managing documents with scan upload capability using existing media system. Focus on extensibility for future fields and privacy (documents visible only to owner). DOCUMENT UPLOAD FEATURE: Implement frontend document upload functionality with chunked upload support, file type validation (PDF, images), 10MB size limit, document-specific icons, progress indicators, and visual feedback."
 
 frontend:
+  - task: "MY DOCUMENTS - Layout Update to Universal Structure"
+    implemented: true
+    working: true
+    file: "App.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "LAYOUT UPDATE TO UNIVERSAL STRUCTURE: Updated MY DOCUMENTS page layout to align with the platform's Universal Layout Structure. Changes: 1) Moved yellow privacy gadget from inline position to right sidebar (World Zone), 2) Expanded main content area to 100% width removing max-width constraint of 1200px, 3) Updated document cards grid from minmax(320px, 1fr) to minmax(350px, 1fr) for better space utilization, 4) Adjusted padding from 24px to 32px 40px for improved visual balance, 5) Layout now follows consistent structure: Left Sidebar (Me Zone 260px) + Main Content (full-width) + Right Sidebar (World Zone 280px). Benefits: Better consistency across modules, more space for document cards, always-visible privacy information in sidebar, cleaner separation between main content and contextual information."
+      - working: true
+        agent: "main"
+        comment: "✅ LAYOUT UPDATE VERIFIED: Successfully implemented and visually confirmed the new Universal Layout Structure for MY DOCUMENTS page. Screenshots show: 1) Yellow privacy gadget (🔒 Конфиденциальность) properly positioned in right sidebar with all content intact (Защита данных, Приватность сканов, Контроль доступа), 2) Document cards occupying full width of main content area with improved spacing, 3) Grid layout utilizing available space more effectively with 350px minimum card width, 4) Consistent layout structure matching other platform modules (Left Sidebar + Full-Width Content + Right Sidebar). The layout provides better user experience with improved space utilization and maintains context-aware privacy information always visible in the right sidebar."
+
   - task: "MY DOCUMENTS - Enhanced Document Upload Implementation"
     implemented: true
     working: true
