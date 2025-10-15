@@ -1133,11 +1133,71 @@ function Dashboard() {
           ) : (
             <>
               <div className="content-header">
-                <h2 className="module-title" style={{ color: currentModule.color }}>
-                  {currentModule.name}
-                </h2>
-                <div className="breadcrumb">
-                  <span>Главная</span> / <span>{currentModule.name}</span>
+                <div className="header-left">
+                  {/* Modern Pill Badge for Module */}
+                  <span 
+                    className="module-pill" 
+                    style={{ 
+                      background: `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`,
+                      boxShadow: `0 4px 12px ${currentModule.color}30, 0 1px 3px ${currentModule.color}20`
+                    }}
+                  >
+                    {currentModule.name}
+                  </span>
+                  
+                  {/* Current View with Arrow */}
+                  {activeView && activeView !== 'wall' && (
+                    <>
+                      <ChevronRight size={16} className="view-separator" />
+                      <span className="current-view">
+                        {activeView === 'photos' && 'Фото'}
+                        {activeView === 'videos' && 'Видео'}
+                        {activeView === 'documents' && 'Документы'}
+                        {activeView === 'calendar' && 'Календарь'}
+                        {activeView === 'my-info' && 'Моя Информация'}
+                        {activeView === 'my-documents' && 'Мои Документы'}
+                        {!['photos', 'videos', 'documents', 'calendar', 'my-info', 'my-documents'].includes(activeView) && 'Стена'}
+                      </span>
+                    </>
+                  )}
+                  {(!activeView || activeView === 'wall') && (
+                    <>
+                      <ChevronRight size={16} className="view-separator" />
+                      <span className="current-view">Стена</span>
+                    </>
+                  )}
+                </div>
+                
+                <div className="header-right">
+                  {/* Quick Actions */}
+                  <button 
+                    className="header-action-btn"
+                    onClick={() => {/* Add search functionality */}}
+                    title="Поиск"
+                  >
+                    <Search size={18} />
+                  </button>
+                  <button 
+                    className="header-action-btn primary"
+                    onClick={() => setShowFamilyPostComposer(true)}
+                    title="Создать пост"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`,
+                      color: 'white'
+                    }}
+                  >
+                    <Plus size={18} />
+                  </button>
+                  <button 
+                    className="header-action-btn"
+                    onClick={() => {/* Show notifications */}}
+                    title="Уведомления"
+                  >
+                    <Bell size={18} />
+                    {notifications.length > 0 && (
+                      <span className="notification-badge">{notifications.length}</span>
+                    )}
+                  </button>
                 </div>
               </div>
               
