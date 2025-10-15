@@ -1204,6 +1204,11 @@ body {
   overflow: hidden;
 }
 
+/* Add top padding to first element in right sidebar */
+.right-sidebar > *:first-child {
+  padding-top: 1rem;
+}
+
 .right-sidebar::before {
   content: '';
   position: absolute;
