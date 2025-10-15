@@ -839,14 +839,20 @@ body {
 .sidebar-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #E4E6EA;
+  border-bottom: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%) border-box;
+  border-bottom: 2px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
 
 .sidebar-header h3 {
-  color: #1C1E21;
-  font-size: 1.1rem;
-  font-weight: 700;
+  color: var(--gray-900);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 /* User Profile Section */
