@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Edit2, Trash2, Upload, Save, X, Flag, File, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { triggerConfetti, toast } from '../utils/animations';
 
 const MyDocumentsPage = () => {
   const [documents, setDocuments] = useState([]);
