@@ -916,8 +916,9 @@ function Dashboard() {
 
   // Enhanced sidebar tint with vibrant module colors
   const sidebarTintStyle = {
-    background: `linear-gradient(135deg, ${currentModule.color}15 0%, ${currentModule.color}08 50%, ${currentModule.color}12 100%)`,
-    borderColor: `${currentModule.color}20`,
+    background: `linear-gradient(135deg, ${currentModule.color}18 0%, ${currentModule.color}0A 50%, ${currentModule.color}15 100%)`,
+    borderColor: `${currentModule.color}25`,
+    color: currentModule.color, // For ::before pseudo-element
   };
 
   const getUserAffiliationsByType = (type) => {
