@@ -767,10 +767,14 @@ body {
 }
 
 .nav-module:hover {
-  background: linear-gradient(135deg, currentColor 0.12, currentColor 0.08);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--gray-900);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.nav-module:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* Active module with full color + glow effect */
