@@ -1180,7 +1180,10 @@ function Dashboard() {
                   </button>
                   <button 
                     className="header-action-btn primary"
-                    onClick={() => setShowFamilyPostComposer(true)}
+                    onClick={() => {
+                      // TODO: Open post creation modal
+                      console.log('Create post clicked');
+                    }}
                     title="Создать пост"
                     style={{ 
                       background: `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`,
