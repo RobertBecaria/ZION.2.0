@@ -92,6 +92,9 @@ const MyDocumentsPage = () => {
         await fetchDocuments();
         setShowAddForm(false);
         resetForm();
+        
+        // Show success notification
+        toast.success('Документ успешно создан!', 'Успех');
       }
     } catch (error) {
       console.error('Error adding document:', error);
