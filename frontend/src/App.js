@@ -18,7 +18,7 @@ import {
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
   ChevronRight, Calendar, Heart, MapPin, Bell, Image, Grid, List, 
   Upload, FolderPlus, Download, Trash2, Newspaper, Book, 
-  Building, ShoppingCart, DollarSign
+  Building, ShoppingCart, DollarSign, Plus
 } from 'lucide-react';
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
