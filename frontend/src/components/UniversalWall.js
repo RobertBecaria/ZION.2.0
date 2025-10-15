@@ -438,11 +438,22 @@ function UniversalWall({
       setUploadedMediaIds(prev => [...prev, ...uploadedIds]);
       setUploadingFiles([]);
       
+      // 🎉 Trigger confetti celebration!
+      triggerConfetti(document.body, {
+        particleCount: files.length * 20, // More files = more confetti!
+        colors: ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4']
+      });
+      
       // Show success feedback
-      console.log(`Successfully uploaded ${files.length} file(s)`);
+      toast.success(
+        `Загружено ${files.length} файлов в пост!`,
+        'Успех!',
+        { duration: 3000 }
+      );
       
     } catch (error) {
       console.error('Error uploading files:', error);
+      toast.error(`Ошибка загрузки: ${error.message}`, 'Ошибка');
       alert(`Upload failed: ${error.message}`);
       setUploadingFiles([]);
       
