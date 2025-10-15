@@ -1554,7 +1554,7 @@ body {
   justify-content: space-between;
   padding: 1rem 0 1rem 0;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: none;
   min-height: 64px;
 }
 
