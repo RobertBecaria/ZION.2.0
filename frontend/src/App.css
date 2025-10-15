@@ -642,7 +642,7 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Animated gradient background overlay */
