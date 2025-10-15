@@ -1139,15 +1139,6 @@ function Dashboard() {
                 <div className="breadcrumb">
                   <span>Главная</span> / <span>{currentModule.name}</span>
                 </div>
-                {user.affiliations && user.affiliations.length > 0 && (
-                  <div className="context-tags">
-                    {user.affiliations.slice(0, 3).map((affiliation) => (
-                      <span key={affiliation.id} className="context-tag">
-                        {affiliation.affiliation.name} - {affiliation.user_role_in_org}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
               
               <div className="content-body">
