@@ -177,14 +177,16 @@ function UniversalWall({
         fetchPosts();
         
         // Close modal with animation
-        const modal = document.querySelector('.modal-overlay');
-        modal.style.opacity = '0';
-        modal.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-          modal.style.display = 'none';
-          modal.style.opacity = '1';
-          modal.style.transform = 'scale(1)';
-        }, 200);
+        const modal = document.querySelector('.post-composer-modal');
+        if (modal) {
+          modal.style.opacity = '0';
+          modal.style.transform = 'scale(0.9)';
+          setTimeout(() => {
+            modal.style.display = 'none';
+            modal.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+          }, 200);
+        }
         
         // 🎉 Show success feedback with confetti!
         triggerConfetti(document.body, {
