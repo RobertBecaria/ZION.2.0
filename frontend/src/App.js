@@ -10,6 +10,7 @@ import MediaStorage from './components/MediaStorage';
 // NEW FAMILY SYSTEM COMPONENTS
 import ProfileCompletionModal from './components/ProfileCompletionModal';
 import FamilyTriggerFlow from './components/FamilyTriggerFlow';
+import MyFamilyProfile from './components/MyFamilyProfile';
 // MY INFO MODULE COMPONENTS
 import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
