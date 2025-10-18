@@ -9106,3 +9106,367 @@ select:focus {
   50% { background-position: 100% 50%; }
 }
 
+
+/* ============================================
+   FAMILY PROFILE - UNIVERSAL PROFILE STRUCTURE
+============================================ */
+
+.family-profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #F7F8FA;
+  min-height: 100vh;
+}
+
+/* Profile Header */
+.profile-header {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+/* Profile Banner */
+.profile-banner {
+  height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.banner-upload-btn {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  padding: 0.75rem;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1C1E21;
+}
+
+.banner-upload-btn:hover {
+  transform: scale(1.1);
+  background: white;
+}
+
+/* Profile Info Section */
+.profile-info-section {
+  padding: 0 2rem 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: -60px;
+  position: relative;
+  z-index: 10;
+}
+
+.profile-main-info {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  flex: 1;
+}
+
+/* Profile Avatar */
+.profile-avatar-container {
+  position: relative;
+}
+
+.profile-avatar {
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  border: 6px solid white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--module-color, #059669);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: white;
+  border: 2px solid #E4E6EA;
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #65676B;
+}
+
+.avatar-upload-btn:hover {
+  transform: scale(1.1);
+  background: #F7F8FA;
+  color: #1C1E21;
+}
+
+/* Profile Details */
+.profile-details {
+  flex: 1;
+  margin-top: 60px;
+}
+
+.profile-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1C1E21;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.2;
+}
+
+.profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #65676B;
+  font-size: 0.95rem;
+}
+
+.meta-item svg {
+  color: var(--module-color, #059669);
+}
+
+.profile-description {
+  color: #1C1E21;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 600px;
+}
+
+/* Profile Actions */
+.profile-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 60px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.action-btn.primary {
+  background: var(--module-color, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.action-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.action-btn.secondary {
+  background: #E4E6EA;
+  color: #1C1E21;
+}
+
+.action-btn.secondary:hover {
+  background: #D0D3D9;
+  transform: translateY(-1px);
+}
+
+/* Profile Stats */
+.profile-stats {
+  display: flex;
+  gap: 3rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #E4E6EA;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1C1E21;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #65676B;
+}
+
+/* Profile Content Navigation */
+.profile-content-nav {
+  background: white;
+  border-bottom: 2px solid #E4E6EA;
+  display: flex;
+  gap: 2rem;
+  padding: 0 2rem;
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.nav-tab {
+  background: none;
+  border: none;
+  padding: 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #65676B;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-tab:hover {
+  color: var(--module-color, #059669);
+}
+
+.nav-tab.active {
+  color: var(--module-color, #059669);
+}
+
+/* Profile Content */
+.profile-content {
+  padding: 1.5rem 2rem;
+  flex: 1;
+}
+
+/* Loading & Empty States */
+.profile-loading,
+.profile-empty,
+.calendar-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  margin: 2rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #E4E6EA;
+  border-top-color: var(--module-color, #059669);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.profile-empty h3,
+.calendar-placeholder h3 {
+  color: #1C1E21;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.profile-empty p,
+.calendar-placeholder p {
+  color: #65676B;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .profile-info-section {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .profile-actions {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-banner {
+    height: 200px;
+  }
+  
+  .profile-avatar {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .profile-main-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-details {
+    margin-top: 1rem;
+  }
+  
+  .profile-meta {
+    justify-content: center;
+  }
+  
+  .profile-name {
+    font-size: 1.5rem;
+  }
+  
+  .profile-stats {
+    gap: 1.5rem;
+  }
+  
+  .profile-content-nav {
+    gap: 1rem;
+  }
+}
