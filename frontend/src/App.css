@@ -2455,6 +2455,60 @@ body {
   gap: 1.25rem;
 }
 
+/* Family Filter Bar */
+.family-filter-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  border: 1px solid #E4E6EA;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.family-filter-bar:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.filter-label {
+  font-weight: 600;
+  color: #1C1E21;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.family-filter-select {
+  flex: 1;
+  max-width: 300px;
+  padding: 0.625rem 1rem;
+  border: 2px solid #E4E6EA;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1C1E21;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.family-filter-select:hover {
+  border-color: currentColor;
+  background: #F7F8FA;
+}
+
+.family-filter-select:focus {
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.family-filter-select option {
+  padding: 0.5rem;
+}
+
 .empty-feed {
   background: white;
   border-radius: 12px;
