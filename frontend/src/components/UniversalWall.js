@@ -820,6 +820,29 @@ function UniversalWall({
 
       {/* Posts Feed */}
       <div className="posts-feed">
+        {/* Family Filter Dropdown - Only show in family module */}
+        {activeModule === 'family' && (
+          <div className="family-filter-bar">
+            <label htmlFor="family-filter" className="filter-label">
+              Показать посты от:
+            </label>
+            <select 
+              id="family-filter"
+              value={familyFilter}
+              onChange={(e) => setFamilyFilter(e.target.value)}
+              className="family-filter-select"
+              style={{ 
+                borderColor: moduleColor,
+                accentColor: moduleColor
+              }}
+            >
+              <option value="all">🌍 Все семьи</option>
+              <option value="my-family">✅ Моя семья</option>
+              <option value="subscribed">👥 Подписанные семьи</option>
+            </select>
+          </div>
+        )}
+        
         {posts.length === 0 ? (
           <div className="empty-feed">
             <div className="empty-content">
