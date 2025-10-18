@@ -1344,11 +1344,12 @@ function Dashboard() {
                                 user={user}
                               />
                             ) : activeView === 'my-family-profile' || activeView === 'family-public-view' ? (
-                              /* Family Profile views - show FamilyTriggerFlow */
+                              /* Family Profile views - show MyFamilyProfile */
                               <ErrorBoundary>
-                                <FamilyTriggerFlow
+                                <MyFamilyProfile
                                   user={user}
-                                  onUpdateUser={handleUpdateUser}
+                                  familyData={userFamily}
+                                  moduleColor={currentModule.color}
                                 />
                               </ErrorBoundary>
                             ) : (
