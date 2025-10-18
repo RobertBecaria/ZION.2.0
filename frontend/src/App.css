@@ -1114,6 +1114,19 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Sidebar Divider */
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+  margin: 0.75rem 0;
+}
+
+/* View Toggle Button (indented) */
+.profile-btn.view-toggle {
+  font-size: 0.9rem;
+  padding-left: 2rem;
+}
+
 /* Sidebar Navigation */
 .sidebar-nav {
   display: flex;
