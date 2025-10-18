@@ -33,9 +33,6 @@ function UniversalWall({
   const [notifications, setNotifications] = useState([]);
   const fileInputRef = useRef(null);
   
-  // Family Filter State (only for family module)
-  const [familyFilter, setFamilyFilter] = useState('all'); // 'my-family' | 'subscribed' | 'all'
-  
   // Post Privacy/Visibility State
   const [postVisibility, setPostVisibility] = useState('module'); // 'module' | 'friends' | 'public'
   
