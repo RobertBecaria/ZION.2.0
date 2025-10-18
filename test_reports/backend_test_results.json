@@ -1,0 +1,65 @@
+{
+  "total_tests": 9,
+  "passed_tests": 2,
+  "failed_tests": 7,
+  "success_rate": 22.22222222222222,
+  "test_results": [
+    {
+      "test_name": "API Endpoints Connectivity",
+      "success": false,
+      "details": "",
+      "timestamp": "2025-10-18T12:00:07.132824"
+    },
+    {
+      "test_name": "User Registration",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-18T12:00:07.451608"
+    },
+    {
+      "test_name": "Create Family Profile",
+      "success": false,
+      "details": "Response: {'raw_response': 'Internal Server Error', 'status_code': 500, 'expected_status': 200}",
+      "timestamp": "2025-10-18T12:00:07.504325"
+    },
+    {
+      "test_name": "Family Basic Info Update",
+      "success": false,
+      "details": "No family_id available",
+      "timestamp": "2025-10-18T12:00:07.504340"
+    },
+    {
+      "test_name": "User Search",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-18T12:00:07.547207"
+    },
+    {
+      "test_name": "Get Family Members",
+      "success": false,
+      "details": "No family_id available",
+      "timestamp": "2025-10-18T12:00:07.547222"
+    },
+    {
+      "test_name": "Add Family Member",
+      "success": false,
+      "details": "No family_id available",
+      "timestamp": "2025-10-18T12:00:07.547226"
+    },
+    {
+      "test_name": "Family Privacy Update",
+      "success": false,
+      "details": "No family_id available",
+      "timestamp": "2025-10-18T12:00:07.547234"
+    },
+    {
+      "test_name": "Family Delete",
+      "success": false,
+      "details": "No family_id available",
+      "timestamp": "2025-10-18T12:00:07.547238"
+    }
+  ],
+  "test_user_email": "test_family_120007@example.com",
+  "family_id": null,
+  "user_id": "c0d75ffa-4832-4a85-847d-8f138fde221d"
+}
