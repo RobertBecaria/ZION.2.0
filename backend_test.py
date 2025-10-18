@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class ZionCityAPITester:
-    def __init__(self, base_url="https://zion-family-hub.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://profile-nucleus.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

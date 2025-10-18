@@ -16,7 +16,7 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
   const fetchFamilyProfiles = async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://zion-family-hub.preview.emergentagent.com';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://profile-nucleus.preview.emergentagent.com';
       
       const response = await fetch(`${backendUrl}/api/family-profiles`, {
         headers: {
