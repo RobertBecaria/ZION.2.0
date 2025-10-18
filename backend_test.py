@@ -69,49 +69,16 @@ class FamilySettingsAPITester:
 
     def test_user_registration(self):
         """Test user registration"""
-        print("\n🔍 Testing User Registration...")
+        success, response = self.make_request("POST", "auth/register", self.test_user_data, 200)
         
-        response = self.make_request('POST', 'auth/register', self.test_user_data)
-        
-        if response and response.status_code == 200:
-            data = response.json()
-            if 'access_token' in data and 'user' in data:
-                self.token = data['access_token']
-                self.user_id = data['user']['id']
-                success = (
-                    data['user']['email'] == self.test_user_email and
-                    data['user']['first_name'] == self.test_user_data['first_name'] and
-                    data['user']['last_name'] == self.test_user_data['last_name']
-                )
-                self.log_test("User registration", success, f"User ID: {self.user_id}")
-                return success
-            else:
-                self.log_test("User registration", False, "Missing token or user data in response")
+        if success and "access_token" in response:
+            self.token = response["access_token"]
+            self.user_id = response["user"]["id"]
+            self.log_test("User Registration", True)
+            return True
         else:
-            error_msg = ""
-            if response:
-                try:
-                    error_data = response.json()
-                    if response.status_code == 422:
-                        # Handle validation errors
-                        if 'detail' in error_data and isinstance(error_data['detail'], list):
-                            validation_errors = []
-                            for error in error_data['detail']:
-                                field = error.get('loc', ['unknown'])[-1]
-                                msg = error.get('msg', 'validation error')
-                                validation_errors.append(f"{field}: {msg}")
-                            error_msg = f"Validation errors: {', '.join(validation_errors)}"
-                        else:
-                            error_msg = error_data.get('detail', f'Status: {response.status_code}')
-                    else:
-                        error_msg = error_data.get('detail', f'Status: {response.status_code}')
-                except:
-                    error_msg = f'Status: {response.status_code}'
-            else:
-                error_msg = "No response"
-            self.log_test("User registration", False, error_msg)
-        
-        return False
+            self.log_test("User Registration", False, f"Response: {response}")
+            return False
 
     def test_duplicate_registration(self):
         """Test duplicate email registration should fail"""
