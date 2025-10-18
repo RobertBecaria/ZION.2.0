@@ -9381,6 +9381,7 @@ select:focus {
   flex: 1;
   display: flex;
   gap: 1.25rem;
+  align-items: flex-start;
 }
 
 .profile-content-main {
@@ -9391,6 +9392,11 @@ select:focus {
 .profile-content-sidebar {
   width: 32%;
   max-width: 380px;
+}
+
+.profile-content-sidebar .events-panel-wrapper {
+  position: sticky;
+  top: 80px;
 }
 
 /* Loading & Empty States */
