@@ -673,7 +673,8 @@ function UniversalWall({
         style={{ display: 'none' }}
         onClick={(e) => {
           if (e.target.classList.contains('modal-overlay')) {
-            document.querySelector('.modal-overlay').style.display = 'none';
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.style.display = 'none';
           }
         }}
       >
