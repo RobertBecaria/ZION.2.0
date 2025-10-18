@@ -212,7 +212,11 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
 
           {/* Action Buttons */}
           <div className="profile-actions">
-            <button className="action-btn primary" style={{ backgroundColor: moduleColor }}>
+            <button 
+              className="action-btn primary" 
+              style={{ backgroundColor: moduleColor }}
+              onClick={() => setShowSettings(true)}
+            >
               <Settings size={18} />
               Управление
             </button>
