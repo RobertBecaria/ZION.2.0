@@ -3180,19 +3180,47 @@ async def get_posts(
     skip: int = 0,
     limit: int = 20,
     module: str = "family",  # Module to filter posts by
+    family_id: str = None,  # Filter by specific family ID
+    filter: str = None,  # 'subscribed' for subscribed families
     current_user: User = Depends(get_current_user)
 ):
-    """Get posts feed filtered by module and user connections"""
+    """Get posts feed filtered by module, family, and user connections"""
     
-    # Get connected users based on module
-    connected_users = await get_module_connections(current_user.id, module)
-    
-    # Query posts from connected users in the specified module
-    posts = await db.posts.find({
+    # Build query based on filters
+    query = {
         "is_published": True,
-        "source_module": module,
-        "user_id": {"$in": connected_users}
-    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        "source_module": module
+    }
+    
+    # Family-specific filtering
+    if module == "family":
+        if family_id:
+            # Filter posts from specific family
+            query["family_id"] = family_id
+        elif filter == "subscribed":
+            # Get subscribed families
+            user_families = await get_user_family_ids(current_user.id)
+            subscriptions = await db.family_subscriptions.find({
+                "subscriber_family_id": {"$in": user_families},
+                "is_active": True,
+                "status": "ACTIVE"
+            }).to_list(100)
+            
+            subscribed_family_ids = [sub["target_family_id"] for sub in subscriptions]
+            if subscribed_family_ids:
+                query["family_id"] = {"$in": subscribed_family_ids}
+            else:
+                # No subscribed families, return empty
+                return []
+        # else: 'all' - show all family posts (default behavior)
+    
+    # Get connected users based on module (for non-family filtering)
+    if not family_id and filter != "subscribed":
+        connected_users = await get_module_connections(current_user.id, module)
+        query["user_id"] = {"$in": connected_users}
+    
+    # Query posts
+    posts = await db.posts.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
     # Remove MongoDB _id and get additional info
     result = []
