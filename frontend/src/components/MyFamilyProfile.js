@@ -88,8 +88,8 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
             {/* Avatar */}
             <div className="profile-avatar-container">
               <div className="profile-avatar" style={{ backgroundColor: moduleColor }}>
-                {family.avatar_url ? (
-                  <img src={family.avatar_url} alt={family.name} />
+                {(family.family_photo_url || family.avatar_url) ? (
+                  <img src={family.family_photo_url || family.avatar_url} alt={family.family_name || family.name} />
                 ) : (
                   <Users size={48} color="white" />
                 )}
