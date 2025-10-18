@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Users, Calendar, Settings, Share2, Camera } from 'lucide-react';
 import UniversalWall from './UniversalWall';
 import UniversalChatLayout from './UniversalChatLayout';
+import FamilyStatusForm from './FamilyStatusForm';
 
 function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
   const [activeTab, setActiveTab] = useState('wall'); // 'wall' | 'chat' | 'calendar'
