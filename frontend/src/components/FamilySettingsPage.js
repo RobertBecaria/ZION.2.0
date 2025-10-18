@@ -494,8 +494,6 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
                   ))}
                 </div>
               )}
-                </div>
-              )}
             </div>
           </div>
         )}
