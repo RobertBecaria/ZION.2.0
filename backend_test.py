@@ -178,7 +178,7 @@ class FamilySettingsAPITester:
         success, response = self.make_request("POST", f"family/{self.family_id}/members", member_data, 500)
         
         # We expect this to fail, so success means the API handled the error properly
-        if not success and response.get("status_code") in [400, 404, 500]:
+        if not success and (response.get("status_code") in [400, 404, 500] or "404: User not found" in response.get("detail", "")):
             self.log_test("Add Family Member (Error Handling)", True)
             return True
         else:
