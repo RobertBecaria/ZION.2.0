@@ -2255,6 +2255,308 @@ async def delete_family(
 
 # END: Settings Management Endpoints
 
+# ============================================
+#   HOUSEHOLD MANAGEMENT ENDPOINTS
+# ============================================
+
+@api_router.post("/household/create")
+async def create_household(
+    data: HouseholdCreateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new household"""
+    try:
+        # Create household
+        new_household = {
+            "id": str(uuid.uuid4()),
+            "household_name": data.household_name,
+            "address_street": data.address_street,
+            "address_city": data.address_city,
+            "address_state": data.address_state,
+            "address_country": data.address_country,
+            "address_postal_code": data.address_postal_code,
+            "creator_id": current_user.id,
+            "member_count": 1 + len(data.members),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "is_active": True
+        }
+        
+        await db.households.insert_one(new_household)
+        
+        # Add creator as first member
+        creator_member = {
+            "id": str(uuid.uuid4()),
+            "household_id": new_household["id"],
+            "user_id": current_user.id,
+            "name": current_user.name,
+            "surname": current_user.surname,
+            "relationship": "owner",
+            "is_creator": True,
+            "joined_at": datetime.now(timezone.utc),
+            "is_active": True
+        }
+        await db.household_members.insert_one(creator_member)
+        
+        # Add additional members
+        for member in data.members:
+            household_member = {
+                "id": str(uuid.uuid4()),
+                "household_id": new_household["id"],
+                "user_id": member.get("user_id"),
+                "name": member.get("name", ""),
+                "surname": member.get("surname", ""),
+                "relationship": member.get("relationship", "member"),
+                "is_creator": False,
+                "joined_at": datetime.now(timezone.utc),
+                "is_active": True
+            }
+            await db.household_members.insert_one(household_member)
+        
+        return {
+            "success": True,
+            "household": new_household,
+            "message": "Household created successfully"
+        }
+        
+    except Exception as e:
+        print(f"Error creating household: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/household")
+async def get_user_household(current_user: User = Depends(get_current_user)):
+    """Get user's household"""
+    try:
+        # Find household where user is a member
+        membership = await db.household_members.find_one({
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            return {"household": None, "members": []}
+        
+        # Get household details
+        household = await db.households.find_one({"id": membership["household_id"]})
+        if not household:
+            return {"household": None, "members": []}
+        
+        # Get all members
+        members = await db.household_members.find({
+            "household_id": household["id"],
+            "is_active": True
+        }).to_list(100)
+        
+        # Enrich members with user data
+        enriched_members = []
+        for member in members:
+            member_data = {
+                "id": member["id"],
+                "name": member["name"],
+                "surname": member.get("surname", ""),
+                "relationship": member["relationship"],
+                "is_creator": member.get("is_creator", False)
+            }
+            
+            # If linked to user, get additional info
+            if member.get("user_id"):
+                user = await db.users.find_one({"id": member["user_id"]})
+                if user:
+                    member_data["email"] = user.get("email", "")
+                    member_data["user_id"] = user["id"]
+            
+            enriched_members.append(member_data)
+        
+        # Remove MongoDB _id
+        household.pop("_id", None)
+        
+        return {
+            "household": household,
+            "members": enriched_members
+        }
+        
+    except Exception as e:
+        print(f"Error getting household: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/household/{household_id}/update")
+async def update_household(
+    household_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update household information"""
+    try:
+        # Check if user is member
+        membership = await db.household_members.find_one({
+            "household_id": household_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not a household member")
+        
+        # Update household
+        update_fields = {}
+        if "household_name" in data:
+            update_fields["household_name"] = data["household_name"]
+        if "address_street" in data:
+            update_fields["address_street"] = data["address_street"]
+        if "address_city" in data:
+            update_fields["address_city"] = data["address_city"]
+        if "address_state" in data:
+            update_fields["address_state"] = data["address_state"]
+        if "address_country" in data:
+            update_fields["address_country"] = data["address_country"]
+        if "address_postal_code" in data:
+            update_fields["address_postal_code"] = data["address_postal_code"]
+        
+        update_fields["updated_at"] = datetime.now(timezone.utc)
+        
+        result = await db.households.update_one(
+            {"id": household_id},
+            {"$set": update_fields}
+        )
+        
+        if result.modified_count > 0:
+            updated_household = await db.households.find_one({"id": household_id})
+            updated_household.pop("_id", None)
+            return {"success": True, "household": updated_household}
+        else:
+            raise HTTPException(status_code=404, detail="Household not found")
+            
+    except Exception as e:
+        print(f"Update household error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/household/{household_id}/members")
+async def add_household_member(
+    household_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Add member to household"""
+    try:
+        # Check if user is member
+        membership = await db.household_members.find_one({
+            "household_id": household_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not a household member")
+        
+        # Add new member
+        new_member = {
+            "id": str(uuid.uuid4()),
+            "household_id": household_id,
+            "user_id": data.get("user_id"),
+            "name": data.get("name", ""),
+            "surname": data.get("surname", ""),
+            "relationship": data.get("relationship", "member"),
+            "is_creator": False,
+            "joined_at": datetime.now(timezone.utc),
+            "is_active": True
+        }
+        
+        # If user_id provided, get user info
+        if new_member["user_id"]:
+            user = await db.users.find_one({"id": new_member["user_id"]})
+            if user:
+                new_member["name"] = user.get("name", "")
+                new_member["surname"] = user.get("surname", "")
+        
+        await db.household_members.insert_one(new_member)
+        
+        # Update member count
+        await db.households.update_one(
+            {"id": household_id},
+            {"$inc": {"member_count": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        new_member.pop("_id", None)
+        return {"success": True, "member": new_member}
+        
+    except Exception as e:
+        print(f"Add household member error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/household/{household_id}/members/{member_id}")
+async def remove_household_member(
+    household_id: str,
+    member_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove member from household"""
+    try:
+        # Check if user is member
+        membership = await db.household_members.find_one({
+            "household_id": household_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not a household member")
+        
+        # Cannot remove creator
+        member_to_remove = await db.household_members.find_one({"id": member_id})
+        if member_to_remove and member_to_remove.get("is_creator"):
+            raise HTTPException(status_code=403, detail="Cannot remove household creator")
+        
+        # Remove member
+        result = await db.household_members.update_one(
+            {"id": member_id, "household_id": household_id},
+            {"$set": {"is_active": False}}
+        )
+        
+        if result.modified_count > 0:
+            # Update member count
+            await db.households.update_one(
+                {"id": household_id},
+                {"$inc": {"member_count": -1}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+            )
+            return {"success": True, "message": "Member removed"}
+        else:
+            raise HTTPException(status_code=404, detail="Member not found")
+            
+    except Exception as e:
+        print(f"Remove household member error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/household/{household_id}")
+async def delete_household(
+    household_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete household (creator only)"""
+    try:
+        # Check if user is creator
+        membership = await db.household_members.find_one({
+            "household_id": household_id,
+            "user_id": current_user.id,
+            "is_creator": True,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Only household creator can delete")
+        
+        # Delete household and members
+        await db.households.delete_one({"id": household_id})
+        await db.household_members.delete_many({"household_id": household_id})
+        
+        return {"success": True, "message": "Household deleted"}
+        
+    except Exception as e:
+        print(f"Delete household error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# END: Household Management Endpoints
+
+
 @api_router.put("/family-profiles/{family_id}")
 async def update_family_profile(
     family_id: str,
