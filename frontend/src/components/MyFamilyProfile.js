@@ -156,9 +156,12 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
                   <Users size={48} color="white" />
                 )}
               </div>
-              <button className="avatar-upload-btn" title="Изменить аватар">
-                <Camera size={16} />
-              </button>
+              <ProfileImageUpload
+                type="avatar"
+                currentImage={family.family_photo_url || family.avatar_url}
+                onUploadComplete={handleAvatarUpload}
+                moduleColor={moduleColor}
+              />
             </div>
 
             {/* Family Name & Info */}
