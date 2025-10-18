@@ -9379,24 +9379,6 @@ select:focus {
 .profile-content {
   padding: 1.5rem 2rem;
   flex: 1;
-  display: flex;
-  gap: 1.25rem;
-  align-items: flex-start;
-}
-
-.profile-content-main {
-  flex: 1;
-  max-width: 68%;
-}
-
-.profile-content-sidebar {
-  width: 32%;
-  max-width: 380px;
-}
-
-.profile-content-sidebar .events-panel-wrapper {
-  position: sticky;
-  top: 80px;
 }
 
 /* Loading & Empty States */
