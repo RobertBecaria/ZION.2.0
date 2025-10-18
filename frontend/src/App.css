@@ -9379,6 +9379,18 @@ select:focus {
 .profile-content {
   padding: 1.5rem 2rem;
   flex: 1;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.profile-content-main {
+  flex: 1;
+  max-width: 68%;
+}
+
+.profile-content-sidebar {
+  width: 32%;
+  max-width: 380px;
 }
 
 /* Loading & Empty States */
