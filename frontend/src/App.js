@@ -1410,8 +1410,8 @@ function Dashboard() {
             <h3>Мировая Зона</h3>
           </div>
           
-          {/* WALL View - Wall-specific widgets */}
-          {activeView === 'wall' && (
+          {/* WALL and FEED Views - Wall-specific widgets */}
+          {(activeView === 'wall' || activeView === 'feed') && (
             <>
               {/* Search Widget */}
               <div className="widget search-widget">
