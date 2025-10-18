@@ -742,7 +742,10 @@ function Dashboard() {
   // Load user's primary family
   useEffect(() => {
     const loadUserFamily = async () => {
+      console.log('[DEBUG] loadUserFamily called', { user: !!user, activeModule });
+      
       if (!user || activeModule !== 'family') {
+        console.log('[DEBUG] Skipping family load:', { user: !!user, activeModule });
         setLoadingFamily(false);
         return;
       }
@@ -755,15 +758,20 @@ function Dashboard() {
           }
         });
         
+        console.log('[DEBUG] Family API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('[DEBUG] Family data received:', data);
           const families = data.family_profiles || [];
+          console.log('[DEBUG] Families count:', families.length);
           // Find primary family (where user is creator or first family)
           const primaryFamily = families.find(f => f.user_role === 'PARENT' || f.is_user_member) || families[0];
+          console.log('[DEBUG] Primary family selected:', primaryFamily);
           setUserFamily(primaryFamily);
         }
       } catch (error) {
-        console.error('Error loading family:', error);
+        console.error('[DEBUG] Error loading family:', error);
       } finally {
         setLoadingFamily(false);
       }
