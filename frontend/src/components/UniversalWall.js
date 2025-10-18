@@ -431,7 +431,7 @@ function UniversalWall({
         
         const backendModule = moduleMapping[moduleName] || 'personal';
         formData.append('source_module', backendModule);
-        formData.append('privacy_level', 'module');
+        formData.append('privacy_level', postVisibility); // Use selected visibility
 
         const response = await fetch(`${backendUrl}/api/media/upload`, {
           method: 'POST',
