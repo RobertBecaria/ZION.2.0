@@ -1452,6 +1452,33 @@ function Dashboard() {
                 <input type="text" placeholder="Поиск по записям..." className="search-input" />
               </div>
 
+              {/* Family Filter Widget - Only in Family Module */}
+              {activeModule === 'family' && (
+                <div className="widget family-filter-widget">
+                  <div className="widget-header">
+                    <Filter size={16} />
+                    <span>Фильтр постов</span>
+                  </div>
+                  <div className="filter-content">
+                    <label htmlFor="family-filter-sidebar" className="filter-label-small">
+                      Показать посты от:
+                    </label>
+                    <select 
+                      id="family-filter-sidebar"
+                      className="family-filter-select-widget"
+                      style={{ 
+                        borderColor: currentModule.color,
+                        accentColor: currentModule.color
+                      }}
+                    >
+                      <option value="all">🌍 Все семьи</option>
+                      <option value="my-family">✅ Моя семья</option>
+                      <option value="subscribed">👥 Подписанные семьи</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* Quick Filters Widget */}
               <div className="widget filters-widget">
                 <div className="widget-header">
