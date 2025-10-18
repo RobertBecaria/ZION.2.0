@@ -808,14 +808,37 @@ function UniversalWall({
                 />
               </div>
               
-              <button 
-                type="submit" 
-                className="submit-btn"
-                disabled={loading || (!newPost.trim() && selectedFiles.length === 0)}
-                style={{ backgroundColor: loading ? undefined : moduleColor }}
-              >
-                {loading ? 'Публикуем...' : 'Опубликовать'}
-              </button>
+              <div className="form-footer">
+                {/* Visibility Dropdown */}
+                <div className="visibility-selector">
+                  <label htmlFor="post-visibility" className="visibility-label">
+                    Кому показать?
+                  </label>
+                  <select 
+                    id="post-visibility"
+                    value={postVisibility}
+                    onChange={(e) => setPostVisibility(e.target.value)}
+                    className="visibility-dropdown"
+                    style={{ 
+                      borderColor: moduleColor,
+                      accentColor: moduleColor
+                    }}
+                  >
+                    <option value="module">🔒 Только {moduleName}</option>
+                    <option value="friends">👥 Друзья {moduleName}</option>
+                    <option value="public">🌍 Публично</option>
+                  </select>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={loading || (!newPost.trim() && selectedFiles.length === 0)}
+                  style={{ backgroundColor: loading ? undefined : moduleColor }}
+                >
+                  {loading ? 'Публикуем...' : 'Опубликовать'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
