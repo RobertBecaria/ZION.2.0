@@ -31,6 +31,9 @@ function UniversalWall({
   const [notifications, setNotifications] = useState([]);
   const fileInputRef = useRef(null);
   
+  // Family Filter State (only for family module)
+  const [familyFilter, setFamilyFilter] = useState('all'); // 'my-family' | 'subscribed' | 'all'
+  
   // Use the shared lightbox hook
   const {
     lightboxImage,
