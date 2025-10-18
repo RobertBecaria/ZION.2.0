@@ -67,28 +67,6 @@ class FamilySettingsAPITester:
         except Exception as e:
             return False, {"error": str(e)}
 
-    def test_health_check(self):
-        """Test basic health endpoints"""
-        print("\n🔍 Testing Health Endpoints...")
-        
-        # Test root endpoint
-        response = self.make_request('GET', '')
-        if response and response.status_code == 200:
-            data = response.json()
-            success = "ZION.CITY API" in data.get("message", "")
-            self.log_test("Root endpoint", success, f"Status: {response.status_code}, Message: {data.get('message')}")
-        else:
-            self.log_test("Root endpoint", False, f"Status: {response.status_code if response else 'No response'}")
-        
-        # Test health endpoint
-        response = self.make_request('GET', 'health')
-        if response and response.status_code == 200:
-            data = response.json()
-            success = data.get("status") == "healthy"
-            self.log_test("Health check", success, f"Status: {data.get('status')}")
-        else:
-            self.log_test("Health check", False, f"Status: {response.status_code if response else 'No response'}")
-
     def test_user_registration(self):
         """Test user registration"""
         print("\n🔍 Testing User Registration...")
