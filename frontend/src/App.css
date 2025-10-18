@@ -2455,39 +2455,31 @@ body {
   gap: 1.25rem;
 }
 
-/* Family Filter Bar */
-.family-filter-bar {
-  background: white;
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  border: 1px solid #E4E6EA;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+/* Family Filter Widget (Right Sidebar) */
+.family-filter-widget {
+  /* Inherits from .widget */
+}
+
+.family-filter-widget .filter-content {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0 0 0;
 }
 
-.family-filter-bar:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
-}
-
-.filter-label {
+.filter-label-small {
   font-weight: 600;
   color: #1C1E21;
-  font-size: 0.95rem;
-  white-space: nowrap;
+  font-size: 0.85rem;
 }
 
-.family-filter-select {
-  flex: 1;
-  max-width: 300px;
-  padding: 0.625rem 1rem;
+.family-filter-select-widget {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
   border: 2px solid #E4E6EA;
   border-radius: 8px;
   background: white;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #1C1E21;
   cursor: pointer;
@@ -2495,18 +2487,19 @@ body {
   outline: none;
 }
 
-.family-filter-select:hover {
+.family-filter-select-widget:hover {
   border-color: currentColor;
   background: #F7F8FA;
 }
 
-.family-filter-select:focus {
+.family-filter-select-widget:focus {
   border-color: currentColor;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 
-.family-filter-select option {
+.family-filter-select-widget option {
   padding: 0.5rem;
+  font-size: 0.9rem;
 }
 
 .empty-feed {
