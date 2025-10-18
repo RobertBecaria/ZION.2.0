@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { User, MapPin, Phone, Calendar, Heart, Edit2, Save, X } from 'lucide-react';
+import HouseholdSection from './HouseholdSection';
 
-const MyInfoPage = () => {
+const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
   const [myInfo, setMyInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
