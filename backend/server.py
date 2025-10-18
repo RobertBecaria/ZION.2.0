@@ -1819,6 +1819,80 @@ async def get_family_profile(
     
     return family_response
 
+@api_router.put("/family-profiles/{family_id}/banner")
+async def update_family_banner(
+    family_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update family banner image"""
+    try:
+        # Check if user is member/admin
+        membership = await db.family_members.find_one({
+            "family_id": family_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not a family member")
+        
+        # Update banner
+        banner_image = data.get("banner_image")
+        result = await db.family_profiles.update_one(
+            {"id": family_id},
+            {"$set": {
+                "banner_url": banner_image,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.modified_count > 0:
+            return {"success": True, "message": "Banner updated"}
+        else:
+            raise HTTPException(status_code=404, detail="Family not found")
+            
+    except Exception as e:
+        print(f"Banner upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/family-profiles/{family_id}/avatar")
+async def update_family_avatar(
+    family_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update family avatar/photo"""
+    try:
+        # Check if user is member/admin
+        membership = await db.family_members.find_one({
+            "family_id": family_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not a family member")
+        
+        # Update avatar
+        avatar_image = data.get("avatar_image")
+        result = await db.family_profiles.update_one(
+            {"id": family_id},
+            {"$set": {
+                "family_photo_url": avatar_image,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.modified_count > 0:
+            return {"success": True, "message": "Avatar updated"}
+        else:
+            raise HTTPException(status_code=404, detail="Family not found")
+            
+    except Exception as e:
+        print(f"Avatar upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.put("/family-profiles/{family_id}")
 async def update_family_profile(
     family_id: str,
