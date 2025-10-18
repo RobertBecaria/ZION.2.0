@@ -30,6 +30,37 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     profile_searchability: family?.profile_searchability || 'public' // 'public', 'users_only', 'none'
   });
 
+  // Load family members on mount
+  useEffect(() => {
+    loadFamilyMembers();
+  }, [family?.id]);
+
+  // Load family members from database
+  const loadFamilyMembers = async () => {
+    if (!family?.id) return;
+    
+    setLoadingMembers(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      
+      const response = await fetch(`${backendUrl}/api/family/${family.id}/members`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMembers(data.members || []);
+      }
+    } catch (error) {
+      console.error('Error loading members:', error);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
   // Search for users to add as members
   const searchUsers = async (query) => {
     if (!query || query.length < 2) {
