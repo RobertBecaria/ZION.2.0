@@ -142,10 +142,8 @@ function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
         const data = await response.json();
         alert('✅ Профиль семьи успешно создан!');
         
-        // Call callback to refresh and navigate
-        if (onFamilyCreated) {
-          onFamilyCreated(data.family || data);
-        }
+        // Reload page to show new family profile
+        window.location.reload();
       } else {
         const error = await response.json();
         alert(`Ошибка: ${error.detail || 'Не удалось создать семью'}`);
