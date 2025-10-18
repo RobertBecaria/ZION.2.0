@@ -1200,7 +1200,7 @@ function Dashboard() {
                   </span>
                   
                   {/* Current View with Arrow */}
-                  {activeView && activeView !== 'wall' && (
+                  {activeView && activeView !== 'wall' && activeView !== 'feed' && (
                     <>
                       <ChevronRight size={16} className="view-separator" />
                       <span className="current-view">
@@ -1210,7 +1210,7 @@ function Dashboard() {
                         {activeView === 'calendar' && 'Календарь'}
                         {activeView === 'my-info' && 'Моя Информация'}
                         {activeView === 'my-documents' && 'Мои Документы'}
-                        {!['photos', 'videos', 'documents', 'calendar', 'my-info', 'my-documents'].includes(activeView) && 'Стена'}
+                        {!['photos', 'videos', 'documents', 'calendar', 'my-info', 'my-documents', 'feed'].includes(activeView) && 'Стена'}
                       </span>
                     </>
                   )}
@@ -1218,6 +1218,12 @@ function Dashboard() {
                     <>
                       <ChevronRight size={16} className="view-separator" />
                       <span className="current-view">Стена</span>
+                    </>
+                  )}
+                  {activeView === 'feed' && (
+                    <>
+                      <ChevronRight size={16} className="view-separator" />
+                      <span className="current-view">Моя Лента</span>
                     </>
                   )}
                 </div>
