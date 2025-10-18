@@ -1469,6 +1469,8 @@ function Dashboard() {
                     <select 
                       id="family-filter-sidebar"
                       className="family-filter-select-widget"
+                      value={familyFilter}
+                      onChange={(e) => setFamilyFilter(e.target.value)}
                       style={{ 
                         borderColor: currentModule.color,
                         accentColor: currentModule.color
