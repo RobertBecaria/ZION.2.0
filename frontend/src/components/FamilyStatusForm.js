@@ -144,7 +144,7 @@ function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
         
         // Call callback to refresh and navigate
         if (onFamilyCreated) {
-          onFamilyCreated(data);
+          onFamilyCreated(data.family || data);
         }
       } else {
         const error = await response.json();
