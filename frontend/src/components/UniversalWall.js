@@ -672,11 +672,11 @@ function UniversalWall({
 
       {/* Enhanced Post Creation Modal */}
       <div 
-        className="modal-overlay" 
+        className="modal-overlay post-composer-modal" 
         style={{ display: 'none' }}
         onClick={(e) => {
-          if (e.target.classList.contains('modal-overlay')) {
-            const modal = document.querySelector('.modal-overlay');
+          if (e.target.classList.contains('post-composer-modal')) {
+            const modal = document.querySelector('.post-composer-modal');
             if (modal) modal.style.display = 'none';
           }
         }}
