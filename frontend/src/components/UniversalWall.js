@@ -14,7 +14,9 @@ function UniversalWall({
   moduleColor = "#059669",
   moduleName = "Family",
   user,
-  activeModule = 'family'  // New prop for current module
+  activeModule = 'family',  // New prop for current module
+  familyFilter = null,  // Filter for family posts: 'all', 'my-family', 'subscribed'
+  userFamilyId = null  // User's family ID for filtering
 }) {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
