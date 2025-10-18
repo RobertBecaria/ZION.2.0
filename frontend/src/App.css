@@ -9224,6 +9224,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   color: #65676B;
+  z-index: 20;
 }
 
 .avatar-upload-btn:hover {
