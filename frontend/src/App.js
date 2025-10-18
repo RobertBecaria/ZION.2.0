@@ -731,11 +731,45 @@ function Dashboard() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeView, setActiveView] = useState('wall'); // 'wall' or 'chat'
   const [notifications, setNotifications] = useState([]); // For header notifications badge
+  const [userFamily, setUserFamily] = useState(null); // User's primary family
+  const [loadingFamily, setLoadingFamily] = useState(true);
   
   // NEW FAMILY SYSTEM STATES
   const [showProfileCompletionModal, setShowProfileCompletionModal] = useState(false);
   
   const { user, logout, refreshProfile } = useAuth();
+
+  // Load user's primary family
+  useEffect(() => {
+    const loadUserFamily = async () => {
+      if (!user || activeModule !== 'family') {
+        setLoadingFamily(false);
+        return;
+      }
+      
+      try {
+        const token = localStorage.getItem('zion_token');
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/family/my-families`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const families = await response.json();
+          // Find primary family (where user is creator or first family)
+          const primaryFamily = families.find(f => f.members?.some(m => m.user_id === user.id && m.is_creator)) || families[0];
+          setUserFamily(primaryFamily);
+        }
+      } catch (error) {
+        console.error('Error loading family:', error);
+      } finally {
+        setLoadingFamily(false);
+      }
+    };
+    
+    loadUserFamily();
+  }, [user, activeModule]);
 
   // Check if user needs to complete profile for family system
   useEffect(() => {
