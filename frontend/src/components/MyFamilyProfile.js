@@ -125,6 +125,21 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
     );
   }
 
+  // Show settings page if active
+  if (showSettings) {
+    return (
+      <FamilySettingsPage
+        user={user}
+        family={family}
+        onBack={() => setShowSettings(false)}
+        onFamilyUpdated={(updatedFamily) => {
+          setFamily(updatedFamily);
+        }}
+        moduleColor={moduleColor}
+      />
+    );
+  }
+
   return (
     <div className="family-profile-container">
       {/* Profile Header */}
