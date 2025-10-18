@@ -29,54 +29,43 @@ class FamilySettingsAPITester:
         self.tests_run += 1
         if success:
             self.tests_passed += 1
-            print(f"✅ {name} - PASSED")
+            print(f"✅ {name}")
         else:
-            print(f"❌ {name} - FAILED: {details}")
-        
-        if details:
-            print(f"   Details: {details}")
+            print(f"❌ {name} - {details}")
 
-    def make_request(self, method, endpoint, data=None, auth_required=False, files=None, form_data=None):
-        """Make HTTP request to API"""
-        url = f"{self.base_url}/{endpoint}"
-        headers = {}
-        
-        if auth_required and self.token:
+    def make_request(self, method, endpoint, data=None, expected_status=200):
+        """Make API request with error handling"""
+        url = f"{self.base_url}/api/{endpoint}"
+        headers = {'Content-Type': 'application/json'}
+        if self.token:
             headers['Authorization'] = f'Bearer {self.token}'
-        
-        # Only set Content-Type for JSON requests
-        if not files and not form_data:
-            headers['Content-Type'] = 'application/json'
-        
+
         try:
             if method == 'GET':
                 response = requests.get(url, headers=headers, timeout=30)
             elif method == 'POST':
-                if files:
-                    response = requests.post(url, files=files, headers=headers, timeout=30)
-                elif form_data:
-                    response = requests.post(url, data=form_data, headers=headers, timeout=30)
-                else:
-                    response = requests.post(url, json=data, headers=headers, timeout=30)
+                response = requests.post(url, json=data, headers=headers, timeout=30)
             elif method == 'PUT':
                 response = requests.put(url, json=data, headers=headers, timeout=30)
             elif method == 'DELETE':
                 response = requests.delete(url, headers=headers, timeout=30)
+            else:
+                return False, {"error": f"Unsupported method: {method}"}
+
+            success = response.status_code == expected_status
+            try:
+                response_data = response.json() if response.content else {}
+            except:
+                response_data = {"raw_response": response.text}
             
-            print(f"   Request: {method} {url} -> Status: {response.status_code}")
+            if not success:
+                response_data["status_code"] = response.status_code
+                response_data["expected_status"] = expected_status
             
-            # Print response details for debugging 422 errors
-            if response.status_code == 422:
-                try:
-                    error_data = response.json()
-                    print(f"   422 Error Details: {error_data}")
-                except:
-                    print(f"   422 Error Text: {response.text}")
-            
-            return response
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Network error for {method} {url}: {str(e)}")
-            return None
+            return success, response_data
+
+        except Exception as e:
+            return False, {"error": str(e)}
 
     def test_health_check(self):
         """Test basic health endpoints"""
