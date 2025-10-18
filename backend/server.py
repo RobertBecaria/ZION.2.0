@@ -1691,18 +1691,31 @@ async def create_family_with_members(
         if not family_name:
             raise HTTPException(status_code=400, detail="Family name is required")
         
-        # Create family profile
+        # Create family profile with correct field names matching FamilyProfileResponse
         new_family = {
             "id": str(uuid.uuid4()),
-            "name": family_name,
-            "surname": surname,
+            "family_name": family_name,  # Changed from 'name'
+            "family_surname": surname,    # Changed from 'surname'
             "description": description,
+            "public_bio": description,
+            "primary_address": None,
+            "city": None,
+            "state": None,
+            "country": None,
+            "established_date": datetime.now(timezone.utc),
+            "family_photo_url": None,
+            "is_private": privacy_level == "PRIVATE",
+            "allow_public_discovery": privacy_level == "PUBLIC",
+            "member_count": len(members),
+            "children_count": len([m for m in members if m.get("role") == "CHILD"]),
+            "creator_id": current_user.id,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "is_active": True,
+            # Extra fields for frontend compatibility
             "type": "NODE",
             "privacy_level": privacy_level,
             "created_by": current_user.id,
-            "created_at": datetime.now(timezone.utc),
-            "is_active": True,
-            "member_count": len(members),
             "posts_count": 0,
             "followers_count": 0,
             "events_count": 0
