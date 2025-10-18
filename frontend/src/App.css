@@ -9470,3 +9470,264 @@ select:focus {
     gap: 1rem;
   }
 }
+
+/* ============================================
+   FAMILY STATUS FORM - СЕМЕЙНОЕ ПОЛОЖЕНИЕ
+============================================ */
+
+.family-status-form-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.form-header-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.form-header-section svg {
+  margin-bottom: 1rem;
+}
+
+.form-header-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1C1E21;
+  margin: 0.5rem 0;
+}
+
+.form-header-section p {
+  color: #65676B;
+  font-size: 1rem;
+  margin: 0.5rem 0 0 0;
+}
+
+.family-status-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Form Sections */
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #E4E6EA;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1C1E21;
+  margin: 0;
+}
+
+/* Form Inputs */
+.form-label {
+  display: block;
+  font-weight: 600;
+  color: #1C1E21;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #E4E6EA;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #1C1E21;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.form-input::placeholder {
+  color: #BCC0C4;
+}
+
+/* Add Button */
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #059669;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+.add-btn:hover {
+  background: rgba(5, 150, 105, 0.1);
+}
+
+/* Member Card */
+.member-card {
+  position: relative;
+  background: #F7F8FA;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  border: 2px solid #E4E6EA;
+  transition: all 0.2s ease;
+}
+
+.member-card:hover {
+  border-color: #059669;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1);
+}
+
+.remove-member-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: white;
+  border: 1px solid #E4E6EA;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #65676B;
+  transition: all 0.2s ease;
+}
+
+.remove-member-btn:hover {
+  background: #FEE;
+  border-color: #F87171;
+  color: #DC2626;
+}
+
+/* Member Fields */
+.member-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-group label {
+  font-weight: 600;
+  color: #1C1E21;
+  font-size: 0.9rem;
+}
+
+/* Info Card */
+.info-card {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  border-left: 4px solid #059669;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+}
+
+.info-card h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1C1E21;
+  margin: 0 0 0.5rem 0;
+}
+
+.info-card p {
+  color: #1C1E21;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0 0 0.5rem 0;
+}
+
+.info-card .note {
+  color: #65676B;
+  font-size: 0.875rem;
+  font-style: italic;
+  margin: 0.75rem 0 0 0;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.submit-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+
+.submit-btn:disabled {
+  background: #E4E6EA;
+  color: #BCC0C4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .family-status-form-container {
+    padding: 1rem;
+  }
+  
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-header-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .submit-btn {
+    width: 100%;
+    padding: 0.875rem 2rem;
+  }
+}
