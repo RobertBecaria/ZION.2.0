@@ -150,7 +150,7 @@ function UniversalWall({
       
       // Add source module based on current active module
       formData.append('source_module', activeModule);
-      formData.append('target_audience', 'module'); // Module-specific audience
+      formData.append('target_audience', postVisibility); // Use selected visibility
       
       // Add uploaded media file IDs
       uploadedMediaIds.forEach(id => {
