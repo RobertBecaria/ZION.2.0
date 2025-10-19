@@ -1486,8 +1486,8 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Public View Button - Only in Family Module & When user has family */}
-              {activeModule === 'family' && userFamily && (
+              {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
+              {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
                 <div className="widget public-view-widget">
                   <div className="widget-header">
                     <Eye size={16} />
