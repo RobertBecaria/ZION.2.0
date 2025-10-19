@@ -2530,16 +2530,53 @@ body {
 
 .family-filter-select-widget {
   width: 100%;
-  padding: 0.625rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   border: 2px solid #E4E6EA;
-  border-radius: 8px;
-  background: white;
+  border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #1C1E21;
   cursor: pointer;
   transition: all 0.2s ease;
-  outline: none;
+  background: white;
+}
+
+/* Public View Widget */
+.public-view-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #E4E6EA;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.public-view-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+
+.public-view-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.widget-hint {
+  font-size: 0.8rem;
+  color: #65676B;
+  line-height: 1.4;
+  margin: 0;
+  text-align: center;
 }
 
 .family-filter-select-widget:hover {
