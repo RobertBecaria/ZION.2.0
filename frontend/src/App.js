@@ -1486,9 +1486,9 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" (includes wall/chat/calendar within family profile) */}
+              {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
               {console.log('[DEBUG RIGHT SIDEBAR] activeModule:', activeModule, 'userFamily:', userFamily, 'activeView:', activeView)}
-              {activeModule === 'family' && userFamily && (activeView === 'my-family-profile' || (userFamily && ['wall', 'chat', 'calendar'].includes(activeView))) && (
+              {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
                 <div className="widget public-view-widget">
                   <div className="widget-header">
                     <Eye size={16} />
