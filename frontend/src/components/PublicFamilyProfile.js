@@ -7,7 +7,12 @@ function PublicFamilyProfile({ user, familyId, onBack, moduleColor = '#059669' }
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadPublicProfile();
+    if (familyId) {
+      loadPublicProfile();
+    } else {
+      setError('Семейный профиль не найден. Пожалуйста, создайте семью сначала.');
+      setLoading(false);
+    }
   }, [familyId]);
 
   const loadPublicProfile = async () => {
