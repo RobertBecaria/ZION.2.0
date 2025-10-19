@@ -2567,10 +2567,21 @@ async def get_public_family_profile(
 ):
     """Get public view of family profile (privacy-aware)"""
     try:
+        # Helper function to sanitize data
+        def sanitize_value(value):
+            if isinstance(value, datetime):
+                return value.isoformat()
+            elif hasattr(value, '__dict__'):
+                return str(value)
+            return value
+        
         # Get family profile
         family = await db.family_profiles.find_one({"id": family_id})
         if not family:
             raise HTTPException(status_code=404, detail="Family not found")
+        
+        # Remove MongoDB _id field
+        family.pop('_id', None)
         
         # Check if user is a member
         is_member = await db.family_members.find_one({
@@ -2590,45 +2601,43 @@ async def get_public_family_profile(
             )
         
         # Build public profile data
-        created_at = family.get("created_at")
-        if isinstance(created_at, datetime):
-            created_at = created_at.isoformat()
-        
         public_profile = {
-            "id": family["id"],
-            "family_name": family.get("family_name", ""),
-            "family_surname": family.get("family_surname", ""),
-            "city": family.get("city", ""),
-            "member_count": family.get("member_count", 0),
-            "created_at": created_at,
-            "family_photo_url": family.get("family_photo_url"),
-            "banner_url": family.get("banner_url"),
-            "is_private": is_private,
+            "id": str(family.get("id", "")),
+            "family_name": str(family.get("family_name", "")),
+            "family_surname": str(family.get("family_surname", "")),
+            "city": str(family.get("city", "")),
+            "member_count": int(family.get("member_count", 0)),
+            "created_at": sanitize_value(family.get("created_at")),
+            "family_photo_url": str(family.get("family_photo_url", "")) if family.get("family_photo_url") else None,
+            "banner_url": str(family.get("banner_url", "")) if family.get("banner_url") else None,
+            "is_private": bool(is_private),
             "is_member": bool(is_member),
-            "is_preview_mode": bool(is_member)  # Members see preview
+            "is_preview_mode": bool(is_member)
         }
         
         # Add description if allowed
-        profile_searchability = family.get("profile_searchability", "public")
         if not is_private or is_member:
-            public_profile["description"] = family.get("public_bio", family.get("description", ""))
+            public_profile["description"] = str(family.get("public_bio") or family.get("description") or "")
         
         # Get members (limited info)
-        members = await db.family_members.find({
+        members_cursor = db.family_members.find({
             "family_id": family_id,
             "is_active": True
-        }).to_list(100)
+        })
+        members = await members_cursor.to_list(100)
         
         # Sanitize member data
         public_members = []
         for member in members:
+            member.pop('_id', None)
             user = await db.users.find_one({"id": member["user_id"]})
             if user:
+                user.pop('_id', None)
                 public_members.append({
-                    "name": user.get("name", ""),
-                    "surname": user.get("surname", ""),
-                    "relationship": member.get("relationship", "member"),
-                    "is_creator": member.get("is_creator", False)
+                    "name": str(user.get("name", "")),
+                    "surname": str(user.get("surname", "")),
+                    "relationship": str(member.get("relationship", "member")),
+                    "is_creator": bool(member.get("is_creator", False))
                 })
         
         public_profile["members"] = public_members
@@ -2639,30 +2648,31 @@ async def get_public_family_profile(
         
         if is_member or who_can_see_posts == "public":
             # Get family posts
-            family_posts = await db.posts.find({
+            posts_cursor = db.posts.find({
                 "family_id": family_id,
                 "is_published": True
-            }).sort("created_at", -1).limit(10).to_list(10)
+            }).sort("created_at", -1).limit(10)
+            family_posts = await posts_cursor.to_list(10)
             
             for post in family_posts:
+                post.pop('_id', None)
                 # Get author info
                 author = await db.users.find_one({"id": post["user_id"]})
-                post_created_at = post.get("created_at")
-                if isinstance(post_created_at, datetime):
-                    post_created_at = post_created_at.isoformat()
+                if author:
+                    author.pop('_id', None)
                 
                 posts.append({
-                    "id": post["id"],
-                    "content": post["content"],
-                    "created_at": post_created_at,
-                    "author_name": author.get("name", "") if author else "",
-                    "like_count": post.get("like_count", 0),
-                    "comment_count": post.get("comment_count", 0)
+                    "id": str(post.get("id", "")),
+                    "content": str(post.get("content", "")),
+                    "created_at": sanitize_value(post.get("created_at")),
+                    "author_name": str(author.get("name", "")) if author else "",
+                    "like_count": int(post.get("like_count", 0)),
+                    "comment_count": int(post.get("comment_count", 0))
                 })
         
         public_profile["posts"] = posts
-        public_profile["posts_visible"] = is_member or who_can_see_posts == "public"
-        public_profile["who_can_see_posts"] = who_can_see_posts
+        public_profile["posts_visible"] = bool(is_member or who_can_see_posts == "public")
+        public_profile["who_can_see_posts"] = str(who_can_see_posts)
         
         return {"success": True, "profile": public_profile}
         
