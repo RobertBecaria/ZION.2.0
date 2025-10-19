@@ -1489,7 +1489,6 @@ function Dashboard() {
               )}
 
               {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
-              {console.log('[DEBUG RIGHT SIDEBAR] activeModule:', activeModule, 'userFamily:', userFamily, 'activeView:', activeView)}
               {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
                 <div className="widget public-view-widget">
                   <div className="widget-header">
