@@ -742,11 +742,6 @@ function Dashboard() {
   
   const { user, logout, refreshProfile } = useAuth();
 
-  // Debug: Track activeView changes
-  useEffect(() => {
-    console.log('[DEBUG] activeView changed to:', activeView);
-  }, [activeView]);
-
   // Load user's primary family
   useEffect(() => {
     const loadUserFamily = async () => {
