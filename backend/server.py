@@ -2590,13 +2590,17 @@ async def get_public_family_profile(
             )
         
         # Build public profile data
+        created_at = family.get("created_at")
+        if isinstance(created_at, datetime):
+            created_at = created_at.isoformat()
+        
         public_profile = {
             "id": family["id"],
             "family_name": family.get("family_name", ""),
             "family_surname": family.get("family_surname", ""),
             "city": family.get("city", ""),
             "member_count": family.get("member_count", 0),
-            "created_at": family.get("created_at"),
+            "created_at": created_at,
             "family_photo_url": family.get("family_photo_url"),
             "banner_url": family.get("banner_url"),
             "is_private": is_private,
