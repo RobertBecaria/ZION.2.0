@@ -11,6 +11,7 @@ import MediaStorage from './components/MediaStorage';
 import ProfileCompletionModal from './components/ProfileCompletionModal';
 import FamilyTriggerFlow from './components/FamilyTriggerFlow';
 import MyFamilyProfile from './components/MyFamilyProfile';
+import PublicFamilyProfile from './components/PublicFamilyProfile';
 // MY INFO MODULE COMPONENTS
 import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
