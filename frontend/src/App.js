@@ -1347,12 +1347,22 @@ function Dashboard() {
                                 familyFilter={activeModule === 'family' ? familyFilter : null}
                                 userFamilyId={userFamily?.id}
                               />
-                            ) : activeView === 'my-family-profile' || activeView === 'family-public-view' ? (
-                              /* Family Profile views - show MyFamilyProfile */
+                            ) : activeView === 'my-family-profile' ? (
+                              /* My Family Profile view */
                               <ErrorBoundary>
                                 <MyFamilyProfile
                                   user={user}
                                   familyData={userFamily}
+                                  moduleColor={currentModule.color}
+                                />
+                              </ErrorBoundary>
+                            ) : activeView === 'family-public-view' ? (
+                              /* Public Family Profile view */
+                              <ErrorBoundary>
+                                <PublicFamilyProfile
+                                  user={user}
+                                  familyId={userFamily?.id}
+                                  onBack={() => setActiveView('my-family-profile')}
                                   moduleColor={currentModule.color}
                                 />
                               </ErrorBoundary>
