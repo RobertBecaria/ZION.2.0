@@ -2556,6 +2556,117 @@ async def delete_household(
 
 # END: Household Management Endpoints
 
+# ============================================
+#   PUBLIC FAMILY PROFILE ENDPOINTS
+# ============================================
+
+@api_router.get("/family/{family_id}/public")
+async def get_public_family_profile(
+    family_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get public view of family profile (privacy-aware)"""
+    try:
+        # Get family profile
+        family = await db.family_profiles.find_one({"id": family_id})
+        if not family:
+            raise HTTPException(status_code=404, detail="Family not found")
+        
+        # Check if user is a member
+        is_member = await db.family_members.find_one({
+            "family_id": family_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        # Apply privacy settings
+        is_private = family.get("is_private", False)
+        
+        # If private and not a member, deny access
+        if is_private and not is_member:
+            raise HTTPException(
+                status_code=403, 
+                detail="This family profile is private"
+            )
+        
+        # Build public profile data
+        public_profile = {
+            "id": family["id"],
+            "family_name": family.get("family_name", ""),
+            "family_surname": family.get("family_surname", ""),
+            "city": family.get("city", ""),
+            "member_count": family.get("member_count", 0),
+            "created_at": family.get("created_at"),
+            "family_photo_url": family.get("family_photo_url"),
+            "banner_url": family.get("banner_url"),
+            "is_private": is_private,
+            "is_member": bool(is_member),
+            "is_preview_mode": bool(is_member)  # Members see preview
+        }
+        
+        # Add description if allowed
+        profile_searchability = family.get("profile_searchability", "public")
+        if not is_private or is_member:
+            public_profile["description"] = family.get("public_bio", family.get("description", ""))
+        
+        # Get members (limited info)
+        members = await db.family_members.find({
+            "family_id": family_id,
+            "is_active": True
+        }).to_list(100)
+        
+        # Sanitize member data
+        public_members = []
+        for member in members:
+            user = await db.users.find_one({"id": member["user_id"]})
+            if user:
+                public_members.append({
+                    "name": user.get("name", ""),
+                    "surname": user.get("surname", ""),
+                    "relationship": member.get("relationship", "member"),
+                    "is_creator": member.get("is_creator", False)
+                })
+        
+        public_profile["members"] = public_members
+        
+        # Get posts based on privacy settings
+        who_can_see_posts = family.get("who_can_see_posts", "family")
+        posts = []
+        
+        if is_member or who_can_see_posts == "public":
+            # Get family posts
+            family_posts = await db.posts.find({
+                "family_id": family_id,
+                "is_published": True
+            }).sort("created_at", -1).limit(10).to_list(10)
+            
+            for post in family_posts:
+                # Get author info
+                author = await db.users.find_one({"id": post["user_id"]})
+                posts.append({
+                    "id": post["id"],
+                    "content": post["content"],
+                    "created_at": post["created_at"],
+                    "author_name": author.get("name", "") if author else "",
+                    "like_count": post.get("like_count", 0),
+                    "comment_count": post.get("comment_count", 0)
+                })
+        
+        public_profile["posts"] = posts
+        public_profile["posts_visible"] = is_member or who_can_see_posts == "public"
+        public_profile["who_can_see_posts"] = who_can_see_posts
+        
+        return {"success": True, "profile": public_profile}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting public profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# END: Public Family Profile Endpoints
+
+
 
 @api_router.put("/family-profiles/{family_id}")
 async def update_family_profile(
