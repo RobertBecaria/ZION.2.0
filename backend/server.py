@@ -96,6 +96,8 @@ class Post(BaseModel):
     content: str
     source_module: str = "family"  # Module where post was created
     target_audience: str = "module"  # "module", "public", "private"
+    visibility: PostVisibility = PostVisibility.FAMILY_ONLY  # NEW: Role-based visibility
+    family_id: Optional[str] = None  # NEW: Which family this post belongs to
     media_files: List[str] = []  # List of MediaFile IDs
     youtube_urls: List[str] = []  # Extracted YouTube URLs
     likes_count: int = 0
