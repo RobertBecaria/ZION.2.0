@@ -9474,7 +9474,7 @@ select:focus {
   max-width: 600px;
 }
 
-/* Profile Actions */
+/* Profile Actions - Enhanced with Gradients */
 .profile-actions {
   display: flex;
   gap: 0.75rem;
@@ -9485,34 +9485,71 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-btn:hover::before {
+  left: 100%;
 }
 
 .action-btn.primary {
-  background: var(--module-color, #059669);
+  background: linear-gradient(135deg, var(--module-color, #059669) 0%, color-mix(in srgb, var(--module-color, #059669) 80%, black) 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+  box-shadow: 
+    0 4px 12px color-mix(in srgb, var(--module-color, #059669) 30%, transparent),
+    0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 8px 20px color-mix(in srgb, var(--module-color, #059669) 35%, transparent),
+    0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.action-btn.primary:active {
+  transform: translateY(-1px) scale(1);
 }
 
 .action-btn.secondary {
-  background: #E4E6EA;
+  background: linear-gradient(135deg, #F0F2F5 0%, #E4E6EA 100%);
   color: #1C1E21;
+  border: 1px solid rgba(228, 230, 234, 0.6);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .action-btn.secondary:hover {
-  background: #D0D3D9;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #E4E6EA 0%, #D0D3D9 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  border-color: rgba(208, 211, 217, 0.8);
+}
+
+.action-btn.secondary:active {
+  transform: translateY(0);
 }
 
 /* Profile Stats */
