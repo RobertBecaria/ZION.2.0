@@ -40,7 +40,8 @@ function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/users/gender`, {
         method: 'PUT',

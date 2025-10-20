@@ -42,7 +42,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     setLoadingMembers(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}/members`, {
         headers: {
@@ -71,7 +72,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     setIsSearching(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/users/search?query=${encodeURIComponent(query)}`, {
         headers: {
@@ -103,7 +105,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
   const addMember = async (userData, relationship) => {
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}/members`, {
         method: 'POST',
@@ -141,7 +144,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
 
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}/members/${memberId}`, {
         method: 'DELETE',
@@ -169,7 +173,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}/update`, {
         method: 'PUT',
@@ -202,7 +207,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}/privacy`, {
         method: 'PUT',
@@ -242,7 +248,8 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) throw new Error('Backend URL not configured');
       
       const response = await fetch(`${backendUrl}/api/family/${family.id}`, {
         method: 'DELETE',
