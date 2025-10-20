@@ -479,6 +479,9 @@ class ChatGroupCreate(BaseModel):
     color_code: str = "#059669"
     member_ids: List[str] = []
 
+class GenderUpdateRequest(BaseModel):
+    gender: Gender
+
 # === FAMILY PROFILE INPUT/OUTPUT MODELS ===
 
 class FamilyProfileCreate(BaseModel):
