@@ -1311,30 +1311,43 @@ body {
   opacity: 0.8;
 }
 
-/* Search Widget - Modern Design */
+/* Search Widget - Premium Design */
 .search-input {
   width: 100%;
-  padding: 0.875rem 1.125rem;
+  padding: 0.875rem 1.125rem 0.875rem 2.75rem;
   border: 2px solid transparent;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, rgba(240, 242, 245, 0.8) 0%, rgba(248, 249, 250, 1) 100%);
   font-size: var(--font-size-sm);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-weight: var(--font-weight-medium);
+  position: relative;
+}
+
+.search-input:hover {
+  background: linear-gradient(135deg, rgba(232, 235, 239, 1) 0%, rgba(240, 242, 245, 1) 100%);
+  border-color: rgba(200, 204, 210, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .search-input:focus {
   outline: none;
   background: white;
-  border-color: rgba(102, 126, 234, 0.4);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1),
-              0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 
+    0 0 0 4px rgba(102, 126, 234, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .search-input::placeholder {
   color: var(--gray-500);
   font-weight: var(--font-weight-normal);
+  transition: color 0.3s ease;
+}
+
+.search-input:focus::placeholder {
+  color: var(--gray-400);
 }
 
 /* Filter Widget - Modern Button Design */
