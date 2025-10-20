@@ -103,11 +103,15 @@ function AuthProvider({ children }) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        localStorage.removeItem('zion_token');
+        console.error('Failed to fetch user profile:', response.status);
+        // Only remove token if it's actually unauthorized (401)
+        if (response.status === 401) {
+          localStorage.removeItem('zion_token');
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      localStorage.removeItem('zion_token');
+      // Don't remove token on network errors, only on auth failures
     } finally {
       setLoading(false);
     }
