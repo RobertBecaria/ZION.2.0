@@ -3684,6 +3684,82 @@ async def get_media_file(file_id: str):
         media_type=media_file["mime_type"]
     )
 
+# Helper function to check if user can see post based on visibility
+async def can_user_see_post(post: dict, current_user: User, user_family_membership: dict = None) -> bool:
+    """
+    Determine if current_user can see a post based on role-based visibility rules
+    
+    Args:
+        post: The post document from database
+        current_user: The authenticated user
+        user_family_membership: User's membership in the post's family (if any)
+    
+    Returns:
+        bool: True if user can see the post, False otherwise
+    """
+    visibility = post.get("visibility", "FAMILY_ONLY")
+    post_family_id = post.get("family_id")
+    post_user_id = post.get("user_id")
+    
+    # Creator can always see their own posts
+    if post_user_id == current_user.id:
+        return True
+    
+    # PUBLIC posts - everyone can see
+    if visibility == "PUBLIC":
+        return True
+    
+    # ONLY_ME - only creator can see (already checked above)
+    if visibility == "ONLY_ME":
+        return False
+    
+    # For family-specific visibility, check if user is a member
+    if post_family_id and not user_family_membership:
+        # User is not a member of this family
+        return False
+    
+    # FAMILY_ONLY - all family members can see
+    if visibility == "FAMILY_ONLY":
+        return bool(user_family_membership)
+    
+    # HOUSEHOLD_ONLY - same household members
+    if visibility == "HOUSEHOLD_ONLY":
+        if not user_family_membership:
+            return False
+        # TODO: Add household check when household system is fully implemented
+        # For now, treat as FAMILY_ONLY
+        return True
+    
+    # Role-based visibility checks
+    if not user_family_membership:
+        return False
+    
+    user_relationship = user_family_membership.get("relationship", "")
+    user_gender = current_user.gender
+    
+    # PARENTS_ONLY - all parents (regardless of gender)
+    if visibility == "PARENTS_ONLY":
+        return user_relationship == "PARENT"
+    
+    # FATHERS_ONLY - male parents only
+    if visibility == "FATHERS_ONLY":
+        return user_relationship == "PARENT" and user_gender == "MALE"
+    
+    # MOTHERS_ONLY - female parents only
+    if visibility == "MOTHERS_ONLY":
+        return user_relationship == "PARENT" and user_gender == "FEMALE"
+    
+    # CHILDREN_ONLY - children only
+    if visibility == "CHILDREN_ONLY":
+        return user_relationship == "CHILD"
+    
+    # EXTENDED_FAMILY_ONLY - extended family members
+    if visibility == "EXTENDED_FAMILY_ONLY":
+        return user_relationship == "EXTENDED_FAMILY"
+    
+    # Default: hide post
+    return False
+
 # Posts Endpoints
 @api_router.get("/posts", response_model=List[PostResponse])
 async def get_posts(
