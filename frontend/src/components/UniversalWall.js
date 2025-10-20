@@ -161,9 +161,9 @@ function UniversalWall({
       const formData = new FormData();
       formData.append('content', newPost.trim() || ' '); // Ensure there's some content
       
-      // Add source module based on current active module
+      // Add source module and visibility
       formData.append('source_module', activeModule);
-      formData.append('target_audience', postVisibility); // Use selected visibility
+      formData.append('visibility', postVisibility); // Send visibility to backend
       
       // Add uploaded media file IDs
       uploadedMediaIds.forEach(id => {
