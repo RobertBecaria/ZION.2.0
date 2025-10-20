@@ -982,9 +982,13 @@ function Dashboard() {
   };
 
   if (showOnboarding) {
-    return <OnboardingWizard onComplete={() => {
+    return <OnboardingWizard onComplete={async () => {
       // Mark onboarding as completed for this user
-      localStorage.setItem(`onboarding_completed_${user.id}`, 'true');
+      if (user?.id) {
+        localStorage.setItem(`onboarding_completed_${user.id}`, 'true');
+      }
+      // Wait a tick to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100));
       setShowOnboarding(false);
     }} />;
   }
