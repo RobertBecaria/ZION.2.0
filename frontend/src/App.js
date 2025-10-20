@@ -806,6 +806,15 @@ function Dashboard() {
     }
   }, [user, activeModule]);
 
+  // Check if user needs to set gender
+  useEffect(() => {
+    if (user && !user.gender) {
+      setShowGenderModal(true);
+    } else {
+      setShowGenderModal(false);
+    }
+  }, [user]);
+
   // Check if user needs onboarding (no affiliations)
   useEffect(() => {
     if (user && (!user.affiliations || user.affiliations.length === 0)) {
