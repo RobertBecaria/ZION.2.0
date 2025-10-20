@@ -1477,30 +1477,56 @@ function Dashboard() {
               </div>
 
               {/* Family Filter Widget - Only in Family Module */}
-              {activeModule === 'family' && (
-                <div className="widget family-filter-widget">
+              {/* Unified Post Filter Widget - Stacked Filters */}
+              {activeModule === 'family' && activeView === 'wall' && (
+                <div className="widget unified-filter-widget">
                   <div className="widget-header">
                     <Filter size={16} />
                     <span>Фильтр постов</span>
                   </div>
-                  <div className="filter-content">
-                    <label htmlFor="family-filter-sidebar" className="filter-label-small">
-                      Показать посты от:
-                    </label>
-                    <select 
-                      id="family-filter-sidebar"
-                      className="family-filter-select-widget"
-                      value={familyFilter}
-                      onChange={(e) => setFamilyFilter(e.target.value)}
-                      style={{ 
-                        borderColor: currentModule.color,
-                        accentColor: currentModule.color
-                      }}
-                    >
-                      <option value="all">🌍 Все семьи</option>
-                      <option value="my-family">✅ Моя семья</option>
-                      <option value="subscribed">👥 Подписанные семьи</option>
-                    </select>
+                  <div className="filter-list">
+                    {[
+                      { id: 'all', label: 'Все посты', icon: '👁️', description: 'Показать все' },
+                      { id: 'public', label: 'Публичные', icon: '🌍', description: 'Общедоступные' },
+                      { id: 'my-family', label: 'Моя семья', icon: '🔒', description: 'Только семья' },
+                      { id: 'subscribed', label: 'Подписки', icon: '👥', description: 'Подписанные семьи' },
+                      { id: 'household', label: 'Домохозяйство', icon: '🏠', description: 'Мой дом' },
+                      { id: 'gender-male', label: 'Мужчины', icon: '♂️', description: 'Только для мужчин' },
+                      { id: 'gender-female', label: 'Женщины', icon: '♀️', description: 'Только для женщин' },
+                      { id: 'gender-it', label: 'IT/AI', icon: '🤖', description: 'Технологии' }
+                    ].map((filter) => {
+                      const isActive = filter.id === 'all' 
+                        ? activeFilters.length === 0 
+                        : activeFilters.includes(filter.id);
+                      
+                      return (
+                        <div
+                          key={filter.id}
+                          className={`filter-item ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            if (filter.id === 'all') {
+                              setActiveFilters([]);
+                            } else {
+                              setActiveFilters(prev => 
+                                prev.includes(filter.id)
+                                  ? prev.filter(f => f !== filter.id)
+                                  : [...prev, filter.id]
+                              );
+                            }
+                          }}
+                          style={{
+                            backgroundColor: isActive ? `${currentModule.color}10` : 'transparent',
+                            borderLeft: isActive ? `3px solid ${currentModule.color}` : '3px solid transparent'
+                          }}
+                        >
+                          <span className="filter-icon">{filter.icon}</span>
+                          <span className="filter-label">{filter.label}</span>
+                          {isActive && filter.id !== 'all' && (
+                            <span className="filter-check" style={{ color: currentModule.color }}>✓</span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
