@@ -11278,3 +11278,137 @@ select:focus {
   }
 }
 
+/* ============================================
+   GENDER UPDATE MODAL STYLES
+============================================ */
+
+.gender-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.gender-modal .modal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.gender-modal .modal-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #050505;
+  margin-bottom: 0.5rem;
+}
+
+.gender-modal .modal-subtitle {
+  color: #65676B;
+  font-size: 0.95rem;
+}
+
+.gender-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem;
+  border: 2px solid #E4E6EB;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gender-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gender-option.selected {
+  border-width: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.gender-icon {
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+.gender-info {
+  flex: 1;
+}
+
+.gender-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.gender-info p {
+  font-size: 0.875rem;
+  color: #65676B;
+  margin: 0;
+}
+
+.gender-radio {
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.radio-outer {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #BCC0C4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.radio-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.gender-modal .modal-actions {
+  margin-bottom: 1rem;
+}
+
+.gender-modal .btn-primary {
+  width: 100%;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.gender-modal .btn-primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.gender-modal .modal-note {
+  font-size: 0.875rem;
+  color: #65676B;
+  text-align: center;
+  line-height: 1.5;
+  background: #F0F2F5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 0;
+}
+
+.gender-modal .modal-note strong {
+  color: #050505;
+}
+
