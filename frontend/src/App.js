@@ -740,6 +740,7 @@ function Dashboard() {
   
   // NEW FAMILY SYSTEM STATES
   const [showProfileCompletionModal, setShowProfileCompletionModal] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
   
   const { user, logout, refreshProfile } = useAuth();
 
