@@ -74,7 +74,7 @@ function UniversalWall({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeGroup, activeModule, familyFilter]); // Re-fetch posts when filter changes
+  }, [activeGroup, activeModule, activeFilters]); // Re-fetch posts when filters change
 
   const fetchPosts = async () => {
     try {
@@ -83,14 +83,25 @@ function UniversalWall({
       // Build URL with filter parameters
       let url = `${backendUrl}/api/posts?module=${activeModule}`;
       
-      // Add family filter if in family module
-      if (activeModule === 'family' && familyFilter) {
-        if (familyFilter === 'my-family' && userFamilyId) {
-          url += `&family_id=${userFamilyId}`;
-        } else if (familyFilter === 'subscribed') {
-          url += `&filter=subscribed`;
-        }
-        // 'all' doesn't need extra parameters
+      // Handle unified stacked filters
+      if (activeModule === 'family' && activeFilters.length > 0) {
+        activeFilters.forEach(filter => {
+          if (filter === 'my-family' && userFamilyId) {
+            url += `&family_id=${userFamilyId}`;
+          } else if (filter === 'subscribed') {
+            url += `&filter=subscribed`;
+          } else if (filter === 'public') {
+            url += `&visibility=PUBLIC`;
+          } else if (filter === 'household') {
+            url += `&visibility=HOUSEHOLD_ONLY`;
+          } else if (filter === 'gender-male') {
+            url += `&visibility=GENDER_MALE`;
+          } else if (filter === 'gender-female') {
+            url += `&visibility=GENDER_FEMALE`;
+          } else if (filter === 'gender-it') {
+            url += `&visibility=GENDER_IT`;
+          }
+        });
       }
       
       const response = await fetch(url, {
