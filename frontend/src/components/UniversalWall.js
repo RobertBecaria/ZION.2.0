@@ -15,7 +15,7 @@ function UniversalWall({
   moduleName = "Family",
   user,
   activeModule = 'family',  // New prop for current module
-  familyFilter = null,  // Filter for family posts: 'all', 'my-family', 'subscribed'
+  activeFilters = [],  // Unified stacked filters array
   userFamilyId = null  // User's family ID for filtering
 }) {
   const [posts, setPosts] = useState([]);
