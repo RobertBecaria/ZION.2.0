@@ -1572,6 +1572,22 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
         profile_completed=current_user.profile_completed
     )
 
+@api_router.put("/users/gender")
+async def update_user_gender(
+    gender_data: GenderUpdateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user's gender"""
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "gender": gender_data.gender.value,
+            "updated_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Gender updated successfully", "gender": gender_data.gender.value}
+
 @api_router.post("/onboarding")
 async def complete_onboarding(
     onboarding_data: OnboardingData,
