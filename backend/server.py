@@ -1552,6 +1552,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
         first_name=current_user.first_name,
         last_name=current_user.last_name,
         middle_name=current_user.middle_name,
+        gender=current_user.gender,  # NEW: Include gender
         role=current_user.role,
         is_active=current_user.is_active,
         is_verified=current_user.is_verified,
