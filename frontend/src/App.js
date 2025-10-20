@@ -806,12 +806,18 @@ function Dashboard() {
     }
   }, [user, activeModule]);
 
-  // Check if user needs to set gender
+  // Check if user needs to set gender (only ask once)
   useEffect(() => {
-    if (user && !user.gender) {
-      setShowGenderModal(true);
-    } else {
-      setShowGenderModal(false);
+    if (user) {
+      const hasAskedGender = localStorage.getItem(`gender_asked_${user.id}`);
+      
+      if (!user.gender && !hasAskedGender) {
+        setShowGenderModal(true);
+      } else if (user.gender) {
+        // Mark as asked if gender is set
+        localStorage.setItem(`gender_asked_${user.id}`, 'true');
+        setShowGenderModal(false);
+      }
     }
   }, [user]);
 
