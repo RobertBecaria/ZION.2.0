@@ -24,7 +24,11 @@ const FamilyProfilePage = ({ familyId, currentUser, onBack, onInviteMember }) =>
   const fetchFamilyProfile = async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://family-profile-hub.preview.emergentagent.com';
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      
+      if (!backendUrl) {
+        throw new Error('Backend URL not configured');
+      }
       
       const response = await fetch(`${backendUrl}/api/family-profiles/${familyId}`, {
         headers: {
