@@ -325,6 +325,18 @@ metadata:
   run_ui: true
 
 frontend:
+  - task: "Unified Stacked Filter Widget - Phase 2"
+    implemented: true
+    working: "NA"
+    file: "App.js, App.css, components/UniversalWall.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "PHASE 2 - UNIFIED STACKED FILTER WIDGET IMPLEMENTATION: Implemented unified stacked filter widget in Right Sidebar (WORLD ZONE) that replaces old dropdown family filter. Features: 1) Sidebar-style design matching МОЯ ИНФОРМАЦИЯ menu, 2) Stacked filtering support (multiple filters active simultaneously), 3) Merged family + visibility filters into one unified widget, 4) 8 filter options: 👁️ Все посты (default), 🌍 Публичные, 🔒 Моя семья, 👥 Подписки, 🏠 Домохозяйство, ♂️ Мужчины, ♀️ Женщины, 🤖 IT/AI, 5) Visual feedback with green background tint, green left border, and checkmarks for active filters, 6) Module color theming (green for Family module), 7) activeFilters state management for stacked filtering, 8) Integration with UniversalWall component for post filtering. Ready for comprehensive frontend testing."
+
   - task: "Post Composer Visibility Dropdown - Phase 1"
     implemented: true
     working: true
