@@ -641,6 +641,8 @@ class PostResponse(BaseModel):
     content: str
     source_module: str = "family"
     target_audience: str = "module"
+    visibility: str = "FAMILY_ONLY"  # NEW: Role-based visibility
+    family_id: Optional[str] = None  # NEW: Family ID
     author: Dict[str, Any]  # User info
     media_files: List[Dict[str, Any]] = []  # MediaFile info
     youtube_urls: List[str] = []
