@@ -1525,9 +1525,8 @@ function Dashboard() {
                 <input type="text" placeholder="Поиск по записям..." className="search-input" />
               </div>
 
-              {/* Family Filter Widget - Only in Family Module */}
               {/* Unified Post Filter Widget - Stacked Filters */}
-              {activeModule === 'family' && activeView === 'wall' && (
+              {activeModule === 'family' && (activeView === 'wall' || activeView === 'feed') && (
                 <div className="widget unified-filter-widget">
                   <div className="widget-header">
                     <Filter size={16} />
