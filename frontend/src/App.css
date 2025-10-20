@@ -2270,31 +2270,50 @@ body {
 .visibility-dropdown {
   flex: 1;
   max-width: 250px;
-  padding: 0.5rem 0.875rem;
-  border: 2px solid #E4E6EA;
-  border-radius: 8px;
-  background: white;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: 0.625rem 1rem;
+  border: 2px solid rgba(228, 230, 234, 0.8);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 249, 250, 0.8) 100%);
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #1C1E21;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .visibility-dropdown:hover {
   border-color: currentColor;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, rgba(248, 249, 250, 1) 0%, rgba(240, 242, 245, 1) 100%);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 .visibility-dropdown:focus {
   border-color: currentColor;
-  box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.1);
+  box-shadow: 
+    0 0 0 4px rgba(66, 184, 131, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  background: white;
+}
+
+.visibility-dropdown:active {
+  transform: translateY(0);
 }
 
 .visibility-dropdown option {
-  padding: 0.5rem;
-  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: white;
+  color: #1C1E21;
 }
 
 /* File Upload Indicator */
