@@ -185,13 +185,24 @@ function AuthProvider({ children }) {
 
       if (response.ok) {
         // Refresh user profile to get updated affiliations
-        await fetchUserProfile(token);
+        const profileResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          setUser(userData);
+        }
+        
         return { success: true };
       } else {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
         return { success: false, error: error.detail };
       }
     } catch (error) {
+      console.error('Onboarding error:', error);
       return { success: false, error: 'Network error' };
     }
   };
