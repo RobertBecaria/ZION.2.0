@@ -477,19 +477,26 @@ function OnboardingWizard({ onComplete }) {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      const result = await completeOnboarding(onboardingData);
-      if (result.success) {
-        // Successfully saved onboarding data
-        onComplete();
-      } else {
-        // Error saving, but still allow user to proceed
-        console.error('Onboarding error:', result.error);
-        alert(`Не удалось сохранить данные: ${result.error}. Вы все равно можете продолжить.`);
-        onComplete(); // Allow user to proceed anyway
+      // If user has filled any data, try to save it
+      const hasData = onboardingData.work_place || onboardingData.university || onboardingData.school;
+      
+      if (hasData) {
+        const result = await completeOnboarding(onboardingData);
+        if (!result.success) {
+          console.error('Onboarding error:', result.error);
+          // Show error but still allow to proceed
+          if (!window.confirm(`Не удалось сохранить данные: ${result.error}. Продолжить без сохранения?`)) {
+            setLoading(false);
+            return;
+          }
+        }
       }
+      
+      // Always complete onboarding, even if no data or save failed
+      onComplete();
     } catch (error) {
       console.error('Onboarding exception:', error);
-      // Even if there's an error, allow user to proceed
+      // Allow user to proceed on error
       onComplete();
     } finally {
       setLoading(false);
