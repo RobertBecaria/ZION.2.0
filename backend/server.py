@@ -3806,12 +3806,34 @@ async def get_posts(
         query["user_id"] = {"$in": connected_users}
     
     # Query posts
-    posts = await db.posts.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    posts = await db.posts.find(query).sort("created_at", -1).skip(skip).limit(limit * 2).to_list(limit * 2)  # Fetch more to account for filtering
+    
+    # Get user's family memberships for visibility checks
+    user_family_memberships = {}
+    if module == "family":
+        user_memberships = await db.family_members.find({
+            "user_id": current_user.id,
+            "is_active": True
+        }).to_list(100)
+        
+        for membership in user_memberships:
+            user_family_memberships[membership["family_id"]] = membership
     
     # Remove MongoDB _id and get additional info
     result = []
     for post in posts:
         post.pop("_id", None)
+        
+        # NEW: Check visibility - skip post if user can't see it
+        post_family_id = post.get("family_id")
+        user_membership = user_family_memberships.get(post_family_id) if post_family_id else None
+        
+        if not await can_user_see_post(post, current_user, user_membership):
+            continue
+        
+        # Stop if we've reached the limit
+        if len(result) >= limit:
+            break
         
         # Get author info
         author = await get_user_by_id(post["user_id"])
