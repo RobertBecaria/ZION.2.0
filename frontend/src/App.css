@@ -9342,9 +9342,15 @@ select:focus {
   flex: 1;
 }
 
-/* Profile Avatar */
+/* Profile Avatar - Enhanced with Glow Effect */
 .profile-avatar-container {
   position: relative;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.12));
+  transition: filter 0.3s ease;
+}
+
+.profile-avatar-container:hover {
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.16));
 }
 
 .profile-avatar {
@@ -9352,18 +9358,49 @@ select:focus {
   height: 168px;
   border-radius: 50%;
   border: 6px solid white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: var(--module-color, #059669);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.profile-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.25) 0%,
+    transparent 60%
+  );
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.03) rotate(2deg);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
 }
 
 .profile-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.profile-avatar:hover img {
+  transform: scale(1.05);
 }
 
 .avatar-upload-btn {
@@ -9372,11 +9409,13 @@ select:focus {
   right: 8px;
   background: white;
   border: 2px solid #E4E6EA;
-  padding: 0.5rem;
+  padding: 0.625rem;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9385,9 +9424,13 @@ select:focus {
 }
 
 .avatar-upload-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.15) rotate(-5deg);
   background: #F7F8FA;
   color: #1C1E21;
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.16),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #D0D3D9;
 }
 
 /* Profile Details */
