@@ -212,12 +212,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+  box-sizing: border-box;
 }
 
 .form-group label {
