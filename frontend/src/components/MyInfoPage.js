@@ -250,13 +250,70 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   };
 
   const getMarriageStatusLabel = (status) => {
-    const labels = {
+    const gender = myInfo?.gender;
+    
+    // Gender-aware labels
+    const labelsForMale = {
+      'SINGLE': 'Не женат',
+      'MARRIED': 'Женат',
+      'DIVORCED': 'Разведён',
+      'WIDOWED': 'Вдовец'
+    };
+    
+    const labelsForFemale = {
+      'SINGLE': 'Не замужем',
+      'MARRIED': 'Замужем',
+      'DIVORCED': 'Разведена',
+      'WIDOWED': 'Вдова'
+    };
+    
+    const labelsDefault = {
       'SINGLE': 'Не женат/Не замужем',
       'MARRIED': 'Женат/Замужем',
       'DIVORCED': 'Разведён/Разведена',
       'WIDOWED': 'Вдовец/Вдова'
     };
+    
+    // Choose labels based on gender
+    let labels;
+    if (gender === 'MALE') {
+      labels = labelsForMale;
+    } else if (gender === 'FEMALE') {
+      labels = labelsForFemale;
+    } else {
+      labels = labelsDefault;
+    }
+    
     return labels[status] || 'Не указано';
+  };
+  
+  const getMarriageStatusOptions = () => {
+    const gender = myInfo?.gender;
+    
+    // Gender-aware options for dropdown
+    if (gender === 'MALE') {
+      return [
+        { value: 'SINGLE', label: 'Не женат' },
+        { value: 'MARRIED', label: 'Женат' },
+        { value: 'DIVORCED', label: 'Разведён' },
+        { value: 'WIDOWED', label: 'Вдовец' }
+      ];
+    } else if (gender === 'FEMALE') {
+      return [
+        { value: 'SINGLE', label: 'Не замужем' },
+        { value: 'MARRIED', label: 'Замужем' },
+        { value: 'DIVORCED', label: 'Разведена' },
+        { value: 'WIDOWED', label: 'Вдова' }
+      ];
+    } else {
+      // For IT or unknown gender, use neutral/both forms
+      return [
+        { value: 'SINGLE', label: 'Не женат/Не замужем' },
+        { value: 'MARRIED', label: 'Женат/Замужем' },
+        { value: 'DIVORCED', label: 'Разведён/Разведена' },
+        { value: 'WIDOWED', label: 'Вдовец/Вдова' }
+      ];
+    }
   };
 
   if (loading) {
