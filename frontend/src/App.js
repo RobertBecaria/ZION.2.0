@@ -965,15 +965,6 @@ function Dashboard() {
     fetchChatGroups(); // Refresh groups after creation
   };
 
-  const handleProfileComplete = async (data) => {
-    setShowProfileCompletionModal(false);
-    
-    // Refresh user profile to get updated profile_completed flag
-    if (refreshProfile) {
-      await refreshProfile();
-    }
-  };
-
   const handleUpdateUser = (updatedUserData) => {
     // Update user context with new data
     // This would be handled by your auth context
