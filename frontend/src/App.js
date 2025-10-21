@@ -846,11 +846,12 @@ function Dashboard() {
     if (user) {
       const hasAskedGender = localStorage.getItem(`gender_asked_${user.id}`);
       
+      // Only show modal if gender is not set AND we haven't asked before
       if (!user.gender && !hasAskedGender) {
         setShowGenderModal(true);
-      } else if (user.gender) {
-        // Mark as asked if gender is set
+        // Mark as asked immediately when we show the modal
         localStorage.setItem(`gender_asked_${user.id}`, 'true');
+      } else {
         setShowGenderModal(false);
       }
     }
