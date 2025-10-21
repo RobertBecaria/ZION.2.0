@@ -206,6 +206,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .form-group {
