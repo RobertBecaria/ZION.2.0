@@ -1085,12 +1085,22 @@ function Dashboard() {
                     src={user.profile_picture} 
                     alt={`${user.first_name} ${user.last_name}`}
                     className="avatar-image"
+                    onError={(e) => {
+                      console.error('Avatar image failed to load');
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
-                  <div className="avatar-placeholder" style={{ backgroundColor: currentModule.color }}>
-                    <User size={40} color="white" />
-                  </div>
-                )}
+                ) : null}
+                <div 
+                  className="avatar-placeholder" 
+                  style={{ 
+                    backgroundColor: currentModule.color,
+                    display: user.profile_picture ? 'none' : 'flex'
+                  }}
+                >
+                  <User size={40} color="white" />
+                </div>
                 <div className="status-indicator online"></div>
               </div>
               
@@ -1103,22 +1113,6 @@ function Dashboard() {
                   <p className="profile-alias">{user.name_alias}</p>
                 )}
                 <p className="profile-email">@{user.email.split('@')[0]}</p>
-              </div>
-              
-              {/* Quick Stats */}
-              <div className="profile-stats-mini">
-                <div className="stat-item">
-                  <span className="stat-number">0</span>
-                  <span className="stat-label">Постов</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">0</span>
-                  <span className="stat-label">Друзей</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">0</span>
-                  <span className="stat-label">Подписок</span>
-                </div>
               </div>
             </div>
             
