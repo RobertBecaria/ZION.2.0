@@ -93,25 +93,25 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
         payload = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          middle_name: formData.middle_name,
-          name_alias: formData.name_alias,
-          phone: formData.phone,
+          middle_name: formData.middle_name || null,
+          name_alias: formData.name_alias || null,
+          phone: formData.phone || null,
           email: formData.email,
-          date_of_birth: formData.date_of_birth
+          date_of_birth: formData.date_of_birth || null
         };
       } else if (section === 'address') {
         payload = {
-          address_street: formData.address_street,
-          address_city: formData.address_city,
-          address_state: formData.address_state,
-          address_country: formData.address_country,
-          address_postal_code: formData.address_postal_code
+          address_street: formData.address_street || null,
+          address_city: formData.address_city || null,
+          address_state: formData.address_state || null,
+          address_country: formData.address_country || null,
+          address_postal_code: formData.address_postal_code || null
         };
       } else if (section === 'marriage') {
         payload = {
           marriage_status: formData.marriage_status,
-          spouse_name: formData.spouse_name,
-          spouse_phone: formData.spouse_phone
+          spouse_name: formData.spouse_name || null,
+          spouse_phone: formData.spouse_phone || null
         };
       }
 
