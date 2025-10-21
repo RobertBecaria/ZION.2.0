@@ -763,10 +763,11 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
                 value={formData.marriage_status}
                 onChange={(e) => setFormData({...formData, marriage_status: e.target.value})}
               >
-                <option value="SINGLE">Не женат/Не замужем</option>
-                <option value="MARRIED">Женат/Замужем</option>
-                <option value="DIVORCED">Разведён/Разведена</option>
-                <option value="WIDOWED">Вдовец/Вдова</option>
+                {getMarriageStatusOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             ) : (
               <div className="info-value">{getMarriageStatusLabel(myInfo.marriage_status)}</div>
