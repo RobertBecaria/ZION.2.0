@@ -1389,13 +1389,28 @@ function Dashboard() {
                                 userFamilyId={userFamily?.id}
                               />
                             ) : activeView === 'my-family-profile' ? (
-                              /* My Family Profile view */
+                              /* My Family Profile view - or setup if no family */
                               <ErrorBoundary>
-                                <MyFamilyProfile
-                                  user={user}
-                                  familyData={userFamily}
-                                  moduleColor={currentModule.color}
-                                />
+                                {userFamily ? (
+                                  <MyFamilyProfile
+                                    user={user}
+                                    familyData={userFamily}
+                                    moduleColor={currentModule.color}
+                                  />
+                                ) : (
+                                  <FamilySetupPage
+                                    user={user}
+                                    onBack={() => setActiveView('wall')}
+                                    onComplete={async (newFamily) => {
+                                      // Refresh family data
+                                      setUserFamily(newFamily);
+                                      // Refresh user profile
+                                      await refreshProfile();
+                                      // Stay on family profile view
+                                      setActiveView('my-family-profile');
+                                    }}
+                                  />
+                                )}
                               </ErrorBoundary>
                             ) : activeView === 'family-public-view' ? (
                               /* Public Family Profile view */
