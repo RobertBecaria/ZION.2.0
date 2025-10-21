@@ -979,8 +979,30 @@ class UserDocumentResponse(BaseModel):
     updated_at: datetime
 
 class MyInfoUpdate(BaseModel):
-    """Update MY INFO data (name alias, additional fields)"""
+    """Update MY INFO data (all profile fields)"""
+    # Name fields
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name: Optional[str] = None
     name_alias: Optional[str] = None  # Display name (vs legal name)
+    
+    # Contact info
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    
+    # Address fields
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_country: Optional[str] = None
+    address_postal_code: Optional[str] = None
+    
+    # Marriage info
+    marriage_status: Optional[str] = None
+    spouse_name: Optional[str] = None
+    spouse_phone: Optional[str] = None
+    
     additional_user_data: Optional[Dict[str, Any]] = None  # Future extensibility
     
 class MyInfoResponse(BaseModel):
