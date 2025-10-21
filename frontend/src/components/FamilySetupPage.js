@@ -248,10 +248,11 @@ const FamilySetupPage = ({ user, onBack, onComplete }) => {
                 onChange={handleProfileChange}
                 required
               >
-                <option value="SINGLE">Холост / Не замужем</option>
-                <option value="MARRIED">Женат / Замужем</option>
-                <option value="DIVORCED">Разведен(а)</option>
-                <option value="WIDOWED">Вдовец / Вдова</option>
+                {getMarriageStatusOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
