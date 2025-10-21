@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { User, MapPin, Phone, Calendar, Heart, Edit2, Save, X } from 'lucide-react';
+import { User, MapPin, Phone, Calendar, Heart, Edit2, Save, X, Lock, AlertTriangle, Upload, Mail, Image as ImageIcon } from 'lucide-react';
 import HouseholdSection from './HouseholdSection';
+import ProfileImageUpload from './ProfileImageUpload';
 
-const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
+const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   const [myInfo, setMyInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name_alias: ''
+  const [editingSection, setEditingSection] = useState(null); // 'basic', 'address', 'marriage', null
+  const [formData, setFormData] = useState({});
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [showDangerZone, setShowDangerZone] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [showProfilePicture, setShowProfilePicture] = useState(false);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -30,9 +40,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
       if (response.ok) {
         const data = await response.json();
         setMyInfo(data);
-        setFormData({
-          name_alias: data.name_alias || ''
-        });
+        resetFormData(data);
       }
     } catch (error) {
       console.error('Error fetching MY INFO:', error);
@@ -41,38 +49,183 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
     }
   };
 
-  const handleSave = async () => {
+  const resetFormData = (data) => {
+    setFormData({
+      first_name: data.first_name || '',
+      last_name: data.last_name || '',
+      middle_name: data.middle_name || '',
+      name_alias: data.name_alias || '',
+      phone: data.phone || '',
+      email: data.email || '',
+      date_of_birth: data.date_of_birth || '',
+      address_street: data.address_street || '',
+      address_city: data.address_city || '',
+      address_state: data.address_state || '',
+      address_country: data.address_country || '',
+      address_postal_code: data.address_postal_code || '',
+      marriage_status: data.marriage_status || 'SINGLE',
+      spouse_name: data.spouse_name || '',
+      spouse_phone: data.spouse_phone || ''
+    });
+  };
+
+  const handleEdit = (section) => {
+    setEditingSection(section);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleCancel = () => {
+    resetFormData(myInfo);
+    setEditingSection(null);
+    setError('');
+  };
+
+  const handleSave = async (section) => {
     try {
       setSaving(true);
+      setError('');
+      setSuccess('');
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${BACKEND_URL}/api/my-info`, {
+      
+      let endpoint = `${BACKEND_URL}/api/my-info`;
+      let payload = {};
+      
+      if (section === 'basic') {
+        payload = {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          middle_name: formData.middle_name,
+          name_alias: formData.name_alias,
+          phone: formData.phone,
+          email: formData.email,
+          date_of_birth: formData.date_of_birth
+        };
+      } else if (section === 'address') {
+        payload = {
+          address_street: formData.address_street,
+          address_city: formData.address_city,
+          address_state: formData.address_state,
+          address_country: formData.address_country,
+          address_postal_code: formData.address_postal_code
+        };
+      } else if (section === 'marriage') {
+        payload = {
+          marriage_status: formData.marriage_status,
+          spouse_name: formData.spouse_name,
+          spouse_phone: formData.spouse_phone
+        };
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const updated = await response.json();
+        setMyInfo(updated);
+        setEditingSection(null);
+        setSuccess('Изменения успешно сохранены');
+        setTimeout(() => setSuccess(''), 3000);
+        
+        // Notify parent if email changed
+        if (payload.email && payload.email !== myInfo.email && onProfileUpdate) {
+          onProfileUpdate();
+        }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Не удалось сохранить изменения');
+      }
+    } catch (error) {
+      console.error('Error saving:', error);
+      setError('Произошла ошибка при сохранении');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    try {
+      if (passwordData.new_password !== passwordData.confirm_password) {
+        setError('Новые пароли не совпадают');
+        return;
+      }
+      
+      if (passwordData.new_password.length < 6) {
+        setError('Новый пароль должен содержать минимум 6 символов');
+        return;
+      }
+
+      setSaving(true);
+      setError('');
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(`${BACKEND_URL}/api/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name_alias: formData.name_alias || null
+          current_password: passwordData.current_password,
+          new_password: passwordData.new_password
         })
       });
 
       if (response.ok) {
-        const updated = await response.json();
-        setMyInfo(updated);
-        setEditing(false);
+        setSuccess('Пароль успешно изменен');
+        setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+        setShowPasswordSection(false);
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Не удалось изменить пароль');
       }
     } catch (error) {
-      console.error('Error saving MY INFO:', error);
+      console.error('Error changing password:', error);
+      setError('Произошла ошибка при изменении пароля');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name_alias: myInfo.name_alias || ''
-    });
-    setEditing(false);
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'УДАЛИТЬ') {
+      setError('Введите "УДАЛИТЬ" для подтверждения');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(`${BACKEND_URL}/api/auth/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Logout user
+        localStorage.removeItem('zion_token');
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Не удалось удалить аккаунт');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setError('Произошла ошибка при удалении аккаунта');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -126,18 +279,56 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
         <p className="page-subtitle">Централизованное хранилище ваших персональных данных</p>
       </div>
 
-      {/* Name Section */}
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="alert alert-success">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="alert alert-error">
+          {error}
+        </div>
+      )}
+
+      {/* Profile Picture Section */}
       <div className="info-section">
         <div className="section-header">
-          <h2>Имя и Отображение</h2>
-          {!editing ? (
-            <button className="btn-icon" onClick={() => setEditing(true)}>
+          <h2>
+            <ImageIcon size={20} />
+            Фото профиля
+          </h2>
+          <button 
+            className="btn-icon" 
+            onClick={() => setShowProfilePicture(!showProfilePicture)}
+          >
+            {showProfilePicture ? <X size={18} /> : <Edit2 size={18} />}
+            {showProfilePicture ? 'Закрыть' : 'Изменить'}
+          </button>
+        </div>
+        
+        {showProfilePicture && (
+          <div className="profile-picture-upload">
+            <ProfileImageUpload 
+              user={myInfo}
+              onUploadSuccess={fetchMyInfo}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Basic Information Section */}
+      <div className="info-section">
+        <div className="section-header">
+          <h2>Основная информация</h2>
+          {editingSection !== 'basic' ? (
+            <button className="btn-icon" onClick={() => handleEdit('basic')}>
               <Edit2 size={18} />
               Редактировать
             </button>
           ) : (
             <div className="edit-actions">
-              <button className="btn-icon btn-success" onClick={handleSave} disabled={saving}>
+              <button className="btn-icon btn-success" onClick={() => handleSave('basic')} disabled={saving}>
                 <Save size={18} />
                 {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
@@ -151,34 +342,55 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
 
         <div className="info-grid">
           <div className="info-item">
-            <label>Имя (Официальное)</label>
-            <div className="info-value">{myInfo.first_name}</div>
+            <label>Имя *</label>
+            {editingSection === 'basic' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.first_name}
+                onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                required
+              />
+            ) : (
+              <div className="info-value">{myInfo.first_name}</div>
+            )}
           </div>
 
           <div className="info-item">
-            <label>Фамилия (Официальная)</label>
-            <div className="info-value">{myInfo.last_name}</div>
+            <label>Фамилия *</label>
+            {editingSection === 'basic' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.last_name}
+                onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                required
+              />
+            ) : (
+              <div className="info-value">{myInfo.last_name}</div>
+            )}
           </div>
 
-          {myInfo.middle_name && (
-            <div className="info-item">
-              <label>Отчество</label>
-              <div className="info-value">{myInfo.middle_name}</div>
-            </div>
-          )}
+          <div className="info-item">
+            <label>Отчество</label>
+            {editingSection === 'basic' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.middle_name}
+                onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.middle_name || 'Не указано'}</div>
+            )}
+          </div>
 
-          <div className="info-item full-width">
+          <div className="info-item">
             <label>
               Отображаемое имя (Псевдоним)
               <span className="info-hint">Используется для облегчения произношения</span>
             </label>
-            {!editing ? (
-              <div className="info-value name-alias">
-                {myInfo.name_alias || (
-                  <span className="empty-value">Не указано</span>
-                )}
-              </div>
-            ) : (
+            {editingSection === 'basic' ? (
               <input
                 type="text"
                 className="form-input"
@@ -186,24 +398,29 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
                 value={formData.name_alias}
                 onChange={(e) => setFormData({...formData, name_alias: e.target.value})}
               />
+            ) : (
+              <div className="info-value name-alias">
+                {myInfo.name_alias || <span className="empty-value">Не указано</span>}
+              </div>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Personal Information */}
-      <div className="info-section">
-        <div className="section-header">
-          <h2>Личная Информация</h2>
-        </div>
-
-        <div className="info-grid">
           <div className="info-item">
             <label>
-              <Calendar size={16} />
-              Дата рождения
+              <Mail size={16} />
+              Email *
             </label>
-            <div className="info-value">{formatDate(myInfo.date_of_birth)}</div>
+            {editingSection === 'basic' ? (
+              <input
+                type="email"
+                className="form-input"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
+              />
+            ) : (
+              <div className="info-value">{myInfo.email}</div>
+            )}
           </div>
 
           <div className="info-item">
@@ -211,12 +428,33 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
               <Phone size={16} />
               Телефон
             </label>
-            <div className="info-value">{myInfo.phone || 'Не указано'}</div>
+            {editingSection === 'basic' ? (
+              <input
+                type="tel"
+                className="form-input"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.phone || 'Не указано'}</div>
+            )}
           </div>
 
           <div className="info-item">
-            <label>Email</label>
-            <div className="info-value">{myInfo.email}</div>
+            <label>
+              <Calendar size={16} />
+              Дата рождения
+            </label>
+            {editingSection === 'basic' ? (
+              <input
+                type="date"
+                className="form-input"
+                value={formData.date_of_birth}
+                onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{formatDate(myInfo.date_of_birth)}</div>
+            )}
           </div>
         </div>
       </div>
@@ -228,42 +466,95 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
             <MapPin size={20} />
             Адрес
           </h2>
+          {editingSection !== 'address' ? (
+            <button className="btn-icon" onClick={() => handleEdit('address')}>
+              <Edit2 size={18} />
+              Редактировать
+            </button>
+          ) : (
+            <div className="edit-actions">
+              <button className="btn-icon btn-success" onClick={() => handleSave('address')} disabled={saving}>
+                <Save size={18} />
+                {saving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button className="btn-icon btn-secondary" onClick={handleCancel} disabled={saving}>
+                <X size={18} />
+                Отмена
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="info-grid">
-          {myInfo.address_street && (
-            <div className="info-item full-width">
-              <label>Адрес (Улица, дом)</label>
-              <div className="info-value">{myInfo.address_street}</div>
-            </div>
-          )}
+          <div className="info-item full-width">
+            <label>Адрес (Улица, дом)</label>
+            {editingSection === 'address' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.address_street}
+                onChange={(e) => setFormData({...formData, address_street: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.address_street || 'Не указано'}</div>
+            )}
+          </div>
 
-          {(myInfo.address_city || myInfo.address_state || myInfo.address_country) && (
-            <div className="info-item full-width">
-              <label>Город, Регион, Страна</label>
-              <div className="info-value">
-                {[myInfo.address_city, myInfo.address_state, myInfo.address_country]
-                  .filter(Boolean)
-                  .join(', ')}
-              </div>
-            </div>
-          )}
+          <div className="info-item">
+            <label>Город</label>
+            {editingSection === 'address' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.address_city}
+                onChange={(e) => setFormData({...formData, address_city: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.address_city || 'Не указано'}</div>
+            )}
+          </div>
 
-          {myInfo.address_postal_code && (
-            <div className="info-item">
-              <label>Почтовый индекс</label>
-              <div className="info-value">{myInfo.address_postal_code}</div>
-            </div>
-          )}
+          <div className="info-item">
+            <label>Регион/Область</label>
+            {editingSection === 'address' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.address_state}
+                onChange={(e) => setFormData({...formData, address_state: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.address_state || 'Не указано'}</div>
+            )}
+          </div>
 
-          {!myInfo.address_street && !myInfo.address_city && (
-            <div className="info-item full-width">
-              <div className="empty-state">
-                <p>Адрес не указан</p>
-                <p className="hint">Заполните профиль в модуле Семья для добавления адреса</p>
-              </div>
-            </div>
-          )}
+          <div className="info-item">
+            <label>Страна</label>
+            {editingSection === 'address' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.address_country}
+                onChange={(e) => setFormData({...formData, address_country: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.address_country || 'Не указано'}</div>
+            )}
+          </div>
+
+          <div className="info-item">
+            <label>Почтовый индекс</label>
+            {editingSection === 'address' ? (
+              <input
+                type="text"
+                className="form-input"
+                value={formData.address_postal_code}
+                onChange={(e) => setFormData({...formData, address_postal_code: e.target.value})}
+              />
+            ) : (
+              <div className="info-value">{myInfo.address_postal_code || 'Не указано'}</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -274,27 +565,74 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
             <Heart size={20} />
             Семейное Положение
           </h2>
+          {editingSection !== 'marriage' ? (
+            <button className="btn-icon" onClick={() => handleEdit('marriage')}>
+              <Edit2 size={18} />
+              Редактировать
+            </button>
+          ) : (
+            <div className="edit-actions">
+              <button className="btn-icon btn-success" onClick={() => handleSave('marriage')} disabled={saving}>
+                <Save size={18} />
+                {saving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button className="btn-icon btn-secondary" onClick={handleCancel} disabled={saving}>
+                <X size={18} />
+                Отмена
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="info-grid">
           <div className="info-item">
             <label>Статус</label>
-            <div className="info-value">{getMarriageStatusLabel(myInfo.marriage_status)}</div>
+            {editingSection === 'marriage' ? (
+              <select
+                className="form-input"
+                value={formData.marriage_status}
+                onChange={(e) => setFormData({...formData, marriage_status: e.target.value})}
+              >
+                <option value="SINGLE">Не женат/Не замужем</option>
+                <option value="MARRIED">Женат/Замужем</option>
+                <option value="DIVORCED">Разведён/Разведена</option>
+                <option value="WIDOWED">Вдовец/Вдова</option>
+              </select>
+            ) : (
+              <div className="info-value">{getMarriageStatusLabel(myInfo.marriage_status)}</div>
+            )}
           </div>
 
-          {myInfo.marriage_status === 'MARRIED' && myInfo.spouse_name && (
+          {((editingSection === 'marriage' && formData.marriage_status === 'MARRIED') || 
+            (editingSection !== 'marriage' && myInfo.marriage_status === 'MARRIED')) && (
             <>
               <div className="info-item">
                 <label>Супруг(а)</label>
-                <div className="info-value">{myInfo.spouse_name}</div>
+                {editingSection === 'marriage' ? (
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.spouse_name}
+                    onChange={(e) => setFormData({...formData, spouse_name: e.target.value})}
+                  />
+                ) : (
+                  <div className="info-value">{myInfo.spouse_name || 'Не указано'}</div>
+                )}
               </div>
 
-              {myInfo.spouse_phone && (
-                <div className="info-item">
-                  <label>Телефон супруга(и)</label>
-                  <div className="info-value">{myInfo.spouse_phone}</div>
-                </div>
-              )}
+              <div className="info-item">
+                <label>Телефон супруга(и)</label>
+                {editingSection === 'marriage' ? (
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={formData.spouse_phone}
+                    onChange={(e) => setFormData({...formData, spouse_phone: e.target.value})}
+                  />
+                ) : (
+                  <div className="info-value">{myInfo.spouse_phone || 'Не указано'}</div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -303,6 +641,121 @@ const MyInfoPage = ({ user, moduleColor = '#059669' }) => {
       {/* Household Section */}
       <HouseholdSection user={user} moduleColor={moduleColor} />
 
+      {/* Password Change Section */}
+      <div className="info-section security-section">
+        <div className="section-header">
+          <h2>
+            <Lock size={20} />
+            Безопасность
+          </h2>
+          <button 
+            className="btn-icon" 
+            onClick={() => setShowPasswordSection(!showPasswordSection)}
+          >
+            {showPasswordSection ? <X size={18} /> : <Edit2 size={18} />}
+            {showPasswordSection ? 'Закрыть' : 'Изменить пароль'}
+          </button>
+        </div>
+
+        {showPasswordSection && (
+          <div className="password-change-form">
+            <div className="form-group">
+              <label>Текущий пароль *</label>
+              <input
+                type="password"
+                className="form-input"
+                value={passwordData.current_password}
+                onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                placeholder="Введите текущий пароль"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Новый пароль * (минимум 6 символов)</label>
+              <input
+                type="password"
+                className="form-input"
+                value={passwordData.new_password}
+                onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                placeholder="Введите новый пароль"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Подтвердите новый пароль *</label>
+              <input
+                type="password"
+                className="form-input"
+                value={passwordData.confirm_password}
+                onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                placeholder="Повторите новый пароль"
+              />
+            </div>
+
+            <button 
+              className="btn-primary" 
+              onClick={handlePasswordChange}
+              disabled={saving || !passwordData.current_password || !passwordData.new_password}
+            >
+              {saving ? 'Изменение...' : 'Изменить пароль'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Danger Zone */}
+      <div className="info-section danger-section">
+        <div className="section-header">
+          <h2>
+            <AlertTriangle size={20} />
+            Опасная зона
+          </h2>
+          <button 
+            className="btn-icon btn-danger" 
+            onClick={() => setShowDangerZone(!showDangerZone)}
+          >
+            {showDangerZone ? <X size={18} /> : <AlertTriangle size={18} />}
+            {showDangerZone ? 'Закрыть' : 'Показать'}
+          </button>
+        </div>
+
+        {showDangerZone && (
+          <div className="danger-zone-content">
+            <div className="danger-warning">
+              <AlertTriangle size={24} />
+              <div>
+                <h3>Удаление аккаунта</h3>
+                <p>Это действие необратимо. Все ваши данные будут удалены:</p>
+                <ul>
+                  <li>Личная информация и профиль</li>
+                  <li>Все посты и комментарии</li>
+                  <li>Семейный профиль (если вы создатель)</li>
+                  <li>Членство во всех группах и чатах</li>
+                </ul>
+                <p><strong>Важно:</strong> Если вы создали семейный профиль, система автоматически создаст новый профиль для взрослых членов вашей семьи и уведомит их.</p>
+              </div>
+            </div>
+
+            <div className="delete-confirmation">
+              <label>Введите <strong>УДАЛИТЬ</strong> для подтверждения:</label>
+              <input
+                type="text"
+                className="form-input"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="УДАЛИТЬ"
+              />
+              <button 
+                className="btn-danger" 
+                onClick={handleDeleteAccount}
+                disabled={saving || deleteConfirmation !== 'УДАЛИТЬ'}
+              >
+                {saving ? 'Удаление...' : 'Удалить мой аккаунт навсегда'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
