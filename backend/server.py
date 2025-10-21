@@ -1749,6 +1749,43 @@ async def delete_account(
     
     return {"message": "Аккаунт успешно удален"}
 
+@api_router.put("/users/profile-picture")
+async def update_profile_picture(
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user profile picture"""
+    profile_picture = data.get("profile_picture")
+    
+    if not profile_picture:
+        raise HTTPException(status_code=400, detail="Изображение не предоставлено")
+    
+    # Update user's profile picture
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "profile_picture": profile_picture,
+            "updated_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Фото профиля обновлено", "profile_picture": profile_picture}
+
+@api_router.delete("/users/profile-picture")
+async def delete_profile_picture(
+    current_user: User = Depends(get_current_user)
+):
+    """Delete user profile picture"""
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "profile_picture": None,
+            "updated_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Фото профиля удалено"}
+
 @api_router.post("/onboarding")
 async def complete_onboarding(
     onboarding_data: OnboardingData,
