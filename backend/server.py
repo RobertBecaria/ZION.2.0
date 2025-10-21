@@ -446,7 +446,9 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     middle_name: Optional[str]
+    name_alias: Optional[str] = None  # Display name
     gender: Optional[Gender] = None  # NEW: Include gender in response
+    profile_picture: Optional[str] = None  # Base64 profile photo
     role: UserRole
     is_active: bool
     is_verified: bool
