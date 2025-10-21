@@ -5,7 +5,7 @@ import json
 
 def test_family_profile_system():
     """Simple test of Family Profile System core functionality"""
-    base_url = "https://family-profile-hub.preview.emergentagent.com/api"
+    base_url = "https://zion-profiles.preview.emergentagent.com/api"
     
     # Login
     print("🔍 Testing login...")

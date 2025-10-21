@@ -1,89 +1,79 @@
 <analysis>
-The provided trajectory documents the AI engineer's progress on the ZION.CITY platform, focusing on enhancing user experience and implementing core social functionalities. Initially, the engineer tackled a contextual UI issue, ensuring the Public View button displayed correctly in  when МОЯ СЕМЬЯ was active. This was followed by a critical backend fix in  for public family profile data serialization errors.
-
-A significant feature, the Gender System, was implemented as a prerequisite for Role-Based Post Filtering. This involved updating backend models and endpoints, creating a  endpoint, and developing a  on the frontend. The  enum and  helper function were added to  to filter posts.
-
-Subsequently, the engineer addressed a persistent gender modal issue, implementing  to ensure it appeared only once. The Фильтр постов widget in the  was upgraded to a unified, stacked filter with a new sidebar-style design, integrating  options. Onboarding flow issues causing an infinite loop were resolved by robustly marking completion and strengthening . A UI bug where the filter widget disappeared on МОЯ ЛЕНТА was also fixed. The current focus is on comprehensive desktop UI polish.
+The AI engineer's trajectory details comprehensive development for the ZION.CITY platform. It commenced with an initial system setup and a user request to continue UI polish, specifically starting with Phase 1. The engineer systematically enhanced the application's visual aspects across three phases: Core Component Polish, Forms & Interactive Elements, and Responsive & Edge Cases. This involved extensive modifications to  to refine post cards, family profiles, modal components (including the GenderUpdateModal), sidebar widgets, form inputs, search fields, comment sections, file upload previews, loading states, and dropdowns. Throughout these phases, the engineer consistently used screenshots to verify improvements. A key challenge was addressing an infinite onboarding loop, resolved by robust  usage. After completing the UI polish, the focus shifted to deployment readiness. The  identified hardcoded backend URLs, which the engineer meticulously fixed across numerous frontend components using both  and a Python script for bulk replacements. The trajectory concludes with all hardcoded URLs resolved and the application declared deployment-ready, signifying a significant step from initial build to a polished, deployable state.
 </analysis>
 
 <product_requirements>
-The ZION.CITY platform is a digital ecosystem centered on a Universal Profile System and Family Profile System, enabling intelligent matching and hierarchical social structures. The UI features  (Left Sidebar) and  (Right Sidebar) with contextual navigation.
+The ZION.CITY platform is a digital ecosystem built around a Universal Profile System and Family Profile System, facilitating intelligent matching and hierarchical social structures. It features  (Left Sidebar) and  (Right Sidebar) with contextual navigation.
 
-Implemented features include:
-*   **Family Profile Settings Page**: Comprehensive management of family information, members, and granular privacy settings.
-*   **Family Filter Logic**: Initial filtering capabilities for All, My, and Subscribed Families posts.
-*   **Household Section**: Integrated into  for cohabiting users.
-*   **Public Profile View**: A public interface for family profiles, respecting privacy. Its access button was moved to the  and made context-aware, visible only on the МОЯ СЕМЬЯ section.
-*   **Post Composer**: Features privacy options and supports banner/avatar uploads.
-*   **Gender System**: Backend integration of  enum (, , ) into  models and related endpoints. Frontend includes  for user input, appearing once upon login.
-*   **Role-Based Post Filtering**: Backend logic (e.g.,  enum,  helper) to filter posts by , , , , , , , based on user roles and gender. The frontend now features a unified, stacked filter widget in the  sidebar with these options.
+Implemented functionalities include:
+*   **Family Profile Settings**: Management of family info, members, and privacy.
+*   **Family Filter Logic**: Initial post filtering for All, My, Subscribed Families.
+*   **Household Section**: Integrated into .
+*   **Public Profile View**: A privacy-respecting public interface for family profiles, with an access button in  visible on МОЯ СЕМЬЯ.
+*   **Post Composer**: Features privacy and supports banner/avatar uploads.
+*   **Gender System**: Backend  enum (, , ) in  models and endpoints, frontend  appearing once per user.
+*   **Role-Based Post Filtering**: Backend  enum (, , etc.) and  helper. Frontend displays a unified, stacked filter widget in the  sidebar for these options. The UI has undergone extensive polish across all components.
 </product_requirements>
 
 <key_technical_concepts>
--   **Backend**: FastAPI (Python), Pydantic (data validation), MongoDB (NoSQL, UUIDs), JWT (authentication),  (constrained choices),  handling,  (serialization).
--   **Frontend**: React 18+ (functional components, hooks, Context API), Tailwind CSS (utility-first), custom CSS, yarn install v1.22.22
+-   **Backend**: FastAPI, Pydantic, MongoDB (UUIDs), JWT, Enum, , .
+-   **Frontend**: React 18+ (Hooks, Context), Tailwind CSS, Custom CSS, yarn install v1.22.22
 [1/4] Resolving packages...
 success Already up-to-date.
-Done in 0.07s. (package management),  (client-side state persistence).
--   **Architecture**: / sidebars, Universal Components, context-aware UI, Smart Adaptive Design, Stacked Filters.
+Done in 0.09s., .
+-   **Architecture**: /, Universal Components, Context-aware UI, Smart Adaptive Design, Stacked Filters.
 </key_technical_concepts>
 
 <code_architecture>
-/app
-├── backend/
-│   ├── server.py
-│   └── requirements.txt
-└── frontend/
-    ├── package.json
-    ├── src/
-        ├── App.js
-        ├── App.css
-        ├── components/
-        │   ├── FamilySettingsPage.js
-        │   ├── FamilyStatusForm.js
-        │   ├── GenderUpdateModal.js
-        │   ├── HouseholdSection.js
-        │   ├── MyFamilyProfile.js
-        │   ├── MyInfoPage.js
-        │   ├── ProfileImageUpload.js
-        │   ├── PublicFamilyProfile.js
-        │   ├── UniversalEventsPanel.js
-        │   ├── UniversalWall.js
-        │   └── [Other components like MyDocumentsPage, etc.]
-        └── utils/
-            └── animations.js
 
 -   **backend/server.py**
     -   **Importance**: Core FastAPI application managing API endpoints, Pydantic models, and database interactions.
-    -   **Changes Made**:
-        -   **Gender System**: Added  enum,  to , ,  models. Modified , , and added  endpoint.
-        -   **Public Family Profile**: Implemented  to correctly serialize  and  for .
-        -   **Role-Based Post Filtering**: Introduced  enum,  and  to  and  models. Created  helper and updated  to filter posts, and  to accept .
-        -   **Onboarding**: Modified  endpoint to handle cases where no affiliations are provided.
-
+    -   **Changes Made**: Implemented Gender system (enum, model fields, ), fixed public family profile serialization (), introduced role-based post filtering ( enum, ,  filtering,  visibility), modified . No direct changes in the recent UI polish phase.
 -   **frontend/src/App.js**
     -   **Importance**: Central entry point, handling global state, authentication, routing, and overall application layout.
-    -   **Changes Made**:
-        -   **Public Profile Button**: Refined conditional rendering logic for Публичный просмотр button in .
-        -   **Gender System**: Integrated , added  state and a  to trigger it. Implemented  to prevent re-showing the modal.
-        -   **Unified Stacked Filter**: Replaced  state with , updated  props, and integrated a new unified filter widget with dynamic rendering logic. Fixed an issue where the filter widget disappeared on 'feed' view by expanding the rendering condition.
-        -   **Onboarding Flow**: Implemented  to prevent infinite onboarding loop, even when skipping. Enhanced  for robust error handling and token management.
-
+    -   **Changes Made**: Refined Публичный просмотр button logic, integrated  with  flag, updated filter states for unified filter widget, fixed onboarding loop with  and robust . No direct changes in UI polish phase, but orchestrates component rendering.
 -   **frontend/src/App.css**
     -   **Importance**: Global styles using Tailwind CSS.
-    -   **Changes Made**: Added specific styles for , , . Replaced old filter styles with new unified filter widget styles, incorporating sidebar-style design. Added comprehensive UI polish improvements for buttons, transitions, and general spacing.
-
+    -   **Changes Made**: Extensively modified across three UI polish phases (Core, Forms, Responsive):
+        -   **Phase 1 (Core Polish)**:  hover effects, , post header, profile header/banner/avatar depth/transitions, action buttons with gradients, profile stats,  styling.
+        -   **Phase 2 (Forms & Interactive)**: Global , search input, , file preview cards, upload progress, filter buttons, unified stacked filter widget,  and skeleton loaders, dropdown/select styling ().
+        -   **Phase 3 (Responsive & Edge Cases)**: All  styles for consistency, text truncation utilities, consistent widget styling,  text handling,  handling, responsive improvements for large desktop screens (1200px+).
 -   **frontend/src/components/GenderUpdateModal.js**
     -   **Importance**: Modal component for users to select their gender.
-    -   **Changes Made**: Initial creation. Handles gender selection (Male, Female, IT), updates backend via , and uses  callback to mark gender as asked in .
-
+    -   **Changes Made**: Initial creation. Updated for styling during UI polish. Fixed hardcoded backend URL.
 -   **frontend/src/components/PublicFamilyProfile.js**
     -   **Importance**: Displays a family profile as seen by the public.
-    -   **Changes Made**: No direct changes, but its functionality now correctly relies on the updated and fixed backend endpoint in .
-
+    -   **Changes Made**: Functionality relies on fixed backend endpoint. Fixed hardcoded backend URL.
 -   **frontend/src/components/UniversalWall.js**
     -   **Importance**: The main social feed component, including post creation and display.
-    -   **Changes Made**: Updated  for post creation dropdown to reflect  enum. Modified  to use the new visibility types. Updated to receive and utilize the  array for  logic.
+    -   **Changes Made**: Updated  for post creation dropdown, modified  for new visibility types, utilizes  for . No direct changes in the UI polish phase.
+-   **frontend/src/components/FamilyProfileCreation.js**
+    -   **Importance**: Handles the creation of new family profiles.
+    -   **Changes Made**: Fixed hardcoded backend URL .
+-   **frontend/src/components/MyFamilyProfile.js**
+    -   **Importance**: Manages the user's own family profile details, including banner/avatar uploads and data loading.
+    -   **Changes Made**: Fixed multiple instances of hardcoded backend URLs.
+-   **frontend/src/components/FamilyProfilePage.js**
+    -   **Importance**: Displays and manages a specific family's profile, including members and posts.
+    -   **Changes Made**: Fixed multiple instances of hardcoded backend URLs.
+-   **frontend/src/components/InvitationManager.js**
+    -   **Importance**: Manages family invitations (fetching, accepting, declining).
+    -   **Changes Made**: Fixed hardcoded backend URLs.
+-   **frontend/src/components/FamilyInvitationModal.js**
+    -   **Importance**: Modal for handling family invitations.
+    -   **Changes Made**: Fixed hardcoded backend URLs.
+-   **frontend/src/components/FamilyProfileList.js**
+    -   **Importance**: Lists available family profiles.
+    -   **Changes Made**: Fixed hardcoded backend URLs.
+-   **frontend/src/components/FamilySettingsPage.js**
+    -   **Importance**: Settings page for family profiles.
+    -   **Changes Made**: Fixed hardcoded backend URLs.
+-   **frontend/src/components/FamilyStatusForm.js**
+    -   **Importance**: Form for updating family status.
+    -   **Changes Made**: Fixed hardcoded backend URLs.
+-   **frontend/src/components/HouseholdSection.js**
+    -   **Importance**: Section for managing household details.
+    -   **Changes Made**: Fixed hardcoded backend URLs.
 </code_architecture>
 
 <pending_tasks>
@@ -92,18 +82,9 @@ Done in 0.07s. (package management),  (client-side state persistence).
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was engaged in **UI Polish & Refinements** for desktop. This involved a comprehensive review and enhancement of the application's visual aspects. Specifically, the engineer added extensive CSS improvements to  to enhance:
-1.  Button hover/focus states, ensuring better visual feedback.
-2.  Smooth transitions across various UI elements for a more fluid user experience.
-3.  Improved filter widget animations to make interactions more engaging.
-4.  Enhanced modal animations, likely affecting the  and other similar components.
-5.  Better spacing consistency throughout the application.
-6.  Specific visual enhancements to the gender modal styling.
-
-The changes were applied to , and the frontend successfully compiled. A screenshot of the login page was taken as a baseline, which appeared clean. The current task is to complete this comprehensive UI polish.
+Immediately before this summary request, the AI engineer successfully completed all UI polish phases and fixed critical deployment issues. The extensive UI enhancements across  covered post cards, family profiles, modal components, sidebar widgets, forms, interactive elements (search, comments, uploads, filters), loading states, dropdowns, buttons, text handling, and responsive layouts for large desktops. All visual improvements were verified through screenshots. Following the UI polish, the engineer addressed deployment readiness concerns identified by the . This involved meticulously identifying and removing all hardcoded backend URLs in various frontend components, replacing them with . After these fixes, the frontend successfully rebuilt, and the final deployment check confirmed that all identified issues were resolved. The application is now considered deployment-ready with a fully polished and responsive desktop UI.
 </current_work>
 
 <optional_next_step>
-Continue the comprehensive UI polish, focusing on specific components or areas beyond the login page.
+Start expanding the Universal Profile System to Work and School modules, as outlined in the pending tasks.
 </optional_next_step>
-

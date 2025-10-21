@@ -10,7 +10,7 @@ import os
 from dotenv import load_dotenv
 
 class LoginInvestigationTester:
-    def __init__(self, base_url="https://family-profile-hub.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://zion-profiles.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
