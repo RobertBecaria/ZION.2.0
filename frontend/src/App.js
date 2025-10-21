@@ -774,8 +774,7 @@ function Dashboard() {
   const [activeFilters, setActiveFilters] = useState([]); // Unified stacked filters array
   const [loadingFamily, setLoadingFamily] = useState(true);
   
-  // NEW FAMILY SYSTEM STATES
-  const [showProfileCompletionModal, setShowProfileCompletionModal] = useState(false);
+  // Removed showProfileCompletionModal state - now using full-page FamilySetupPage
   const [showGenderModal, setShowGenderModal] = useState(false);
   
   const { user, logout, refreshProfile } = useAuth();
