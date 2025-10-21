@@ -48,6 +48,19 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   };
 
   const resetFormData = (data) => {
+    // Format date_of_birth to YYYY-MM-DD for input type="date"
+    let formattedDate = '';
+    if (data.date_of_birth) {
+      try {
+        const date = new Date(data.date_of_birth);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.error('Error formatting date:', e);
+      }
+    }
+    
     setFormData({
       first_name: data.first_name || '',
       last_name: data.last_name || '',
@@ -55,7 +68,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       name_alias: data.name_alias || '',
       phone: data.phone || '',
       email: data.email || '',
-      date_of_birth: data.date_of_birth || '',
+      date_of_birth: formattedDate,
       address_street: data.address_street || '',
       address_city: data.address_city || '',
       address_state: data.address_state || '',
