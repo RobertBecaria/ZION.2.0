@@ -343,7 +343,7 @@ function RegistrationForm({ onSwitchToLogin }) {
             <img src="/zion-logo.jpeg" alt="ZION.CITY Logo" className="auth-logo" />
             <h1 className="platform-logo">ZION.CITY</h1>
           </div>
-          <p>Создайте аккаунт в цифровой экосистеме</p>
+          <p>Создайте аккаунт в WEB 4.0 - многофункциональная цифровая платформа и мессенджер!</p>
         </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
