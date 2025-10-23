@@ -122,7 +122,14 @@ function ProfileImageUpload({
 
             <div className="modal-body">
               {!preview ? (
-                <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
+                <div 
+                  className="upload-area" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
                   <Upload size={48} color={moduleColor} />
                   <p>Нажмите для выбора изображения</p>
                   <span className="hint">PNG, JPG до 5MB</span>
@@ -131,6 +138,7 @@ function ProfileImageUpload({
                     type="file"
                     accept="image/*"
                     onChange={handleFileSelect}
+                    onClick={(e) => e.stopPropagation()}
                     style={{ display: 'none' }}
                   />
                 </div>
@@ -143,7 +151,12 @@ function ProfileImageUpload({
                   />
                   <button 
                     className="change-image-btn"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    type="button"
                   >
                     Выбрать другое изображение
                   </button>
