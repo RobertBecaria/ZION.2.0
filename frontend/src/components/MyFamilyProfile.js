@@ -75,14 +75,15 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
   };
 
   useEffect(() => {
-    // Load family data if not provided
+    // Load family data if not provided OR if familyData.id changed
     if (!familyData) {
       loadFamilyData();
-    } else {
+    } else if (!family || family.id !== familyData.id) {
+      // Only update if it's a different family
       setFamily(familyData);
       setLoading(false);
     }
-  }, [familyData]);
+  }, [familyData?.id]); // Only re-run if family ID changes
 
   const loadFamilyData = async () => {
     try {
