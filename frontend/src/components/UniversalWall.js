@@ -910,9 +910,23 @@ function UniversalWall({
             <div key={post.id} className="post-item">
               <div className="post-header">
                 <div className="post-author">
-                  <div className="author-avatar" style={{ backgroundColor: moduleColor }}>
-                    <User size={20} color="white" />
-                  </div>
+                  {post.author.profile_picture ? (
+                    <img 
+                      src={post.author.profile_picture} 
+                      alt={`${post.author.first_name} ${post.author.last_name}`}
+                      className="author-avatar"
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '50%', 
+                        objectFit: 'cover' 
+                      }}
+                    />
+                  ) : (
+                    <div className="author-avatar" style={{ backgroundColor: moduleColor }}>
+                      <User size={20} color="white" />
+                    </div>
+                  )}
                   <div className="author-info">
                     <h5>{post.author.first_name} {post.author.last_name}</h5>
                     <span className="post-time">{formatTime(post.created_at)}</span>
