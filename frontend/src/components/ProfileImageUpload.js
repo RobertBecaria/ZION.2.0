@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, X, Upload, Loader } from 'lucide-react';
 
 function ProfileImageUpload({ 
@@ -11,6 +11,18 @@ function ProfileImageUpload({
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showModal]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
