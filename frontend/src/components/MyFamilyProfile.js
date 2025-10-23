@@ -75,17 +75,18 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
   };
 
   useEffect(() => {
-    // Load family data if not provided OR if familyData.id changed
+    // Load family data if not provided
     if (!familyData) {
       loadFamilyData();
-    } else {
-      // Update family if it's different, always stop loading
-      if (!family || family.id !== familyData.id) {
-        setFamily(familyData);
-      }
-      setLoading(false); // Always set loading to false when familyData exists
+      return;
     }
-  }, [familyData?.id]); // Only re-run if family ID changes
+    
+    // Update family if it's different from current familyData
+    if (!family || family.id !== familyData.id) {
+      setFamily(familyData);
+    }
+    setLoading(false);
+  }, [familyData?.id, family?.id]); // Depend on both IDs
 
   const loadFamilyData = async () => {
     try {
