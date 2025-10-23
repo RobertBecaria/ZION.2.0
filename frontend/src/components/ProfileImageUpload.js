@@ -154,16 +154,26 @@ function ProfileImageUpload({
             <div className="modal-footer">
               <button 
                 className="btn-secondary"
-                onClick={handleCancel}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancel();
+                }}
                 disabled={uploading}
+                type="button"
               >
                 Отмена
               </button>
               <button 
                 className="btn-primary"
-                onClick={handleUpload}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUpload();
+                }}
                 disabled={!preview || uploading}
                 style={{ backgroundColor: moduleColor }}
+                type="button"
               >
                 {uploading ? (
                   <>
