@@ -341,6 +341,7 @@ class FamilyProfile(BaseModel):
     # Family Information
     established_date: Optional[datetime] = None  # When family was established
     family_photo_url: Optional[str] = None  # Family cover photo
+    banner_url: Optional[str] = None  # Family banner image
     
     # Privacy & Access Settings
     is_private: bool = True  # Invite-only by default
