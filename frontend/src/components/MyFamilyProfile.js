@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Users, Calendar, Settings, Share2, Camera } from 'lucide-react';
 import UniversalWall from './UniversalWall';
 import UniversalChatLayout from './UniversalChatLayout';
@@ -11,6 +11,7 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
   const [family, setFamily] = useState(familyData || null);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const initializedRef = useRef(false);
 
   const handleBannerUpload = async (base64Image) => {
     try {
