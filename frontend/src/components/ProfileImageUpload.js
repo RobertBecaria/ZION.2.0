@@ -68,26 +68,40 @@ function ProfileImageUpload({
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setShowModal(false);
     setPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  };
+  }, []);
+
+  const handleOpenModal = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowModal(true);
+  }, []);
+
+  const handleOverlayClick = useCallback((e) => {
+    // Only close if clicking the overlay itself, not its children
+    if (e.target === e.currentTarget) {
+      handleCancel();
+    }
+  }, [handleCancel]);
 
   return (
     <>
       <button
         className={type === 'banner' ? 'banner-upload-btn' : 'avatar-upload-btn'}
-        onClick={() => setShowModal(true)}
+        onClick={handleOpenModal}
         title={type === 'banner' ? 'Изменить баннер' : 'Изменить аватар'}
+        type="button"
       >
         <Camera size={type === 'banner' ? 20 : 16} />
       </button>
 
       {showModal && (
-        <div className="image-upload-modal-overlay" onClick={handleCancel}>
+        <div className="image-upload-modal-overlay" onClick={handleOverlayClick}>
           <div className="image-upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
