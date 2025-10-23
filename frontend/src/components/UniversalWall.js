@@ -564,9 +564,23 @@ function UniversalWall({
     <div key={comment.id} className={`comment-item ${level > 0 ? 'comment-reply' : ''}`} style={{marginLeft: `${level * 20}px`}}>
       <div className="comment-header">
         <div className="comment-author">
-          <div className="author-avatar" style={{ backgroundColor: moduleColor }}>
-            <User size={16} color="white" />
-          </div>
+          {comment.author.profile_picture ? (
+            <img 
+              src={comment.author.profile_picture} 
+              alt={`${comment.author.first_name} ${comment.author.last_name}`}
+              className="author-avatar"
+              style={{ 
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '50%', 
+                objectFit: 'cover' 
+              }}
+            />
+          ) : (
+            <div className="author-avatar" style={{ backgroundColor: moduleColor }}>
+              <User size={16} color="white" />
+            </div>
+          )}
           <div className="comment-author-info">
             <span className="comment-author-name">
               {comment.author.first_name} {comment.author.last_name}
