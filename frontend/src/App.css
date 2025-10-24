@@ -10043,7 +10043,7 @@ select:focus {
   /* transform: scale(1.05); - REMOVED */
 }
 
-/* Avatar Upload Button - Rewritten from scratch for stability */
+/* Avatar Upload Button - Simple static icon */
 .avatar-upload-btn {
   position: absolute;
   bottom: 8px;
@@ -10051,7 +10051,7 @@ select:focus {
   width: 40px;
   height: 40px;
   background: white;
-  border: 2px solid rgba(0, 0, 0, 0.1);
+  border: none;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -10060,14 +10060,6 @@ select:focus {
   color: #059669;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /* No transitions - instant response */
-}
-
-.avatar-upload-btn:hover {
-  background: #059669;
-  color: white;
-  border-color: #059669;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }
 
 /* Profile Details */
