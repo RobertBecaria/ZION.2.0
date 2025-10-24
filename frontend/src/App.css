@@ -9943,7 +9943,7 @@ select:focus {
   /* transform: scale(1.02); - REMOVED */
 }
 
-/* Banner Upload Button - Rewritten from scratch for stability */
+/* Banner Upload Button - Simple static icon */
 .banner-upload-btn {
   position: absolute;
   bottom: 1rem;
@@ -9951,7 +9951,7 @@ select:focus {
   width: 44px;
   height: 44px;
   background: white;
-  border: 2px solid rgba(0, 0, 0, 0.1);
+  border: none;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -9960,14 +9960,6 @@ select:focus {
   color: #059669;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /* No transitions - instant response */
-}
-
-.banner-upload-btn:hover {
-  background: #059669;
-  color: white;
-  border-color: #059669;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }
 
 /* Profile Info Section */
