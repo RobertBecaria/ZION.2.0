@@ -90,20 +90,10 @@ function ProfileImageUpload({
     }
   }, [handleCancel]);
 
-  return (
-    <>
-      <button
-        className={type === 'banner' ? 'banner-upload-btn' : 'avatar-upload-btn'}
-        onClick={handleOpenModal}
-        title={type === 'banner' ? 'Изменить баннер' : 'Изменить аватар'}
-        type="button"
-      >
-        <Camera size={type === 'banner' ? 20 : 16} />
-      </button>
-
-      {showModal && (
-        <div className="image-upload-modal-overlay" onClick={handleOverlayClick}>
-          <div className="image-upload-modal" onClick={(e) => e.stopPropagation()}>
+  // Render modal content
+  const modalContent = showModal ? (
+    <div className="image-upload-modal-overlay" onClick={handleOverlayClick}>
+      <div className="image-upload-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
                 {type === 'banner' ? 'Загрузить баннер' : 'Загрузить аватар'}
