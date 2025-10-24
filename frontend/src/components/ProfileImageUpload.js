@@ -156,38 +156,38 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
           </div>
 
           <div className="modal-footer">
-              <button 
-                className="btn-secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCancel();
-                }}
-                disabled={uploading}
-                type="button"
-              >
-                Отмена
-              </button>
-              <button 
-                className="btn-primary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUpload();
-                }}
-                disabled={!preview || uploading}
-                style={{ backgroundColor: moduleColor }}
-                type="button"
-              >
-                {uploading ? (
-                  <>
-                    <Loader size={16} className="spinning" />
-                    Загрузка...
-                  </>
-                ) : (
-                  'Сохранить'
-                )}
-              </button>
+            <button 
+              className="btn-secondary"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCancel();
+              }}
+              disabled={uploading}
+              type="button"
+            >
+              Отмена
+            </button>
+            <button 
+              className="btn-primary"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleUpload();
+              }}
+              disabled={!preview || uploading}
+              style={{ backgroundColor: moduleColor }}
+              type="button"
+            >
+              {uploading ? (
+                <>
+                  <Loader size={16} className="spinning" />
+                  Загрузка...
+                </>
+              ) : (
+                'Сохранить'
+              )}
+            </button>
           </div>
         </div>
         </div>
