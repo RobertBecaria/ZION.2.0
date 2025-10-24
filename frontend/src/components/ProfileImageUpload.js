@@ -155,7 +155,7 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
               )}
             </div>
 
-            <div className="modal-footer">
+          <div className="modal-footer">
               <button 
                 className="btn-secondary"
                 onClick={(e) => {
