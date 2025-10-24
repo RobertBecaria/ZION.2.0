@@ -209,6 +209,6 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
       {modalContent && createPortal(modalContent, document.body)}
     </>
   );
-}
+});
 
 export default ProfileImageUpload;
