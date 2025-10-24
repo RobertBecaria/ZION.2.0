@@ -10071,7 +10071,6 @@ select:focus {
 }
 
 .avatar-upload-btn:hover {
-  transform: scale(1.15) rotate(-5deg);
   background: #F7F8FA;
   color: #1C1E21;
   box-shadow: 
