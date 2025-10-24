@@ -10070,7 +10070,13 @@ select:focus {
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.12),
     0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Fixed: Transition only visual properties, not 'all' */
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10085,6 +10091,7 @@ select:focus {
     0 6px 16px rgba(0, 0, 0, 0.16),
     0 2px 4px rgba(0, 0, 0, 0.1);
   border-color: #D0D3D9;
+  transform: translateY(-1px);
 }
 
 /* Profile Details */
