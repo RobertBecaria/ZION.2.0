@@ -292,9 +292,9 @@ frontend:
     implemented: true
     working: false
     file: "components/ProfileImageUpload.js, App.css"
-    stuck_count: 1
+    stuck_count: 2
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
@@ -302,6 +302,9 @@ frontend:
       - working: false
         agent: "user"
         comment: "USER FEEDBACK: The screen is still blinking and the upload popup window is blinking in МОЯ СЕМЬЯ page. Previous fix attempt did not resolve the issue. Need deeper investigation and comprehensive testing to identify the actual root cause. The blinking persists when clicking the upload avatar button."
+      - working: false
+        agent: "testing"
+        comment: "🔍 COMPREHENSIVE AVATAR UPLOAD MODAL BLINKING INVESTIGATION COMPLETED - CRITICAL ISSUES IDENTIFIED: ❌ TESTING LIMITATIONS: Unable to perform complete runtime testing due to persistent authentication/session management issues in test environment. Multiple attempts to access МОЯ СЕМЬЯ page resulted in session loss and redirects to login page, preventing direct modal blinking verification. However, conducted thorough code analysis and identified multiple potential root causes. 🔧 CODE ANALYSIS FINDINGS: 1) CURRENT IMPLEMENTATION STATUS: ✅ Modal z-index hierarchy correctly implemented (overlay: 10000, content: 10001, buttons: 100), ✅ Event handling with useCallback hooks present, ✅ Body scroll prevention implemented, ✅ Event.stopPropagation() added to interactive elements. 2) POTENTIAL ROOT CAUSES FOR PERSISTENT BLINKING: a) SESSION MANAGEMENT CONFLICTS: Authentication token issues causing component re-initialization during modal interaction, b) PARENT COMPONENT RE-RENDERING: MyFamilyProfile component may be triggering re-renders that unmount/remount the ProfileImageUpload component, c) STATE MANAGEMENT RACE CONDITIONS: Rapid state changes in showModal state possibly caused by external factors, d) CSS ANIMATION CONFLICTS: Modal animations (fadeIn 0.2s, slideUp 0.3s) may conflict with React state updates, e) EVENT LOOP TIMING ISSUES: useCallback dependencies or useEffect cleanup timing may cause modal state flickering. 🚨 CRITICAL RECOMMENDATIONS FOR MAIN AGENT: 1) INVESTIGATE SESSION MANAGEMENT: Check if authentication token refresh/validation is interfering with modal state, 2) ADD MODAL STATE DEBUGGING: Implement console logging in ProfileImageUpload component to track showModal state changes, 3) REVIEW PARENT COMPONENT: Examine MyFamilyProfile for unnecessary re-renders that could affect modal, 4) CONSIDER PORTAL IMPLEMENTATION: Move modal to document.body using React Portal to isolate from parent component re-renders, 5) ADD MODAL STABILITY TESTING: Implement automated tests specifically for modal open/close behavior. ⚠️ AUTHENTICATION ISSUES DETECTED: Test environment shows consistent 401 errors and session management problems that may be related to the modal blinking issue. The blinking could be caused by authentication state changes triggering component re-initialization. RECOMMENDATION: Use web search tool to research React modal blinking issues and authentication-related component re-rendering problems."
       
   - task: "MY DOCUMENTS - Layout Update to Universal Structure"
     implemented: true
