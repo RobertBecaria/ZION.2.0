@@ -290,15 +290,18 @@ user_problem_statement: "FAMILY PROFILE AVATAR UPLOAD MODAL BUG FIX: User report
 frontend:
   - task: "Family Profile Avatar Upload Modal - Blinking & Close Bug Fix"
     implemented: true
-    working: "NA"
+    working: false
     file: "components/ProfileImageUpload.js, App.css"
-    stuck_count: 0
+    stuck_count: 1
     priority: "critical"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "CRITICAL BUG FIX - FAMILY PROFILE AVATAR UPLOAD MODAL: Implemented comprehensive fix for the blinking modal and difficulty closing issues reported by user in МОЯ СЕМЬЯ section. ROOT CAUSE ANALYSIS: 1) Event Bubbling Conflicts - Clicks were propagating incorrectly between overlay, modal content, and buttons causing rapid open/close cycles, 2) Z-index Layering Issues - Modal overlay (z-index: 2000) and upload buttons (z-index: 20) had insufficient separation from other UI elements, 3) Component Re-rendering - Parent component (MyFamilyProfile) re-renders could trigger modal state conflicts, 4) Body Scroll Interference - Background page remained interactive when modal was open, allowing unintended interactions, 5) Missing Event Handlers - Critical buttons lacked event.preventDefault() and event.stopPropagation(). COMPREHENSIVE FIXES IMPLEMENTED: 1) Event Handling Enhancement (ProfileImageUpload.js): a) Added useCallback hooks for handleCancel, handleOpenModal, handleOverlayClick to prevent unnecessary re-renders, b) Implemented proper event.stopPropagation() and event.preventDefault() on ALL interactive elements (upload button, close button, cancel/save buttons, file input area), c) Enhanced overlay click detection to only close when clicking overlay itself (e.target === e.currentTarget), d) Added type='button' to all buttons to prevent form submission interference. 2) Body Scroll Prevention: a) Added useEffect hook to disable body scroll when modal is open (document.body.style.overflow = 'hidden'), b) Proper cleanup on modal close and component unmount. 3) Z-index Hierarchy Fix (App.css): a) Increased modal overlay z-index from 2000 to 10000 for top-level positioning, b) Set modal content z-index to 10001 with pointer-events: all, c) Increased upload buttons (avatar/banner) z-index from 20 to 100, d) Added backdrop-filter: blur(2px) to modal overlay for better visual separation, e) Added pointer-events: all to modal-body to ensure proper interaction. 4) Animation & Visual Improvements: a) Maintained fadeIn animation for overlay (0.2s ease), b) Maintained slideUp animation for modal content (0.3s ease), c) Enhanced visual feedback with backdrop blur. TECHNICAL IMPLEMENTATION: All changes follow React best practices using useCallback for memoization, proper cleanup in useEffect, comprehensive event handling preventing all potential bubbling issues. The fix addresses both symptoms (blinking, hard to close) and root causes (event propagation, z-index conflicts, re-rendering). Ready for comprehensive user testing to verify the modal now opens smoothly, remains stable without blinking, and closes reliably via close button, cancel button, or overlay click."
+      - working: false
+        agent: "user"
+        comment: "USER FEEDBACK: The screen is still blinking and the upload popup window is blinking in МОЯ СЕМЬЯ page. Previous fix attempt did not resolve the issue. Need deeper investigation and comprehensive testing to identify the actual root cause. The blinking persists when clicking the upload avatar button."
       
   - task: "MY DOCUMENTS - Layout Update to Universal Structure"
     implemented: true
