@@ -188,8 +188,8 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
                   'Сохранить'
                 )}
               </button>
-            </div>
           </div>
+        </div>
         </div>
   ) : null;
 
