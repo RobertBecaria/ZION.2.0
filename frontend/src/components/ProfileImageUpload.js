@@ -94,7 +94,7 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
   const modalContent = showModal ? (
     <div className="image-upload-modal-overlay" onClick={handleOverlayClick}>
       <div className="image-upload-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-header">
               <h3>
                 {type === 'banner' ? 'Загрузить баннер' : 'Загрузить аватар'}
               </h3>
