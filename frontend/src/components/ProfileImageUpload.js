@@ -112,48 +112,48 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
           </div>
 
           <div className="modal-body">
-              {!preview ? (
-                <div 
-                  className="upload-area" 
+            {!preview ? (
+              <div 
+                className="upload-area" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <Upload size={48} color={moduleColor} />
+                <p>Нажмите для выбора изображения</p>
+                <span className="hint">PNG, JPG до 5MB</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            ) : (
+              <div className="preview-area">
+                <img 
+                  src={preview} 
+                  alt="Preview" 
+                  className={type === 'banner' ? 'banner-preview' : 'avatar-preview'}
+                />
+                <button 
+                  className="change-image-btn"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
+                  type="button"
                 >
-                  <Upload size={48} color={moduleColor} />
-                  <p>Нажмите для выбора изображения</p>
-                  <span className="hint">PNG, JPG до 5MB</span>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              ) : (
-                <div className="preview-area">
-                  <img 
-                    src={preview} 
-                    alt="Preview" 
-                    className={type === 'banner' ? 'banner-preview' : 'avatar-preview'}
-                  />
-                  <button 
-                    className="change-image-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    type="button"
-                  >
-                    Выбрать другое изображение
-                  </button>
-                </div>
-              )}
-            </div>
+                  Выбрать другое изображение
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="modal-footer">
               <button 
