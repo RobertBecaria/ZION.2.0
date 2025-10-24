@@ -191,7 +191,6 @@ const ProfileImageUpload = React.memo(function ProfileImageUpload({
             </div>
           </div>
         </div>
-      </div>
   ) : null;
 
   return (
