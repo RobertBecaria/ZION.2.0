@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Building2, Users, MapPin, Plus, Briefcase, Crown, Shield, ChevronRight } from 'lucide-react';
 import { getUserOrganizations, mockWorkUsers } from '../mock-work';
 
-const WorkOrganizationList = () => {
-  const navigate = useNavigate();
+const WorkOrganizationList = ({ onOrgClick, onCreateNew, onJoinOrg, onExploreFeed }) => {
   const [organizations, setOrganizations] = useState([]);
   const currentUserId = 'user-1'; // Mock current user
 
