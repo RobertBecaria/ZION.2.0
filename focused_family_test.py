@@ -6,7 +6,7 @@ from datetime import datetime
 import uuid
 
 class FocusedFamilyTester:
-    def __init__(self, base_url="https://upload-icon-repair.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://new-features-1.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
