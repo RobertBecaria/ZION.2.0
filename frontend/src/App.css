@@ -972,12 +972,14 @@ body {
 }
 
 .nav-logo {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 50%;
   transition: all 0.3s ease;
   filter: grayscale(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Logo tints with module color on hover */
