@@ -49,14 +49,14 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
     // Mock: Show success and navigate to organization page
     console.log('Creating organization:', formData);
     alert('Organization created successfully! (Mock)');
-    navigate('/work/organizations');
+    onComplete && onComplete();
   };
 
   const handleJoinOrganization = (orgId) => {
     // Mock: Show success and navigate
     console.log('Joining organization:', orgId);
     alert('Join request sent! (Mock)');
-    navigate('/work/organizations');
+    onJoinRequest && onJoinRequest(orgId);
   };
 
   // Choice View
