@@ -6803,7 +6803,7 @@ async def approve_join_request(
         
         # Create new membership
         new_member = {
-            "id": str(uuid4()),
+            "id": str(uuid.uuid4()),
             "organization_id": join_request["organization_id"],
             "user_id": join_request["user_id"],
             "role": role,
