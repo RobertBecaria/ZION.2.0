@@ -5841,8 +5841,12 @@ async def get_user_work_organizations(
             })
             
             if org:
+                org_response_data = org.copy()
+                if "organization_id" in org_response_data:
+                    org_response_data["id"] = org_response_data.pop("organization_id")
+                
                 org_response = WorkOrganizationResponse(
-                    **org,
+                    **org_response_data,
                     user_role=WorkRole(membership["role"]),
                     user_custom_role_name=membership.get("custom_role_name"),
                     user_department=membership.get("department"),
