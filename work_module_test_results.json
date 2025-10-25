@@ -9,114 +9,114 @@
       "test_name": "User Registrations (All 3 Users)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:27.080754"
+      "timestamp": "2025-10-25T19:22:56.089217"
     },
     {
       "test_name": "Create Organization",
       "success": true,
-      "details": "Organization ID: 65fd13ef-40b8-47d3-beee-8c84aa302066",
-      "timestamp": "2025-10-25T19:22:27.620353"
+      "details": "Organization ID: b6ac4619-b9a2-4b2e-b5d8-60b6ec752ce2",
+      "timestamp": "2025-10-25T19:22:56.643607"
     },
     {
       "test_name": "Get User Organizations",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:28.158207"
+      "timestamp": "2025-10-25T19:22:57.190269"
     },
     {
       "test_name": "Get Organization Details",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:28.701613"
+      "timestamp": "2025-10-25T19:22:57.731193"
     },
     {
       "test_name": "Update Organization",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:29.304890"
+      "timestamp": "2025-10-25T19:22:58.267005"
     },
     {
       "test_name": "Add Admin Member",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:29.844162"
+      "timestamp": "2025-10-25T19:22:58.806717"
     },
     {
       "test_name": "Add Employee Member",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:30.388213"
+      "timestamp": "2025-10-25T19:22:59.346364"
     },
     {
       "test_name": "Get Organization Members",
       "success": true,
       "details": "Found 3 members",
-      "timestamp": "2025-10-25T19:22:30.927291"
+      "timestamp": "2025-10-25T19:22:59.886168"
     },
     {
       "test_name": "Update Member Role (EMPLOYEE \u2192 CLIENT)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:31.481006"
+      "timestamp": "2025-10-25T19:23:00.440918"
     },
     {
       "test_name": "Remove Member",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:32.020176"
+      "timestamp": "2025-10-25T19:23:00.980756"
     },
     {
       "test_name": "Transfer Ownership (Owner \u2192 Admin)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:32.560111"
+      "timestamp": "2025-10-25T19:23:01.522172"
     },
     {
       "test_name": "Join Request Workflow (Complete)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:33.173984"
+      "timestamp": "2025-10-25T19:23:02.180994"
     },
     {
       "test_name": "Leave Organization",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:33.710610"
+      "timestamp": "2025-10-25T19:23:02.720260"
     },
     {
       "test_name": "Organization Posts - Create Post",
       "success": false,
-      "details": "Response: {'detail': [{'type': 'missing', 'loc': ['query', 'content'], 'msg': 'Field required', 'input': None, 'url': 'https://errors.pydantic.dev/2.11/v/missing'}], 'status_code': 422, 'expected_status': 200}",
-      "timestamp": "2025-10-25T19:22:34.252828"
+      "details": "Response: {'detail': \"You don't have permission to post\", 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-25T19:23:03.256021"
     },
     {
       "test_name": "Search Organizations",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:34.796416"
+      "timestamp": "2025-10-25T19:23:03.794294"
     },
     {
       "test_name": "Role Permissions (Non-admin blocked)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:35.333725"
+      "timestamp": "2025-10-25T19:23:04.332561"
     },
     {
       "test_name": "Organization Privacy Settings (Public Access)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:22:35.870280"
+      "timestamp": "2025-10-25T19:23:04.868982"
     }
   ],
   "test_users": {
-    "owner": "owner_192226@techinnovations.com",
-    "admin": "admin_192226@techinnovations.com",
-    "member": "member_192226@techinnovations.com"
+    "owner": "owner_192255@techinnovations.com",
+    "admin": "admin_192255@techinnovations.com",
+    "member": "member_192255@techinnovations.com"
   },
-  "organization_id": "65fd13ef-40b8-47d3-beee-8c84aa302066",
+  "organization_id": "b6ac4619-b9a2-4b2e-b5d8-60b6ec752ce2",
   "user_ids": {
-    "owner": "19bdd794-a554-4605-96c0-41a6fbe444b0",
-    "admin": "b4d46b97-99c8-4490-b56f-fb85e0b7318f",
-    "member": "2b2be7c7-2c51-4402-9782-5fef51af790b"
+    "owner": "a20b3590-3f3e-4a0e-8f73-676c4dc611b5",
+    "admin": "75762e18-708e-461d-950b-92cc2d56bd2a",
+    "member": "e57bccd8-62e0-4a7d-85bc-6c506f1731e7"
   }
 }
