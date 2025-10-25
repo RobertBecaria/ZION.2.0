@@ -6138,6 +6138,62 @@ async def update_work_organization(
         print(f"Update organization error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/work/organizations/{organization_id}/leave")
+async def leave_work_organization(
+    organization_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Leave a work organization (remove self from members)"""
+    try:
+        # Find the user's membership
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership:
+            raise HTTPException(
+                status_code=404,
+                detail="You are not a member of this organization"
+            )
+        
+        # Check if user is the only admin
+        if membership.get("is_admin", False):
+            admin_count = await db.work_members.count_documents({
+                "organization_id": organization_id,
+                "is_admin": True,
+                "is_active": True
+            })
+            
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Cannot leave: You are the only admin. Please transfer admin rights first or delete the organization."
+                )
+        
+        # Set membership as inactive (soft delete)
+        await db.work_members.update_one(
+            {"_id": membership["_id"]},
+            {
+                "$set": {
+                    "is_active": False,
+                    "left_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return {
+            "message": "Successfully left the organization",
+            "organization_id": organization_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Leave organization error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # === END WORK ORGANIZATION SYSTEM API ENDPOINTS ===
 
 # Basic status endpoints
