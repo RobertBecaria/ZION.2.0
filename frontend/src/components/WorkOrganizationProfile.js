@@ -88,9 +88,16 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
   };
 
   const loadOrganizationData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
       const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('zion_token');
+
+      if (!token) {
+        throw new Error('Не авторизован');
+      }
 
       // Load organization details
       const orgResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
@@ -98,7 +105,8 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
       });
 
       if (!orgResponse.ok) {
-        throw new Error('Failed to load organization');
+        const errorData = await orgResponse.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Не удалось загрузить организацию');
       }
 
       const orgData = await orgResponse.json();
@@ -120,7 +128,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
 
     } catch (error) {
       console.error('Error loading organization:', error);
-      setError(error.message);
+      setError(error.message || 'Произошла ошибка при загрузке');
     } finally {
       setLoading(false);
     }
