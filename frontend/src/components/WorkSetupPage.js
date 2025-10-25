@@ -387,23 +387,23 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
                     <input
                       type="text"
                       value={formData.address_city}
                       onChange={(e) => handleInputChange('address_city', e.target.value)}
-                      placeholder="Kherson"
+                      placeholder="Ростов-на-Дону"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State/Region</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Область/Регион</label>
                     <input
                       type="text"
                       value={formData.address_state}
                       onChange={(e) => handleInputChange('address_state', e.target.value)}
-                      placeholder="Kherson Oblast"
+                      placeholder="Ростовская область"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
