@@ -481,6 +481,15 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
           onSuccess={handleInviteSuccess}
         />
       )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <WorkOrganizationSettings
+          organizationId={organizationId}
+          onClose={() => setShowSettingsModal(false)}
+          onSuccess={handleSettingsSuccess}
+        />
+      )}
     </div>
   );
 };
