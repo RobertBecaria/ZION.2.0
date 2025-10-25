@@ -68,6 +68,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       name_alias: data.name_alias || '',
       phone: data.phone || '',
       email: data.email || '',
+      gender: data.gender || '', // NEW: Include gender
       date_of_birth: formattedDate,
       address_street: data.address_street || '',
       address_city: data.address_city || '',
