@@ -6194,6 +6194,382 @@ async def leave_work_organization(
         print(f"Leave organization error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/work/organizations/{organization_id}/join")
+async def join_work_organization(
+    organization_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Join a public organization instantly"""
+    try:
+        # Check if organization exists and is public
+        org = await db.work_organizations.find_one({
+            "$or": [
+                {"id": organization_id},
+                {"organization_id": organization_id}
+            ]
+        })
+        
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        if org.get("is_private", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot join private organization directly. Please request to join instead."
+            )
+        
+        # Check if already a member
+        existing_member = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if existing_member:
+            raise HTTPException(status_code=400, detail="Already a member of this organization")
+        
+        # Create new membership
+        new_member = {
+            "id": str(uuid4()),
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "role": "Member",
+            "department": None,
+            "team": None,
+            "is_admin": False,
+            "can_invite": False,
+            "permissions": {
+                "can_post": True,
+                "can_edit_profile": False,
+                "can_manage_members": False
+            },
+            "is_active": True,
+            "joined_at": datetime.now(timezone.utc)
+        }
+        
+        await db.work_members.insert_one(new_member)
+        
+        return {
+            "message": "Successfully joined organization",
+            "organization_id": organization_id,
+            "member_id": new_member["id"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Join organization error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/organizations/{organization_id}/request-join")
+async def request_join_organization(
+    organization_id: str,
+    message: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Request to join a private organization"""
+    try:
+        # Check if organization exists
+        org = await db.work_organizations.find_one({
+            "$or": [
+                {"id": organization_id},
+                {"organization_id": organization_id}
+            ]
+        })
+        
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        # Check if already a member
+        existing_member = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if existing_member:
+            raise HTTPException(status_code=400, detail="Already a member of this organization")
+        
+        # Check if already has pending request
+        existing_request = await db.work_join_requests.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "pending"
+        })
+        
+        if existing_request:
+            raise HTTPException(status_code=400, detail="You already have a pending request for this organization")
+        
+        # Create join request
+        request_id = str(uuid4())
+        join_request = {
+            "id": request_id,
+            "organization_id": organization_id,
+            "organization_name": org.get("name"),
+            "organization_type": org.get("organization_type"),
+            "user_id": current_user.id,
+            "user_email": current_user.email,
+            "user_name": f"{current_user.first_name} {current_user.last_name}",
+            "message": message,
+            "status": "pending",
+            "requested_at": datetime.now(timezone.utc),
+            "reviewed_at": None,
+            "reviewed_by": None,
+            "rejection_reason": None
+        }
+        
+        await db.work_join_requests.insert_one(join_request)
+        
+        return {
+            "message": "Join request sent successfully",
+            "request_id": request_id,
+            "organization_id": organization_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Request join error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/work/join-requests/my-requests")
+async def get_my_join_requests(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all join requests made by current user"""
+    try:
+        requests = await db.work_join_requests.find({
+            "user_id": current_user.id
+        }).sort("requested_at", -1).to_list(length=100)
+        
+        # Clean up MongoDB _id field
+        for req in requests:
+            req.pop("_id", None)
+        
+        return {"requests": requests}
+        
+    except Exception as e:
+        print(f"Get my requests error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/work/organizations/{organization_id}/join-requests")
+async def get_organization_join_requests(
+    organization_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all join requests for an organization (admin only)"""
+    try:
+        # Check if user is admin
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership or not membership.get("is_admin", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Only admins can view join requests"
+            )
+        
+        # Get pending requests
+        requests = await db.work_join_requests.find({
+            "organization_id": organization_id,
+            "status": "pending"
+        }).sort("requested_at", -1).to_list(length=100)
+        
+        # Clean up MongoDB _id field
+        for req in requests:
+            req.pop("_id", None)
+        
+        return {"requests": requests}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get org requests error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/join-requests/{request_id}/approve")
+async def approve_join_request(
+    request_id: str,
+    role: str = "Member",
+    current_user: User = Depends(get_current_user)
+):
+    """Approve a join request (admin only)"""
+    try:
+        # Get the request
+        join_request = await db.work_join_requests.find_one({"id": request_id})
+        
+        if not join_request:
+            raise HTTPException(status_code=404, detail="Join request not found")
+        
+        if join_request.get("status") != "pending":
+            raise HTTPException(status_code=400, detail="Request is not pending")
+        
+        # Check if current user is admin of the organization
+        membership = await db.work_members.find_one({
+            "organization_id": join_request["organization_id"],
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership or not membership.get("is_admin", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Only admins can approve join requests"
+            )
+        
+        # Check if user is already a member
+        existing_member = await db.work_members.find_one({
+            "organization_id": join_request["organization_id"],
+            "user_id": join_request["user_id"],
+            "is_active": True
+        })
+        
+        if existing_member:
+            # Update request as approved but don't create duplicate membership
+            await db.work_join_requests.update_one(
+                {"id": request_id},
+                {
+                    "$set": {
+                        "status": "approved",
+                        "reviewed_at": datetime.now(timezone.utc),
+                        "reviewed_by": current_user.id
+                    }
+                }
+            )
+            return {"message": "User is already a member"}
+        
+        # Create new membership
+        new_member = {
+            "id": str(uuid4()),
+            "organization_id": join_request["organization_id"],
+            "user_id": join_request["user_id"],
+            "role": role,
+            "department": None,
+            "team": None,
+            "is_admin": False,
+            "can_invite": False,
+            "permissions": {
+                "can_post": True,
+                "can_edit_profile": False,
+                "can_manage_members": False
+            },
+            "is_active": True,
+            "joined_at": datetime.now(timezone.utc)
+        }
+        
+        await db.work_members.insert_one(new_member)
+        
+        # Update request status
+        await db.work_join_requests.update_one(
+            {"id": request_id},
+            {
+                "$set": {
+                    "status": "approved",
+                    "reviewed_at": datetime.now(timezone.utc),
+                    "reviewed_by": current_user.id
+                }
+            }
+        )
+        
+        return {
+            "message": "Join request approved successfully",
+            "member_id": new_member["id"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Approve request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/join-requests/{request_id}/reject")
+async def reject_join_request(
+    request_id: str,
+    rejection_reason: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Reject a join request (admin only)"""
+    try:
+        # Get the request
+        join_request = await db.work_join_requests.find_one({"id": request_id})
+        
+        if not join_request:
+            raise HTTPException(status_code=404, detail="Join request not found")
+        
+        if join_request.get("status") != "pending":
+            raise HTTPException(status_code=400, detail="Request is not pending")
+        
+        # Check if current user is admin of the organization
+        membership = await db.work_members.find_one({
+            "organization_id": join_request["organization_id"],
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        
+        if not membership or not membership.get("is_admin", False):
+            raise HTTPException(
+                status_code=403,
+                detail="Only admins can reject join requests"
+            )
+        
+        # Update request status
+        await db.work_join_requests.update_one(
+            {"id": request_id},
+            {
+                "$set": {
+                    "status": "rejected",
+                    "reviewed_at": datetime.now(timezone.utc),
+                    "reviewed_by": current_user.id,
+                    "rejection_reason": rejection_reason
+                }
+            }
+        )
+        
+        return {"message": "Join request rejected"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Reject request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/work/join-requests/{request_id}")
+async def cancel_join_request(
+    request_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Cancel own join request"""
+    try:
+        # Get the request
+        join_request = await db.work_join_requests.find_one({"id": request_id})
+        
+        if not join_request:
+            raise HTTPException(status_code=404, detail="Join request not found")
+        
+        # Check if current user owns the request
+        if join_request.get("user_id") != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="You can only cancel your own requests"
+            )
+        
+        if join_request.get("status") != "pending":
+            raise HTTPException(status_code=400, detail="Can only cancel pending requests")
+        
+        # Delete the request
+        await db.work_join_requests.delete_one({"id": request_id})
+        
+        return {"message": "Join request cancelled"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Cancel request error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # === END WORK ORGANIZATION SYSTEM API ENDPOINTS ===
 
 # Basic status endpoints
