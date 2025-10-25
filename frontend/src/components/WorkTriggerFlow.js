@@ -144,7 +144,7 @@ const WorkTriggerFlow = ({ onCreateOrg, onJoinOrg }) => {
               onClick={() => setView('landing')}
               className="text-gray-600 hover:text-gray-900 font-medium transition-colors duration-200"
             >
-              ← Back
+              ← Назад
             </button>
           </div>
         </div>
