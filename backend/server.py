@@ -5876,7 +5876,10 @@ async def get_work_organization(
     """Get specific work organization details"""
     try:
         org = await db.work_organizations.find_one({
-            "id": organization_id,
+            "$or": [
+                {"id": organization_id},
+                {"organization_id": organization_id}
+            ],
             "is_active": True
         })
         
