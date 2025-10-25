@@ -445,6 +445,7 @@ class WorkRole(str, Enum):
     CONTRACTOR = "CONTRACTOR"
     INTERN = "INTERN"
     CONSULTANT = "CONSULTANT"
+    CLIENT = "CLIENT"
     CUSTOM = "CUSTOM"
 
 class OrganizationType(str, Enum):
