@@ -448,7 +448,7 @@ class WorkModuleAPITester:
         # Create post as admin (now owner) - endpoint expects content as query parameter
         content = "We're excited to announce our new product launch next month. Stay tuned for more updates!"
         
-        success, response = self.make_request("POST", f"work/organizations/{self.organization_id}/posts?content={content}", None, 200, "admin")
+        success, response = self.make_request("POST", f"work/organizations/{self.organization_id}/posts?content={content}", None, 200, "owner")
         
         if not success:
             self.log_test("Organization Posts - Create Post", False, f"Response: {response}")
