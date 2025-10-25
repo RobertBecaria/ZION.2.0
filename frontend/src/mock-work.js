@@ -20,6 +20,7 @@ export const WorkRoleTypes = {
   CONTRACTOR: 'CONTRACTOR',
   INTERN: 'INTERN',
   CONSULTANT: 'CONSULTANT',
+  CLIENT: 'CLIENT',
   CUSTOM: 'CUSTOM'
 };
 
