@@ -317,21 +317,37 @@ class OrganizationPostsAPITester:
         print("🎯 Focus: Verifying organization posts permission fix (line 7012)")
         print("-" * 80)
         
+        # Step 1: Register all users
+        print("\n📝 STEP 1: User Registration")
+        print("-" * 40)
+        for user_type in ["owner", "admin", "member"]:
+            if not self.test_user_registration(user_type):
+                print(f"❌ Failed to register {user_type}, aborting tests")
+                return 1
+        
+        # Step 2: Create organization (owner only)
+        print("\n🏢 STEP 2: Organization Setup")
+        print("-" * 40)
+        if not self.test_create_organization("owner"):
+            print("❌ Failed to create organization, aborting tests")
+            return 1
+        
+        # Step 3: Add members to organization
+        print("\n👥 STEP 3: Add Organization Members")
+        print("-" * 40)
+        if not self.test_add_organization_member("admin", "MANAGER", True):
+            print("❌ Failed to add admin member")
+        if not self.test_add_organization_member("member", "EMPLOYEE", True):
+            print("❌ Failed to add regular member")
+        
+        # Step 4: Test organization posts functionality
+        print("\n📝 STEP 4: Organization Posts Testing")
+        print("-" * 40)
+        
         # Test each user type
         for user_type in ["owner", "admin", "member"]:
             print(f"\n👤 Testing {user_type.upper()} user ({self.test_users[user_type]['email']}):")
-            print("-" * 40)
-            
-            # Login user
-            if not self.test_user_login(user_type):
-                print(f"❌ Skipping {user_type} tests due to login failure")
-                continue
-            
-            # Get organizations (only need to do this once)
-            if not self.organization_id:
-                if not self.test_get_user_organizations(user_type):
-                    print(f"❌ Skipping {user_type} tests due to no organizations")
-                    continue
+            print("-" * 30)
             
             # Test organization membership details
             self.test_organization_membership_details(user_type)
