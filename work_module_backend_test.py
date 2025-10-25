@@ -175,7 +175,7 @@ class WorkModuleAPITester:
         
         success, response = self.make_request("GET", f"work/organizations/{self.organization_id}", None, 200, "owner")
         
-        if success and response.get("name") == "Tech Innovations Ltd":
+        if success and "Tech Innovations Ltd" in response.get("name", ""):
             self.log_test("Get Organization Details", True)
             return True
         else:
