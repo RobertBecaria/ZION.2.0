@@ -17,6 +17,10 @@ import GenderUpdateModal from './components/GenderUpdateModal';
 import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
 import FamilySetupPage from './components/FamilySetupPage';
+// WORK MODULE COMPONENTS
+import WorkTriggerFlow from './components/WorkTriggerFlow';
+import WorkSetupPage from './components/WorkSetupPage';
+import WorkOrganizationList from './components/WorkOrganizationList';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
