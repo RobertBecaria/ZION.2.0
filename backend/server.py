@@ -6117,10 +6117,18 @@ async def update_work_organization(
         update_dict = {k: v for k, v in update_data.items() if v is not None}
         update_dict["updated_at"] = datetime.now(timezone.utc)
         
-        await db.work_organizations.update_one(
-            {"id": organization_id},
+        result = await db.work_organizations.update_one(
+            {
+                "$or": [
+                    {"id": organization_id},
+                    {"organization_id": organization_id}
+                ]
+            },
             {"$set": update_dict}
         )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Organization not found")
         
         return {"message": "Organization updated successfully"}
         
