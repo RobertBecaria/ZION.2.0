@@ -12,6 +12,20 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    // Get current user ID from token or localStorage
+    const token = localStorage.getItem('zion_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.sub);
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (organizationId) {
