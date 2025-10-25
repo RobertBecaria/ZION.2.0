@@ -78,11 +78,37 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     }
   }, [organizationId]);
 
+  const loadPendingRequestsCount = useCallback(async () => {
+    if (!organizationId || !organization?.user_is_admin) return;
+
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/join-requests`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPendingRequestsCount(data.requests?.length || 0);
+      }
+    } catch (error) {
+      console.error('Error loading requests count:', error);
+    }
+  }, [organizationId, organization?.user_is_admin]);
+
   useEffect(() => {
     if (organizationId) {
       loadOrganizationData();
     }
   }, [organizationId, loadOrganizationData]);
+
+  useEffect(() => {
+    if (organization?.user_is_admin) {
+      loadPendingRequestsCount();
+    }
+  }, [organization?.user_is_admin, loadPendingRequestsCount]);
 
   // Check if current user is admin (from organization object)
   const isAdmin = organization?.user_is_admin || false;
