@@ -192,9 +192,17 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
               </div>
               <button
                 onClick={handleSearch}
-                className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold"
+                disabled={searching || !searchQuery.trim()}
+                className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Search
+                {searching ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Поиск...
+                  </>
+                ) : (
+                  'Поиск'
+                )}
               </button>
             </div>
 
