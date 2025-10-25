@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Building2, Globe, Mail, MapPin, Image, AlertCircle, Check, Upload, Trash2, LogOut } from 'lucide-react';
+import { X, Save, Building2, Globe, Mail, MapPin, Image, AlertCircle, Check, Upload, Trash2, LogOut, Crown } from 'lucide-react';
 import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
+import WorkTransferOwnershipModal from './WorkTransferOwnershipModal';
 
 const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveOrganization }) => {
   const [organization, setOrganization] = useState(null);
@@ -12,6 +13,8 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
   
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [showTransferOwnership, setShowTransferOwnership] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
