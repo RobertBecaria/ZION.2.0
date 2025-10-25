@@ -6,7 +6,7 @@ from datetime import datetime
 
 class FocusedSocialTest:
     def __init__(self):
-        self.base_url = "https://work-orgs-manager.preview.emergentagent.com/api"
+        self.base_url = "https://zion-work-module.preview.emergentagent.com/api"
         self.token = None
         self.user_id = None
         self.post_id = None
