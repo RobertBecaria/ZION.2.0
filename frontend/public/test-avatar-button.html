@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avatar Button Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      padding: 40px;
+    }
+    
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      margin-bottom: 30px;
+      color: #333;
+    }
+    
+    /* Family Profile Styles */
+    .profile-avatar-container {
+      position: relative;
+      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.12));
+      transition: filter 0.3s ease;
+      width: fit-content;
+      margin: 40px auto;
+    }
+    
+    .profile-avatar-container:hover {
+      filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.16));
+    }
+    
+    .profile-avatar {
+      width: 168px;
+      height: 168px;
+      border-radius: 50%;
+      border: 6px solid white;
+      box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.12),
+        0 1px 4px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #059669;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    
+    .profile-avatar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        circle at 30% 30%,
+        rgba(255, 255, 255, 0.25) 0%,
+        transparent 60%
+      );
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Avatar Upload Button - CRITICAL STYLES */
+    .avatar-upload-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #059669;
+      z-index: 10000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      pointer-events: auto;
+    }
+    
+    .avatar-upload-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    /* Console Log Display */
+    .console-log {
+      margin-top: 40px;
+      padding: 20px;
+      background: #1e1e1e;
+      border-radius: 8px;
+      color: #d4d4d4;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .console-log .log-entry {
+      margin-bottom: 4px;
+    }
+    
+    .console-log .log-entry.info {
+      color: #4fc3f7;
+    }
+    
+    .console-log .log-entry.success {
+      color: #81c784;
+    }
+    
+    .console-log .log-entry.error {
+      color: #e57373;
+    }
+    
+    .instructions {
+      background: #e3f2fd;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .instructions h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #1976d2;
+    }
+    
+    .instructions ul {
+      margin-left: 20px;
+    }
+    
+    .instructions li {
+      margin-bottom: 8px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🔍 Avatar Upload Button Test</h1>
+    
+    <div class="instructions">
+      <h2>Test Instructions:</h2>
+      <ul>
+        <li>Move your cursor over the avatar below</li>
+        <li>Look for the small white circle with a camera icon in the bottom-right</li>
+        <li>Click the camera icon button</li>
+        <li>Check the console logs below to see what happens</li>
+      </ul>
+    </div>
+    
+    <!-- Test Avatar -->
+    <div class="profile-avatar-container">
+      <div class="profile-avatar">
+        <svg width="48" height="48" fill="white" viewBox="0 0 24 24">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+      </div>
+      
+      <!-- Upload Button -->
+      <button
+        class="avatar-upload-btn"
+        onclick="handleButtonClick(event)"
+        onmouseenter="logToConsole('info', 'Mouse entered button')"
+        onmouseleave="logToConsole('info', 'Mouse left button')"
+        onmousedown="logToConsole('info', 'Mouse down on button')"
+        onmouseup="logToConsole('info', 'Mouse up on button')"
+        title="Изменить аватар"
+        type="button"
+      >
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Console Log Display -->
+    <div class="console-log" id="consoleLog">
+      <div class="log-entry success">✅ Test page loaded successfully</div>
+      <div class="log-entry info">👆 Hover over the avatar above and click the camera icon</div>
+    </div>
+  </div>
+  
+  <script>
+    const consoleLog = document.getElementById('consoleLog');
+    
+    function logToConsole(type, message) {
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      consoleLog.appendChild(entry);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+      
+      // Also log to browser console
+      console.log(`[${timestamp}] ${message}`);
+    }
+    
+    function handleButtonClick(event) {
+      logToConsole('success', '🎉 BUTTON CLICKED! Event fired successfully');
+      logToConsole('info', `Event target: ${event.target.tagName}`);
+      logToConsole('info', `Event currentTarget: ${event.currentTarget.tagName}`);
+      logToConsole('info', `Mouse button: ${event.button} (0=left, 1=middle, 2=right)`);
+      logToConsole('info', `Coordinates: x=${event.clientX}, y=${event.clientY}`);
+      
+      event.stopPropagation();
+      event.preventDefault();
+      
+      logToConsole('success', '✅ In a real app, the upload modal would open now');
+    }
+    
+    // Track mouse movements over the avatar area
+    document.querySelector('.profile-avatar-container').addEventListener('mousemove', function(e) {
+      // Only log occasionally to avoid spam
+      if (Math.random() < 0.05) {
+        logToConsole('info', `Mouse position: x=${e.clientX}, y=${e.clientY}`);
+      }
+    });
+    
+    // Log page load info
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        logToConsole('info', '🔍 Checking button properties...');
+        const button = document.querySelector('.avatar-upload-btn');
+        const rect = button.getBoundingClientRect();
+        const computed = window.getComputedStyle(button);
+        
+        logToConsole('info', `Button position: x=${rect.x.toFixed(1)}, y=${rect.y.toFixed(1)}`);
+        logToConsole('info', `Button size: ${rect.width}x${rect.height}`);
+        logToConsole('info', `Button z-index: ${computed.zIndex}`);
+        logToConsole('info', `Button pointer-events: ${computed.pointerEvents}`);
+        logToConsole('info', `Button visibility: ${computed.visibility}`);
+        logToConsole('info', `Button display: ${computed.display}`);
+        logToConsole('success', '✅ Button is ready for interaction');
+      }, 500);
+    });
+  </script>
+</body>
+</html>
