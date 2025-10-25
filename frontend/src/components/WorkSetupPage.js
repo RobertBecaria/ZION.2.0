@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Search, Plus, Globe, Lock, MapPin, Calendar, Users, Briefcase, Check, X } from 'lucide-react';
 import { searchOrganizations, OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
 
-const WorkSetupPage = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const initialMode = searchParams.get('mode') === 'join' ? 'search' : 'choice';
+const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinRequest }) => {
   
   const [mode, setMode] = useState(initialMode); // 'choice', 'search', 'create'
   const [searchQuery, setSearchQuery] = useState('');
