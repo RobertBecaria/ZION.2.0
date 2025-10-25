@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, MapPin, Globe, Mail, Calendar, Settings, UserPlus, Edit, Share2, Briefcase, ChevronRight, Crown } from 'lucide-react';
+import { Building2, Users, MapPin, Globe, Mail, Calendar, Settings, UserPlus, Edit, Share2, Briefcase, ChevronRight, Crown, Bell } from 'lucide-react';
 import WorkInviteMemberModal from './WorkInviteMemberModal';
 import WorkMemberManagement from './WorkMemberManagement';
 import WorkOrganizationSettings from './WorkOrganizationSettings';
+import WorkJoinRequestsManagement from './WorkJoinRequestsManagement';
 
 const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSettings }) => {
   const [organization, setOrganization] = useState(null);
   const [members, setMembers] = useState([]);
   const [membersByDept, setMembersByDept] = useState({});
   const [posts, setPosts] = useState([]);
-  const [activeTab, setActiveTab] = useState('about'); // 'about', 'members', 'posts'
+  const [activeTab, setActiveTab] = useState('about'); // 'about', 'members', 'posts', 'requests'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   useEffect(() => {
     // Get current user ID from token or localStorage
