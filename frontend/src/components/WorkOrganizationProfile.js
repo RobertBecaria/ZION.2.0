@@ -100,7 +100,56 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     // Reload members after successful invitation
     setShowInviteModal(false);
     // Reload organization data to get updated member count
-    window.location.reload(); // Simple approach for now
+    loadOrganizationData();
+  };
+
+  const handleMemberUpdate = () => {
+    // Reload members after update
+    loadOrganizationData();
+  };
+
+  const handleMemberRemove = () => {
+    // Reload members after removal
+    loadOrganizationData();
+  };
+
+  const loadOrganizationData = async () => {
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      // Load organization details
+      const orgResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!orgResponse.ok) {
+        throw new Error('Failed to load organization');
+      }
+
+      const orgData = await orgResponse.json();
+      setOrganization(orgData);
+
+      // Load members
+      const membersResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (membersResponse.ok) {
+        const membersData = await membersResponse.json();
+        setMembers(membersData.members || []);
+        setMembersByDept(membersData.departments || {});
+      }
+
+      // Posts will be handled by UniversalWall in future
+      setPosts([]);
+
+    } catch (error) {
+      console.error('Error loading organization:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
