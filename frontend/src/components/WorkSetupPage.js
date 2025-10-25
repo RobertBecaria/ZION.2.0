@@ -74,17 +74,42 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCreateOrganization = () => {
-    // Mock: Show success and navigate to organization page
-    console.log('Creating organization:', formData);
-    alert('Organization created successfully! (Mock)');
-    onComplete && onComplete();
+  const handleCreateOrganization = async () => {
+    setCreating(true);
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to create organization');
+      }
+      
+      const data = await response.json();
+      console.log('Organization created:', data);
+      alert('Организация успешно создана!');
+      onComplete && onComplete();
+    } catch (error) {
+      console.error('Create organization error:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleJoinOrganization = (orgId) => {
     // Mock: Show success and navigate
     console.log('Joining organization:', orgId);
-    alert('Join request sent! (Mock)');
+    alert('Запрос на присоединение отправлен! (В разработке)');
     onJoinRequest && onJoinRequest(orgId);
   };
 
