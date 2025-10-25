@@ -111,6 +111,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
           name_alias: formData.name_alias || null,
           phone: formData.phone || null,
           email: formData.email,
+          gender: formData.gender || null, // NEW: Include gender
           date_of_birth: formData.date_of_birth || null
         };
       } else if (section === 'address') {
