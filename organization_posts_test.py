@@ -16,27 +16,31 @@ class OrganizationPostsAPITester:
         self.tests_passed = 0
         self.test_results = []
         
-        # Test users as specified in the review request
+        # Create test users with realistic data (dynamic to avoid conflicts)
+        timestamp = datetime.now().strftime('%H%M%S')
         self.test_users = {
             "owner": {
-                "email": "owner@test.com",
+                "email": f"owner_{timestamp}@testorg.com",
                 "password": "password123",
                 "first_name": "Owner",
                 "last_name": "User",
+                "phone": "+1234567890",
                 "expected_can_post": True
             },
             "admin": {
-                "email": "admin@test.com", 
+                "email": f"admin_{timestamp}@testorg.com", 
                 "password": "password123",
                 "first_name": "Admin",
                 "last_name": "User",
+                "phone": "+1234567891",
                 "expected_can_post": True
             },
             "member": {
-                "email": "member@test.com",
+                "email": f"member_{timestamp}@testorg.com",
                 "password": "password123", 
                 "first_name": "Member",
                 "last_name": "User",
+                "phone": "+1234567892",
                 "expected_can_post": True  # Assuming member has can_post: true
             }
         }
