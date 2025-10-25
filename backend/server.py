@@ -5891,7 +5891,11 @@ async def get_work_organization(
             )
         
         # Build response with user's membership details
-        response_data = WorkOrganizationResponse(**org)
+        org_response_data = org.copy()
+        if "organization_id" in org_response_data:
+            org_response_data["id"] = org_response_data.pop("organization_id")
+        
+        response_data = WorkOrganizationResponse(**org_response_data)
         
         if membership:
             response_data.user_role = WorkRole(membership["role"])
@@ -5899,6 +5903,9 @@ async def get_work_organization(
             response_data.user_department = membership.get("department")
             response_data.user_team = membership.get("team")
             response_data.user_is_admin = membership.get("is_admin", False)
+            response_data.user_can_invite = membership.get("can_invite", False)
+            response_data.user_can_post = membership.get("can_post", True)
+            response_data.user_job_title = membership.get("job_title")
         
         return response_data
         
