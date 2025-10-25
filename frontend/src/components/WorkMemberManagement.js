@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Edit2, Trash2, Shield, Crown, Check, X, AlertTriangle } from 'lucide-react';
+import { Edit2, Trash2, Shield, Crown, Check, X, AlertTriangle, ChevronDown } from 'lucide-react';
 import { WorkRoleTypes } from '../mock-work';
 
-const WorkMemberManagement = ({ member, organizationId, isCurrentUser, onUpdate, onRemove }) => {
+const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, currentUserId, onUpdate, onRemove }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [quickActionLoading, setQuickActionLoading] = useState(false);
   const [formData, setFormData] = useState({
     role: member.role,
     custom_role_name: member.custom_role_name || '',
@@ -17,13 +18,42 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, onUpdate,
     is_admin: member.is_admin || false
   });
 
+  const handleQuickAdminToggle = async () => {
+    setQuickActionLoading(true);
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}/role`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_admin: !member.is_admin })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Не удалось обновить роль');
+      }
+
+      onUpdate && onUpdate();
+    } catch (error) {
+      console.error('Error toggling admin:', error);
+      alert(`Ошибка: ${error.message}`);
+    } finally {
+      setQuickActionLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
       const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('zion_token');
 
-      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -53,7 +83,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, onUpdate,
       const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('zion_token');
 
-      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
