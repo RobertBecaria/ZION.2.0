@@ -27,11 +27,58 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     }
   }, []);
 
+  const loadOrganizationData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      if (!token) {
+        throw new Error('Не авторизован');
+      }
+
+      // Load organization details
+      const orgResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!orgResponse.ok) {
+        const errorData = await orgResponse.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Не удалось загрузить организацию');
+      }
+
+      const orgData = await orgResponse.json();
+      setOrganization(orgData);
+
+      // Load members
+      const membersResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (membersResponse.ok) {
+        const membersData = await membersResponse.json();
+        setMembers(membersData.members || []);
+        setMembersByDept(membersData.departments || {});
+      }
+
+      // Posts will be handled by UniversalWall in future
+      setPosts([]);
+
+    } catch (error) {
+      console.error('Error loading organization:', error);
+      setError(error.message || 'Произошла ошибка при загрузке');
+    } finally {
+      setLoading(false);
+    }
+  }, [organizationId]);
+
   useEffect(() => {
     if (organizationId) {
       loadOrganizationData();
     }
-  }, [organizationId]);
+  }, [organizationId, loadOrganizationData]);
 
   // Check if current user is admin (from organization object)
   const isAdmin = organization?.user_is_admin || false;
