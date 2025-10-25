@@ -295,6 +295,24 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
               >
                 Posts
               </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('requests')}
+                  className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 flex items-center gap-2 ${
+                    activeTab === 'requests'
+                      ? 'text-orange-600 border-orange-600'
+                      : 'text-gray-600 border-transparent hover:text-gray-900'
+                  }`}
+                >
+                  <Bell className="w-4 h-4" />
+                  Запросы
+                  {pendingRequestsCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
