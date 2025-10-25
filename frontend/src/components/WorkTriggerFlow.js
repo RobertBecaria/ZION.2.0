@@ -106,13 +106,13 @@ const WorkTriggerFlow = ({ onCreateOrg, onJoinOrg }) => {
                 <Building2 className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                Create Organization
+                Создать Организацию
               </h3>
               <p className="text-gray-600 leading-relaxed mb-4">
-                Start your own company, startup, or organization profile. Perfect for founders and business owners.
+                Создайте профиль своей компании, стартапа или организации. Идеально для основателей и владельцев бизнеса.
               </p>
               <div className="flex items-center text-orange-600 font-semibold group-hover:gap-3 transition-all duration-300">
-                <span>Create Now</span>
+                <span>Создать сейчас</span>
                 <span className="ml-2 group-hover:ml-0">→</span>
               </div>
             </button>
