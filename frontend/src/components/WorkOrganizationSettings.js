@@ -1,0 +1,535 @@
+import React, { useState, useEffect } from 'react';
+import { X, Save, Building2, Globe, Mail, MapPin, Image, AlertCircle, Check, Upload, Trash2 } from 'lucide-react';
+import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
+
+const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess }) => {
+  const [organization, setOrganization] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState('basic'); // 'basic', 'contact', 'media', 'privacy'
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    organization_type: 'COMPANY',
+    description: '',
+    industry: '',
+    organization_size: '11-50',
+    founded_year: new Date().getFullYear(),
+    website: '',
+    official_email: '',
+    address_street: '',
+    address_city: '',
+    address_state: '',
+    address_country: 'Россия',
+    address_postal_code: '',
+    is_private: false,
+    allow_public_discovery: true,
+    logo_url: '',
+    banner_url: ''
+  });
+
+  useEffect(() => {
+    loadOrganization();
+  }, [organizationId]);
+
+  const loadOrganization = async () => {
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить организацию');
+      }
+
+      const data = await response.json();
+      setOrganization(data);
+      setFormData({
+        name: data.name || '',
+        organization_type: data.organization_type || 'COMPANY',
+        description: data.description || '',
+        industry: data.industry || '',
+        organization_size: data.organization_size || '11-50',
+        founded_year: data.founded_year || new Date().getFullYear(),
+        website: data.website || '',
+        official_email: data.official_email || '',
+        address_street: data.address_street || '',
+        address_city: data.address_city || '',
+        address_state: data.address_state || '',
+        address_country: data.address_country || 'Россия',
+        address_postal_code: data.address_postal_code || '',
+        is_private: data.is_private || false,
+        allow_public_discovery: data.allow_public_discovery !== false,
+        logo_url: data.logo_url || '',
+        banner_url: data.banner_url || ''
+      });
+    } catch (error) {
+      console.error('Error loading organization:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setError(null);
+  };
+
+  const handleImageUpload = (field, event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Размер файла не должен превышать 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      handleChange(field, reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.description) {
+      setError('Название и описание обязательны');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Не удалось обновить организацию');
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        onSuccess && onSuccess();
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      setError(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-8">
+          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка настроек...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Настройки Организации</h2>
+            <p className="text-sm text-gray-600 mt-1">{organization?.name}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="border-b border-gray-200 px-6">
+          <div className="flex gap-1">
+            {[
+              { id: 'basic', label: 'Основное', icon: Building2 },
+              { id: 'contact', label: 'Контакты', icon: Mail },
+              { id: 'media', label: 'Медиа', icon: Image },
+              { id: 'privacy', label: 'Приватность', icon: Globe }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSection(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${
+                  activeSection === tab.id
+                    ? 'text-orange-600 border-orange-600'
+                    : 'text-gray-600 border-transparent hover:text-gray-900'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3 mb-6">
+              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-green-900">Сохранено!</h3>
+                <p className="text-sm text-green-700 mt-1">Настройки организации успешно обновлены.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 mb-6">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900">Ошибка</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Basic Info Section */}
+          {activeSection === 'basic' && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Название *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Тип организации</label>
+                <select
+                  value={formData.organization_type}
+                  onChange={(e) => handleChange('organization_type', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  {Object.keys(OrganizationTypes).map(type => (
+                    <option key={type} value={type}>
+                      {type.replace('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Описание *</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Индустрия</label>
+                  <select
+                    value={formData.industry}
+                    onChange={(e) => handleChange('industry', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    <option value="">Выберите индустрию</option>
+                    {Industries.map(ind => (
+                      <option key={ind} value={ind}>{ind}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Размер</label>
+                  <select
+                    value={formData.organization_size}
+                    onChange={(e) => handleChange('organization_size', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  >
+                    {OrganizationSizes.map(size => (
+                      <option key={size} value={size}>{size} сотрудников</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Год основания</label>
+                <input
+                  type="number"
+                  value={formData.founded_year}
+                  onChange={(e) => handleChange('founded_year', parseInt(e.target.value))}
+                  min="1800"
+                  max={new Date().getFullYear()}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Contact Info Section */}
+          {activeSection === 'contact' && (
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Веб-сайт</label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleChange('website', e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={formData.official_email}
+                    onChange={(e) => handleChange('official_email', e.target.value)}
+                    placeholder="info@example.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Адрес</label>
+                <input
+                  type="text"
+                  value={formData.address_street}
+                  onChange={(e) => handleChange('address_street', e.target.value)}
+                  placeholder="Проспект Буденновский, 15"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Город</label>
+                  <input
+                    type="text"
+                    value={formData.address_city}
+                    onChange={(e) => handleChange('address_city', e.target.value)}
+                    placeholder="Ростов-на-Дону"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Область/Регион</label>
+                  <input
+                    type="text"
+                    value={formData.address_state}
+                    onChange={(e) => handleChange('address_state', e.target.value)}
+                    placeholder="Ростовская область"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Страна</label>
+                  <input
+                    type="text"
+                    value={formData.address_country}
+                    onChange={(e) => handleChange('address_country', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Индекс</label>
+                  <input
+                    type="text"
+                    value={formData.address_postal_code}
+                    onChange={(e) => handleChange('address_postal_code', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Media Section */}
+          {activeSection === 'media' && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Логотип</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                  {formData.logo_url ? (
+                    <div className="relative inline-block">
+                      <img src={formData.logo_url} alt="Logo" className="w-32 h-32 object-cover rounded-xl" />
+                      <button
+                        onClick={() => handleChange('logo_url', '')}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 mb-2">Загрузите логотип</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload('logo_url', e)}
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="inline-block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 cursor-pointer"
+                      >
+                        Выбрать файл
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">Макс. 5MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Баннер</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                  {formData.banner_url ? (
+                    <div className="relative inline-block">
+                      <img src={formData.banner_url} alt="Banner" className="w-full max-w-md h-32 object-cover rounded-xl" />
+                      <button
+                        onClick={() => handleChange('banner_url', '')}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 mb-2">Загрузите баннер</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload('banner_url', e)}
+                        className="hidden"
+                        id="banner-upload"
+                      />
+                      <label
+                        htmlFor="banner-upload"
+                        className="inline-block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 cursor-pointer"
+                      >
+                        Выбрать файл
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">Рекомендуется 1200x400px, макс. 5MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Privacy Section */}
+          {activeSection === 'privacy' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-blue-700">
+                  Настройки приватности определяют, кто может видеть вашу организацию и её контент.
+                </p>
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={!formData.is_private}
+                  onChange={(e) => handleChange('is_private', !e.target.checked)}
+                  className="w-5 h-5 text-orange-500 rounded mt-1"
+                />
+                <div>
+                  <div className="font-medium text-gray-900">Публичная организация</div>
+                  <div className="text-sm text-gray-600">Любой пользователь может просматривать профиль организации</div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={formData.allow_public_discovery}
+                  onChange={(e) => handleChange('allow_public_discovery', e.target.checked)}
+                  className="w-5 h-5 text-orange-500 rounded mt-1"
+                />
+                <div>
+                  <div className="font-medium text-gray-900">Разрешить поиск</div>
+                  <div className="text-sm text-gray-600">Организация будет отображаться в результатах поиска</div>
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-semibold text-gray-700"
+            disabled={saving}
+          >
+            Отмена
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || success}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Сохранение...
+              </>
+            ) : success ? (
+              'Сохранено!'
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                Сохранить изменения
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WorkOrganizationSettings;
