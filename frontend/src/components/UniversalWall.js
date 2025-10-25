@@ -8,6 +8,7 @@ import {
 import { useLightbox } from '../hooks/useLightbox';
 import LightboxModal from './LightboxModal';
 import { triggerConfetti, toast } from '../utils/animations';
+import WorkUniversalFeed from './WorkUniversalFeed';
 
 function UniversalWall({ 
   activeGroup, 
@@ -18,6 +19,10 @@ function UniversalWall({
   activeFilters = [],  // Unified stacked filters array
   userFamilyId = null  // User's family ID for filtering
 }) {
+  // If this is the organizations/work module, show WorkUniversalFeed
+  if (activeModule === 'organizations') {
+    return <WorkUniversalFeed currentUserId={user?.id} />;
+  }
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
