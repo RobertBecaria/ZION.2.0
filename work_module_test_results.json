@@ -1,0 +1,122 @@
+{
+  "module": "WORK",
+  "total_tests": 17,
+  "passed_tests": 12,
+  "failed_tests": 5,
+  "success_rate": 70.58823529411765,
+  "test_results": [
+    {
+      "test_name": "User Registrations (All 3 Users)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:21.375210"
+    },
+    {
+      "test_name": "Create Organization",
+      "success": true,
+      "details": "Organization ID: dcc0fb49-7ebf-4ede-8d5d-1a070b9ae15d",
+      "timestamp": "2025-10-25T19:20:21.939297"
+    },
+    {
+      "test_name": "Get User Organizations",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:22.477331"
+    },
+    {
+      "test_name": "Get Organization Details",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:23.019453"
+    },
+    {
+      "test_name": "Update Organization",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:23.558588"
+    },
+    {
+      "test_name": "Add Admin Member",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:24.102681"
+    },
+    {
+      "test_name": "Add Employee Member",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:24.643442"
+    },
+    {
+      "test_name": "Get Organization Members",
+      "success": true,
+      "details": "Found 3 members",
+      "timestamp": "2025-10-25T19:20:25.186587"
+    },
+    {
+      "test_name": "Update Member Role (EMPLOYEE \u2192 CLIENT)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:25.746842"
+    },
+    {
+      "test_name": "Remove Member",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:26.288129"
+    },
+    {
+      "test_name": "Transfer Ownership (Owner \u2192 Admin)",
+      "success": false,
+      "details": "Response: {'detail': 'new_owner_id is required', 'status_code': 400, 'expected_status': 200}",
+      "timestamp": "2025-10-25T19:20:26.827001"
+    },
+    {
+      "test_name": "Join Request Workflow - Submit Request",
+      "success": false,
+      "details": "Unexpected response: {'message': 'Join request sent successfully', 'request_id': '62999bc8-51f9-4a41-add6-85ecfb2b198a', 'organization_id': 'dcc0fb49-7ebf-4ede-8d5d-1a070b9ae15d'}",
+      "timestamp": "2025-10-25T19:20:27.374725"
+    },
+    {
+      "test_name": "Leave Organization",
+      "success": false,
+      "details": "Response: {'detail': 'You are not a member of this organization', 'status_code': 404, 'expected_status': 200}",
+      "timestamp": "2025-10-25T19:20:27.910573"
+    },
+    {
+      "test_name": "Organization Posts - Create Post",
+      "success": false,
+      "details": "Response: {'detail': [{'type': 'missing', 'loc': ['query', 'content'], 'msg': 'Field required', 'input': None, 'url': 'https://errors.pydantic.dev/2.11/v/missing'}], 'status_code': 422, 'expected_status': 200}",
+      "timestamp": "2025-10-25T19:20:28.450002"
+    },
+    {
+      "test_name": "Search Organizations",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:28.988577"
+    },
+    {
+      "test_name": "Role Permissions (Non-admin blocked)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-25T19:20:29.524595"
+    },
+    {
+      "test_name": "Deactivate Organization",
+      "success": false,
+      "details": "Response: {'detail': 'Not Found', 'status_code': 404, 'expected_status': 200}",
+      "timestamp": "2025-10-25T19:20:30.061607"
+    }
+  ],
+  "test_users": {
+    "owner": "owner_192020@techinnovations.com",
+    "admin": "admin_192020@techinnovations.com",
+    "member": "member_192020@techinnovations.com"
+  },
+  "organization_id": "dcc0fb49-7ebf-4ede-8d5d-1a070b9ae15d",
+  "user_ids": {
+    "owner": "edb9157a-8e27-4be5-9dcd-fc6e84947928",
+    "admin": "553c07f7-c597-43df-aef3-d4aff64cdaac",
+    "member": "0d8aa914-e010-49d9-a1b0-c6a8b991b70b"
+  }
+}
