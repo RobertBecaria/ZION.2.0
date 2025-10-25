@@ -21,6 +21,7 @@ import FamilySetupPage from './components/FamilySetupPage';
 import WorkTriggerFlow from './components/WorkTriggerFlow';
 import WorkSetupPage from './components/WorkSetupPage';
 import WorkOrganizationList from './components/WorkOrganizationList';
+import WorkOrganizationProfile from './components/WorkOrganizationProfile';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
