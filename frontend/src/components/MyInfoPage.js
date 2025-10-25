@@ -483,6 +483,10 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
                     
                     if (response.ok) {
                       await fetchMyInfo();
+                      // Refresh parent user state
+                      if (onProfileUpdate) {
+                        onProfileUpdate();
+                      }
                       setSuccess('Фото профиля удалено');
                       setTimeout(() => setSuccess(''), 3000);
                     }
