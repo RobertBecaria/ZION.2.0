@@ -376,22 +376,6 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
           </div>
         )}
       </div>
-
-      {/* Invite Modal Placeholder */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Invite Members</h2>
-            <p className="text-gray-600 mb-6">Member invitation feature coming soon!</p>
-            <button
-              onClick={() => setShowInviteModal(false)}
-              className="w-full py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
