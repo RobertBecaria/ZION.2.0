@@ -1145,6 +1145,26 @@ function Dashboard() {
                 <div className="sidebar-divider"></div>
               </>
             )}
+            
+            {/* Work Section - Always visible in Organizations module */}
+            {activeModule === 'organizations' && (
+              <>
+                <div className="sidebar-divider"></div>
+                
+                <button 
+                  className={`profile-btn ${activeView === 'my-work' ? 'primary' : 'secondary'}`}
+                  style={{ 
+                    backgroundColor: activeView === 'my-work' ? '#C2410C' : undefined,
+                    color: activeView === 'my-work' ? 'white' : undefined
+                  }}
+                  onClick={() => setActiveView('my-work')}
+                >
+                  💼 МОЯ РАБОТА
+                </button>
+                
+                <div className="sidebar-divider"></div>
+              </>
+            )}
           </div>
 
           <nav className="sidebar-nav">
