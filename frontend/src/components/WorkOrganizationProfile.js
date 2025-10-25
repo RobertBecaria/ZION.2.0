@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, MapPin, Globe, Mail, Calendar, Settings, UserPlus, Edit, Share2, Briefcase, ChevronRight, Crown } from 'lucide-react';
-import { mockOrganizations, getOrganizationMembers, getMembersByDepartment, getOrganizationPosts } from '../mock-work';
 
 const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSettings }) => {
   const [organization, setOrganization] = useState(null);
@@ -8,24 +7,52 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
   const [membersByDept, setMembersByDept] = useState({});
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState('about'); // 'about', 'members', 'posts'
-  const currentUserId = 'user-1'; // Mock current user
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Load organization data
-    const org = mockOrganizations.find(o => o.id === organizationId);
-    setOrganization(org);
+    const loadOrganizationData = async () => {
+      try {
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+        const token = localStorage.getItem('zion_token');
 
-    // Load members
-    const orgMembers = getOrganizationMembers(organizationId);
-    setMembers(orgMembers);
+        // Load organization details
+        const orgResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    // Load members grouped by department
-    const grouped = getMembersByDepartment(organizationId);
-    setMembersByDept(grouped);
+        if (!orgResponse.ok) {
+          throw new Error('Failed to load organization');
+        }
 
-    // Load posts
-    const orgPosts = getOrganizationPosts(organizationId);
-    setPosts(orgPosts);
+        const orgData = await orgResponse.json();
+        setOrganization(orgData);
+
+        // Load members
+        const membersResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (membersResponse.ok) {
+          const membersData = await membersResponse.json();
+          setMembers(membersData.members || []);
+          setMembersByDept(membersData.departments || {});
+        }
+
+        // Posts will be handled by UniversalWall in future
+        setPosts([]);
+
+      } catch (error) {
+        console.error('Error loading organization:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (organizationId) {
+      loadOrganizationData();
+    }
   }, [organizationId]);
 
   if (!organization) {
