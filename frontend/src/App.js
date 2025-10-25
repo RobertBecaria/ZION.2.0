@@ -778,6 +778,10 @@ function Dashboard() {
   const [activeFilters, setActiveFilters] = useState([]); // Unified stacked filters array
   const [loadingFamily, setLoadingFamily] = useState(true);
   
+  // Work Module State
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
+  const [workSetupMode, setWorkSetupMode] = useState('choice'); // 'choice', 'search', 'create'
+  
   // Removed showProfileCompletionModal state - now using full-page FamilySetupPage
   const [showGenderModal, setShowGenderModal] = useState(false);
   
