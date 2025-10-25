@@ -33,7 +33,6 @@ function ProfileImageUpload({
 
   // Open modal handler
   const openModal = () => {
-    console.log(`[ProfileImageUpload] Opening modal for ${type}`);
     setIsOpen(true);
     setPreviewImage(null);
   };
