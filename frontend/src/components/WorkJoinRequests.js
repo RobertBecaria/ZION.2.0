@@ -5,59 +5,67 @@ const WorkJoinRequests = ({ onBack, onViewProfile }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
-
-  // Mock join requests data
-  const mockRequests = [
-    {
-      id: 'req-001',
-      organization_id: 'org-002',
-      organization_name: 'Сбербанк',
-      organization_type: 'COMPANY',
-      status: 'pending',
-      requested_at: '2025-08-20T10:30:00Z',
-      message: 'Хочу присоединиться к вашей команде в качестве разработчика'
-    },
-    {
-      id: 'req-002',
-      organization_id: 'org-004',
-      organization_name: 'Газпром',
-      organization_type: 'COMPANY',
-      status: 'pending',
-      requested_at: '2025-08-22T14:15:00Z',
-      message: 'Заинтересован в работе в вашей компании'
-    },
-    {
-      id: 'req-003',
-      organization_id: 'org-006',
-      organization_name: 'Ростелеком',
-      organization_type: 'COMPANY',
-      status: 'rejected',
-      requested_at: '2025-08-15T09:00:00Z',
-      reviewed_at: '2025-08-16T11:30:00Z',
-      rejection_reason: 'В данный момент мы не принимаем новых участников'
-    }
-  ];
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadRequests();
   }, []);
 
-  const loadRequests = () => {
+  const loadRequests = async () => {
     setLoading(true);
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      setRequests(mockRequests);
+    setError(null);
+    
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/join-requests/my-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load requests');
+      }
+
+      const data = await response.json();
+      setRequests(data.requests || []);
+    } catch (error) {
+      console.error('Load requests error:', error);
+      setError(error.message);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const handleCancelRequest = async (requestId) => {
     setCancellingId(requestId);
-    // TODO: Replace with actual API call
-    setTimeout(() => {
+    
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/join-requests/${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to cancel request');
+      }
+
+      // Remove from list
       setRequests(prev => prev.filter(req => req.id !== requestId));
+    } catch (error) {
+      console.error('Cancel request error:', error);
+      alert(error.message);
+    } finally {
       setCancellingId(null);
-    }, 1000);
+    }
   };
 
   const formatDate = (dateString) => {
