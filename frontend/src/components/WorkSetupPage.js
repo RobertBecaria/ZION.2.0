@@ -571,10 +571,17 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
 
                 <button
                   onClick={handleCreateOrganization}
-                  disabled={!formData.creator_job_title}
-                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  disabled={!formData.creator_job_title || creating}
+                  className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Create Organization
+                  {creating ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Создание...
+                    </>
+                  ) : (
+                    'Создать организацию'
+                  )}
                 </button>
               </div>
             )}
