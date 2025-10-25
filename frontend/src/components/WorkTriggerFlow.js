@@ -88,10 +88,10 @@ const WorkTriggerFlow = ({ onCreateOrg, onJoinOrg }) => {
           {/* Header */}
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-3">
-              How would you like to proceed?
+              Как вы хотите продолжить?
             </h2>
             <p className="text-lg text-gray-600">
-              Choose an option to get started with your professional network
+              Выберите вариант, чтобы начать работу с профессиональной сетью
             </p>
           </div>
 
