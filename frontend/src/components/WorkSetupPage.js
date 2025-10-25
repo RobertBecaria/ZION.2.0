@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Search, Plus, Globe, Lock, MapPin, Calendar, Users, Briefcase, Check, X } from 'lucide-react';
-import { searchOrganizations, OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
+import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
 
 const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinRequest }) => {
   
