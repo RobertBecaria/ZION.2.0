@@ -445,14 +445,10 @@ class WorkModuleAPITester:
             self.log_test("Organization Posts", False, "No organization_id available")
             return False
         
-        # Create post as admin (now owner)
-        post_data = {
-            "content": "We're excited to announce our new product launch next month. Stay tuned for more updates!",
-            "title": "Welcome to Tech Innovations!",
-            "privacy_level": "PUBLIC"
-        }
+        # Create post as admin (now owner) - endpoint expects content as query parameter
+        content = "We're excited to announce our new product launch next month. Stay tuned for more updates!"
         
-        success, response = self.make_request("POST", f"work/organizations/{self.organization_id}/posts", post_data, 200, "admin")
+        success, response = self.make_request("POST", f"work/organizations/{self.organization_id}/posts?content={content}", None, 200, "admin")
         
         if not success:
             self.log_test("Organization Posts - Create Post", False, f"Response: {response}")
