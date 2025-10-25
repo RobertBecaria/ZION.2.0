@@ -351,37 +351,40 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
 
         {activeTab === 'members' && (
           <div className="space-y-6">
-            {Object.entries(membersByDept).map(([dept, deptMembers]) => (
-              <div key={dept} className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">{dept}</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {deptMembers.map(member => (
-                    <div key={member.id} className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:shadow-md transition-all duration-200">
-                      <img
-                        src={member.user_avatar_url}
-                        alt={member.user_first_name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">
-                          {member.user_first_name} {member.user_last_name}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-1">{member.job_title}</p>
-                        {member.team && (
-                          <p className="text-xs text-gray-500">{member.team}</p>
-                        )}
-                        {member.is_admin && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full mt-2 font-semibold">
-                            <Crown className="w-3 h-3" />
-                            Admin
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* Admin Controls Info */}
+            {isAdmin && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-blue-700">
+                  <Crown className="w-4 h-4 inline mr-2" />
+                  Вы администратор. Вы можете редактировать роли и удалять членов.
+                </p>
               </div>
-            ))}
+            )}
+
+            {Object.entries(membersByDept).length > 0 ? (
+              Object.entries(membersByDept).map(([dept, deptMembers]) => (
+                <div key={dept} className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{dept}</h2>
+                  <div className="space-y-4">
+                    {deptMembers.map(member => (
+                      <WorkMemberManagement
+                        key={member.id}
+                        member={member}
+                        organizationId={organizationId}
+                        isCurrentUser={member.user_id === organization.creator_id}
+                        onUpdate={handleMemberUpdate}
+                        onRemove={handleMemberRemove}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100 text-center">
+                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600">Загрузка членов организации...</p>
+              </div>
+            )}
           </div>
         )}
 
