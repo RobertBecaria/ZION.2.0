@@ -465,8 +465,13 @@ class WorkModuleAPITester:
             self.log_test("Organization Posts (Create & Retrieve)", True)
             return True
         else:
-            self.log_test("Organization Posts - Retrieve Posts", False, f"Response: {response}")
-            return False
+            # This is a known backend bug - permission check looks for permissions.can_post instead of can_post
+            if "permission" in response.get("detail", "").lower():
+                self.log_test("Organization Posts (BACKEND BUG - Permission Check)", False, "Backend bug: permission check incorrect - looks for permissions.can_post instead of can_post")
+                return False
+            else:
+                self.log_test("Organization Posts - Retrieve Posts", False, f"Response: {response}")
+                return False
 
     def test_role_permissions(self):
         """Test role-based permissions"""
