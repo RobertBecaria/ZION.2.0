@@ -1,15 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, MapPin, Plus, Briefcase, Crown, Shield, ChevronRight } from 'lucide-react';
-import { getUserOrganizations, mockWorkUsers } from '../mock-work';
 
 const WorkOrganizationList = ({ onOrgClick, onCreateNew, onJoinOrg, onExploreFeed }) => {
   const [organizations, setOrganizations] = useState([]);
-  const currentUserId = 'user-1'; // Mock current user
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Load user's organizations
-    const userOrgs = getUserOrganizations(currentUserId);
-    setOrganizations(userOrgs);
+    const loadOrganizations = async () => {
+      try {
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+        const token = localStorage.getItem('zion_token');
+        
+        const response = await fetch(`${BACKEND_URL}/api/work/organizations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load organizations');
+        }
+        
+        const data = await response.json();
+        setOrganizations(data.organizations || []);
+      } catch (error) {
+        console.error('Error loading organizations:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadOrganizations();
   }, []);
 
   const handleOrgClick = (orgId) => {
