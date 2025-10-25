@@ -140,6 +140,38 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
     }
   };
 
+  const handleLeaveOrganization = async () => {
+    setLeaving(true);
+    setError(null);
+
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Не удалось покинуть организацию');
+      }
+
+      // Call the callback to return to organization list
+      onLeaveOrganization && onLeaveOrganization();
+
+    } catch (error) {
+      console.error('Error leaving organization:', error);
+      setError(error.message);
+      setLeaving(false);
+      setShowLeaveConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
