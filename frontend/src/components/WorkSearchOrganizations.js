@@ -95,42 +95,41 @@ const WorkSearchOrganizations = ({ onBack, onViewProfile, onJoinSuccess }) => {
     }
   ];
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setSearching(true);
     setHasSearched(true);
 
-    // Simulate API call with mock data
-    setTimeout(() => {
-      let results = [...mockOrganizations];
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
 
-      // Filter by search query
-      if (searchQuery) {
-        results = results.filter(org => 
-          org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          org.description.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/search`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: searchQuery,
+          industry: filters.industry || null,
+          city: filters.city || null,
+          organization_type: filters.organization_type || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search organizations');
       }
 
-      // Filter by industry
-      if (filters.industry) {
-        results = results.filter(org => org.industry === filters.industry);
-      }
-
-      // Filter by city
-      if (filters.city) {
-        results = results.filter(org => 
-          org.address_city.toLowerCase().includes(filters.city.toLowerCase())
-        );
-      }
-
-      // Filter by organization type
-      if (filters.organization_type) {
-        results = results.filter(org => org.organization_type === filters.organization_type);
-      }
-
-      setSearchResults(results);
+      const data = await response.json();
+      setSearchResults(data.organizations || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Не удалось выполнить поиск. Попробуйте снова.');
+      setSearchResults([]);
+    } finally {
       setSearching(false);
-    }, 800);
+    }
   };
 
   const handleJoinOrganization = async (orgId, isPrivate) => {
