@@ -2000,7 +2000,7 @@ async def delete_account(
             
             # Add the user as a member of their new family
             new_member = {
-                "id": str(uuid4()),
+                "id": str(uuid.uuid4()),
                 "family_id": new_family_id,
                 "user_id": adult_user["id"],
                 "role": "PARENT",
