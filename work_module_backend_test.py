@@ -332,7 +332,7 @@ class WorkModuleAPITester:
             return False
         
         transfer_data = {
-            "new_owner_user_id": admin_user_id
+            "new_owner_id": admin_user_id
         }
         
         success, response = self.make_request("POST", f"work/organizations/{self.organization_id}/transfer-ownership", transfer_data, 200, "owner")
