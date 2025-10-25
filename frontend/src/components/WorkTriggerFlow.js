@@ -9,12 +9,11 @@ const WorkTriggerFlow = ({ onCreateOrg, onJoinOrg }) => {
   };
 
   const handleCreateOrganization = () => {
-    navigate('/work/setup');
+    onCreateOrg && onCreateOrg();
   };
 
   const handleJoinOrganization = () => {
-    // For now, navigate to setup with a query param
-    navigate('/work/setup?mode=join');
+    onJoinOrg && onJoinOrg();
   };
 
   if (view === 'landing') {
