@@ -36,10 +36,37 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
     creator_job_title: ''
   });
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      const results = searchOrganizations(searchQuery, selectedOrgType || null);
-      setSearchResults(results);
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setSearching(true);
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/search`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: searchQuery,
+          organization_type: selectedOrgType || null
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
+      const data = await response.json();
+      setSearchResults(data.organizations || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Ошибка при поиске организаций');
+    } finally {
+      setSearching(false);
     }
   };
 
