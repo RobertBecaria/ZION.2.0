@@ -2503,7 +2503,7 @@ JWT_SECRET_KEY="zion-city-secret-key-change-in-production-2024"
 **File**: `/app/frontend/.env`
 
 ```env
-REACT_APP_BACKEND_URL=https://new-features-1.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://work-orgs-manager.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ```
 
