@@ -1,141 +1,141 @@
 {
   "total_tests": 21,
-  "passed_tests": 18,
-  "failed_tests": 3,
-  "success_rate": 85.71428571428571,
+  "passed_tests": 21,
+  "failed_tests": 0,
+  "success_rate": 100.0,
   "test_results": [
     {
       "test_name": "User Registration (owner)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:29:44.914053"
+      "timestamp": "2025-10-25T19:30:31.345082"
     },
     {
       "test_name": "User Registration (admin)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:29:45.179215"
+      "timestamp": "2025-10-25T19:30:31.613506"
     },
     {
       "test_name": "User Registration (member)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-25T19:29:45.445928"
+      "timestamp": "2025-10-25T19:30:31.881679"
     },
     {
       "test_name": "Create Organization (owner)",
       "success": true,
-      "details": "Created org: e7c2fa77-30c7-4ebc-a47e-82c468001af6",
-      "timestamp": "2025-10-25T19:29:45.483265"
+      "details": "Created org: 036894d4-af1a-4579-8330-691f39f3324b",
+      "timestamp": "2025-10-25T19:30:31.925061"
     },
     {
       "test_name": "Add Member (admin)",
       "success": true,
       "details": "Added as MANAGER",
-      "timestamp": "2025-10-25T19:29:45.521884"
+      "timestamp": "2025-10-25T19:30:31.967275"
     },
     {
       "test_name": "Add Member (member)",
       "success": true,
       "details": "Added as EMPLOYEE",
-      "timestamp": "2025-10-25T19:29:45.600840"
+      "timestamp": "2025-10-25T19:30:32.011974"
     },
     {
       "test_name": "Get Organization Details (owner)",
       "success": true,
       "details": "Role: CEO, Can Post: True",
-      "timestamp": "2025-10-25T19:29:45.639049"
+      "timestamp": "2025-10-25T19:30:32.052830"
     },
     {
       "test_name": "Permission Check (owner)",
       "success": true,
       "details": "can_post correctly set to True",
-      "timestamp": "2025-10-25T19:29:45.639063"
+      "timestamp": "2025-10-25T19:30:32.052845"
     },
     {
       "test_name": "Create Organization Post (owner)",
-      "success": false,
-      "details": "Response: {'raw_response': 'Internal Server Error', 'status_code': 500, 'expected_status': 200}",
-      "timestamp": "2025-10-25T19:29:45.686537"
+      "success": true,
+      "details": "Post created successfully",
+      "timestamp": "2025-10-25T19:30:32.092066"
     },
     {
       "test_name": "Get Organization Posts (owner)",
       "success": true,
       "details": "Retrieved 1 posts",
-      "timestamp": "2025-10-25T19:29:45.726110"
+      "timestamp": "2025-10-25T19:30:32.132098"
     },
     {
       "test_name": "Get Work Posts Feed (owner)",
       "success": true,
       "details": "Retrieved 1 posts from feed",
-      "timestamp": "2025-10-25T19:29:45.764777"
+      "timestamp": "2025-10-25T19:30:32.171697"
     },
     {
       "test_name": "Get Organization Details (admin)",
       "success": true,
       "details": "Role: MANAGER, Can Post: True",
-      "timestamp": "2025-10-25T19:29:45.800715"
+      "timestamp": "2025-10-25T19:30:32.252106"
     },
     {
       "test_name": "Permission Check (admin)",
       "success": true,
       "details": "can_post correctly set to True",
-      "timestamp": "2025-10-25T19:29:45.800727"
+      "timestamp": "2025-10-25T19:30:32.252117"
     },
     {
       "test_name": "Create Organization Post (admin)",
-      "success": false,
-      "details": "Response: {'raw_response': 'Internal Server Error', 'status_code': 500, 'expected_status': 200}",
-      "timestamp": "2025-10-25T19:29:45.839233"
+      "success": true,
+      "details": "Post created successfully",
+      "timestamp": "2025-10-25T19:30:32.288222"
     },
     {
       "test_name": "Get Organization Posts (admin)",
       "success": true,
       "details": "Retrieved 2 posts",
-      "timestamp": "2025-10-25T19:29:45.875701"
+      "timestamp": "2025-10-25T19:30:32.326084"
     },
     {
       "test_name": "Get Work Posts Feed (admin)",
       "success": true,
       "details": "Retrieved 2 posts from feed",
-      "timestamp": "2025-10-25T19:29:45.914489"
+      "timestamp": "2025-10-25T19:30:32.365104"
     },
     {
       "test_name": "Get Organization Details (member)",
       "success": true,
       "details": "Role: EMPLOYEE, Can Post: True",
-      "timestamp": "2025-10-25T19:29:45.950915"
+      "timestamp": "2025-10-25T19:30:32.442265"
     },
     {
       "test_name": "Permission Check (member)",
       "success": true,
       "details": "can_post correctly set to True",
-      "timestamp": "2025-10-25T19:29:45.950926"
+      "timestamp": "2025-10-25T19:30:32.442275"
     },
     {
       "test_name": "Create Organization Post (member)",
-      "success": false,
-      "details": "Response: {'raw_response': 'Internal Server Error', 'status_code': 500, 'expected_status': 200}",
-      "timestamp": "2025-10-25T19:29:45.986941"
+      "success": true,
+      "details": "Post created successfully",
+      "timestamp": "2025-10-25T19:30:32.478245"
     },
     {
       "test_name": "Get Organization Posts (member)",
       "success": true,
       "details": "Retrieved 3 posts",
-      "timestamp": "2025-10-25T19:29:46.025792"
+      "timestamp": "2025-10-25T19:30:32.519442"
     },
     {
       "test_name": "Get Work Posts Feed (member)",
       "success": true,
       "details": "Retrieved 3 posts from feed",
-      "timestamp": "2025-10-25T19:29:46.062814"
+      "timestamp": "2025-10-25T19:30:32.555802"
     }
   ],
-  "organization_id": "e7c2fa77-30c7-4ebc-a47e-82c468001af6",
+  "organization_id": "036894d4-af1a-4579-8330-691f39f3324b",
   "user_ids": {
-    "owner": "f9393f1f-9833-4329-ba6c-e744794c9d67",
-    "admin": "dfb7cf7e-30d5-4d7b-b427-09867846c40c",
-    "member": "6bfab945-b227-4a56-a080-ea518ca76df0"
+    "owner": "92c12bc5-b5fd-4936-873e-14bec7034419",
+    "admin": "c8a668d0-bb07-4271-8872-48f39139516c",
+    "member": "e8570239-d299-4e92-b0ea-34268c17cb70"
   },
   "focus": "Organization posts permission fix verification"
 }
