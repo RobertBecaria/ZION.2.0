@@ -136,6 +136,12 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     loadOrganizationData();
   };
 
+  const handleSettingsSuccess = () => {
+    // Reload organization after settings update
+    setShowSettingsModal(false);
+    loadOrganizationData();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
       {/* Header Section */}
