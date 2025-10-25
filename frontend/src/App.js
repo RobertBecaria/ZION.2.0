@@ -22,6 +22,8 @@ import WorkTriggerFlow from './components/WorkTriggerFlow';
 import WorkSetupPage from './components/WorkSetupPage';
 import WorkOrganizationList from './components/WorkOrganizationList';
 import WorkOrganizationProfile from './components/WorkOrganizationProfile';
+import WorkSearchOrganizations from './components/WorkSearchOrganizations';
+import WorkJoinRequests from './components/WorkJoinRequests';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
