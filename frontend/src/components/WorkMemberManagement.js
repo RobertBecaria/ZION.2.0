@@ -288,19 +288,43 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate">
+            <h3 className="font-semibold text-gray-900 truncate flex items-center gap-2">
               {member.user_first_name} {member.user_last_name}
               {isCurrentUser && (
-                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
                   Вы
+                </span>
+              )}
+              {isOwner && (
+                <span className="inline-flex items-center gap-1 text-xs bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+                  <Crown className="w-3 h-3" />
+                  Владелец
                 </span>
               )}
             </h3>
             <p className="text-sm text-gray-600 truncate">{member.job_title}</p>
           </div>
           
-          {!isCurrentUser && (
+          {!isCurrentUser && !isOwner && (
             <div className="flex gap-2">
+              {/* Quick Admin Toggle */}
+              <button
+                onClick={handleQuickAdminToggle}
+                disabled={quickActionLoading}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  member.is_admin
+                    ? 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={member.is_admin ? 'Убрать админа' : 'Сделать админом'}
+              >
+                {quickActionLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Shield className="w-4 h-4" />
+                )}
+              </button>
+              
               <button
                 onClick={() => setIsEditing(true)}
                 className="p-2 rounded-lg hover:bg-orange-50 text-orange-600 transition-colors duration-200"
@@ -328,18 +352,18 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
         <div className="flex flex-wrap gap-1.5">
           {member.is_admin && (
             <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold">
-              <Crown className="w-3 h-3" />
-              Admin
+              <Shield className="w-3 h-3" />
+              Админ
             </span>
           )}
           {member.can_invite && (
             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-              Can Invite
+              Может приглашать
             </span>
           )}
           {member.can_post && (
             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-              Can Post
+              Может публиковать
             </span>
           )}
         </div>
