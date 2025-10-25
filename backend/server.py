@@ -1266,6 +1266,7 @@ class MyInfoUpdate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[datetime] = None
+    gender: Optional[str] = None  # NEW: MALE, FEMALE, IT
     
     # Address fields
     address_street: Optional[str] = None
