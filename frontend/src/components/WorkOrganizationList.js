@@ -43,6 +43,49 @@ const WorkOrganizationList = ({ onOrgClick, onCreateNew, onJoinOrg, onExploreFee
     onCreateNew && onCreateNew();
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Загрузка организаций...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center max-w-md">
+              <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+                <Building2 className="w-12 h-12 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Ошибка загрузки
+              </h2>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold"
+              >
+                Попробовать снова
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (organizations.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white p-6">
