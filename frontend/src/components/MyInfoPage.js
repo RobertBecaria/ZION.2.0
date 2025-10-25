@@ -634,6 +634,31 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
 
           <div className="info-item">
             <label>
+              <User size={16} />
+              Пол
+              <span className="info-hint">Для корректного отображения текста</span>
+            </label>
+            {editingSection === 'basic' ? (
+              <select
+                className="form-input"
+                value={formData.gender || ''}
+                onChange={(e) => setFormData({...formData, gender: e.target.value})}
+              >
+                <option value="">Не указано</option>
+                <option value="MALE">Мужской</option>
+                <option value="FEMALE">Женский</option>
+              </select>
+            ) : (
+              <div className="info-value">
+                {myInfo.gender === 'MALE' ? 'Мужской' : 
+                 myInfo.gender === 'FEMALE' ? 'Женский' : 
+                 'Не указано'}
+              </div>
+            )}
+          </div>
+
+          <div className="info-item">
+            <label>
               <Calendar size={16} />
               Дата рождения
             </label>
