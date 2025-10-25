@@ -26,10 +26,10 @@ const WorkTriggerFlow = ({ onCreateOrg, onJoinOrg }) => {
               <Building2 className="w-12 h-12 text-white" />
             </div>
             <h1 className="text-5xl font-bold text-gray-900 mb-4">
-              Welcome to <span className="text-orange-600">WORK</span>
+              Добро пожаловать в <span className="text-orange-600">РАБОТУ</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Connect with your professional network, manage organizations, and collaborate with colleagues all in one place.
+              Подключайтесь к своей профессиональной сети, управляйте организациями и сотрудничайте с коллегами в одном месте.
             </p>
           </div>
 
