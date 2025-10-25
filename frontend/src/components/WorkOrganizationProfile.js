@@ -516,6 +516,15 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
             )}
           </div>
         )}
+
+        {activeTab === 'requests' && isAdmin && (
+          <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
+            <WorkJoinRequestsManagement
+              organizationId={organizationId}
+              organizationName={organization?.name}
+            />
+          </div>
+        )}
       </div>
 
       {/* Invite Member Modal */}
