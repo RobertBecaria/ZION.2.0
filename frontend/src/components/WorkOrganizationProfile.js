@@ -33,8 +33,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     }
   }, [organizationId]);
 
-  // Check if current user is admin
-  const currentUserMembership = members.find(m => m.user_id === organization?.user_id);
+  // Check if current user is admin (from organization object)
   const isAdmin = organization?.user_is_admin || false;
   const canInvite = organization?.user_can_invite || false;
 
