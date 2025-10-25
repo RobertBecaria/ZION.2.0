@@ -440,8 +440,8 @@ class WorkModuleAPITester:
         
         # Create post as admin (now owner)
         post_data = {
-            "title": "Welcome to Tech Innovations!",
             "content": "We're excited to announce our new product launch next month. Stay tuned for more updates!",
+            "title": "Welcome to Tech Innovations!",
             "privacy_level": "PUBLIC"
         }
         
