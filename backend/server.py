@@ -1984,7 +1984,7 @@ async def delete_account(
         
         # Create new family profiles for each adult member
         for adult_user in adult_members:
-            new_family_id = str(uuid4())
+            new_family_id = str(uuid.uuid4())
             new_family = {
                 "id": new_family_id,
                 "family_name": f"Семья {adult_user.get('last_name', '')}",
