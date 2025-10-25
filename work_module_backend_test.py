@@ -551,8 +551,8 @@ class WorkModuleAPITester:
             # Scenario 8: Permission Testing
             self.test_role_permissions,
             
-            # Cleanup
-            self.test_deactivate_organization,
+            # Additional Testing
+            self.test_organization_privacy_settings,
         ]
         
         for test in tests:
