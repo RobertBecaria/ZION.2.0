@@ -816,7 +816,10 @@ class WorkOrganizationResponse(BaseModel):
     user_custom_role_name: Optional[str] = None
     user_department: Optional[str] = None
     user_team: Optional[str] = None
+    user_job_title: Optional[str] = None
     user_is_admin: bool = False
+    user_can_invite: bool = False
+    user_can_post: bool = True
 
 class WorkMemberAdd(BaseModel):
     user_email: str
