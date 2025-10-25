@@ -128,7 +128,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
                   <div className="flex gap-3">
                     {canInvite && (
                       <button
-                        onClick={() => setShowInviteModal(true)}
+                        onClick={() => onInviteMember && onInviteMember(organizationId, organization.name)}
                         className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold flex items-center gap-2 hover:scale-105 transition-transform"
                       >
                         <UserPlus className="w-5 h-5" />
