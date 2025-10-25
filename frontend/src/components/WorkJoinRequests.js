@@ -93,6 +93,24 @@ const WorkJoinRequests = ({ onBack, onViewProfile }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Ошибка загрузки</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={loadRequests}
+            className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-semibold"
+          >
+            Попробовать снова
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white p-6">
       <div className="max-w-4xl mx-auto">
