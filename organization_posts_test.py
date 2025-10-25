@@ -97,6 +97,21 @@ class OrganizationPostsAPITester:
         except Exception as e:
             return False, {"error": str(e)}
 
+    def test_user_registration(self, user_type):
+        """Test user registration for specific user type"""
+        user_data = self.test_users[user_type]
+        
+        success, response = self.make_request("POST", "auth/register", user_data, 200)
+        
+        if success and "access_token" in response:
+            self.tokens[user_type] = response["access_token"]
+            self.user_ids[user_type] = response["user"]["id"]
+            self.log_test(f"User Registration ({user_type})", True)
+            return True
+        else:
+            self.log_test(f"User Registration ({user_type})", False, f"Response: {response}")
+            return False
+
     def test_user_login(self, user_type):
         """Test user login for specific user type"""
         user_data = self.test_users[user_type]
