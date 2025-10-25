@@ -291,36 +291,36 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
             </div>
 
             {/* Your Role (if member) */}
-            {currentUserMembership && (
+            {currentUserRole && (
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-8 border border-orange-200">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Role</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Ваша роль</h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div>
-                    <div className="text-sm text-gray-600 mb-1">Position</div>
-                    <div className="text-gray-900 font-semibold">{currentUserMembership.job_title}</div>
+                    <div className="text-sm text-gray-600 mb-1">Должность</div>
+                    <div className="text-gray-900 font-semibold">{organization.user_job_title}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-600 mb-1">Department</div>
-                    <div className="text-gray-900 font-semibold">{currentUserMembership.department}</div>
+                    <div className="text-sm text-gray-600 mb-1">Отдел</div>
+                    <div className="text-gray-900 font-semibold">{organization.user_department}</div>
                   </div>
-                  {currentUserMembership.team && (
+                  {organization.user_team && (
                     <div>
-                      <div className="text-sm text-gray-600 mb-1">Team</div>
-                      <div className="text-gray-900 font-semibold">{currentUserMembership.team}</div>
+                      <div className="text-sm text-gray-600 mb-1">Команда</div>
+                      <div className="text-gray-900 font-semibold">{organization.user_team}</div>
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2 mt-4">
-                  {currentUserMembership.is_admin && (
+                  {organization.user_is_admin && (
                     <span className="px-3 py-1 bg-orange-500 text-white rounded-full text-sm font-semibold flex items-center gap-1">
                       <Crown className="w-3 h-3" />
                       Admin
                     </span>
                   )}
-                  {currentUserMembership.can_invite && (
+                  {organization.user_can_invite && (
                     <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-semibold">Can Invite</span>
                   )}
-                  {currentUserMembership.can_post && (
+                  {organization.user_can_post && (
                     <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-semibold">Can Post</span>
                   )}
                 </div>
