@@ -8595,50 +8595,6 @@ async def update_my_member_settings(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/work/organizations/{organization_id}/leave")
-async def leave_organization(
-    organization_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Member leaves the organization"""
-    try:
-        # Check if user is a member
-        membership = await db.work_members.find_one({
-            "organization_id": organization_id,
-            "user_id": current_user["id"],
-            "status": "ACTIVE"
-        })
-        
-        if not membership:
-            raise HTTPException(status_code=404, detail="Вы не являетесь членом этой организации")
-        
-        # Check if user is the owner
-        organization = await db.work_organizations.find_one({"organization_id": organization_id})
-        if organization and organization.get("creator_id") == current_user["id"]:
-            raise HTTPException(
-                status_code=403,
-                detail="Владелец не может покинуть организацию. Сначала передайте права владения."
-            )
-        
-        # Remove membership
-        await db.work_members.update_one(
-            {"_id": membership["_id"]},
-            {"$set": {"status": "LEFT", "end_date": datetime.now(timezone.utc), "is_current": False}}
-        )
-        
-        # Update member count
-        await db.work_organizations.update_one(
-            {"organization_id": organization_id},
-            {"$inc": {"member_count": -1}}
-        )
-        
-        return {"success": True, "message": "Вы покинули организацию"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @api_router.get("/work/organizations/{organization_id}/change-requests")
 async def get_change_requests(
     organization_id: str,
