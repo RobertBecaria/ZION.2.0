@@ -1515,13 +1515,22 @@ function Dashboard() {
                                 <WorkSearchOrganizations
                                   onBack={() => setActiveView('my-work')}
                                   onViewProfile={(orgId) => {
-                                    setSelectedOrganizationId(orgId);
-                                    setActiveView('work-org-profile');
+                                    setViewingPublicOrgId(orgId);
+                                    setActiveView('work-org-public-view');
                                   }}
                                   onJoinSuccess={(orgId) => {
                                     setSelectedOrganizationId(orgId);
                                     setActiveView('work-org-profile');
                                   }}
+                                />
+                              </ErrorBoundary>
+                            ) : activeView === 'work-org-public-view' ? (
+                              <ErrorBoundary>
+                                <WorkOrganizationPublicProfile
+                                  organizationId={viewingPublicOrgId}
+                                  currentUserId={user?.id}
+                                  onBack={() => setActiveView('work-search')}
+                                  moduleColor={currentModule.color}
                                 />
                               </ErrorBoundary>
                             ) : activeView === 'work-requests' ? (
