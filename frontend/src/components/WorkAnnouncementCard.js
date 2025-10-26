@@ -1,15 +1,60 @@
 import React, { useState } from 'react';
 import { Pin, AlertCircle, Info, Eye, ThumbsUp, Heart, Flame, Clap, MessageCircle, Edit3, Trash2, MoreHorizontal } from 'lucide-react';
-import { mockWorkUsers, mockDepartments } from '../mock-work';
 
-function WorkAnnouncementCard({ announcement, onEdit, onDelete, onPin, onReact, currentUserId, moduleColor = '#C2410C' }) {
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+
+function WorkAnnouncementCard({ announcement, onEdit, onDelete, onPin, onReact, currentUserId, moduleColor = '#C2410C', organizationId }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
 
-  const author = mockWorkUsers.find(u => u.id === announcement.author_id);
-  const department = announcement.department_id 
-    ? mockDepartments.find(d => d.id === announcement.department_id)
-    : null;
+  const handlePinToggle = async () => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(
+        `${BACKEND_URL}/api/organizations/${organizationId}/announcements/${announcement.id}/pin`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_pinned: !announcement.is_pinned })
+        }
+      );
+
+      if (response.ok) {
+        onPin(announcement.id, !announcement.is_pinned);
+      }
+    } catch (error) {
+      console.error('Error pinning announcement:', error);
+    }
+    setShowMenu(false);
+  };
+
+  const handleReact = async (reactionType) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(
+        `${BACKEND_URL}/api/organizations/${organizationId}/announcements/${announcement.id}/react`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reaction_type: reactionType })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        onReact(announcement.id, reactionType, data.data.reactions);
+      }
+    } catch (error) {
+      console.error('Error reacting to announcement:', error);
+    }
+    setShowReactions(false);
+  };
 
   const getPriorityConfig = (priority) => {
     switch (priority) {
