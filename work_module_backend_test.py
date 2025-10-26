@@ -8,7 +8,7 @@ import uuid
 import time
 
 class WorkModuleAPITester:
-    def __init__(self, base_url="https://workhub-17.preview.emergentagent.com"):
+    def __init__(self, base_url="https://org-posts-fixed.preview.emergentagent.com"):
         self.base_url = base_url
         self.tokens = {}  # Store tokens for multiple users
         self.user_ids = {}  # Store user IDs for multiple users
