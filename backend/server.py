@@ -7560,7 +7560,7 @@ async def root():
 async def create_department(
     organization_id: str,
     department_data: DepartmentCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new department in an organization."""
     try:
@@ -7600,7 +7600,7 @@ async def create_department(
 @api_router.get("/organizations/{organization_id}/departments")
 async def list_departments(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """List all departments in an organization."""
     try:
@@ -7645,7 +7645,7 @@ async def update_department(
     organization_id: str,
     dept_id: str,
     department_data: DepartmentUpdate,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Update a department."""
     try:
@@ -7696,7 +7696,7 @@ async def update_department(
 async def delete_department(
     organization_id: str,
     dept_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Delete a department."""
     try:
@@ -7731,7 +7731,7 @@ async def add_department_member(
     organization_id: str,
     dept_id: str,
     member_data: DepartmentMemberAdd,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Add a member to a department."""
     try:
@@ -7800,7 +7800,7 @@ async def add_department_member(
 async def list_department_members(
     organization_id: str,
     dept_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """List all members of a department."""
     try:
@@ -7840,7 +7840,7 @@ async def remove_department_member(
     organization_id: str,
     dept_id: str,
     user_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Remove a member from a department."""
     try:
@@ -7886,7 +7886,7 @@ async def remove_department_member(
 async def create_announcement(
     organization_id: str,
     announcement_data: AnnouncementCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new announcement."""
     try:
@@ -7949,7 +7949,7 @@ async def list_announcements(
     pinned: Optional[bool] = None,
     limit: int = 50,
     offset: int = 0,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """List announcements in an organization."""
     try:
@@ -8027,7 +8027,7 @@ async def update_announcement(
     organization_id: str,
     announcement_id: str,
     announcement_data: AnnouncementUpdate,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Update an announcement."""
     try:
@@ -8076,7 +8076,7 @@ async def update_announcement(
 async def delete_announcement(
     organization_id: str,
     announcement_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Delete an announcement."""
     try:
@@ -8120,7 +8120,7 @@ async def pin_announcement(
     organization_id: str,
     announcement_id: str,
     pin_data: dict,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Pin or unpin an announcement."""
     try:
@@ -8152,7 +8152,7 @@ async def pin_announcement(
 async def track_announcement_view(
     organization_id: str,
     announcement_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Track an announcement view."""
     try:
@@ -8190,7 +8190,7 @@ async def react_to_announcement(
     organization_id: str,
     announcement_id: str,
     reaction_data: AnnouncementReactionRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """React to an announcement (toggle reaction)."""
     try:
@@ -8256,7 +8256,7 @@ async def react_to_announcement(
 @api_router.post("/organizations/{organization_id}/follow")
 async def follow_organization(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Follow an organization."""
     try:
@@ -8292,7 +8292,7 @@ async def follow_organization(
 @api_router.delete("/organizations/{organization_id}/follow")
 async def unfollow_organization(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Unfollow an organization."""
     try:
@@ -8315,7 +8315,7 @@ async def unfollow_organization(
 @api_router.get("/organizations/{organization_id}/follow/status")
 async def get_follow_status(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Check if user is following an organization."""
     try:
@@ -8335,7 +8335,7 @@ async def get_follow_status(
 @api_router.get("/organizations/{organization_id}/followers")
 async def get_organization_followers(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get list of followers for an organization."""
     try:
@@ -8376,7 +8376,7 @@ async def get_organization_followers(
 @api_router.post("/organizations/{organization_id}/join-request")
 async def create_join_request_with_notification(
     organization_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Send a join request to an organization and notify admins."""
     try:
@@ -8599,7 +8599,7 @@ async def update_my_member_settings(
 async def get_change_requests(
     organization_id: str,
     status: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get all pending change requests for the organization (Admin only)"""
     try:
@@ -8666,7 +8666,7 @@ async def get_change_requests(
 async def approve_change_request(
     organization_id: str,
     request_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Admin approves a change request"""
     try:
@@ -8741,7 +8741,7 @@ async def reject_change_request(
     organization_id: str,
     request_id: str,
     rejection_reason: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Admin rejects a change request"""
     try:
