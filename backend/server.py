@@ -7890,13 +7890,10 @@ async def update_announcement(
     organization_id: str,
     announcement_id: str,
     announcement_data: AnnouncementUpdate,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """Update an announcement."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check if announcement exists
         announcement = await db.announcements.find_one({
             "id": announcement_id,
