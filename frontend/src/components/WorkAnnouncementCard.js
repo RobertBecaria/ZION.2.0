@@ -173,7 +173,7 @@ function WorkAnnouncementCard({ announcement, onEdit, onDelete, onPin, onReact, 
                   <Edit3 size={16} />
                   <span>Редактировать</span>
                 </button>
-                <button className="menu-item" onClick={() => { onPin(announcement.id, !announcement.is_pinned); setShowMenu(false); }}>
+                <button className="menu-item" onClick={handlePinToggle}>
                   <Pin size={16} />
                   <span>{announcement.is_pinned ? 'Открепить' : 'Закрепить'}</span>
                 </button>
