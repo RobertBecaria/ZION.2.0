@@ -1,114 +1,114 @@
 {
   "total_tests": 17,
-  "passed_tests": 10,
-  "failed_tests": 7,
-  "success_rate": 58.82352941176471,
+  "passed_tests": 12,
+  "failed_tests": 5,
+  "success_rate": 70.58823529411765,
   "test_results": [
     {
       "test_name": "Admin User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:27.960710"
+      "timestamp": "2025-10-26T08:23:57.396217"
     },
     {
       "test_name": "Member User Registration",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.232608"
+      "timestamp": "2025-10-26T08:23:57.665204"
     },
     {
       "test_name": "Create Organization",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.273391"
+      "timestamp": "2025-10-26T08:23:57.746998"
     },
     {
       "test_name": "Add Member to Organization",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.310308"
+      "timestamp": "2025-10-26T08:23:57.790747"
     },
     {
       "test_name": "Get Member Settings",
       "success": false,
       "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.346579"
+      "timestamp": "2025-10-26T08:23:57.826148"
     },
     {
       "test_name": "Update Member Settings",
       "success": false,
       "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.386150"
+      "timestamp": "2025-10-26T08:23:57.900376"
     },
     {
       "test_name": "Member Self Update Settings",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.425425"
+      "timestamp": "2025-10-26T08:23:57.945155"
     },
     {
-      "test_name": "Create Role Change Request",
-      "success": false,
-      "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.501951"
+      "test_name": "Create Role Change Request (via member settings)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:23:57.982401"
     },
     {
-      "test_name": "Get Organization Role Change Requests",
-      "success": false,
-      "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.537488"
+      "test_name": "Get Organization Change Requests",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:23:58.025371"
     },
     {
       "test_name": "Get Specific Role Change Request (Endpoint Check)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.574249"
+      "timestamp": "2025-10-26T08:23:58.064663"
     },
     {
-      "test_name": "Approve Role Change Request (Endpoint Check)",
+      "test_name": "Approve Change Request (Endpoint Check)",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.652856"
+      "timestamp": "2025-10-26T08:23:58.102295"
     },
     {
       "test_name": "Create Team",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.690355"
+      "timestamp": "2025-10-26T08:23:58.144516"
     },
     {
       "test_name": "Get Teams",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.729321"
+      "timestamp": "2025-10-26T08:23:58.184742"
     },
     {
       "test_name": "Update Team",
       "success": false,
       "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.763932"
+      "timestamp": "2025-10-26T08:23:58.220172"
     },
     {
       "test_name": "Delete Team",
       "success": false,
       "details": "Endpoint not implemented (404)",
-      "timestamp": "2025-10-26T08:22:28.800970"
+      "timestamp": "2025-10-26T08:23:58.258315"
     },
     {
       "test_name": "Unauthorized Access Test",
       "success": false,
       "details": "Expected 401, got: {'detail': 'Not Found', 'status_code': 404, 'expected_status': 401}",
-      "timestamp": "2025-10-26T08:22:28.834514"
+      "timestamp": "2025-10-26T08:23:58.295076"
     },
     {
       "test_name": "Invalid Organization ID Test",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-26T08:22:28.913896"
+      "timestamp": "2025-10-26T08:23:58.331700"
     }
   ],
-  "admin_user_email": "admin_member_settings_082227@example.com",
-  "member_user_email": "member_settings_082227@example.com",
-  "organization_id": "afb18479-54ef-4705-b6d5-f8f005479639",
-  "team_id": "61f05702-e866-4128-a867-b938053e43e4"
+  "admin_user_email": "admin_member_settings_082357@example.com",
+  "member_user_email": "member_settings_082357@example.com",
+  "organization_id": "b928f28f-ef9e-4e0b-806e-deb2051f1cfb",
+  "team_id": "eff99e6b-1a80-4cf1-9b86-6fafd40e6181"
 }
