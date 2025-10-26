@@ -7417,6 +7417,745 @@ async def get_post_comments(
 async def root():
     return {"message": "ZION.CITY API v1.0.0", "status": "operational"}
 
+# ===== DEPARTMENTS API ENDPOINTS =====
+
+@api_router.post("/organizations/{organization_id}/departments")
+async def create_department(
+    organization_id: str,
+    department_data: DepartmentCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new department in an organization."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if organization exists
+        organization = await db.work_organizations.find_one({"id": organization_id})
+        if not organization:
+            raise HTTPException(status_code=404, detail="Организация не найдена")
+        
+        # Check if user is OWNER or ADMIN
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership or membership.get("role") not in ["OWNER", "ADMIN"]:
+            raise HTTPException(status_code=403, detail="Только владелец или администратор может создавать отделы")
+        
+        # Create department
+        department = Department(
+            organization_id=organization_id,
+            name=department_data.name,
+            description=department_data.description,
+            color=department_data.color,
+            head_id=department_data.head_id
+        )
+        
+        await db.departments.insert_one(department.dict())
+        
+        return {"success": True, "data": department.dict()}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/organizations/{organization_id}/departments")
+async def list_departments(
+    organization_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List all departments in an organization."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if user is a member
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Вы не являетесь членом этой организации")
+        
+        # Get all departments
+        departments_cursor = db.departments.find({"organization_id": organization_id})
+        departments = await departments_cursor.to_list(length=None)
+        
+        # Enrich with head name and member count
+        result = []
+        for dept in departments:
+            # Get member count
+            member_count = await db.department_members.count_documents({"department_id": dept["id"]})
+            dept["member_count"] = member_count
+            
+            # Get head name if exists
+            if dept.get("head_id"):
+                head_user = await db.users.find_one({"id": dept["head_id"]})
+                if head_user:
+                    dept["head_name"] = f"{head_user.get('first_name', '')} {head_user.get('last_name', '')}"
+            
+            result.append(dept)
+        
+        return {"success": True, "data": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/organizations/{organization_id}/departments/{dept_id}")
+async def update_department(
+    organization_id: str,
+    dept_id: str,
+    department_data: DepartmentUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a department."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if department exists
+        department = await db.departments.find_one({"id": dept_id, "organization_id": organization_id})
+        if not department:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_dept_head = department.get("head_id") == current_user["id"]
+        is_authorized = membership and (
+            membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
+        )
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для редактирования отдела")
+        
+        # Update department
+        update_data = {k: v for k, v in department_data.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        await db.departments.update_one(
+            {"id": dept_id},
+            {"$set": update_data}
+        )
+        
+        # Get updated department
+        updated_dept = await db.departments.find_one({"id": dept_id})
+        
+        # Add member count
+        member_count = await db.department_members.count_documents({"department_id": dept_id})
+        updated_dept["member_count"] = member_count
+        
+        return {"success": True, "data": updated_dept}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/organizations/{organization_id}/departments/{dept_id}")
+async def delete_department(
+    organization_id: str,
+    dept_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a department."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check permissions (OWNER or ADMIN only)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership or membership.get("role") not in ["OWNER", "ADMIN"]:
+            raise HTTPException(status_code=403, detail="Только владелец или администратор может удалять отделы")
+        
+        # Delete department members first
+        await db.department_members.delete_many({"department_id": dept_id})
+        
+        # Delete department
+        result = await db.departments.delete_one({"id": dept_id, "organization_id": organization_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        return {"success": True, "message": "Отдел успешно удален"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/organizations/{organization_id}/departments/{dept_id}/members")
+async def add_department_member(
+    organization_id: str,
+    dept_id: str,
+    member_data: DepartmentMemberAdd,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Add a member to a department."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if department exists
+        department = await db.departments.find_one({"id": dept_id, "organization_id": organization_id})
+        if not department:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        # Check permissions
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_dept_head = department.get("head_id") == current_user["id"]
+        is_authorized = membership and (
+            membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
+        )
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для добавления членов в отдел")
+        
+        # Check if user is organization member
+        target_membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": member_data.user_id,
+            "status": "ACTIVE"
+        })
+        
+        if not target_membership:
+            raise HTTPException(status_code=400, detail="Пользователь не является членом организации")
+        
+        # Check if already in department
+        existing = await db.department_members.find_one({
+            "department_id": dept_id,
+            "user_id": member_data.user_id
+        })
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Пользователь уже состоит в этом отделе")
+        
+        # Add member
+        dept_member = DepartmentMember(
+            department_id=dept_id,
+            user_id=member_data.user_id,
+            role=member_data.role
+        )
+        
+        await db.department_members.insert_one(dept_member.dict())
+        
+        # Get user details
+        user = await db.users.find_one({"id": member_data.user_id})
+        
+        result = dept_member.dict()
+        result["user_name"] = f"{user.get('first_name', '')} {user.get('last_name', '')}"
+        
+        return {"success": True, "data": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/organizations/{organization_id}/departments/{dept_id}/members")
+async def list_department_members(
+    organization_id: str,
+    dept_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List all members of a department."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if user is organization member
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Вы не являетесь членом этой организации")
+        
+        # Get department members
+        members_cursor = db.department_members.find({"department_id": dept_id})
+        members = await members_cursor.to_list(length=None)
+        
+        # Enrich with user details
+        result = []
+        for member in members:
+            user = await db.users.find_one({"id": member["user_id"]})
+            if user:
+                member["user_name"] = f"{user.get('first_name', '')} {user.get('last_name', '')}"
+                member["user_email"] = user.get("email", "")
+                member["user_avatar"] = user.get("avatar_url")
+                result.append(member)
+        
+        return {"success": True, "data": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/organizations/{organization_id}/departments/{dept_id}/members/{user_id}")
+async def remove_department_member(
+    organization_id: str,
+    dept_id: str,
+    user_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Remove a member from a department."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if department exists
+        department = await db.departments.find_one({"id": dept_id, "organization_id": organization_id})
+        if not department:
+            raise HTTPException(status_code=404, detail="Отдел не найден")
+        
+        # Check permissions
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_dept_head = department.get("head_id") == current_user["id"]
+        is_authorized = membership and (
+            membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
+        )
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для удаления членов из отдела")
+        
+        # Remove member
+        result = await db.department_members.delete_one({
+            "department_id": dept_id,
+            "user_id": user_id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Член отдела не найден")
+        
+        return {"success": True, "message": "Член удален из отдела"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== ANNOUNCEMENTS API ENDPOINTS =====
+
+@api_router.post("/organizations/{organization_id}/announcements")
+async def create_announcement(
+    organization_id: str,
+    announcement_data: AnnouncementCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new announcement."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if organization exists
+        organization = await db.work_organizations.find_one({"id": organization_id})
+        if not organization:
+            raise HTTPException(status_code=404, detail="Организация не найдена")
+        
+        # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_dept_head = False
+        if announcement_data.department_id:
+            dept = await db.departments.find_one({"id": announcement_data.department_id})
+            if dept:
+                is_dept_head = dept.get("head_id") == current_user["id"]
+        
+        is_authorized = membership and (
+            membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
+        )
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для создания объявлений")
+        
+        # Create announcement
+        announcement = Announcement(
+            organization_id=organization_id,
+            department_id=announcement_data.department_id,
+            title=announcement_data.title,
+            content=announcement_data.content,
+            priority=announcement_data.priority,
+            author_id=current_user["id"],
+            target_type=announcement_data.target_type,
+            target_departments=announcement_data.target_departments,
+            is_pinned=announcement_data.is_pinned
+        )
+        
+        await db.announcements.insert_one(announcement.dict())
+        
+        # Enrich response with author name
+        result = announcement.dict()
+        result["author_name"] = f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}"
+        
+        return {"success": True, "data": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/organizations/{organization_id}/announcements")
+async def list_announcements(
+    organization_id: str,
+    department_id: Optional[str] = None,
+    priority: Optional[str] = None,
+    pinned: Optional[bool] = None,
+    limit: int = 50,
+    offset: int = 0,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """List announcements in an organization."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if user is member
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Вы не являетесь членом этой организации")
+        
+        # Build query
+        query = {"organization_id": organization_id}
+        
+        if priority:
+            query["priority"] = priority
+        
+        if pinned is not None:
+            query["is_pinned"] = pinned
+        
+        # Handle department filtering
+        if department_id:
+            query["$or"] = [
+                {"target_type": "ALL"},
+                {"department_id": department_id},
+                {"target_departments": department_id}
+            ]
+        
+        # Get total count
+        total = await db.announcements.count_documents(query)
+        
+        # Get announcements with sorting (pinned first, then by date)
+        announcements_cursor = db.announcements.find(query).sort([
+            ("is_pinned", -1),
+            ("created_at", -1)
+        ]).skip(offset).limit(limit)
+        
+        announcements = await announcements_cursor.to_list(length=None)
+        
+        # Enrich with author and department details
+        result = []
+        for ann in announcements:
+            # Get author details
+            author = await db.users.find_one({"id": ann["author_id"]})
+            if author:
+                ann["author_name"] = f"{author.get('first_name', '')} {author.get('last_name', '')}"
+                ann["author_avatar"] = author.get("avatar_url")
+            
+            # Get department details if exists
+            if ann.get("department_id"):
+                dept = await db.departments.find_one({"id": ann["department_id"]})
+                if dept:
+                    ann["department_name"] = dept.get("name")
+                    ann["department_color"] = dept.get("color")
+            
+            result.append(ann)
+        
+        return {
+            "success": True,
+            "data": result,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/organizations/{organization_id}/announcements/{announcement_id}")
+async def update_announcement(
+    organization_id: str,
+    announcement_id: str,
+    announcement_data: AnnouncementUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update an announcement."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if announcement exists
+        announcement = await db.announcements.find_one({
+            "id": announcement_id,
+            "organization_id": organization_id
+        })
+        
+        if not announcement:
+            raise HTTPException(status_code=404, detail="Объявление не найдено")
+        
+        # Check permissions (Author, OWNER, or ADMIN)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_author = announcement.get("author_id") == current_user["id"]
+        is_authorized = is_author or (membership and membership.get("role") in ["OWNER", "ADMIN"])
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для редактирования объявления")
+        
+        # Update announcement
+        update_data = {k: v for k, v in announcement_data.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        await db.announcements.update_one(
+            {"id": announcement_id},
+            {"$set": update_data}
+        )
+        
+        # Get updated announcement
+        updated_ann = await db.announcements.find_one({"id": announcement_id})
+        
+        return {"success": True, "data": updated_ann}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/organizations/{organization_id}/announcements/{announcement_id}")
+async def delete_announcement(
+    organization_id: str,
+    announcement_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete an announcement."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if announcement exists
+        announcement = await db.announcements.find_one({
+            "id": announcement_id,
+            "organization_id": organization_id
+        })
+        
+        if not announcement:
+            raise HTTPException(status_code=404, detail="Объявление не найдено")
+        
+        # Check permissions (Author, OWNER, or ADMIN)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        is_author = announcement.get("author_id") == current_user["id"]
+        is_authorized = is_author or (membership and membership.get("role") in ["OWNER", "ADMIN"])
+        
+        if not is_authorized:
+            raise HTTPException(status_code=403, detail="Недостаточно прав для удаления объявления")
+        
+        # Delete reactions first
+        await db.announcement_reactions.delete_many({"announcement_id": announcement_id})
+        
+        # Delete announcement
+        await db.announcements.delete_one({"id": announcement_id})
+        
+        return {"success": True, "message": "Объявление успешно удалено"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/organizations/{organization_id}/announcements/{announcement_id}/pin")
+async def pin_announcement(
+    organization_id: str,
+    announcement_id: str,
+    pin_data: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Pin or unpin an announcement."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check permissions (OWNER or ADMIN only)
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership or membership.get("role") not in ["OWNER", "ADMIN"]:
+            raise HTTPException(status_code=403, detail="Только владелец или администратор может закреплять объявления")
+        
+        # Update pin status
+        is_pinned = pin_data.get("is_pinned", False)
+        await db.announcements.update_one(
+            {"id": announcement_id, "organization_id": organization_id},
+            {"$set": {"is_pinned": is_pinned, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        return {"success": True, "data": {"id": announcement_id, "is_pinned": is_pinned}}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/organizations/{organization_id}/announcements/{announcement_id}/view")
+async def track_announcement_view(
+    organization_id: str,
+    announcement_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Track an announcement view."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if user is member
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Вы не являетесь членом этой организации")
+        
+        # Increment view count
+        result = await db.announcements.update_one(
+            {"id": announcement_id, "organization_id": organization_id},
+            {"$inc": {"views": 1}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Объявление не найдено")
+        
+        # Get updated view count
+        announcement = await db.announcements.find_one({"id": announcement_id})
+        
+        return {"success": True, "data": {"views": announcement.get("views", 0)}}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/organizations/{organization_id}/announcements/{announcement_id}/react")
+async def react_to_announcement(
+    organization_id: str,
+    announcement_id: str,
+    reaction_data: AnnouncementReactionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """React to an announcement (toggle reaction)."""
+    try:
+        # Verify token and get current user
+        current_user = await get_current_user(credentials.credentials)
+        
+        # Check if user is member
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user["id"],
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Вы не являетесь членом этой организации")
+        
+        # Check if reaction already exists
+        existing_reaction = await db.announcement_reactions.find_one({
+            "announcement_id": announcement_id,
+            "user_id": current_user["id"],
+            "reaction_type": reaction_data.reaction_type
+        })
+        
+        if existing_reaction:
+            # Remove reaction (toggle off)
+            await db.announcement_reactions.delete_one({"id": existing_reaction["id"]})
+        else:
+            # Add reaction
+            reaction = AnnouncementReaction(
+                announcement_id=announcement_id,
+                user_id=current_user["id"],
+                reaction_type=reaction_data.reaction_type
+            )
+            await db.announcement_reactions.insert_one(reaction.dict())
+        
+        # Recalculate reaction counts
+        pipeline = [
+            {"$match": {"announcement_id": announcement_id}},
+            {"$group": {
+                "_id": "$reaction_type",
+                "count": {"$sum": 1}
+            }}
+        ]
+        
+        reaction_counts = {}
+        async for result in db.announcement_reactions.aggregate(pipeline):
+            reaction_counts[result["_id"]] = result["count"]
+        
+        # Update announcement reactions
+        await db.announcements.update_one(
+            {"id": announcement_id},
+            {"$set": {"reactions": reaction_counts}}
+        )
+        
+        return {"success": True, "data": {"reactions": reaction_counts}}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== END DEPARTMENTS & ANNOUNCEMENTS ENDPOINTS =====
+
 @api_router.get("/health")
 async def health_check():
     return {
