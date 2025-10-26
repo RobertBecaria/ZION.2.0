@@ -5,7 +5,7 @@ import json
 
 def test_my_info_endpoints():
     """Simple test of MY INFO module endpoints"""
-    base_url = "https://worknet-zion.preview.emergentagent.com/api"
+    base_url = "https://orgrole-manager.preview.emergentagent.com/api"
     
     # Login
     login_response = requests.post(f"{base_url}/auth/login", json={
