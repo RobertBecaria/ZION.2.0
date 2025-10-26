@@ -7559,13 +7559,10 @@ async def update_department(
 async def delete_department(
     organization_id: str,
     dept_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """Delete a department."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check permissions (OWNER or ADMIN only)
         membership = await db.work_memberships.find_one({
             "organization_id": organization_id,
