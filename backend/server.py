@@ -7487,7 +7487,7 @@ async def list_departments(
     """List all departments in an organization."""
     try:
         # Check if user is a member
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7537,7 +7537,7 @@ async def update_department(
             raise HTTPException(status_code=404, detail="Отдел не найден")
         
         # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7583,7 +7583,7 @@ async def delete_department(
     """Delete a department."""
     try:
         # Check permissions (OWNER or ADMIN only)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7623,7 +7623,7 @@ async def add_department_member(
             raise HTTPException(status_code=404, detail="Отдел не найден")
         
         # Check permissions
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7638,7 +7638,7 @@ async def add_department_member(
             raise HTTPException(status_code=403, detail="Недостаточно прав для добавления членов в отдел")
         
         # Check if user is organization member
-        target_membership = await db.work_memberships.find_one({
+        target_membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": member_data.user_id,
             "status": "ACTIVE"
@@ -7687,7 +7687,7 @@ async def list_department_members(
     """List all members of a department."""
     try:
         # Check if user is organization member
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7732,7 +7732,7 @@ async def remove_department_member(
             raise HTTPException(status_code=404, detail="Отдел не найден")
         
         # Check permissions
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7778,7 +7778,7 @@ async def create_announcement(
             raise HTTPException(status_code=404, detail="Организация не найдена")
         
         # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7836,7 +7836,7 @@ async def list_announcements(
     """List announcements in an organization."""
     try:
         # Check if user is member
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7923,7 +7923,7 @@ async def update_announcement(
             raise HTTPException(status_code=404, detail="Объявление не найдено")
         
         # Check permissions (Author, OWNER, or ADMIN)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -7972,7 +7972,7 @@ async def delete_announcement(
             raise HTTPException(status_code=404, detail="Объявление не найдено")
         
         # Check permissions (Author, OWNER, or ADMIN)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -8007,7 +8007,7 @@ async def pin_announcement(
     """Pin or unpin an announcement."""
     try:
         # Check permissions (OWNER or ADMIN only)
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -8039,7 +8039,7 @@ async def track_announcement_view(
     """Track an announcement view."""
     try:
         # Check if user is member
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
@@ -8077,7 +8077,7 @@ async def react_to_announcement(
     """React to an announcement (toggle reaction)."""
     try:
         # Check if user is member
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "organization_id": organization_id,
             "user_id": current_user["id"],
             "status": "ACTIVE"
