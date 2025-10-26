@@ -991,6 +991,124 @@ class OrganizationFollow(BaseModel):
 
 # ===== END ORGANIZATION FOLLOW MODELS =====
 
+# ===== MEMBER SETTINGS & CHANGE REQUESTS MODELS =====
+
+class ChangeRequestType(str, Enum):
+    ROLE_CHANGE = "ROLE_CHANGE"
+    DEPARTMENT_CHANGE = "DEPARTMENT_CHANGE"
+    TEAM_CHANGE = "TEAM_CHANGE"
+    JOB_TITLE_CHANGE = "JOB_TITLE_CHANGE"
+    PERMISSIONS_CHANGE = "PERMISSIONS_CHANGE"
+
+class ChangeRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+class WorkChangeRequest(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    user_id: str  # Member requesting the change
+    request_type: ChangeRequestType
+    
+    # Current values
+    current_role: Optional[WorkRole] = None
+    current_department: Optional[str] = None
+    current_team: Optional[str] = None
+    current_job_title: Optional[str] = None
+    current_can_post: Optional[bool] = None
+    current_can_invite: Optional[bool] = None
+    
+    # Requested values
+    requested_role: Optional[WorkRole] = None
+    requested_custom_role_name: Optional[str] = None
+    requested_department: Optional[str] = None
+    requested_team: Optional[str] = None
+    requested_job_title: Optional[str] = None
+    requested_can_post: Optional[bool] = None
+    requested_can_invite: Optional[bool] = None
+    
+    # Request details
+    reason: Optional[str] = None  # Why they need this change
+    status: ChangeRequestStatus = ChangeRequestStatus.PENDING
+    reviewed_by: Optional[str] = None  # Admin who reviewed
+    reviewed_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WorkChangeRequestCreate(BaseModel):
+    request_type: ChangeRequestType
+    requested_role: Optional[WorkRole] = None
+    requested_custom_role_name: Optional[str] = None
+    requested_department: Optional[str] = None
+    requested_team: Optional[str] = None
+    requested_job_title: Optional[str] = None
+    requested_can_post: Optional[bool] = None
+    requested_can_invite: Optional[bool] = None
+    reason: Optional[str] = None
+
+class WorkChangeRequestResponse(BaseModel):
+    id: str
+    organization_id: str
+    user_id: str
+    request_type: ChangeRequestType
+    
+    # Current values
+    current_role: Optional[WorkRole]
+    current_department: Optional[str]
+    current_team: Optional[str]
+    current_job_title: Optional[str]
+    
+    # Requested values
+    requested_role: Optional[WorkRole]
+    requested_custom_role_name: Optional[str]
+    requested_department: Optional[str]
+    requested_team: Optional[str]
+    requested_job_title: Optional[str]
+    
+    reason: Optional[str]
+    status: ChangeRequestStatus
+    reviewed_by: Optional[str]
+    reviewed_at: Optional[datetime]
+    rejection_reason: Optional[str]
+    created_at: datetime
+    
+    # User details
+    user_first_name: str
+    user_last_name: str
+    user_email: str
+    user_avatar_url: Optional[str]
+
+class WorkMemberSettingsUpdate(BaseModel):
+    """Member updates their own settings - creates change requests for role/dept/team"""
+    job_title: Optional[str] = None  # Direct update, no approval needed
+    requested_role: Optional[WorkRole] = None  # Requires approval
+    requested_custom_role_name: Optional[str] = None
+    requested_department: Optional[str] = None  # Requires approval
+    requested_team: Optional[str] = None  # Requires approval
+    reason: Optional[str] = None  # Why they need these changes
+
+class WorkTeamCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    department_id: Optional[str] = None
+    team_lead_id: Optional[str] = None
+
+class WorkTeam(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    name: str
+    description: Optional[str] = None
+    department_id: Optional[str] = None
+    team_lead_id: Optional[str] = None
+    member_ids: List[str] = []
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+# ===== END MEMBER SETTINGS & CHANGE REQUESTS MODELS =====
+
 # ===== END DEPARTMENTS & ANNOUNCEMENTS MODELS =====
 
 class ChatMessageCreate(BaseModel):
