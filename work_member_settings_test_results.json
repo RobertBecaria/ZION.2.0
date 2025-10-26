@@ -1,0 +1,114 @@
+{
+  "total_tests": 17,
+  "passed_tests": 6,
+  "failed_tests": 11,
+  "success_rate": 35.294117647058826,
+  "test_results": [
+    {
+      "test_name": "Admin User Registration",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:58.782670"
+    },
+    {
+      "test_name": "Member User Registration",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:59.091846"
+    },
+    {
+      "test_name": "Create Organization",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:59.157681"
+    },
+    {
+      "test_name": "Add Member to Organization",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:59.199561"
+    },
+    {
+      "test_name": "Get Member Settings",
+      "success": false,
+      "details": "Endpoint not implemented (404)",
+      "timestamp": "2025-10-26T08:18:59.238686"
+    },
+    {
+      "test_name": "Update Member Settings",
+      "success": false,
+      "details": "Endpoint not implemented (404)",
+      "timestamp": "2025-10-26T08:18:59.275277"
+    },
+    {
+      "test_name": "Member Self Update Settings",
+      "success": false,
+      "details": "Response: {'detail': \"'User' object is not subscriptable\", 'status_code': 500, 'expected_status': 200}",
+      "timestamp": "2025-10-26T08:18:59.314556"
+    },
+    {
+      "test_name": "Create Role Change Request",
+      "success": false,
+      "details": "Endpoint not implemented (404)",
+      "timestamp": "2025-10-26T08:18:59.354821"
+    },
+    {
+      "test_name": "Get Organization Role Change Requests",
+      "success": false,
+      "details": "Endpoint not implemented (404)",
+      "timestamp": "2025-10-26T08:18:59.393351"
+    },
+    {
+      "test_name": "Get Specific Role Change Request (Endpoint Check)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:59.427845"
+    },
+    {
+      "test_name": "Approve Role Change Request (Endpoint Check)",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-26T08:18:59.461360"
+    },
+    {
+      "test_name": "Create Team",
+      "success": false,
+      "details": "Response: {'detail': \"'User' object is not subscriptable\", 'status_code': 500, 'expected_status': 200}",
+      "timestamp": "2025-10-26T08:18:59.501976"
+    },
+    {
+      "test_name": "Get Teams",
+      "success": false,
+      "details": "Response: {'detail': \"'User' object is not subscriptable\", 'status_code': 500, 'expected_status': 200}",
+      "timestamp": "2025-10-26T08:18:59.578852"
+    },
+    {
+      "test_name": "Update Team",
+      "success": false,
+      "details": "No team_id available",
+      "timestamp": "2025-10-26T08:18:59.578865"
+    },
+    {
+      "test_name": "Delete Team",
+      "success": false,
+      "details": "No team_id available",
+      "timestamp": "2025-10-26T08:18:59.578868"
+    },
+    {
+      "test_name": "Unauthorized Access Test",
+      "success": false,
+      "details": "Expected 401, got: {'detail': 'Not Found', 'status_code': 404, 'expected_status': 401}",
+      "timestamp": "2025-10-26T08:18:59.614202"
+    },
+    {
+      "test_name": "Invalid Organization ID Test",
+      "success": false,
+      "details": "Expected 404, got: {'detail': \"'User' object is not subscriptable\", 'status_code': 500, 'expected_status': 404}",
+      "timestamp": "2025-10-26T08:18:59.651163"
+    }
+  ],
+  "admin_user_email": "admin_member_settings_081858@example.com",
+  "member_user_email": "member_settings_081858@example.com",
+  "organization_id": "23c23e20-e587-4e9f-9cfc-d7cec6b7dd17",
+  "team_id": null
+}
