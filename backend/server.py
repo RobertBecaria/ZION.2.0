@@ -7572,7 +7572,7 @@ async def create_department(
         # Check if user is OWNER or ADMIN
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7607,7 +7607,7 @@ async def list_departments(
         # Check if user is a member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7657,7 +7657,7 @@ async def update_department(
         # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7703,7 +7703,7 @@ async def delete_department(
         # Check permissions (OWNER or ADMIN only)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7743,7 +7743,7 @@ async def add_department_member(
         # Check permissions
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7807,7 +7807,7 @@ async def list_department_members(
         # Check if user is organization member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7852,7 +7852,7 @@ async def remove_department_member(
         # Check permissions
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7898,7 +7898,7 @@ async def create_announcement(
         # Check permissions (OWNER, ADMIN, or DEPARTMENT_HEAD)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -7956,7 +7956,7 @@ async def list_announcements(
         # Check if user is member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8043,7 +8043,7 @@ async def update_announcement(
         # Check permissions (Author, OWNER, or ADMIN)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8092,7 +8092,7 @@ async def delete_announcement(
         # Check permissions (Author, OWNER, or ADMIN)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8127,7 +8127,7 @@ async def pin_announcement(
         # Check permissions (OWNER or ADMIN only)
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8159,7 +8159,7 @@ async def track_announcement_view(
         # Check if user is member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8197,7 +8197,7 @@ async def react_to_announcement(
         # Check if user is member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8207,7 +8207,7 @@ async def react_to_announcement(
         # Check if reaction already exists
         existing_reaction = await db.announcement_reactions.find_one({
             "announcement_id": announcement_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "reaction_type": reaction_data.reaction_type
         })
         
@@ -8397,7 +8397,7 @@ async def create_join_request_with_notification(
         # Check if already has pending request
         existing_request = await db.work_join_requests.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "PENDING"
         })
         
@@ -8408,7 +8408,7 @@ async def create_join_request_with_notification(
         join_request = {
             "id": str(uuid.uuid4()),
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "PENDING",
             "message": "",
             "created_at": datetime.now(timezone.utc),
@@ -8529,7 +8529,7 @@ async def update_my_member_settings(
         # Check if user is a member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8606,7 +8606,7 @@ async def get_change_requests(
         # Check if user is admin
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8673,7 +8673,7 @@ async def approve_change_request(
         # Check if user is admin
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8748,7 +8748,7 @@ async def reject_change_request(
         # Check if user is admin
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8794,7 +8794,7 @@ async def create_team(
         # Check if user is a member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
@@ -8831,7 +8831,7 @@ async def get_teams(
         # Check if user is a member
         membership = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"],
+            "user_id": current_user.id,
             "status": "ACTIVE"
         })
         
