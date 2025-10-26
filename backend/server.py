@@ -7594,13 +7594,10 @@ async def add_department_member(
     organization_id: str,
     dept_id: str,
     member_data: DepartmentMemberAdd,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """Add a member to a department."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check if department exists
         department = await db.departments.find_one({"id": dept_id, "organization_id": organization_id})
         if not department:
