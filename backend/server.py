@@ -8143,7 +8143,7 @@ async def follow_organization(
     """Follow an organization."""
     try:
         # Check if organization exists
-        organization = await db.work_organizations.find_one({"id": organization_id})
+        organization = await db.work_organizations.find_one({"organization_id": organization_id})
         if not organization:
             raise HTTPException(status_code=404, detail="Организация не найдена")
         
