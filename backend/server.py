@@ -8218,7 +8218,7 @@ async def react_to_announcement(
             # Add reaction
             reaction = AnnouncementReaction(
                 announcement_id=announcement_id,
-                user_id=current_user["id"],
+                user_id=current_user.id,
                 reaction_type=reaction_data.reaction_type
             )
             await db.announcement_reactions.insert_one(reaction.dict())
@@ -8549,7 +8549,7 @@ async def update_my_member_settings(
         if settings.requested_role is not None:
             change_request = WorkChangeRequest(
                 organization_id=organization_id,
-                user_id=current_user["id"],
+                user_id=current_user.id,
                 request_type=ChangeRequestType.ROLE_CHANGE,
                 current_role=WorkRole(membership["role"]),
                 requested_role=settings.requested_role,
@@ -8562,7 +8562,7 @@ async def update_my_member_settings(
         if settings.requested_department is not None:
             change_request = WorkChangeRequest(
                 organization_id=organization_id,
-                user_id=current_user["id"],
+                user_id=current_user.id,
                 request_type=ChangeRequestType.DEPARTMENT_CHANGE,
                 current_department=membership.get("department"),
                 requested_department=settings.requested_department,
@@ -8574,7 +8574,7 @@ async def update_my_member_settings(
         if settings.requested_team is not None:
             change_request = WorkChangeRequest(
                 organization_id=organization_id,
-                user_id=current_user["id"],
+                user_id=current_user.id,
                 request_type=ChangeRequestType.TEAM_CHANGE,
                 current_team=membership.get("team"),
                 requested_team=settings.requested_team,
