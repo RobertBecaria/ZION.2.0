@@ -58,65 +58,40 @@ const WorkSearchOrganizations = ({ onBack, onViewProfile, onJoinSuccess }) => {
     const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
     const token = localStorage.getItem('zion_token');
 
-    if (isPrivate) {
-      // Request to join private organization
-      setRequestingOrgId(orgId);
-      
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/work/organizations/${orgId}/request-join`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message: '' })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to send request');
+    // Always send a join request (for both public and private organizations)
+    // This ensures admins get notified and can approve/reject
+    setRequestingOrgId(orgId);
+    
+    try {
+      // Use the new endpoint that creates notification for admins
+      const response = await fetch(`${BACKEND_URL}/api/organizations/${orgId}/join-request`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
+      });
 
-        // Update the org in results to show pending request
-        setSearchResults(prev => prev.map(org => 
-          org.id === orgId ? { ...org, user_has_pending_request: true } : org
-        ));
-      } catch (error) {
-        console.error('Request join error:', error);
-        alert(error.message);
-      } finally {
-        setRequestingOrgId(null);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Не удалось отправить запрос');
       }
-    } else {
-      // Join public organization instantly
-      setJoiningOrgId(orgId);
+
+      const data = await response.json();
       
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/work/organizations/${orgId}/join`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to join organization');
-        }
-
-        // Update the org in results to show membership
-        setSearchResults(prev => prev.map(org => 
-          org.id === orgId ? { ...org, user_is_member: true } : org
-        ));
-        
-        onJoinSuccess && onJoinSuccess(orgId);
-      } catch (error) {
-        console.error('Join error:', error);
-        alert(error.message);
-      } finally {
-        setJoiningOrgId(null);
-      }
+      // Update the org in results to show pending request
+      setSearchResults(prev => prev.map(org => 
+        org.id === orgId ? { ...org, user_has_pending_request: true } : org
+      ));
+      
+      // Show success message
+      alert(data.message || 'Запрос на вступление отправлен! Администратор организации получит уведомление.');
+      
+    } catch (error) {
+      console.error('Request join error:', error);
+      alert(error.message);
+    } finally {
+      setRequestingOrgId(null);
     }
   };
 
