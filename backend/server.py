@@ -8787,7 +8787,7 @@ async def reject_change_request(
 async def create_team(
     organization_id: str,
     team_data: WorkTeamCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Create a new team (any member can create)"""
     try:
