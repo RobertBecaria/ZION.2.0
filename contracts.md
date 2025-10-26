@@ -1,449 +1,618 @@
-# Work Module API Integration Contracts
+# API Contracts: Departments & Announcements System
 
 ## Overview
-This document defines the integration contracts between the Work Module frontend and backend API. The backend API endpoints are already implemented and documented in `/app/WORK_MODULE_API.md`.
+This document defines the API contracts for the Departments and Announcements features in the Organizations module.
 
 ---
 
-## 1. API Endpoints to Integrate
+## 1. DEPARTMENTS API
 
-### 1.1 Search Organizations
-**Endpoint:** `POST /api/work/organizations/search`
+### 1.1 Create Department
+**Endpoint:** `POST /api/organizations/{org_id}/departments`
 
-**Frontend Usage:** `WorkSetupPage.js` - Search view
+**Authentication:** Required (JWT)
 
-**Request:**
+**Authorization:** User must be OWNER or ADMIN of the organization
+
+**Request Body:**
 ```json
 {
-  "query": "string",
-  "organization_type": "COMPANY" // optional
+  "name": "Engineering",
+  "description": "Software development and technical infrastructure",
+  "color": "#1D4ED8",
+  "head_id": "user-uuid-here" // Optional
 }
 ```
 
-**Response:**
+**Response (201):**
 ```json
 {
-  "organizations": [
+  "success": true,
+  "data": {
+    "id": "dept-uuid",
+    "organization_id": "org-uuid",
+    "name": "Engineering",
+    "description": "Software development and technical infrastructure",
+    "color": "#1D4ED8",
+    "head_id": "user-uuid-here",
+    "member_count": 0,
+    "created_at": "2024-03-20T10:00:00Z",
+    "updated_at": "2024-03-20T10:00:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- 401: Unauthorized (no valid token)
+- 403: Forbidden (not OWNER/ADMIN)
+- 404: Organization not found
+- 400: Validation error (missing name, invalid color format, etc.)
+
+---
+
+### 1.2 List Departments
+**Endpoint:** `GET /api/organizations/{org_id}/departments`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** User must be a member of the organization
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
     {
-      "id": "uuid",
-      "name": "string",
-      "organization_type": "COMPANY",
-      "industry": "string",
-      "member_count": 0,
-      "logo_url": "string",
-      "is_member": false
+      "id": "dept-uuid-1",
+      "organization_id": "org-uuid",
+      "name": "Engineering",
+      "description": "Software development",
+      "color": "#1D4ED8",
+      "head_id": "user-uuid",
+      "head_name": "John Doe",
+      "member_count": 12,
+      "created_at": "2024-03-20T10:00:00Z",
+      "updated_at": "2024-03-20T10:00:00Z"
     }
-  ],
-  "count": 0
+  ]
 }
 ```
 
 ---
 
-### 1.2 Create Organization
-**Endpoint:** `POST /api/work/organizations`
+### 1.3 Update Department
+**Endpoint:** `PUT /api/organizations/{org_id}/departments/{dept_id}`
 
-**Frontend Usage:** `WorkSetupPage.js` - Create view (Step 3 completion)
+**Authentication:** Required (JWT)
 
-**Request:** Full organization data from form
+**Authorization:** OWNER, ADMIN, or DEPARTMENT_HEAD
+
+**Request Body:**
 ```json
 {
-  "name": "string",
-  "organization_type": "COMPANY",
-  "description": "string",
-  "industry": "string",
-  "organization_size": "11-50",
-  "founded_year": 2024,
-  "website": "string",
-  "official_email": "string",
-  "address_street": "string",
-  "address_city": "string",
-  "address_state": "string",
-  "address_country": "string",
-  "address_postal_code": "string",
-  "is_private": false,
-  "allow_public_discovery": true,
-  "creator_role": "CEO",
-  "custom_role_name": null,
-  "creator_department": "string",
-  "creator_team": "string",
-  "creator_job_title": "string"
+  "name": "Engineering & Tech",
+  "description": "Updated description",
+  "color": "#2563EB",
+  "head_id": "new-user-uuid"
 }
 ```
 
-**Response:** Full organization object with user membership details
-
----
-
-### 1.3 Get User's Organizations
-**Endpoint:** `GET /api/work/organizations`
-
-**Frontend Usage:** `WorkOrganizationList.js` - Load user's organizations
-
-**Request:** None (uses JWT token)
-
-**Response:**
+**Response (200):**
 ```json
 {
-  "organizations": [
-    {
-      "id": "uuid",
-      "name": "string",
-      "organization_type": "COMPANY",
-      "industry": "string",
-      "member_count": 0,
-      "logo_url": "string",
-      "banner_url": "string",
-      "address_city": "string",
-      "address_country": "string",
-      "user_role": "CEO",
-      "user_department": "string",
-      "user_team": "string",
-      "user_job_title": "string",
-      "user_is_admin": true,
-      "user_can_invite": true,
-      "user_can_post": true
-    }
-  ],
-  "count": 0
-}
-```
-
----
-
-### 1.4 Get Organization Details
-**Endpoint:** `GET /api/work/organizations/{organization_id}`
-
-**Frontend Usage:** `WorkOrganizationProfile.js` - Load organization profile
-
-**Request:** None (organization_id in URL)
-
-**Response:** Full organization object with user membership details
-
----
-
-### 1.5 Get Organization Members
-**Endpoint:** `GET /api/work/organizations/{organization_id}/members`
-
-**Frontend Usage:** `WorkOrganizationProfile.js` - Members tab
-
-**Request:** None
-
-**Response:**
-```json
-{
-  "members": [
-    {
-      "id": "uuid",
-      "user_id": "uuid",
-      "role": "CEO",
-      "department": "string",
-      "team": "string",
-      "job_title": "string",
-      "user_first_name": "string",
-      "user_last_name": "string",
-      "user_email": "string",
-      "user_avatar_url": "string",
-      "is_admin": true,
-      "can_invite": true,
-      "can_post": true
-    }
-  ],
-  "count": 0,
-  "departments": {
-    "Executive": [...],
-    "Engineering": [...]
+  "success": true,
+  "data": {
+    "id": "dept-uuid",
+    "organization_id": "org-uuid",
+    "name": "Engineering & Tech",
+    "description": "Updated description",
+    "color": "#2563EB",
+    "head_id": "new-user-uuid",
+    "member_count": 12,
+    "created_at": "2024-03-20T10:00:00Z",
+    "updated_at": "2024-03-21T14:30:00Z"
   }
 }
 ```
 
 ---
 
-### 1.6 Add Member to Organization
-**Endpoint:** `POST /api/work/organizations/{organization_id}/members`
+### 1.4 Delete Department
+**Endpoint:** `DELETE /api/organizations/{org_id}/departments/{dept_id}`
 
-**Frontend Usage:** Future - Invite modal (not yet implemented in Phase A)
+**Authentication:** Required (JWT)
 
-**Request:**
+**Authorization:** OWNER or ADMIN only
+
+**Response (200):**
 ```json
 {
-  "user_email": "string",
-  "role": "EMPLOYEE",
-  "department": "string",
-  "team": "string",
-  "job_title": "string",
-  "can_invite": false,
-  "is_admin": false
+  "success": true,
+  "message": "Department deleted successfully"
 }
 ```
 
-**Response:**
+**Note:** This will also remove all department member assignments.
+
+---
+
+### 1.5 Add Member to Department
+**Endpoint:** `POST /api/organizations/{org_id}/departments/{dept_id}/members`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** OWNER, ADMIN, or DEPARTMENT_HEAD
+
+**Request Body:**
 ```json
 {
-  "message": "Member added successfully",
-  "member_id": "uuid"
+  "user_id": "user-uuid",
+  "role": "MEMBER" // DEPARTMENT_HEAD, LEAD, MEMBER, CLIENT
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "member-assignment-uuid",
+    "department_id": "dept-uuid",
+    "user_id": "user-uuid",
+    "user_name": "Jane Smith",
+    "role": "MEMBER",
+    "joined_at": "2024-03-20T10:00:00Z"
+  }
 }
 ```
 
 ---
 
-## 2. Mock Data to Replace
+### 1.6 List Department Members
+**Endpoint:** `GET /api/organizations/{org_id}/departments/{dept_id}/members`
 
-### In `mock-work.js`:
+**Authentication:** Required (JWT)
 
-**To be removed/replaced:**
-- `mockOrganizations` → API call to `/api/work/organizations`
-- `mockMembers` → API call to `/api/work/organizations/{id}/members`
-- `mockWorkPosts` → Will be handled by UniversalWall component
-- Helper functions like `getUserOrganizations()`, `getOrganizationMembers()`, etc.
+**Authorization:** Organization member
 
-### Components to Update:
-
-#### 2.1 **WorkOrganizationList.js**
-**Current:** Uses `getUserOrganizations(currentUserId)` from mock-work.js
-
-**Update to:**
-```javascript
-const [organizations, setOrganizations] = useState([]);
-const [loading, setLoading] = useState(true);
-
-useEffect(() => {
-  const loadOrganizations = async () => {
-    try {
-      const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${BACKEND_URL}/api/work/organizations`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setOrganizations(data.organizations || []);
-    } catch (error) {
-      console.error('Error loading organizations:', error);
-    } finally {
-      setLoading(false);
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "member-assignment-uuid",
+      "department_id": "dept-uuid",
+      "user_id": "user-uuid",
+      "user_name": "Jane Smith",
+      "user_email": "jane@example.com",
+      "user_avatar": "https://...",
+      "role": "MEMBER",
+      "joined_at": "2024-03-20T10:00:00Z"
     }
-  };
-  loadOrganizations();
-}, []);
+  ]
+}
 ```
 
-#### 2.2 **WorkOrganizationProfile.js**
-**Current:** Uses `mockOrganizations.find()` and `getOrganizationMembers()`
+---
 
-**Update to:**
-```javascript
-// Load organization details
-const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-const orgData = await response.json();
+### 1.7 Remove Member from Department
+**Endpoint:** `DELETE /api/organizations/{org_id}/departments/{dept_id}/members/{user_id}`
 
-// Load members
-const membersResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members`, {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-const membersData = await membersResponse.json();
-setMembers(membersData.members || []);
-setMembersByDept(membersData.departments || {});
+**Authentication:** Required (JWT)
+
+**Authorization:** OWNER, ADMIN, or DEPARTMENT_HEAD
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Member removed from department"
+}
 ```
 
-#### 2.3 **WorkSetupPage.js**
-**Current (Search):** Uses `searchOrganizations()` from mock-work.js
+---
 
-**Update to:**
-```javascript
-const handleSearch = async () => {
-  try {
-    const token = localStorage.getItem('zion_token');
-    const response = await fetch(`${BACKEND_URL}/api/work/organizations/search`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+## 2. ANNOUNCEMENTS API
+
+### 2.1 Create Announcement
+**Endpoint:** `POST /api/organizations/{org_id}/announcements`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** OWNER, ADMIN, or DEPARTMENT_HEAD
+
+**Request Body:**
+```json
+{
+  "title": "Q1 All Hands Meeting",
+  "content": "Join us this Friday at 3 PM for quarterly review...",
+  "priority": "URGENT", // NORMAL, IMPORTANT, URGENT
+  "target_type": "ALL", // ALL or DEPARTMENTS
+  "target_departments": [], // Array of dept IDs if target_type is DEPARTMENTS
+  "department_id": null, // Optional: which department is making this announcement
+  "is_pinned": true
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "announcement-uuid",
+    "organization_id": "org-uuid",
+    "department_id": null,
+    "title": "Q1 All Hands Meeting",
+    "content": "Join us this Friday at 3 PM for quarterly review...",
+    "priority": "URGENT",
+    "author_id": "user-uuid",
+    "author_name": "John Doe",
+    "target_type": "ALL",
+    "target_departments": [],
+    "is_pinned": true,
+    "views": 0,
+    "reactions": {},
+    "created_at": "2024-03-20T09:00:00Z",
+    "updated_at": "2024-03-20T09:00:00Z"
+  }
+}
+```
+
+---
+
+### 2.2 List Announcements
+**Endpoint:** `GET /api/organizations/{org_id}/announcements`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** Organization member
+
+**Query Parameters:**
+- `department_id` (optional): Filter by department
+- `priority` (optional): Filter by priority (NORMAL, IMPORTANT, URGENT)
+- `pinned` (optional): Filter pinned (true/false)
+- `limit` (optional): Number of results (default: 50)
+- `offset` (optional): Pagination offset (default: 0)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "announcement-uuid",
+      "organization_id": "org-uuid",
+      "department_id": "dept-uuid",
+      "department_name": "Engineering",
+      "department_color": "#1D4ED8",
+      "title": "New Code Review Guidelines",
+      "content": "We have updated our code review process...",
+      "priority": "IMPORTANT",
+      "author_id": "user-uuid",
+      "author_name": "John Doe",
+      "author_avatar": "https://...",
+      "target_type": "DEPARTMENTS",
+      "target_departments": ["dept-uuid"],
+      "is_pinned": false,
+      "views": 45,
+      "reactions": {
+        "thumbsup": 12,
+        "heart": 5,
+        "clap": 8
       },
-      body: JSON.stringify({
-        query: searchQuery,
-        organization_type: selectedOrgType || null
-      })
-    });
-    const data = await response.json();
-    setSearchResults(data.organizations || []);
-  } catch (error) {
-    console.error('Search error:', error);
-  }
-};
-```
-
-**Current (Create):** Mock alert on form submission
-
-**Update to:**
-```javascript
-const handleCreateOrganization = async () => {
-  try {
-    const token = localStorage.getItem('zion_token');
-    const response = await fetch(`${BACKEND_URL}/api/work/organizations`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      alert('Организация успешно создана!');
-      onComplete && onComplete();
-    } else {
-      const error = await response.json();
-      alert(`Ошибка: ${error.detail || 'Не удалось создать организацию'}`);
+      "created_at": "2024-03-20T09:00:00Z",
+      "updated_at": "2024-03-20T09:00:00Z"
     }
-  } catch (error) {
-    console.error('Create organization error:', error);
-    alert('Ошибка при создании организации');
+  ],
+  "total": 25,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+**Note:** Announcements are sorted by:
+1. Pinned first
+2. Then by created_at DESC
+
+---
+
+### 2.3 Update Announcement
+**Endpoint:** `PUT /api/organizations/{org_id}/announcements/{announcement_id}`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** Author, OWNER, or ADMIN
+
+**Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "content": "Updated content...",
+  "priority": "IMPORTANT",
+  "target_type": "DEPARTMENTS",
+  "target_departments": ["dept-uuid-1", "dept-uuid-2"],
+  "is_pinned": false
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    // Updated announcement object
   }
-};
+}
 ```
 
 ---
 
-## 3. Backend API Status
+### 2.4 Delete Announcement
+**Endpoint:** `DELETE /api/organizations/{org_id}/announcements/{announcement_id}`
 
-✅ **Already Implemented** (per WORK_MODULE_API.md):
-- POST /api/work/organizations/search
-- POST /api/work/organizations (create)
-- GET /api/work/organizations (user's orgs)
-- GET /api/work/organizations/{id}
-- GET /api/work/organizations/{id}/members
-- POST /api/work/organizations/{id}/members (invite)
-- PUT /api/work/organizations/{id} (update)
+**Authentication:** Required (JWT)
 
-**Backend is ready for integration!**
+**Authorization:** Author, OWNER, or ADMIN
 
----
-
-## 4. Environment Variables
-
-**Frontend must use:**
-```javascript
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Announcement deleted successfully"
+}
 ```
 
-**Never hardcode URLs!**
+---
+
+### 2.5 Pin/Unpin Announcement
+**Endpoint:** `PATCH /api/organizations/{org_id}/announcements/{announcement_id}/pin`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** OWNER or ADMIN
+
+**Request Body:**
+```json
+{
+  "is_pinned": true
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "announcement-uuid",
+    "is_pinned": true
+  }
+}
+```
 
 ---
 
-## 5. Authentication
+### 2.6 Track Announcement View
+**Endpoint:** `POST /api/organizations/{org_id}/announcements/{announcement_id}/view`
 
-All API calls require JWT token:
+**Authentication:** Required (JWT)
+
+**Authorization:** Organization member
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "views": 46
+  }
+}
+```
+
+**Note:** This increments the view count. Can be called once per user per announcement.
+
+---
+
+### 2.7 React to Announcement
+**Endpoint:** `POST /api/organizations/{org_id}/announcements/{announcement_id}/react`
+
+**Authentication:** Required (JWT)
+
+**Authorization:** Organization member
+
+**Request Body:**
+```json
+{
+  "reaction_type": "thumbsup" // thumbsup, heart, clap, fire
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "reactions": {
+      "thumbsup": 13,
+      "heart": 5,
+      "clap": 8,
+      "fire": 3
+    }
+  }
+}
+```
+
+**Note:** User can only react once per type. Calling again with same type removes the reaction (toggle).
+
+---
+
+## 3. DATABASE MODELS
+
+### 3.1 Department Model
+```python
+class Department(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    organization_id: str
+    name: str
+    description: Optional[str] = None
+    color: str  # Hex color code
+    head_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+```
+
+**Collection:** `departments`
+
+**Indexes:**
+- `organization_id` (for querying all departments in an org)
+- `id` (primary key)
+
+---
+
+### 3.2 Department Member Model
+```python
+class DepartmentRole(str, Enum):
+    DEPARTMENT_HEAD = "DEPARTMENT_HEAD"
+    LEAD = "LEAD"
+    MEMBER = "MEMBER"
+    CLIENT = "CLIENT"
+
+class DepartmentMember(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    department_id: str
+    user_id: str
+    role: DepartmentRole
+    joined_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+```
+
+**Collection:** `department_members`
+
+**Indexes:**
+- `department_id` (for querying all members in a department)
+- `user_id` (for querying all departments a user is in)
+- Compound: `(department_id, user_id)` (unique constraint)
+
+---
+
+### 3.3 Announcement Model
+```python
+class AnnouncementPriority(str, Enum):
+    NORMAL = "NORMAL"
+    IMPORTANT = "IMPORTANT"
+    URGENT = "URGENT"
+
+class AnnouncementTargetType(str, Enum):
+    ALL = "ALL"
+    DEPARTMENTS = "DEPARTMENTS"
+
+class Announcement(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    organization_id: str
+    department_id: Optional[str] = None  # Which department created this
+    title: str
+    content: str
+    priority: AnnouncementPriority
+    author_id: str
+    target_type: AnnouncementTargetType
+    target_departments: List[str] = []  # Empty if target_type is ALL
+    is_pinned: bool = False
+    views: int = 0
+    reactions: Dict[str, int] = {}  # {"thumbsup": 5, "heart": 3}
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+```
+
+**Collection:** `announcements`
+
+**Indexes:**
+- `organization_id` (for querying all announcements in an org)
+- `department_id` (for filtering by department)
+- `is_pinned` (for filtering pinned announcements)
+- `created_at` (for sorting)
+
+---
+
+### 3.4 Announcement Reaction Model
+```python
+class AnnouncementReaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    announcement_id: str
+    user_id: str
+    reaction_type: str  # thumbsup, heart, clap, fire
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+```
+
+**Collection:** `announcement_reactions`
+
+**Indexes:**
+- `announcement_id` (for counting reactions per announcement)
+- Compound: `(announcement_id, user_id, reaction_type)` (unique constraint)
+
+---
+
+## 4. FRONTEND INTEGRATION POINTS
+
+### 4.1 Components to Update
+
+**Replace Mock Data Imports:**
+- `WorkDepartmentNavigator.js` → Call `GET /api/organizations/{org_id}/departments`
+- `WorkAnnouncementsWidget.js` → Call `GET /api/organizations/{org_id}/announcements?limit=5`
+- `WorkDepartmentManager.js` → Call department CRUD endpoints
+- `WorkAnnouncementComposer.js` → Call `POST` or `PUT` announcement endpoints
+- `WorkAnnouncementCard.js` → Call reaction and pin endpoints
+- `WorkAnnouncementsList.js` → Call `GET` announcements with filters
+
+### 4.2 API Call Pattern
 ```javascript
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const token = localStorage.getItem('zion_token');
 
-headers: {
-  'Authorization': `Bearer ${token}`,
-  'Content-Type': 'application/json'
-}
-```
-
----
-
-## 6. Error Handling
-
-**Standard error responses:**
-- 401: Unauthorized (redirect to login)
-- 403: Forbidden (insufficient permissions)
-- 404: Not found
-- 500: Server error
-
-**Frontend should handle:**
-```javascript
-try {
-  const response = await fetch(...);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Request failed');
+const response = await fetch(`${BACKEND_URL}/api/organizations/${orgId}/departments`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
   }
+});
+
+if (response.ok) {
   const data = await response.json();
-  // Handle success
-} catch (error) {
-  console.error('API Error:', error);
-  // Show user-friendly error message
+  // Use data.data
 }
 ```
 
 ---
 
-## 7. Integration Steps
+## 5. AUTHORIZATION RULES SUMMARY
 
-### Step 1: Update WorkOrganizationList.js
-- Remove mock data imports
-- Add API call to fetch user's organizations
-- Add loading states
-- Add error handling
+**Departments:**
+- Create/Delete: OWNER or ADMIN
+- Update: OWNER, ADMIN, or DEPARTMENT_HEAD
+- Add/Remove Members: OWNER, ADMIN, or DEPARTMENT_HEAD
+- View: Any organization member
 
-### Step 2: Update WorkOrganizationProfile.js
-- Replace mock data with API calls
-- Load organization details
-- Load organization members
-- Update members tab to use real data
-
-### Step 3: Update WorkSetupPage.js
-- Implement real search functionality
-- Implement organization creation with API
-- Add form validation
-- Handle success/error states
-
-### Step 4: Remove mock-work.js (after testing)
-- Once all components use real API
-- Keep file for reference during development
-- Remove imports from all components
-
-### Step 5: Testing
-- Test organization creation flow
-- Test search functionality
-- Test organization profile loading
-- Test member list display
-- Verify all permissions work correctly
+**Announcements:**
+- Create: OWNER, ADMIN, or DEPARTMENT_HEAD
+- Update/Delete: Author, OWNER, or ADMIN
+- Pin/Unpin: OWNER or ADMIN
+- View/React: Any organization member
 
 ---
 
-## 8. Testing Credentials
+## 6. ERROR HANDLING
 
-**Test User:**
-- Email: `test@zion.city`
-- Password: `Test123456`
-
-**Or create new user via:**
-```bash
-curl -X POST http://localhost:8001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password123","first_name":"First","last_name":"Last"}'
+All endpoints return consistent error format:
+```json
+{
+  "detail": "Error message here"
+}
 ```
 
----
-
-## 9. Next Features (Future)
-
-**Not in Phase B, but documented for future:**
-- Organization posts in wall feed
-- Invite members modal (frontend)
-- Organization settings page functionality
-- Update organization details
-- Remove members
-- Role management
-- Organization chat groups
-
----
-
-## Summary
-
-**Phase B Goal:** Replace all mock data with real API calls while maintaining the beautiful UI from Phase A.
-
-**Priority Order:**
-1. WorkOrganizationList (show real user orgs)
-2. WorkOrganizationProfile (show real org details)
-3. WorkSetupPage - Create (create real organizations)
-4. WorkSetupPage - Search (search real organizations)
-5. Testing and refinement
-
-**Backend is ready. Let's connect the dots!**
+Common HTTP Status Codes:
+- 200: Success
+- 201: Created
+- 400: Bad Request (validation error)
+- 401: Unauthorized (no token or invalid token)
+- 403: Forbidden (insufficient permissions)
+- 404: Not Found
+- 500: Internal Server Error
