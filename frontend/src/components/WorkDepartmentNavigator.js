@@ -39,13 +39,25 @@ function WorkDepartmentNavigator({ organizationId, activeDepartmentId, onDepartm
   };
 
   const getDepartmentStats = (deptId) => {
-    // Mock stats - will be replaced with real data from backend
+    // Mock stats for now - can be enhanced with real analytics later
     return {
       posts: Math.floor(Math.random() * 50) + 5,
       announcements: Math.floor(Math.random() * 10),
       activity: Math.floor(Math.random() * 100)
     };
   };
+
+  if (loading) {
+    return (
+      <div className="widget department-navigator-widget">
+        <div className="widget-header">
+          <Building2 size={16} style={{ color: moduleColor }} />
+          <span>Отделы</span>
+        </div>
+        <div className="loading-state">Загрузка...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="widget department-navigator-widget">
