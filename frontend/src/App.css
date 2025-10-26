@@ -14292,7 +14292,7 @@ a,
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   z-index: 60;
   padding: 1rem;
 }
