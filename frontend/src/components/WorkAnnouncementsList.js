@@ -302,7 +302,12 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
 
       {/* Announcements List */}
       <div className="announcements-container">
-        {filteredAnnouncements.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">
+            <Megaphone size={48} style={{ color: '#BCC0C4' }} />
+            <p>Загрузка объявлений...</p>
+          </div>
+        ) : announcements.length === 0 ? (
           <div className="empty-state">
             <Megaphone size={64} style={{ color: '#BCC0C4' }} />
             <h3>Нет объявлений</h3>
@@ -317,7 +322,7 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
             </button>
           </div>
         ) : (
-          filteredAnnouncements.map(announcement => (
+          announcements.map(announcement => (
             <WorkAnnouncementCard
               key={announcement.id}
               announcement={announcement}
@@ -326,6 +331,7 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
               onPin={handlePin}
               onReact={handleReact}
               currentUserId={currentUserId}
+              organizationId={organizationId}
               moduleColor={moduleColor}
             />
           ))
