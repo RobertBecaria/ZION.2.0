@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react';
-import { getDepartmentsByOrg, mockWorkUsers } from '../mock-work';
+import { mockWorkUsers } from '../mock-work';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
-  const [departments, setDepartments] = useState(getDepartmentsByOrg(organizationId));
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState(null);
   const [formData, setFormData] = useState({
@@ -12,6 +15,32 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
     color: '#1D4ED8',
     head_id: ''
   });
+
+  useEffect(() => {
+    fetchDepartments();
+  }, [organizationId]);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/organizations/${organizationId}/departments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDepartments(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const colorOptions = [
     { color: '#1D4ED8', name: 'Синий' },
