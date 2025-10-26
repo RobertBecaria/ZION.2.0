@@ -184,20 +184,6 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
     ));
   };
 
-  // Filter announcements
-  const filteredAnnouncements = announcements.filter(ann => {
-    if (filters.priority !== 'all' && ann.priority !== filters.priority) return false;
-    if (filters.pinned === 'pinned' && !ann.is_pinned) return false;
-    if (filters.pinned === 'unpinned' && ann.is_pinned) return false;
-    if (filters.department !== 'all') {
-      if (ann.target_type === 'ALL') return true;
-      if (ann.department_id === filters.department) return true;
-      if (ann.target_departments && ann.target_departments.includes(filters.department)) return true;
-      return false;
-    }
-    return true;
-  });
-
   const stats = {
     total: announcements.length,
     urgent: announcements.filter(a => a.priority === 'URGENT').length,
@@ -219,7 +205,7 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
             </div>
             <div>
               <h1>Объявления организации</h1>
-              <p>{filteredAnnouncements.length} из {announcements.length} объявлений</p>
+              <p>{loading ? 'Загрузка...' : `${announcements.length} объявлений`}</p>
             </div>
           </div>
           <button
