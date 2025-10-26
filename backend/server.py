@@ -8845,6 +8845,10 @@ async def get_teams(
         })
         teams = await teams_cursor.to_list(100)
         
+        # Clean teams data for JSON serialization
+        for team in teams:
+            team.pop("_id", None)  # Remove MongoDB ObjectId
+        
         return {"success": True, "data": teams}
         
     except HTTPException:
