@@ -1806,6 +1806,31 @@ function Dashboard() {
             </div>
           )}
 
+          {/* ORGANIZATIONS Module - Department & Announcements Widgets */}
+          {activeModule === 'organizations' && selectedOrganizationId && (activeView === 'work-org-profile' || activeView === 'wall' || activeView === 'feed') && (
+            <>
+              {/* Department Navigator Widget */}
+              <WorkDepartmentNavigator
+                organizationId={selectedOrganizationId}
+                activeDepartmentId={activeDepartmentId}
+                onDepartmentSelect={setActiveDepartmentId}
+                onCreateDepartment={() => setShowDepartmentManager(true)}
+                moduleColor={currentModule.color}
+              />
+
+              {/* Announcements Widget */}
+              <WorkAnnouncementsWidget
+                organizationId={selectedOrganizationId}
+                departmentId={activeDepartmentId}
+                onViewAll={() => {
+                  // TODO: Navigate to announcements list view
+                  console.log('View all announcements');
+                }}
+                moduleColor={currentModule.color}
+              />
+            </>
+          )}
+
           {/* MEDIA Views - Media-specific controls */}
           {(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos') && (
             <>
