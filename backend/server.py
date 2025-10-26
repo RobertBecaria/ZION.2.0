@@ -8053,13 +8053,10 @@ async def react_to_announcement(
     organization_id: str,
     announcement_id: str,
     reaction_data: AnnouncementReactionRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """React to an announcement (toggle reaction)."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check if user is member
         membership = await db.work_memberships.find_one({
             "organization_id": organization_id,
