@@ -7812,13 +7812,10 @@ async def list_announcements(
     pinned: Optional[bool] = None,
     limit: int = 50,
     offset: int = 0,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """List announcements in an organization."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check if user is member
         membership = await db.work_memberships.find_one({
             "organization_id": organization_id,
