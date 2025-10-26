@@ -416,23 +416,6 @@ function RegistrationForm({ onSwitchToLogin }) {
           </div>
           
           <div className="form-group">
-            <label>Пол</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              className="form-select"
-            >
-              <option value="">Предпочитаю не указывать</option>
-              <option value="MALE">Мужской</option>
-              <option value="FEMALE">Женский</option>
-            </select>
-            <span className="info-hint" style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '4px', display: 'block' }}>
-              Используется для корректного отображения текста на русском языке
-            </span>
-          </div>
-          
-          <div className="form-group">
             <label>Пароль *</label>
             <div className="password-input">
               <input
