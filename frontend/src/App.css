@@ -13953,7 +13953,7 @@ a,
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -13979,7 +13979,7 @@ a,
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -13998,7 +13998,7 @@ a,
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -14254,7 +14254,7 @@ a,
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
@@ -14275,7 +14275,7 @@ a,
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
