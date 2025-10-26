@@ -7423,13 +7423,10 @@ async def root():
 async def create_department(
     organization_id: str,
     department_data: DepartmentCreate,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user: dict = Depends(get_current_user)
 ):
     """Create a new department in an organization."""
     try:
-        # Verify token and get current user
-        current_user = await get_current_user(credentials.credentials)
-        
         # Check if organization exists
         organization = await db.work_organizations.find_one({"id": organization_id})
         if not organization:
