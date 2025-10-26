@@ -256,21 +256,18 @@ class WorkMemberSettingsAPITester:
             return False
 
     def test_get_organization_role_change_requests(self):
-        """Test getting all role change requests for organization - GET /api/work/organizations/{organization_id}/role-change-requests"""
+        """Test getting all change requests for organization - GET /api/work/organizations/{organization_id}/change-requests"""
         if not self.organization_id:
-            self.log_test("Get Organization Role Change Requests", False, "No organization_id available")
+            self.log_test("Get Organization Change Requests", False, "No organization_id available")
             return False
         
-        success, response = self.make_request("GET", f"work/organizations/{self.organization_id}/role-change-requests", None, 200, self.admin_token)
+        success, response = self.make_request("GET", f"work/organizations/{self.organization_id}/change-requests", None, 200, self.admin_token)
         
         if success:
-            self.log_test("Get Organization Role Change Requests", True)
+            self.log_test("Get Organization Change Requests", True)
             return True
         else:
-            if response.get("status_code") == 404:
-                self.log_test("Get Organization Role Change Requests", False, "Endpoint not implemented (404)")
-            else:
-                self.log_test("Get Organization Role Change Requests", False, f"Response: {response}")
+            self.log_test("Get Organization Change Requests", False, f"Response: {response}")
             return False
 
     def test_get_specific_role_change_request(self):
