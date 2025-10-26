@@ -80,32 +80,60 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
     }
   };
 
-  const handleSave = (announcementData) => {
-    if (editingAnnouncement) {
-      // Update existing
-      setAnnouncements(announcements.map(a => 
-        a.id === editingAnnouncement.id 
-          ? { ...a, ...announcementData }
-          : a
-      ));
-      alert('Объявление обновлено!');
-    } else {
-      // Create new
-      const newAnnouncement = {
-        id: `ann-${Date.now()}`,
-        organization_id: organizationId,
-        ...announcementData,
-        author_id: currentUserId,
-        author_name: 'Вы',
-        created_at: new Date().toISOString(),
-        views: 0,
-        reactions: {}
-      };
-      setAnnouncements([newAnnouncement, ...announcements]);
-      alert('Объявление опубликовано!');
+  const handleSave = async (announcementData) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      
+      if (editingAnnouncement) {
+        // Update existing
+        const response = await fetch(
+          `${BACKEND_URL}/api/organizations/${organizationId}/announcements/${editingAnnouncement.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(announcementData)
+          }
+        );
+
+        if (response.ok) {
+          alert('Объявление обновлено!');
+          await fetchAnnouncements();
+        } else {
+          const error = await response.json();
+          alert(error.detail || 'Ошибка при обновлении');
+        }
+      } else {
+        // Create new
+        const response = await fetch(
+          `${BACKEND_URL}/api/organizations/${organizationId}/announcements`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(announcementData)
+          }
+        );
+
+        if (response.ok) {
+          alert('Объявление опубликовано!');
+          await fetchAnnouncements();
+        } else {
+          const error = await response.json();
+          alert(error.detail || 'Ошибка при создании');
+        }
+      }
+
+      setShowComposer(false);
+      setEditingAnnouncement(null);
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      alert('Произошла ошибка');
     }
-    setShowComposer(false);
-    setEditingAnnouncement(null);
   };
 
   const handleEdit = (announcement) => {
@@ -113,31 +141,47 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
     setShowComposer(true);
   };
 
-  const handleDelete = (announcementId) => {
+  const handleDelete = async (announcementId) => {
     if (window.confirm('Удалить это объявление?')) {
-      setAnnouncements(announcements.filter(a => a.id !== announcementId));
-      alert('Объявление удалено');
+      try {
+        const token = localStorage.getItem('zion_token');
+        const response = await fetch(
+          `${BACKEND_URL}/api/organizations/${organizationId}/announcements/${announcementId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.ok) {
+          alert('Объявление удалено');
+          await fetchAnnouncements();
+        } else {
+          const error = await response.json();
+          alert(error.detail || 'Ошибка при удалении');
+        }
+      } catch (error) {
+        console.error('Error deleting announcement:', error);
+        alert('Произошла ошибка');
+      }
     }
   };
 
-  const handlePin = (announcementId, isPinned) => {
-    setAnnouncements(announcements.map(a => 
-      a.id === announcementId 
-        ? { ...a, is_pinned: isPinned }
-        : a
-    ));
-    alert(isPinned ? 'Объявление закреплено' : 'Объявление откреплено');
+  const handlePin = async (announcementId, isPinned) => {
+    // Just refresh - the card handles the actual API call
+    await fetchAnnouncements();
   };
 
-  const handleReact = (announcementId, reactionType) => {
-    setAnnouncements(announcements.map(a => {
-      if (a.id === announcementId) {
-        const reactions = { ...a.reactions };
-        reactions[reactionType] = (reactions[reactionType] || 0) + 1;
-        return { ...a, reactions };
-      }
-      return a;
-    }));
+  const handleReact = async (announcementId, reactionType, newReactions) => {
+    // Update local state with new reactions
+    setAnnouncements(announcements.map(a => 
+      a.id === announcementId 
+        ? { ...a, reactions: newReactions }
+        : a
+    ));
   };
 
   // Filter announcements
