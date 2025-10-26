@@ -8724,7 +8724,7 @@ async def approve_change_request(
             {"id": request_id},
             {"$set": {
                 "status": "APPROVED",
-                "reviewed_by": current_user["id"],
+                "reviewed_by": current_user.id,
                 "reviewed_at": datetime.now(timezone.utc)
             }}
         )
@@ -8770,7 +8770,7 @@ async def reject_change_request(
             {"id": request_id},
             {"$set": {
                 "status": "REJECTED",
-                "reviewed_by": current_user["id"],
+                "reviewed_by": current_user.id,
                 "reviewed_at": datetime.now(timezone.utc),
                 "rejection_reason": rejection_reason
             }}
