@@ -24,6 +24,9 @@ import WorkOrganizationList from './components/WorkOrganizationList';
 import WorkOrganizationProfile from './components/WorkOrganizationProfile';
 import WorkSearchOrganizations from './components/WorkSearchOrganizations';
 import WorkJoinRequests from './components/WorkJoinRequests';
+import WorkDepartmentNavigator from './components/WorkDepartmentNavigator';
+import WorkAnnouncementsWidget from './components/WorkAnnouncementsWidget';
+import WorkDepartmentManager from './components/WorkDepartmentManager';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
