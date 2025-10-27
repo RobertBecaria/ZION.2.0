@@ -227,7 +227,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
           <div className="px-8 pb-6">
             <div className="flex items-start gap-6 -mt-16 relative">
               {/* Logo */}
-              <div className="w-32 h-32 rounded-2xl bg-white border-4 border-white shadow-xl overflow-hidden">
+              <div className="w-32 h-32 rounded-2xl bg-white border-4 border-white shadow-xl overflow-hidden relative z-10">
                 <img
                   src={organization.logo_url}
                   alt={organization.name}
