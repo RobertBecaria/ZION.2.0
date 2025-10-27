@@ -1,52 +1,108 @@
 #!/usr/bin/env python3
+"""
+Join Request Notifications Integration Backend Testing
+Testing all join request endpoints for work organizations
+"""
 
 import requests
-import sys
 import json
-from datetime import datetime
 import uuid
+from datetime import datetime
 
-class FamilySettingsAPITester:
-    def __init__(self, base_url="https://zion-work-module-1.preview.emergentagent.com"):
-        self.base_url = base_url
-        self.token = None
-        self.user_id = None
-        self.family_id = None
-        self.tests_run = 0
-        self.tests_passed = 0
-        self.test_user_email = f"test_family_{datetime.now().strftime('%H%M%S')}@example.com"
-        self.test_user_data = {
-            "email": self.test_user_email,
-            "password": "TestPass123!",
-            "first_name": "Test",
-            "last_name": "Family", 
-            "middle_name": "Settings",
-            "phone": "+1234567890"
-        }
-        self.test_results = []
+# Configuration
+BASE_URL = "https://zion-work-module-1.preview.emergentagent.com/api"
+ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organization
 
-    def log_test(self, name, success, details=""):
-        """Log test results"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            print(f"✅ {name}")
-        else:
-            print(f"❌ {name} - {details}")
+# Test credentials
+ADMIN_EMAIL = "admin@test.com"
+ADMIN_PASSWORD = "admin123"
+
+class JoinRequestTester:
+    def __init__(self):
+        self.admin_token = None
+        self.test_user_token = None
+        self.test_user_id = None
+        self.test_user_email = None
+        self.join_request_id = None
+        self.results = []
         
-        self.test_results.append({
-            "test_name": name,
-            "success": success,
+    def log_result(self, test_name, success, details="", response_data=None):
+        """Log test result"""
+        status = "✅ PASS" if success else "❌ FAIL"
+        result = {
+            "test": test_name,
+            "status": status,
             "details": details,
-            "timestamp": datetime.now().isoformat()
-        })
+            "response_data": response_data
+        }
+        self.results.append(result)
+        print(f"{status}: {test_name}")
+        if details:
+            print(f"   Details: {details}")
+        if not success and response_data:
+            print(f"   Response: {response_data}")
+        print()
 
-    def make_request(self, method, endpoint, data=None, expected_status=200):
-        """Make API request with error handling"""
-        url = f"{self.base_url}/api/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
-        if self.token:
-            headers['Authorization'] = f'Bearer {self.token}'
+    def authenticate_admin(self):
+        """Authenticate admin user"""
+        try:
+            response = requests.post(f"{BASE_URL}/auth/login", json={
+                "email": ADMIN_EMAIL,
+                "password": ADMIN_PASSWORD
+            })
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.admin_token = data.get("access_token")
+                self.log_result("Admin Authentication", True, f"Admin logged in successfully")
+                return True
+            else:
+                self.log_result("Admin Authentication", False, f"Status: {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Admin Authentication", False, f"Exception: {str(e)}")
+            return False
+
+    def create_test_user(self):
+        """Create a test user for join requests"""
+        try:
+            # Generate unique email
+            unique_id = str(uuid.uuid4())[:8]
+            self.test_user_email = f"jointest_{unique_id}@example.com"
+            test_password = "testpass123"
+            
+            # Register test user
+            response = requests.post(f"{BASE_URL}/auth/register", json={
+                "email": self.test_user_email,
+                "password": test_password,
+                "first_name": "Join",
+                "last_name": "Tester"
+            })
+            
+            if response.status_code == 201:
+                # Login test user
+                login_response = requests.post(f"{BASE_URL}/auth/login", json={
+                    "email": self.test_user_email,
+                    "password": test_password
+                })
+                
+                if login_response.status_code == 200:
+                    login_data = login_response.json()
+                    self.test_user_token = login_data.get("access_token")
+                    self.test_user_id = login_data.get("user", {}).get("id")
+                    self.log_result("Test User Creation", True, f"Created user: {self.test_user_email}")
+                    return True
+                else:
+                    self.log_result("Test User Creation", False, f"Login failed: {login_response.status_code}", login_response.text)
+                    return False
+            else:
+                self.log_result("Test User Creation", False, f"Registration failed: {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Test User Creation", False, f"Exception: {str(e)}")
+            return False
 
         try:
             if method == 'GET':
