@@ -490,8 +490,8 @@ class AdminChangeRequestsTester:
                     self.admin_token
                 )
                 
-                if success2 and isinstance(response2, list):
-                    pending_count = len(response2)
+                if success2 and response2.get("success") and isinstance(response2.get("data"), list):
+                    pending_count = len(response2["data"])
                     if pending_count >= 1:
                         self.log_test("Badge Count Integration", True, f"Badge count shows {pending_count} pending requests")
                         return True
