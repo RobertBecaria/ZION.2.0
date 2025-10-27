@@ -127,6 +127,9 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         }
       } else {
         // Create new
+        console.log('Creating department with organization ID:', organizationId);
+        console.log('Form data:', formData);
+        
         const response = await fetch(
           `${BACKEND_URL}/api/organizations/${organizationId}/departments`,
           {
@@ -139,12 +142,15 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
           }
         );
 
+        console.log('Response status:', response.status);
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+
         if (response.ok) {
           alert('Отдел создан!');
           await fetchDepartments();
         } else {
-          const error = await response.json();
-          alert(error.detail || 'Ошибка при создании отдела');
+          alert(responseData.detail || 'Ошибка при создании отдела');
         }
       }
 
