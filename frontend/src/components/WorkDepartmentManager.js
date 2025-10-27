@@ -4,6 +4,8 @@ import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
+  console.log('WorkDepartmentManager loaded with organizationId:', organizationId);
+  
   const [departments, setDepartments] = useState([]);
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loading, setLoading] = useState(true);
