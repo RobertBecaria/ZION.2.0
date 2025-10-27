@@ -43,6 +43,25 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
     }
   };
 
+  const fetchOrganizationMembers = async () => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrganizationMembers(data.members || []);
+      }
+    } catch (error) {
+      console.error('Error fetching organization members:', error);
+    }
+  };
+
   const colorOptions = [
     { color: '#1D4ED8', name: 'Синий' },
     { color: '#059669', name: 'Зеленый' },
