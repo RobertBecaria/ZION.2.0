@@ -100,6 +100,24 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
     }
   };
 
+  const loadPendingChangeRequests = async () => {
+    try {
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const token = localStorage.getItem('zion_token');
+
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/change-requests?status=PENDING`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPendingChangeRequestsCount(data.data?.length || 0);
+      }
+    } catch (error) {
+      console.error('Error loading change requests:', error);
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError(null);
