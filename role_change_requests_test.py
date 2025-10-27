@@ -215,14 +215,25 @@ class RoleChangeRequestsAPITester:
             self.log_test("Verify Role Updated", False, "No member token")
             return False
         
-        success, response = self.make_request("GET", f"work/organizations/{self.org_id}/members/me", 
+        # Get all members and find our test member
+        success, response = self.make_request("GET", f"work/organizations/{self.org_id}/members", 
                                             None, 200, token=self.member_token)
         
-        if success and response.get("role") == "MANAGER":
-            self.log_test("Verify Role Updated", True, "Role successfully updated to MANAGER")
-            return True
+        if success and "members" in response:
+            # Find our test member by email
+            for member in response["members"]:
+                if member.get("user_email") == self.member_credentials["email"]:
+                    if member.get("role") == "MANAGER":
+                        self.log_test("Verify Role Updated", True, "Role successfully updated to MANAGER")
+                        return True
+                    else:
+                        self.log_test("Verify Role Updated", False, f"Role not updated. Current role: {member.get('role')}")
+                        return False
+            
+            self.log_test("Verify Role Updated", False, "Test member not found in members list")
+            return False
         else:
-            self.log_test("Verify Role Updated", False, f"Role not updated. Response: {response}")
+            self.log_test("Verify Role Updated", False, f"Failed to get members. Response: {response}")
             return False
 
     def test_create_another_change_request_for_rejection(self):
