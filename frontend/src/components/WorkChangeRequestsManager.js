@@ -245,16 +245,16 @@ const WorkChangeRequestsManager = ({ organizationId, onRequestHandled }) => {
         </div>
       )}
       
-      {!loading && requests.length === 0 && (
+      {!loading && (requestType === 'change' ? changeRequests : joinRequests).length === 0 && (
         <div className="empty-state">
           <Clock size={48} style={{ opacity: 0.3 }} />
           <p>Нет запросов со статусом "{statusFilter === 'PENDING' ? 'Ожидание' : statusFilter === 'APPROVED' ? 'Одобрено' : 'Отклонено'}"</p>
         </div>
       )}
       
-      {!loading && requests.length > 0 && (
+      {!loading && (requestType === 'change' ? changeRequests : joinRequests).length > 0 && (
         <div className="requests-list">
-          {requests.map((request) => (
+          {(requestType === 'change' ? changeRequests : joinRequests).map((request) => (
             <div key={request.id} className="request-card">
               <div className="request-header">
                 <div className="user-info">
