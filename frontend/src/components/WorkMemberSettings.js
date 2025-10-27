@@ -107,54 +107,6 @@ const WorkMemberSettings = ({ organizationId, currentMembership, onClose, onUpda
     }
   };
   
-  const handleCreateTeam = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      if (!teamName.trim()) {
-        setError('Введите название команды');
-        return;
-      }
-      
-      const token = localStorage.getItem('zion_token');
-      
-      const response = await fetch(
-        `${API}/work/organizations/${organizationId}/teams`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: teamName,
-            description: teamDescription
-          })
-        }
-      );
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.detail || 'Ошибка при создании команды');
-      }
-      
-      setSuccess('Команда успешно создана!');
-      setShowTeamForm(false);
-      setTeamName('');
-      setTeamDescription('');
-      
-      if (onUpdate) {
-        onUpdate();
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const handleLeaveOrganization = async () => {
     try {
       setLoading(true);
