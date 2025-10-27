@@ -323,9 +323,9 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
                   onChange={(e) => setFormData({ ...formData, head_id: e.target.value })}
                 >
                   <option value="">Выберите руководителя</option>
-                  {mockWorkUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.first_name} {user.last_name}
+                  {organizationMembers.map((member) => (
+                    <option key={member.user_id} value={member.user_id}>
+                      {member.first_name} {member.last_name} ({member.role})
                     </option>
                   ))}
                 </select>
