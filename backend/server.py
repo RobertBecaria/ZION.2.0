@@ -1079,6 +1079,41 @@ class WorkChangeRequestResponse(BaseModel):
     user_email: str
     user_avatar_url: Optional[str]
 
+# === WORK NOTIFICATION MODELS ===
+
+class NotificationType(str, Enum):
+    ROLE_CHANGE_APPROVED = "ROLE_CHANGE_APPROVED"
+    ROLE_CHANGE_REJECTED = "ROLE_CHANGE_REJECTED"
+    JOIN_REQUEST_APPROVED = "JOIN_REQUEST_APPROVED"
+    JOIN_REQUEST_REJECTED = "JOIN_REQUEST_REJECTED"
+    DEPARTMENT_CHANGE_APPROVED = "DEPARTMENT_CHANGE_APPROVED"
+    DEPARTMENT_CHANGE_REJECTED = "DEPARTMENT_CHANGE_REJECTED"
+    TEAM_CHANGE_APPROVED = "TEAM_CHANGE_APPROVED"
+    TEAM_CHANGE_REJECTED = "TEAM_CHANGE_REJECTED"
+
+class WorkNotification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # User who receives the notification
+    organization_id: str
+    notification_type: NotificationType
+    title: str  # Short title of notification
+    message: str  # Detailed message
+    related_request_id: Optional[str] = None  # ID of the related request
+    is_read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WorkNotificationResponse(BaseModel):
+    id: str
+    user_id: str
+    organization_id: str
+    notification_type: NotificationType
+    title: str
+    message: str
+    related_request_id: Optional[str]
+    is_read: bool
+    created_at: datetime
+    organization_name: Optional[str] = None
+
 class WorkMemberSettingsUpdate(BaseModel):
     """Member updates their own settings - creates change requests for role/dept/team"""
     job_title: Optional[str] = None  # Direct update, no approval needed
