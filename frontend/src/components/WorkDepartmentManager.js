@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react';
-import { mockWorkUsers } from '../mock-work';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
   const [departments, setDepartments] = useState([]);
+  const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState(null);
@@ -18,6 +18,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
 
   useEffect(() => {
     fetchDepartments();
+    fetchOrganizationMembers();
   }, [organizationId]);
 
   const fetchDepartments = async () => {
