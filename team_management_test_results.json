@@ -1,0 +1,101 @@
+{
+  "total_tests": 14,
+  "passed_tests": 13,
+  "failed_tests": 1,
+  "success_rate": 92.85714285714286,
+  "test_results": [
+    {
+      "test_name": "Admin Login",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T11:32:53.343966"
+    },
+    {
+      "test_name": "Create Test Member & Add to Organization",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T11:32:53.663609"
+    },
+    {
+      "test_name": "Create Non-Member User",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T11:32:53.934662"
+    },
+    {
+      "test_name": "Create Team - Minimal Data",
+      "success": true,
+      "details": "Team ID: 0a9ca865-43a7-4701-9b63-5291c569557e",
+      "timestamp": "2025-10-27T11:32:53.980349"
+    },
+    {
+      "test_name": "Create Team - Full Data",
+      "success": true,
+      "details": "Team ID: 0b6e3f2b-7b31-40b5-869f-24f7f7650d7f",
+      "timestamp": "2025-10-27T11:32:54.025545"
+    },
+    {
+      "test_name": "Create Team - Default Team Lead",
+      "success": true,
+      "details": "Team ID: c5d3424b-d72b-45e6-a7f3-3cedfc9a7b1b",
+      "timestamp": "2025-10-27T11:32:54.068078"
+    },
+    {
+      "test_name": "Create Team - Validation Error (Missing Name)",
+      "success": true,
+      "details": "Correctly rejected team without name",
+      "timestamp": "2025-10-27T11:32:54.149813"
+    },
+    {
+      "test_name": "Get Teams - As Member",
+      "success": true,
+      "details": "Found 3 total teams, 3 test teams",
+      "timestamp": "2025-10-27T11:32:54.188397"
+    },
+    {
+      "test_name": "Team Data Structure Validation",
+      "success": true,
+      "details": "All required fields present",
+      "timestamp": "2025-10-27T11:32:54.188411"
+    },
+    {
+      "test_name": "Creator in Members Check",
+      "success": true,
+      "details": "Verified 3 teams have creator in member_ids",
+      "timestamp": "2025-10-27T11:32:54.226464"
+    },
+    {
+      "test_name": "Team Lead Default Check",
+      "success": true,
+      "details": "Creator de98a7ad-a6d4-445f-a32e-31440e46ac77 correctly set as team lead",
+      "timestamp": "2025-10-27T11:32:54.264358"
+    },
+    {
+      "test_name": "Non-Member Create Team - Authorization Check",
+      "success": true,
+      "details": "Correctly denied access to non-member",
+      "timestamp": "2025-10-27T11:32:54.300964"
+    },
+    {
+      "test_name": "Non-Member Get Teams - Authorization Check",
+      "success": true,
+      "details": "Correctly denied access to non-member",
+      "timestamp": "2025-10-27T11:32:54.378831"
+    },
+    {
+      "test_name": "Unauthenticated Access Check",
+      "success": false,
+      "details": "Create blocked: False, Get blocked: False",
+      "timestamp": "2025-10-27T11:32:54.450657"
+    }
+  ],
+  "organization_id": "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf",
+  "created_teams": [
+    "0a9ca865-43a7-4701-9b63-5291c569557e",
+    "0b6e3f2b-7b31-40b5-869f-24f7f7650d7f",
+    "c5d3424b-d72b-45e6-a7f3-3cedfc9a7b1b"
+  ],
+  "admin_user_id": "b2b2f7ee-5b9c-4972-8658-50be80d9429e",
+  "member_user_id": "de98a7ad-a6d4-445f-a32e-31440e46ac77",
+  "non_member_user_id": "3062e1be-742c-4463-8f2b-28c17e34b445"
+}
