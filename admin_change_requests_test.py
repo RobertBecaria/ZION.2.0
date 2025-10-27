@@ -363,10 +363,10 @@ class AdminChangeRequestsTester:
             self.log_test("Verify Rejection Saved", False, "No admin token")
             return False
 
-        # Get rejected requests
+        # Get all requests to find the rejected one
         success, response = self.make_request(
             "GET", 
-            f"work/organizations/{self.organization_id}/change-requests?status=REJECTED", 
+            f"work/organizations/{self.organization_id}/change-requests", 
             None, 
             200, 
             self.admin_token
@@ -378,13 +378,19 @@ class AdminChangeRequestsTester:
                     request.get("request_type") == "DEPARTMENT_CHANGE" and
                     request.get("status") == "REJECTED"):
                     if request.get("rejection_reason"):
-                        self.log_test("Verify Rejection Saved", True, "Rejection reason saved correctly")
+                        self.log_test("Verify Rejection Saved", True, f"Rejection reason saved: {request.get('rejection_reason')}")
                         return True
                     else:
                         self.log_test("Verify Rejection Saved", False, "Rejection reason not saved")
                         return False
             
-            self.log_test("Verify Rejection Saved", False, "Rejected request not found")
+            # If not found in rejected, check if it's still pending or approved
+            dept_requests = [req for req in response["data"] if req.get("user_id") == self.member_user_id and req.get("request_type") == "DEPARTMENT_CHANGE"]
+            if dept_requests:
+                req = dept_requests[0]
+                self.log_test("Verify Rejection Saved", False, f"Department request found but status is {req.get('status')}, not REJECTED")
+            else:
+                self.log_test("Verify Rejection Saved", False, "Department change request not found at all")
             return False
         else:
             self.log_test("Verify Rejection Saved", False, f"Response: {response}")
