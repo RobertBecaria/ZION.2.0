@@ -306,21 +306,21 @@ const WorkChangeRequestsManager = ({ organizationId, onRequestHandled }) => {
               <div className="request-header">
                 <div className="user-info">
                   <div className="avatar">
-                    {request.user_avatar_url ? (
-                      <img src={request.user_avatar_url} alt={request.user_first_name} />
+                    {(requestType === 'change' ? request.user_avatar_url : request.avatar_url) ? (
+                      <img src={requestType === 'change' ? request.user_avatar_url : request.avatar_url} alt={requestType === 'change' ? request.user_first_name : request.first_name} />
                     ) : (
                       <div className="avatar-placeholder">
-                        {request.user_first_name?.[0]}{request.user_last_name?.[0]}
+                        {(requestType === 'change' ? request.user_first_name : request.first_name)?.[0]}{(requestType === 'change' ? request.user_last_name : request.last_name)?.[0]}
                       </div>
                     )}
                   </div>
                   <div>
-                    <h4>{request.user_first_name} {request.user_last_name}</h4>
-                    <p className="email">{request.user_email}</p>
+                    <h4>{requestType === 'change' ? `${request.user_first_name} ${request.user_last_name}` : `${request.first_name} ${request.last_name}`}</h4>
+                    <p className="email">{requestType === 'change' ? request.user_email : request.email}</p>
                   </div>
                 </div>
                 <div className="request-type">
-                  {getRequestTypeLabel(request.request_type)}
+                  {requestType === 'change' ? getRequestTypeLabel(request.request_type) : 'Запрос на вступление'}
                 </div>
               </div>
               
