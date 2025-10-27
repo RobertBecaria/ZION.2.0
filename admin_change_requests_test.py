@@ -113,21 +113,19 @@ class AdminChangeRequestsTester:
             return False
 
         request_data = {
-            "request_type": "ROLE_CHANGE",
             "requested_role": "MANAGER",
             "reason": "I have been taking on management responsibilities and would like my role to reflect this."
         }
         
         success, response = self.make_request(
-            "POST", 
-            f"work/organizations/{self.organization_id}/change-requests", 
+            "PUT", 
+            f"work/organizations/{self.organization_id}/members/me", 
             request_data, 
             200, 
             self.member_token
         )
         
-        if success and response.get("id"):
-            self.change_request_ids.append(response["id"])
+        if success:
             self.log_test("Member Submit Role Change Request", True)
             return True
         else:
