@@ -6144,9 +6144,6 @@ async def get_work_organization(
 ):
     """Get specific work organization details"""
     try:
-        print(f"[DEBUG] Getting organization: {organization_id}")
-        print(f"[DEBUG] Current user: {current_user.id}")
-        
         org = await db.work_organizations.find_one({
             "$or": [
                 {"id": organization_id},
@@ -6154,8 +6151,6 @@ async def get_work_organization(
             ],
             "is_active": True
         })
-        
-        print(f"[DEBUG] Organization found: {org is not None}")
         
         if not org:
             raise HTTPException(status_code=404, detail="Organization not found")
