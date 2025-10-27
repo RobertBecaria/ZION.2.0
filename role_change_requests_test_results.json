@@ -1,0 +1,91 @@
+{
+  "total_tests": 13,
+  "passed_tests": 2,
+  "failed_tests": 11,
+  "success_rate": 15.384615384615385,
+  "test_results": [
+    {
+      "test_name": "Admin Login",
+      "success": false,
+      "details": "Response: {'raw_response': 'Internal Server Error', 'status_code': 500, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:52.900165"
+    },
+    {
+      "test_name": "Member Registration & Login",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T11:18:53.457880"
+    },
+    {
+      "test_name": "Add Member to Organization",
+      "success": false,
+      "details": "Response: {'detail': 'Not authenticated', 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.495986"
+    },
+    {
+      "test_name": "Member Create Change Request",
+      "success": false,
+      "details": "Response: {'detail': '\u0412\u044b \u043d\u0435 \u044f\u0432\u043b\u044f\u0435\u0442\u0435\u0441\u044c \u0447\u043b\u0435\u043d\u043e\u043c \u044d\u0442\u043e\u0439 \u043e\u0440\u0433\u0430\u043d\u0438\u0437\u0430\u0446\u0438\u0438', 'status_code': 404, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.540077"
+    },
+    {
+      "test_name": "GET Pending Change Requests",
+      "success": false,
+      "details": "Response: {'detail': 'Not authenticated', 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.579623"
+    },
+    {
+      "test_name": "Approve Change Request",
+      "success": false,
+      "details": "No test request ID available",
+      "timestamp": "2025-10-27T11:18:53.579635"
+    },
+    {
+      "test_name": "Verify Role Updated",
+      "success": false,
+      "details": "Role not updated. Response: {'detail': 'Method Not Allowed', 'status_code': 405, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.620461"
+    },
+    {
+      "test_name": "Create Request for Rejection Test",
+      "success": false,
+      "details": "Response: {'detail': '\u0412\u044b \u043d\u0435 \u044f\u0432\u043b\u044f\u0435\u0442\u0435\u0441\u044c \u0447\u043b\u0435\u043d\u043e\u043c \u044d\u0442\u043e\u0439 \u043e\u0440\u0433\u0430\u043d\u0438\u0437\u0430\u0446\u0438\u0438', 'status_code': 404, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.661596"
+    },
+    {
+      "test_name": "Get New Pending Request",
+      "success": false,
+      "details": "Response: {'detail': 'Not authenticated', 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.697400"
+    },
+    {
+      "test_name": "Reject Change Request",
+      "success": false,
+      "details": "No test request ID available",
+      "timestamp": "2025-10-27T11:18:53.697415"
+    },
+    {
+      "test_name": "Verify Rejected Request",
+      "success": false,
+      "details": "Response: {'detail': 'Not authenticated', 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.737247"
+    },
+    {
+      "test_name": "Non-Admin Authorization Check",
+      "success": true,
+      "details": "All admin endpoints properly return 403 for non-admin",
+      "timestamp": "2025-10-27T11:18:53.854142"
+    },
+    {
+      "test_name": "Pending Count Accuracy",
+      "success": false,
+      "details": "Response: {'detail': 'Not authenticated', 'status_code': 403, 'expected_status': 200}",
+      "timestamp": "2025-10-27T11:18:53.893079"
+    }
+  ],
+  "admin_email": "admin@test.com",
+  "member_email": "member_test_111852@example.com",
+  "organization_id": "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf",
+  "admin_user_id": null,
+  "member_user_id": "12d8a176-4c3a-4089-8b2b-bae8e2b3a9dd"
+}
