@@ -6049,7 +6049,7 @@ async def create_work_organization(
         )
         
         # Insert organization
-        org_dict = organization.model_dump(by_alias=True)
+        org_dict = organization.model_dump(by_alias=False)
         await db.work_organizations.insert_one(org_dict)
         
         # Add creator as first member with admin privileges
@@ -6065,13 +6065,11 @@ async def create_work_organization(
             is_admin=True
         )
         
-        member_dict = member.model_dump(by_alias=True)
+        member_dict = member.model_dump(by_alias=False)
         await db.work_members.insert_one(member_dict)
         
         # Return response with user membership details
         response_data = org_dict.copy()
-        if "organization_id" in response_data:
-            response_data["id"] = response_data.pop("organization_id")
         
         return WorkOrganizationResponse(
             **response_data,
