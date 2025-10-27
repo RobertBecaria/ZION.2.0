@@ -5,6 +5,7 @@ import WorkMemberManagement from './WorkMemberManagement';
 import WorkOrganizationSettings from './WorkOrganizationSettings';
 import WorkJoinRequestsManagement from './WorkJoinRequestsManagement';
 import WorkPostFeed from './WorkPostFeed';
+import WorkNotificationBell from './WorkNotificationBell';
 
 const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSettings }) => {
   const [organization, setOrganization] = useState(null);
