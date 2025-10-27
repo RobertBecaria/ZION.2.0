@@ -175,7 +175,7 @@ const WorkChangeRequestsManager = ({ organizationId, onRequestHandled }) => {
       // Refresh list and close modal
       setRejectingRequest(null);
       setRejectionReason('');
-      fetchRequests();
+      fetchChangeRequests();
       // Notify parent component
       if (onRequestHandled) onRequestHandled();
     } catch (err) {
