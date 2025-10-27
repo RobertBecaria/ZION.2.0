@@ -220,7 +220,7 @@ class CleanAdminChangeRequestsTester:
         # Step 7: Verify the request is now rejected with reason
         success, response = self.make_request(
             "GET", 
-            f"work/organizations/{self.organization_id}/change-requests", 
+            f"work/organizations/{self.organization_id}/change-requests?status=REJECTED", 
             None, 
             200, 
             self.admin_token
