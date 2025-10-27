@@ -8850,6 +8850,45 @@ async def reject_change_request(
             }}
         )
         
+        # Create notification for the requesting user
+        org = await db.work_organizations.find_one({"id": organization_id})
+        org_name = org.get("name") if org else "организации"
+        
+        notification_title = "Запрос отклонён"
+        notification_message = f"Ваш запрос на изменение в {org_name} был отклонён."
+        
+        if rejection_reason:
+            notification_message += f" Причина: {rejection_reason}"
+        
+        if request["request_type"] == "ROLE_CHANGE":
+            notification_message = f"Ваш запрос на изменение роли в {org_name} был отклонён."
+            if rejection_reason:
+                notification_message += f" Причина: {rejection_reason}"
+            notification_type = NotificationType.ROLE_CHANGE_REJECTED
+        elif request["request_type"] == "DEPARTMENT_CHANGE":
+            notification_message = f"Ваш запрос на изменение отдела в {org_name} был отклонён."
+            if rejection_reason:
+                notification_message += f" Причина: {rejection_reason}"
+            notification_type = NotificationType.DEPARTMENT_CHANGE_REJECTED
+        elif request["request_type"] == "TEAM_CHANGE":
+            notification_message = f"Ваш запрос на изменение команды в {org_name} был отклонён."
+            if rejection_reason:
+                notification_message += f" Причина: {rejection_reason}"
+            notification_type = NotificationType.TEAM_CHANGE_REJECTED
+        else:
+            notification_type = NotificationType.ROLE_CHANGE_REJECTED
+        
+        notification = WorkNotification(
+            user_id=request["user_id"],
+            organization_id=organization_id,
+            notification_type=notification_type,
+            title=notification_title,
+            message=notification_message,
+            related_request_id=request_id
+        )
+        
+        await db.work_notifications.insert_one(notification.model_dump())
+        
         return {"success": True, "message": "Запрос отклонен"}
         
     except HTTPException:
