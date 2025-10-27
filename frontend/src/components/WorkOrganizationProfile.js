@@ -88,6 +88,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
       const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('zion_token');
 
+      // Load join requests count
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/join-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -95,6 +96,16 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
       if (response.ok) {
         const data = await response.json();
         setPendingRequestsCount(data.requests?.length || 0);
+      }
+
+      // Load change requests count (NEW)
+      const changeRequestsResponse = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/change-requests?status=PENDING`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (changeRequestsResponse.ok) {
+        const changeData = await changeRequestsResponse.json();
+        setPendingChangeRequestsCount(changeData.data?.length || 0);
       }
     } catch (error) {
       console.error('Error loading requests count:', error);
