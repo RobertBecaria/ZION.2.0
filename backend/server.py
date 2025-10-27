@@ -8827,6 +8827,79 @@ async def reject_change_request(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# === WORK NOTIFICATION ENDPOINTS ===
+
+@api_router.get("/work/notifications")
+async def get_user_notifications(
+    current_user: User = Depends(get_current_user),
+    unread_only: bool = False,
+    limit: int = 50
+):
+    """Get notifications for the current user"""
+    try:
+        query = {"user_id": current_user.id}
+        if unread_only:
+            query["is_read"] = False
+        
+        notifications = await db.work_notifications.find(query).sort("created_at", -1).limit(limit).to_list(length=limit)
+        
+        # Enrich notifications with organization names
+        notification_responses = []
+        for notif in notifications:
+            org = await db.work_organizations.find_one({"id": notif["organization_id"]})
+            notification_responses.append(
+                WorkNotificationResponse(
+                    **notif,
+                    organization_name=org.get("name") if org else None
+                )
+            )
+        
+        return {"success": True, "notifications": notification_responses}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/work/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a notification as read"""
+    try:
+        result = await db.work_notifications.update_one(
+            {"id": notification_id, "user_id": current_user.id},
+            {"$set": {"is_read": True}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {"success": True, "message": "Notification marked as read"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/work/notifications/read-all")
+async def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user)
+):
+    """Mark all notifications as read for current user"""
+    try:
+        result = await db.work_notifications.update_many(
+            {"user_id": current_user.id, "is_read": False},
+            {"$set": {"is_read": True}}
+        )
+        
+        return {
+            "success": True,
+            "message": f"Marked {result.modified_count} notifications as read"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/work/organizations/{organization_id}/teams")
 async def create_team(
     organization_id: str,
