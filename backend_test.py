@@ -266,7 +266,7 @@ class JoinRequestTester:
                 "last_name": "Tester"
             })
             
-            if register_response.status_code != 201:
+            if register_response.status_code not in [200, 201]:
                 self.log_result("Reject Join Request", False, "Could not create second test user")
                 return False
             
