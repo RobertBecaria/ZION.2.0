@@ -146,8 +146,8 @@ class AdminChangeRequestsTester:
             self.admin_token
         )
         
-        if success and isinstance(response, list):
-            pending_count = len(response)
+        if success and response.get("success") and isinstance(response.get("data"), list):
+            pending_count = len(response["data"])
             if pending_count >= 1:  # Should have at least the request we just created
                 self.log_test("Admin Get Pending Count", True, f"Found {pending_count} pending requests")
                 return True
