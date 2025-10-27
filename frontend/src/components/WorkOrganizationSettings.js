@@ -325,7 +325,13 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
             <>
               {/* Change Requests Section (NEW) */}
               {activeSection === 'requests' && (
-                <WorkChangeRequestsManager organizationId={organizationId} />
+                <WorkChangeRequestsManager 
+                  organizationId={organizationId}
+                  onRequestHandled={() => {
+                    loadPendingChangeRequests();
+                    if (onSuccess) onSuccess();
+                  }}
+                />
               )}
 
               {/* Success Message */}
