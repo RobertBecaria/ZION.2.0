@@ -6177,12 +6177,15 @@ async def get_work_organization(
         response_data = WorkOrganizationResponse(**org_response_data)
         
         if membership:
-            response_data.user_role = WorkRole(membership["role"])
+            role = membership["role"]
+            response_data.user_role = WorkRole(role)
             response_data.user_custom_role_name = membership.get("custom_role_name")
             response_data.user_department = membership.get("department")
             response_data.user_team = membership.get("team")
-            response_data.user_is_admin = membership.get("is_admin", False)
-            response_data.user_can_invite = membership.get("can_invite", False)
+            # Determine is_admin based on role - ADMIN, OWNER, CEO, etc. are admins
+            admin_roles = ["ADMIN", "OWNER", "CEO", "FOUNDER", "CO_FOUNDER", "PRESIDENT"]
+            response_data.user_is_admin = membership.get("is_admin", role in admin_roles)
+            response_data.user_can_invite = membership.get("can_invite", role in admin_roles or role in ["MANAGER", "SENIOR_MANAGER", "TEAM_LEAD", "DIRECTOR"])
             response_data.user_can_post = membership.get("can_post", True)
             response_data.user_job_title = membership.get("job_title")
         
