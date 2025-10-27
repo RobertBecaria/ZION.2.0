@@ -375,7 +375,7 @@ const WorkChangeRequestsManager = ({ organizationId, onRequestHandled }) => {
                 )}
                 
                 <div className="request-meta">
-                  <span className="date">Создано: {formatDate(request.created_at)}</span>
+                  <span className="date">Создано: {formatDate(requestType === 'change' ? request.created_at : request.requested_at)}</span>
                   {request.reviewed_at && (
                     <span className="date">Рассмотрено: {formatDate(request.reviewed_at)}</span>
                   )}
