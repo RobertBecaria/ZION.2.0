@@ -219,7 +219,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
             </div>
           ) : (
             departments.map((dept) => {
-              const head = mockWorkUsers.find(u => u.id === dept.head_id);
+              const head = organizationMembers.find(m => m.user_id === dept.head_id);
               return (
                 <div key={dept.id} className="department-card">
                   <div className="dept-card-header" style={{ borderTop: `4px solid ${dept.color}` }}>
