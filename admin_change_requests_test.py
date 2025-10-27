@@ -466,14 +466,13 @@ class AdminChangeRequestsTester:
         # Create a new request to test count
         if self.member_token:
             request_data = {
-                "request_type": "TEAM_CHANGE",
                 "requested_team": "Backend Team",
                 "reason": "Testing badge count functionality"
             }
             
             success, response = self.make_request(
-                "POST", 
-                f"work/organizations/{self.organization_id}/change-requests", 
+                "PUT", 
+                f"work/organizations/{self.organization_id}/members/me", 
                 request_data, 
                 200, 
                 self.member_token
