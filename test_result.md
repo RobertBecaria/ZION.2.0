@@ -285,7 +285,7 @@ frontend:
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "WORK MODULE - ORGANIZATIONS LOADING ERROR FIX: Critical bug preventing organizations from loading in Work module. Error: 'Member is not a valid WorkRole' causing organization listing to fail. Root causes: 1) Database had invalid role 'Member' instead of 'MEMBER', 2) Backend queries used wrong field name {'id': ...} instead of {'organization_id': ...}, 3) Wrong collection name 'work_memberships' instead of 'work_members'. All issues fixed and verified."
+user_problem_statement: "ADMIN PANEL - CHANGE REQUESTS MANAGEMENT TESTING: Comprehensive testing of the Admin Panel for managing member change requests (role, department, team). Features tested include: notification badge on Settings button, badge on 'Запросы' tab in settings, real-time count updates after approve/reject, complete member-to-admin workflow, rejection flow with reasons, multiple requests handling, badge count integration, request details validation, authorization controls, and edge cases. All core functionality verified working correctly."
 
 backend:
   - task: "WORK Module - Organizations Loading Critical Bug Fix"
