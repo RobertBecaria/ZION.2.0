@@ -1,102 +1,104 @@
 {
   "total_tests": 15,
-  "passed_tests": 2,
-  "failed_tests": 13,
-  "success_rate": 13.333333333333334,
+  "passed_tests": 11,
+  "failed_tests": 4,
+  "success_rate": 73.33333333333333,
   "test_results": [
     {
       "test_name": "Admin Login",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-27T09:43:09.837254"
+      "timestamp": "2025-10-27T09:45:14.893338"
     },
     {
       "test_name": "Member Login",
       "success": true,
       "details": "",
-      "timestamp": "2025-10-27T09:43:10.600572"
+      "timestamp": "2025-10-27T09:45:15.661771"
     },
     {
       "test_name": "Member Submit Role Change Request",
-      "success": false,
-      "details": "Response: {'detail': 'Method Not Allowed', 'status_code': 405, 'expected_status': 200}",
-      "timestamp": "2025-10-27T09:43:11.138984"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T09:45:16.207503"
     },
     {
       "test_name": "Admin Get Pending Count",
-      "success": false,
-      "details": "Response: {'success': True, 'data': []}",
-      "timestamp": "2025-10-27T09:43:11.679736"
+      "success": true,
+      "details": "Found 1 pending requests",
+      "timestamp": "2025-10-27T09:45:16.750171"
     },
     {
       "test_name": "Admin Get Pending Requests List",
-      "success": false,
-      "details": "Response: {'success': True, 'data': []}",
-      "timestamp": "2025-10-27T09:43:12.218279"
+      "success": true,
+      "details": "Member's request found with correct details",
+      "timestamp": "2025-10-27T09:45:17.290376"
     },
     {
       "test_name": "Admin Approve Request",
-      "success": false,
-      "details": "No admin token or change request ID",
-      "timestamp": "2025-10-27T09:43:12.718389"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T09:45:17.832140"
     },
     {
       "test_name": "Verify Member Role Updated",
       "success": false,
-      "details": "Response: {'members': [{'id': '6323e207-9780-4df8-9a3a-7777767e3270', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '498c8140-3f26-4d99-8d61-4eb7af982985', 'role': 'ADMIN', 'custom_role_name': None, 'department': 'Management', 'team': None, 'job_title': 'Administrator', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': True, 'is_admin': True, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.930000', 'user_first_name': 'Admin', 'user_last_name': 'Test', 'user_email': 'admintest@example.com', 'user_avatar_url': None}, {'id': '0bfc6e4e-79c3-4519-9f96-350b3357c3c3', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '20b9b563-ea8c-49d1-88ad-c244677317a9', 'role': 'MEMBER', 'custom_role_name': None, 'department': 'General', 'team': None, 'job_title': 'Team Member', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': False, 'is_admin': False, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.977000', 'user_first_name': 'Member', 'user_last_name': 'Test', 'user_email': 'membertest@example.com', 'user_avatar_url': None}], 'count': 2, 'departments': {'Management': [{'id': '6323e207-9780-4df8-9a3a-7777767e3270', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '498c8140-3f26-4d99-8d61-4eb7af982985', 'role': 'ADMIN', 'custom_role_name': None, 'department': 'Management', 'team': None, 'job_title': 'Administrator', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': True, 'is_admin': True, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.930000', 'user_first_name': 'Admin', 'user_last_name': 'Test', 'user_email': 'admintest@example.com', 'user_avatar_url': None}], 'General': [{'id': '0bfc6e4e-79c3-4519-9f96-350b3357c3c3', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '20b9b563-ea8c-49d1-88ad-c244677317a9', 'role': 'MEMBER', 'custom_role_name': None, 'department': 'General', 'team': None, 'job_title': 'Team Member', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': False, 'is_admin': False, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.977000', 'user_first_name': 'Member', 'user_last_name': 'Test', 'user_email': 'membertest@example.com', 'user_avatar_url': None}]}}",
-      "timestamp": "2025-10-27T09:43:13.257298"
+      "details": "Response: {'members': [{'id': '6323e207-9780-4df8-9a3a-7777767e3270', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '498c8140-3f26-4d99-8d61-4eb7af982985', 'role': 'ADMIN', 'custom_role_name': None, 'department': 'Management', 'team': None, 'job_title': 'Administrator', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': True, 'is_admin': True, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.930000', 'user_first_name': 'Admin', 'user_last_name': 'Test', 'user_email': 'admintest@example.com', 'user_avatar_url': None}, {'id': '0bfc6e4e-79c3-4519-9f96-350b3357c3c3', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '20b9b563-ea8c-49d1-88ad-c244677317a9', 'role': 'MANAGER', 'custom_role_name': None, 'department': 'General', 'team': None, 'job_title': 'Team Member', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': False, 'is_admin': False, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.977000', 'user_first_name': 'Member', 'user_last_name': 'Test', 'user_email': 'membertest@example.com', 'user_avatar_url': None}], 'count': 2, 'departments': {'Management': [{'id': '6323e207-9780-4df8-9a3a-7777767e3270', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '498c8140-3f26-4d99-8d61-4eb7af982985', 'role': 'ADMIN', 'custom_role_name': None, 'department': 'Management', 'team': None, 'job_title': 'Administrator', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': True, 'is_admin': True, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.930000', 'user_first_name': 'Admin', 'user_last_name': 'Test', 'user_email': 'admintest@example.com', 'user_avatar_url': None}], 'General': [{'id': '0bfc6e4e-79c3-4519-9f96-350b3357c3c3', 'organization_id': '7a1968de-4575-46ef-8d99-7650fd522a2b', 'user_id': '20b9b563-ea8c-49d1-88ad-c244677317a9', 'role': 'MANAGER', 'custom_role_name': None, 'department': 'General', 'team': None, 'job_title': 'Team Member', 'start_date': None, 'is_current': True, 'can_post': True, 'can_invite': False, 'is_admin': False, 'status': 'ACTIVE', 'joined_at': '2025-10-27T09:42:58.977000', 'user_first_name': 'Member', 'user_last_name': 'Test', 'user_email': 'membertest@example.com', 'user_avatar_url': None}]}}",
+      "timestamp": "2025-10-27T09:45:18.372873"
     },
     {
       "test_name": "Verify Pending Count Zero",
-      "success": false,
-      "details": "Response: {'success': True, 'data': []}",
-      "timestamp": "2025-10-27T09:43:13.794523"
+      "success": true,
+      "details": "Pending count is now 0",
+      "timestamp": "2025-10-27T09:45:18.911729"
     },
     {
       "test_name": "Member Submit Department Change Request",
-      "success": false,
-      "details": "Response: {'detail': 'Method Not Allowed', 'status_code': 405, 'expected_status': 200}",
-      "timestamp": "2025-10-27T09:43:14.329002"
+      "success": true,
+      "details": "",
+      "timestamp": "2025-10-27T09:45:19.449147"
     },
     {
       "test_name": "Admin Reject Request",
       "success": false,
       "details": "No admin token or insufficient change requests",
-      "timestamp": "2025-10-27T09:43:14.829113"
+      "timestamp": "2025-10-27T09:45:19.949256"
     },
     {
       "test_name": "Verify Rejection Saved",
       "success": false,
-      "details": "Response: {'success': True, 'data': []}",
-      "timestamp": "2025-10-27T09:43:15.384646"
+      "details": "Rejected request not found",
+      "timestamp": "2025-10-27T09:45:20.513297"
     },
     {
       "test_name": "Badge Count Integration",
-      "success": false,
-      "details": "Failed to create test request: {'detail': 'Method Not Allowed', 'status_code': 405, 'expected_status': 200}",
-      "timestamp": "2025-10-27T09:43:15.922314"
+      "success": true,
+      "details": "Badge count shows 2 pending requests",
+      "timestamp": "2025-10-27T09:45:21.091518"
     },
     {
       "test_name": "Request Details Validation",
-      "success": false,
-      "details": "Response: {'success': True, 'data': []}",
-      "timestamp": "2025-10-27T09:43:16.460907"
+      "success": true,
+      "details": "All required fields present",
+      "timestamp": "2025-10-27T09:45:21.632407"
     },
     {
       "test_name": "Non-Admin Authorization",
-      "success": false,
-      "details": "No change request ID to test with",
-      "timestamp": "2025-10-27T09:43:16.961017"
+      "success": true,
+      "details": "Member correctly denied admin access",
+      "timestamp": "2025-10-27T09:45:22.168350"
     },
     {
       "test_name": "Edge Case - Duplicate Approval",
       "success": false,
-      "details": "No admin token or change request ID",
-      "timestamp": "2025-10-27T09:43:17.461128"
+      "details": "Should reject duplicate approval. Response: {'detail': '\u0417\u0430\u043f\u0440\u043e\u0441 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d', 'status_code': 404, 'expected_status': 400}",
+      "timestamp": "2025-10-27T09:45:22.846397"
     }
   ],
   "organization_id": "7a1968de-4575-46ef-8d99-7650fd522a2b",
   "admin_user_id": "498c8140-3f26-4d99-8d61-4eb7af982985",
   "member_user_id": "20b9b563-ea8c-49d1-88ad-c244677317a9",
-  "change_request_ids": []
+  "change_request_ids": [
+    "a3b5106c-1d22-4ef1-90a6-04c2f1e1c0dd"
+  ]
 }
