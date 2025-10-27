@@ -105,16 +105,32 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
       const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
       const token = localStorage.getItem('zion_token');
 
-      const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/change-requests?status=PENDING`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Load both change requests and join requests
+      const [changeResponse, joinResponse] = await Promise.all([
+        fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/change-requests?status=PENDING`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/join-requests`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
-        setPendingChangeRequestsCount(data.data?.length || 0);
+      let totalCount = 0;
+
+      if (changeResponse.ok) {
+        const changeData = await changeResponse.json();
+        totalCount += changeData.data?.length || 0;
       }
+
+      if (joinResponse.ok) {
+        const joinData = await joinResponse.json();
+        const pendingJoinRequests = (joinData.requests || []).filter(r => r.status === 'pending');
+        totalCount += pendingJoinRequests.length;
+      }
+
+      setPendingChangeRequestsCount(totalCount);
     } catch (error) {
-      console.error('Error loading change requests:', error);
+      console.error('Error loading pending requests:', error);
     }
   };
 
