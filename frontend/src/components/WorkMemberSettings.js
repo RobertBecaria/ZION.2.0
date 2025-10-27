@@ -17,11 +17,6 @@ const WorkMemberSettings = ({ organizationId, currentMembership, onClose, onUpda
   const [requestedTeam, setRequestedTeam] = useState(currentMembership?.team || '');
   const [reason, setReason] = useState('');
   
-  // Team creation
-  const [showTeamForm, setShowTeamForm] = useState(false);
-  const [teamName, setTeamName] = useState('');
-  const [teamDescription, setTeamDescription] = useState('');
-  
   // Leave confirmation
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   
