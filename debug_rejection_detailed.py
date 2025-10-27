@@ -88,8 +88,9 @@ def debug_rejection():
         
         time.sleep(1)
         
-        # Check all requests after rejection
-        response = requests.get(f"{base_url}/api/work/organizations/{org_id}/change-requests", headers=headers_admin)
+        # Check all requests after rejection (without status filter to get all)
+        # But since the endpoint defaults to PENDING, let's try REJECTED specifically
+        response = requests.get(f"{base_url}/api/work/organizations/{org_id}/change-requests?status=REJECTED", headers=headers_admin)
         all_data = response.json()
         print(f"All requests after rejection: {json.dumps(all_data, indent=2)}")
         
