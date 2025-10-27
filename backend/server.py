@@ -7105,6 +7105,21 @@ async def approve_join_request(
             }
         )
         
+        # Create notification for the requesting user
+        org = await db.work_organizations.find_one({"id": join_request["organization_id"]})
+        org_name = org.get("name") if org else "организации"
+        
+        notification = WorkNotification(
+            user_id=join_request["user_id"],
+            organization_id=join_request["organization_id"],
+            notification_type=NotificationType.JOIN_REQUEST_APPROVED,
+            title="Запрос на вступление одобрен",
+            message=f"Ваш запрос на вступление в {org_name} был одобрен. Теперь вы являетесь членом организации.",
+            related_request_id=request_id
+        )
+        
+        await db.work_notifications.insert_one(notification.model_dump())
+        
         return {
             "message": "Join request approved successfully",
             "member_id": new_member["id"]
