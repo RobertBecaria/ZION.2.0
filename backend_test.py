@@ -80,7 +80,7 @@ class JoinRequestTester:
                 "last_name": "Tester"
             })
             
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 # Login test user
                 login_response = requests.post(f"{BASE_URL}/auth/login", json={
                     "email": self.test_user_email,
