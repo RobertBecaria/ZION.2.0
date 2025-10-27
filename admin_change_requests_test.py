@@ -338,14 +338,12 @@ class AdminChangeRequestsTester:
             self.log_test("Admin Reject Request", False, "Department change request not found")
             return False
 
-        reject_data = {
-            "rejection_reason": "Engineering department is currently at full capacity. Please reapply next quarter."
-        }
+        rejection_reason = "Engineering department is currently at full capacity. Please reapply next quarter."
         
         success, response = self.make_request(
             "POST", 
-            f"work/organizations/{self.organization_id}/change-requests/{department_request_id}/reject", 
-            reject_data, 
+            f"work/organizations/{self.organization_id}/change-requests/{department_request_id}/reject?rejection_reason={rejection_reason}", 
+            {}, 
             200, 
             self.admin_token
         )
