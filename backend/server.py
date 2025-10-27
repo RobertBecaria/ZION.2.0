@@ -7174,6 +7174,25 @@ async def reject_join_request(
             }
         )
         
+        # Create notification for the requesting user
+        org = await db.work_organizations.find_one({"id": join_request["organization_id"]})
+        org_name = org.get("name") if org else "организации"
+        
+        notification_message = f"Ваш запрос на вступление в {org_name} был отклонён."
+        if rejection_reason:
+            notification_message += f" Причина: {rejection_reason}"
+        
+        notification = WorkNotification(
+            user_id=join_request["user_id"],
+            organization_id=join_request["organization_id"],
+            notification_type=NotificationType.JOIN_REQUEST_REJECTED,
+            title="Запрос на вступление отклонён",
+            message=notification_message,
+            related_request_id=request_id
+        )
+        
+        await db.work_notifications.insert_one(notification.model_dump())
+        
         return {"message": "Join request rejected"}
         
     except HTTPException:
