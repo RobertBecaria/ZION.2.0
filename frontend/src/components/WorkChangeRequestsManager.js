@@ -68,6 +68,8 @@ const WorkChangeRequestsManager = ({ organizationId, onRequestHandled }) => {
       
       // Refresh list
       fetchRequests();
+      // Notify parent component
+      if (onRequestHandled) onRequestHandled();
     } catch (err) {
       setError(err.message);
     }
