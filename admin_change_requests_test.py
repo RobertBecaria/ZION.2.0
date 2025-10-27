@@ -172,12 +172,14 @@ class AdminChangeRequestsTester:
             self.admin_token
         )
         
-        if success and isinstance(response, list) and len(response) > 0:
+        if success and response.get("success") and isinstance(response.get("data"), list) and len(response["data"]) > 0:
             # Verify the member's request appears
             member_request_found = False
-            for request in response:
+            for request in response["data"]:
                 if request.get("user_id") == self.member_user_id and request.get("request_type") == "ROLE_CHANGE":
                     member_request_found = True
+                    # Store the request ID for later use
+                    self.change_request_ids.append(request.get("id"))
                     # Verify request details
                     if (request.get("requested_role") == "MANAGER" and 
                         request.get("status") == "PENDING" and
