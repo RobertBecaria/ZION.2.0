@@ -518,6 +518,15 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
           />
         )}
 
+        {activeTab === 'events' && (
+          <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+            <WorkEventsPanel
+              organizationId={organizationId}
+              currentMembership={currentMembership}
+            />
+          </div>
+        )}
+
         {activeTab === 'requests' && isAdmin && (
           <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-100">
             <WorkJoinRequestsManagement
