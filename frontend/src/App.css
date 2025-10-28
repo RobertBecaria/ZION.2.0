@@ -1884,6 +1884,9 @@ body {
 
 /* Modern Content Header - Minimalist Pill Badge Style */
 .content-header {
+  display: none;
+  /* Hidden per user request - navigation bar not needed */
+  /* Original values preserved below for reference:
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1891,6 +1894,7 @@ body {
   margin-bottom: 1.5rem;
   border-bottom: none;
   min-height: 64px;
+  */
 }
 
 .header-left {
