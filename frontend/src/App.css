@@ -15486,6 +15486,34 @@ a,
   flex-shrink: 0;
 }
 
+/* View Details Button */
+.view-event-details-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: linear-gradient(135deg, #C2410C 0%, #EA580C 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.view-event-details-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
+}
+
+.view-event-details-btn:active {
+  transform: translateY(0);
+}
+
 /* Expired Badge */
 .work-next-event-widget .event-expired {
   text-align: center;
