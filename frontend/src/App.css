@@ -1877,7 +1877,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 0 2rem 2rem 2rem;
+  padding: 0 0 2rem 0;
   margin-left: 2rem;
   margin-right: 2rem;
 }
