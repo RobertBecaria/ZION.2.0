@@ -1215,9 +1215,9 @@ body {
   background: white;
   border-radius: 0;
   padding: 0 1.5rem 1.5rem 1.5rem;
-  min-height: calc(100vh - 62px);
+  min-height: calc(100vh - 66px);
   position: sticky;
-  top: 62px;
+  top: 66px;
   border: 1px solid #E4E6EA;
   border-top: none;
   border-left: none;
