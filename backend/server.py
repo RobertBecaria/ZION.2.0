@@ -9250,8 +9250,6 @@ async def get_organization_events(
         if team_id:
             query["team_id"] = team_id
         
-        print(f"DEBUG: Query before visibility: {query}")
-        
         # Filter by visibility (user can only see events they're allowed to)
         # Simplified for now - show all events to organization members
         final_query = {
@@ -9262,12 +9260,8 @@ async def get_organization_events(
             ]
         }
         
-        print(f"DEBUG: Final query: {final_query}")
-        
         # Fetch events
         events = await db.work_organization_events.find(final_query).sort("scheduled_date", 1).to_list(length=100)
-        
-        print(f"DEBUG: Found {len(events)} events")
         
         # Enrich events with additional data
         event_responses = []
