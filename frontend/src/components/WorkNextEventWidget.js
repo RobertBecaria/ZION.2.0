@@ -300,15 +300,19 @@ function WorkNextEventWidget({ organizationId, onEventClick }) {
     return types[type] || '📌';
   };
 
-  const handleWidgetClick = useCallback((e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setShowModal(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setShowModal(false);
-  }, []);
+  // Memoized modal to prevent unnecessary re-renders
+  const EventModal = useMemo(() => {
+    if (!showModal || !nextEvent) return null;
+    
+    return ReactDOM.createPortal(
+      <EventDetailsModal 
+        event={nextEvent} 
+        onClose={handleCloseModal} 
+        timeLeft={timeLeft} 
+      />, 
+      document.body
+    );
+  }, [showModal, nextEvent, timeLeft, handleCloseModal]);
 
   // Memoized modal component using the separate EventDetailsModal
   const EventModal = useMemo(() => {
