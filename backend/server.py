@@ -1164,6 +1164,9 @@ class WorkOrganizationEvent(BaseModel):
     color_code: str = "#ea580c"  # Work module orange
     is_cancelled: bool = False
     cancelled_reason: Optional[str] = None
+    # Reminder settings
+    reminder_intervals: List[WorkEventReminderInterval] = []  # Selected reminder times
+    reminders_sent: Dict[str, List[str]] = {}  # {interval: [user_ids who received]}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
