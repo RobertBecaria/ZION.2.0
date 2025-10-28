@@ -1257,6 +1257,8 @@ body {
   font-weight: var(--font-weight-bold);
   margin: 0;
   letter-spacing: -0.01em;
+  /* Hide header text but keep in code for reference */
+  display: none;
 }
 
 /* User Profile Section */
