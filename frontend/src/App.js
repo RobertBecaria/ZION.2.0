@@ -1850,6 +1850,11 @@ function Dashboard() {
                 maxEvents={5}
               />
 
+              {/* Calendar Widget */}
+              <WorkCalendarWidget
+                organizationId={selectedOrganizationId}
+              />
+
               {/* Department Navigator Widget */}
               <WorkDepartmentNavigator
                 organizationId={selectedOrganizationId}
