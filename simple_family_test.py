@@ -5,7 +5,7 @@ import json
 
 def test_family_profile_system():
     """Simple test of Family Profile System core functionality"""
-    base_url = "https://bizconnect-85.preview.emergentagent.com/api"
+    base_url = "https://orgevents-hub.preview.emergentagent.com/api"
     
     # Login
     print("🔍 Testing login...")

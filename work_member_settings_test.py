@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class WorkMemberSettingsAPITester:
-    def __init__(self, base_url="https://bizconnect-85.preview.emergentagent.com"):
+    def __init__(self, base_url="https://orgevents-hub.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

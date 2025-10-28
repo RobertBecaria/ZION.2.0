@@ -5,7 +5,7 @@ import json
 import time
 
 def test_rejection_status():
-    base_url = "https://bizconnect-85.preview.emergentagent.com"
+    base_url = "https://orgevents-hub.preview.emergentagent.com"
     
     # Login as admin
     login_data = {"email": "admintest@example.com", "password": "admin123"}

@@ -5,7 +5,7 @@ import json
 
 def test_my_info_endpoints():
     """Simple test of MY INFO module endpoints"""
-    base_url = "https://bizconnect-85.preview.emergentagent.com/api"
+    base_url = "https://orgevents-hub.preview.emergentagent.com/api"
     
     # Login
     login_response = requests.post(f"{base_url}/auth/login", json={
