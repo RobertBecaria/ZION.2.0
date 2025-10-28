@@ -15335,10 +15335,8 @@ a,
   transition: all 0.3s ease;
 }
 
-.work-next-event-widget.active:hover {
-  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.15);
-  transform: translateY(-2px);
-  border-color: rgba(194, 65, 12, 0.3);
+.work-next-event-widget.active {
+  /* No hover effect on widget itself anymore */
 }
 
 .work-next-event-widget .widget-header {
