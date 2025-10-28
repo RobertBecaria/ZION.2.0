@@ -384,6 +384,17 @@ function WorkNextEventWidget({ organizationId, onEventClick }) {
     setShowModal(false);
   }, []);
 
+  const handleRSVPUpdate = useCallback((eventId, status, newStats) => {
+    // Update local event data
+    if (nextEvent && nextEvent.id === eventId) {
+      setNextEvent(prev => ({
+        ...prev,
+        user_rsvp_status: status,
+        rsvp_summary: newStats
+      }));
+    }
+  }, [nextEvent]);
+
   // Memoized modal to prevent unnecessary re-renders
   const EventModal = useMemo(() => {
     if (!showModal || !nextEvent) return null;
@@ -392,11 +403,12 @@ function WorkNextEventWidget({ organizationId, onEventClick }) {
       <EventDetailsModal 
         event={nextEvent} 
         onClose={handleCloseModal} 
-        timeLeft={timeLeft} 
+        timeLeft={timeLeft}
+        onRSVPUpdate={handleRSVPUpdate}
       />, 
       document.body
     );
-  }, [showModal, nextEvent, timeLeft, handleCloseModal]);
+  }, [showModal, nextEvent, timeLeft, handleCloseModal, handleRSVPUpdate]);
 
   if (loading) {
     return (
