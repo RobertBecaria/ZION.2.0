@@ -2130,6 +2130,12 @@ body {
   max-width: 42%;
 }
 
+/* When events panel is hidden (e.g., for Work/Organizations module), content expands */
+.content-area:only-child {
+  flex: 1;
+  max-width: 100%;
+}
+
 /* ============================================
    UNIVERSAL WALL (MEETMAX-INSPIRED POSTS)
 ============================================ */
