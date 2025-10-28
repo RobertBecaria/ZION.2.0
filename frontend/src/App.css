@@ -15858,8 +15858,8 @@ a,
   background: #FFFBF5;
   border: 1px solid transparent;
   transition: all 0.2s;
-  padding: 2px;
-  min-height: 32px;
+  padding: 3px;
+  min-height: 36px;
 }
 
 .calendar-day.empty {
