@@ -15294,3 +15294,199 @@ a,
   }
 }
 
+/* ==========================================
+   WORK NEXT EVENT WIDGET (World Zone)
+========================================== */
+
+.work-next-event-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(194, 65, 12, 0.1);
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.work-next-event-widget.active:hover {
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(194, 65, 12, 0.3);
+}
+
+.work-next-event-widget .widget-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #C2410C;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.work-next-event-widget .widget-header svg {
+  flex-shrink: 0;
+}
+
+.work-next-event-widget .widget-header h4 {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.work-next-event-widget .chevron-icon {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.work-next-event-widget.active:hover .chevron-icon {
+  opacity: 1;
+}
+
+.work-next-event-widget .widget-loading,
+.work-next-event-widget .widget-empty {
+  text-align: center;
+  padding: 20px;
+  color: #6B7280;
+  font-size: 13px;
+}
+
+.work-next-event-widget .widget-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.work-next-event-widget .widget-empty p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.work-next-event-widget .event-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.work-next-event-widget .event-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.work-next-event-widget .event-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.work-next-event-widget .event-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #1F2937;
+  line-height: 1.4;
+}
+
+/* Countdown Timer */
+.countdown-timer {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(194, 65, 12, 0.15);
+}
+
+.countdown-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 40px;
+}
+
+.countdown-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #C2410C;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-label {
+  font-size: 10px;
+  color: #9A3412;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.countdown-separator {
+  font-size: 20px;
+  font-weight: 700;
+  color: #C2410C;
+  opacity: 0.5;
+  margin: 0 2px;
+  padding-bottom: 12px;
+}
+
+/* Event Details */
+.work-next-event-widget .event-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(194, 65, 12, 0.1);
+}
+
+.work-next-event-widget .event-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6B7280;
+  font-size: 12px;
+}
+
+.work-next-event-widget .event-detail-row svg {
+  color: #C2410C;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* Expired Badge */
+.work-next-event-widget .event-expired {
+  text-align: center;
+  padding: 8px;
+}
+
+.work-next-event-widget .expired-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  color: #991B1B;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(153, 27, 27, 0.2);
+}
+
+/* Animation for countdown pulse */
+@keyframes pulse-countdown {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.countdown-separator {
+  animation: pulse-countdown 1s ease-in-out infinite;
+}
+
