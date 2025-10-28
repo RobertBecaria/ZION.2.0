@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { Calendar, Clock, MapPin, ChevronRight, X, Users, Bell, CheckCircle, XCircle, HelpCircle, Eye } from 'lucide-react';
 
