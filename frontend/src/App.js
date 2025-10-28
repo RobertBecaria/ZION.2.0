@@ -1045,7 +1045,15 @@ function Dashboard() {
               <button
                 key={module.key}
                 className={`nav-module ${activeModule === module.key ? 'active' : ''}`}
-                onClick={() => setActiveModule(module.key)}
+                onClick={() => {
+                  setActiveModule(module.key);
+                  // Set appropriate view for Work module
+                  if (module.key === 'organizations') {
+                    setActiveView('my-work');
+                  } else {
+                    setActiveView('wall');
+                  }
+                }}
                 style={{
                   color: activeModule === module.key ? 'white' : module.color,
                   backgroundColor: activeModule === module.key ? module.color : undefined,
