@@ -1837,6 +1837,15 @@ function Dashboard() {
           {/* ORGANIZATIONS Module - Department & Announcements Widgets */}
           {activeModule === 'organizations' && selectedOrganizationId && (activeView === 'work-org-profile' || activeView === 'wall' || activeView === 'feed') && (
             <>
+              {/* Next Event Countdown Widget */}
+              <WorkNextEventWidget
+                organizationId={selectedOrganizationId}
+                onEventClick={(event) => {
+                  // Navigate to event details - for now just show alert
+                  alert(`Событие: ${event.title}\nДата: ${new Date(event.scheduled_date).toLocaleDateString('ru-RU')}\nВремя: ${event.scheduled_time || 'Не указано'}\nМесто: ${event.location || 'Не указано'}`);
+                }}
+              />
+
               {/* Department Navigator Widget */}
               <WorkDepartmentNavigator
                 organizationId={selectedOrganizationId}
