@@ -192,7 +192,7 @@ const EventDetailsModal = React.memo(({ event, onClose, timeLeft, onRSVPUpdate }
           </div>
 
           {/* RSVP Stats */}
-          {event.rsvp_enabled && getRSVPStats() && (
+          {event.rsvp_enabled && (
             <div className="modal-rsvp-section">
               <h4><Users size={18} /> Участники</h4>
               <div className="rsvp-stats">
