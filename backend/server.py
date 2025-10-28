@@ -9307,19 +9307,38 @@ async def get_organization_events(
             
             user_rsvp_status = rsvp_responses.get(current_user.id)
             
-            # Remove MongoDB _id before creating response
-            event_clean = {k: v for k, v in event.items() if k != '_id'}
+            # Create response object (exclude MongoDB _id)
+            event_data = {
+                "id": event.get("id"),
+                "organization_id": event.get("organization_id"),
+                "created_by_user_id": event.get("created_by_user_id"),
+                "title": event.get("title"),
+                "description": event.get("description"),
+                "event_type": event.get("event_type"),
+                "scheduled_date": event.get("scheduled_date"),
+                "scheduled_time": event.get("scheduled_time"),
+                "end_time": event.get("end_time"),
+                "location": event.get("location"),
+                "department_id": event.get("department_id"),
+                "team_id": event.get("team_id"),
+                "visibility": event.get("visibility"),
+                "rsvp_enabled": event.get("rsvp_enabled", False),
+                "rsvp_responses": event.get("rsvp_responses", {}),
+                "color_code": event.get("color_code", "#ea580c"),
+                "is_cancelled": event.get("is_cancelled", False),
+                "cancelled_reason": event.get("cancelled_reason"),
+                "reminder_intervals": event.get("reminder_intervals", []),
+                "reminders_sent": event.get("reminders_sent", {}),
+                "created_at": event.get("created_at"),
+                "updated_at": event.get("updated_at"),
+                "created_by_name": creator_name,
+                "department_name": dept_name,
+                "team_name": team_name,
+                "rsvp_summary": rsvp_summary,
+                "user_rsvp_status": user_rsvp_status
+            }
             
-            event_responses.append(
-                WorkOrganizationEventResponse(
-                    **event_clean,
-                    created_by_name=creator_name,
-                    department_name=dept_name,
-                    team_name=team_name,
-                    rsvp_summary=rsvp_summary,
-                    user_rsvp_status=user_rsvp_status
-                )
-            )
+            event_responses.append(event_data)
         
         return {"success": True, "events": event_responses}
         
