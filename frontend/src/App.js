@@ -1369,7 +1369,7 @@ function Dashboard() {
                 {/* Content Area with Split Layout */}
                 <div className="split-content-layout">
                   {/* Main Content Area */}
-                  <div className={`main-content-area ${(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents') ? 'full-width' : ''}`}>
+                  <div className={`main-content-area ${(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations') ? 'full-width' : ''}`}>
                     
                     {/* Family Profile Views - Full Width */}
                     {activeView === 'family-profiles' ? (
