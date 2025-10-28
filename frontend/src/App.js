@@ -29,6 +29,7 @@ import WorkDepartmentNavigator from './components/WorkDepartmentNavigator';
 import WorkAnnouncementsWidget from './components/WorkAnnouncementsWidget';
 import WorkDepartmentManager from './components/WorkDepartmentManager';
 import WorkNextEventWidget from './components/WorkNextEventWidget';
+import WorkUpcomingEventsList from './components/WorkUpcomingEventsList';
 import { 
   Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
   LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
