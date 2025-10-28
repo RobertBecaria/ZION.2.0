@@ -1,9 +1,203 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { Calendar, Clock, MapPin, ChevronRight, X, Users, Bell, CheckCircle, XCircle, HelpCircle, Eye } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Separate Modal Component that doesn't re-render with countdown
+const EventDetailsModal = React.memo(({ event, onClose, timeLeft }) => {
+  if (!event) return null;
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', { 
+      day: 'numeric', 
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const getEventTypeEmoji = (type) => {
+    const types = {
+      'MEETING': '👥',
+      'TRAINING': '📚',
+      'DEADLINE': '⏰',
+      'COMPANY_EVENT': '🎉',
+      'TEAM_BUILDING': '🤝',
+      'REVIEW': '📝',
+      'ANNOUNCEMENT': '📢',
+      'OTHER': '📌'
+    };
+    return types[type] || '📌';
+  };
+
+  const getEventTypeLabel = (type) => {
+    const labels = {
+      'MEETING': 'Встреча',
+      'TRAINING': 'Обучение',
+      'DEADLINE': 'Дедлайн',
+      'COMPANY_EVENT': 'Мероприятие',
+      'TEAM_BUILDING': 'Тимбилдинг',
+      'REVIEW': 'Ревью',
+      'ANNOUNCEMENT': 'Объявление',
+      'OTHER': 'Другое'
+    };
+    return labels[type] || 'Событие';
+  };
+
+  const getRSVPStats = () => {
+    if (!event.rsvp_responses) return null;
+    
+    const responses = event.rsvp_responses;
+    const going = Object.values(responses).filter(r => r === 'GOING').length;
+    const maybe = Object.values(responses).filter(r => r === 'MAYBE').length;
+    const notGoing = Object.values(responses).filter(r => r === 'NOT_GOING').length;
+    
+    return { going, maybe, notGoing };
+  };
+
+  return (
+    <div className="event-modal-overlay" onClick={(e) => {
+      if (e.target.className === 'event-modal-overlay') {
+        onClose();
+      }
+    }}>
+      <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="event-modal-header">
+          <div className="event-modal-title">
+            <span className="event-modal-emoji">{getEventTypeEmoji(event.event_type)}</span>
+            <div>
+              <h2>{event.title}</h2>
+              <span className="event-type-badge">{getEventTypeLabel(event.event_type)}</span>
+            </div>
+          </div>
+          <button className="close-modal-btn" onClick={onClose}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="event-modal-body">
+          {/* Countdown Section */}
+          {timeLeft && !timeLeft.expired && (
+            <div className="modal-countdown-section">
+              <h3>⏱️ Событие начнется через:</h3>
+              <div className="modal-countdown">
+                {timeLeft.days > 0 && (
+                  <div className="modal-countdown-item">
+                    <div className="modal-countdown-value">{timeLeft.days}</div>
+                    <div className="modal-countdown-label">{timeLeft.days === 1 ? 'день' : 'дней'}</div>
+                  </div>
+                )}
+                <div className="modal-countdown-item">
+                  <div className="modal-countdown-value">{String(timeLeft.hours).padStart(2, '0')}</div>
+                  <div className="modal-countdown-label">часов</div>
+                </div>
+                <div className="modal-countdown-sep">:</div>
+                <div className="modal-countdown-item">
+                  <div className="modal-countdown-value">{String(timeLeft.minutes).padStart(2, '0')}</div>
+                  <div className="modal-countdown-label">минут</div>
+                </div>
+                <div className="modal-countdown-sep">:</div>
+                <div className="modal-countdown-item">
+                  <div className="modal-countdown-value">{String(timeLeft.seconds).padStart(2, '0')}</div>
+                  <div className="modal-countdown-label">секунд</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Event Details */}
+          <div className="modal-details-section">
+            <div className="modal-detail-row">
+              <Calendar size={20} />
+              <div>
+                <div className="modal-detail-label">Дата</div>
+                <div className="modal-detail-value">{formatDate(event.scheduled_date)}</div>
+              </div>
+            </div>
+
+            {event.scheduled_time && (
+              <div className="modal-detail-row">
+                <Clock size={20} />
+                <div>
+                  <div className="modal-detail-label">Время</div>
+                  <div className="modal-detail-value">
+                    {event.scheduled_time}
+                    {event.end_time && ` - ${event.end_time}`}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {event.location && (
+              <div className="modal-detail-row">
+                <MapPin size={20} />
+                <div>
+                  <div className="modal-detail-label">Место</div>
+                  <div className="modal-detail-value">{event.location}</div>
+                </div>
+              </div>
+            )}
+
+            {event.description && (
+              <div className="modal-description">
+                <h4>Описание</h4>
+                <p>{event.description}</p>
+              </div>
+            )}
+          </div>
+
+          {/* RSVP Stats */}
+          {event.rsvp_enabled && getRSVPStats() && (
+            <div className="modal-rsvp-section">
+              <h4><Users size={18} /> Участники</h4>
+              <div className="rsvp-stats">
+                <div className="rsvp-stat-item going">
+                  <CheckCircle size={16} />
+                  <span className="rsvp-stat-count">{getRSVPStats().going}</span>
+                  <span className="rsvp-stat-label">Придут</span>
+                </div>
+                <div className="rsvp-stat-item maybe">
+                  <HelpCircle size={16} />
+                  <span className="rsvp-stat-count">{getRSVPStats().maybe}</span>
+                  <span className="rsvp-stat-label">Возможно</span>
+                </div>
+                <div className="rsvp-stat-item not-going">
+                  <XCircle size={16} />
+                  <span className="rsvp-stat-count">{getRSVPStats().notGoing}</span>
+                  <span className="rsvp-stat-label">Не придут</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reminders */}
+          {event.reminder_intervals && event.reminder_intervals.length > 0 && (
+            <div className="modal-reminders-section">
+              <h4><Bell size={18} /> Напоминания</h4>
+              <div className="reminder-tags">
+                {event.reminder_intervals.map((interval, idx) => (
+                  <span key={idx} className="reminder-tag">
+                    {interval === '15_MINUTES' && '🔔 За 15 минут'}
+                    {interval === '1_HOUR' && '🔔 За 1 час'}
+                    {interval === '1_DAY' && '🔔 За 1 день'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="event-modal-footer">
+          <button className="modal-btn secondary" onClick={onClose}>
+            Закрыть
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function WorkNextEventWidget({ organizationId, onEventClick }) {
   const [nextEvent, setNextEvent] = useState(null);
