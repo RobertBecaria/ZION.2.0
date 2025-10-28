@@ -1144,7 +1144,13 @@ function Dashboard() {
             
             <button 
               className={`profile-btn ${activeView === 'my-profile' ? 'primary' : 'secondary'}`}
-              style={{ backgroundColor: activeView === 'my-profile' ? currentModule.color : undefined }}
+              style={{ 
+                backgroundColor: activeView === 'my-profile' ? currentModule.color : undefined,
+                background: activeView === 'my-profile' 
+                  ? `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`
+                  : undefined,
+                color: activeView === 'my-profile' ? 'white' : undefined
+              }}
               onClick={() => setActiveView('my-profile')}
             >
               <User size={18} />
@@ -1153,7 +1159,13 @@ function Dashboard() {
             
             <button 
               className={`profile-btn ${activeView === 'feed' ? 'primary' : 'secondary'}`}
-              style={{ backgroundColor: activeView === 'feed' ? currentModule.color : undefined }}
+              style={{ 
+                backgroundColor: activeView === 'feed' ? currentModule.color : undefined,
+                background: activeView === 'feed' 
+                  ? `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`
+                  : undefined,
+                color: activeView === 'feed' ? 'white' : undefined
+              }}
               onClick={() => setActiveView('feed')}
             >
               <Newspaper size={18} />
@@ -1163,12 +1175,15 @@ function Dashboard() {
             {/* Family Section - Always visible in Family module */}
             {activeModule === 'family' && (
               <>
-                <div className="sidebar-divider"></div>
+                <div className="sidebar-divider" style={{ background: `linear-gradient(90deg, transparent, ${currentModule.color}30, transparent)` }}></div>
                 
                 <button 
                   className={`profile-btn ${activeView === 'my-family-profile' ? 'primary' : 'secondary'}`}
                   style={{ 
                     backgroundColor: activeView === 'my-family-profile' ? '#059669' : undefined,
+                    background: activeView === 'my-family-profile' 
+                      ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                      : undefined,
                     color: activeView === 'my-family-profile' ? 'white' : undefined
                   }}
                   onClick={() => setActiveView('my-family-profile')}
@@ -1177,19 +1192,22 @@ function Dashboard() {
                   <span>МОЯ СЕМЬЯ</span>
                 </button>
                 
-                <div className="sidebar-divider"></div>
+                <div className="sidebar-divider" style={{ background: `linear-gradient(90deg, transparent, ${currentModule.color}30, transparent)` }}></div>
               </>
             )}
             
             {/* Work Section - Always visible in Organizations module */}
             {activeModule === 'organizations' && (
               <>
-                <div className="sidebar-divider"></div>
+                <div className="sidebar-divider" style={{ background: 'linear-gradient(90deg, transparent, rgba(194, 65, 12, 0.3), transparent)' }}></div>
                 
                 <button 
                   className={`profile-btn ${activeView === 'my-work' ? 'primary' : 'secondary'}`}
                   style={{ 
                     backgroundColor: activeView === 'my-work' ? '#C2410C' : undefined,
+                    background: activeView === 'my-work' 
+                      ? 'linear-gradient(135deg, #C2410C 0%, #EA580C 100%)'
+                      : undefined,
                     color: activeView === 'my-work' ? 'white' : undefined
                   }}
                   onClick={() => setActiveView('my-work')}
