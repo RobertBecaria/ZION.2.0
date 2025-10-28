@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 class LoginResolutionTester:
-    def __init__(self, base_url="https://zion-collab.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://bizconnect-85.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0

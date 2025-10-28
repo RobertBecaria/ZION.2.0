@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class RoleChangeRequestsAPITester:
-    def __init__(self, base_url="https://zion-collab.preview.emergentagent.com"):
+    def __init__(self, base_url="https://bizconnect-85.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None

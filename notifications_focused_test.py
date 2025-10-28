@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://zion-collab.preview.emergentagent.com/api"
+BACKEND_URL = "https://bizconnect-85.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_MEMBER_EMAIL = "test@zion.city"
