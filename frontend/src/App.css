@@ -1241,6 +1241,9 @@ body {
 }
 
 .sidebar-header {
+  display: none;
+  /* Completely hidden to remove white space at top of sidebars */
+  /* Original styling preserved below for reference:
   margin-bottom: 1rem;
   padding: 0.5rem 0;
   border-bottom: 2px solid transparent;
@@ -1249,6 +1252,7 @@ body {
   border-bottom: 2px solid transparent;
   background-origin: border-box;
   background-clip: padding-box, border-box;
+  */
 }
 
 .sidebar-header h3 {
