@@ -1878,6 +1878,8 @@ body {
   flex-direction: column;
   min-width: 0;
   padding: 0 2rem 2rem 2rem;
+  margin-left: 2rem;
+  margin-right: 2rem;
 }
 
 /* Modern Content Header - Minimalist Pill Badge Style */
