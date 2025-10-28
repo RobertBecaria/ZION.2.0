@@ -276,53 +276,7 @@ function WorkNextEventWidget({ organizationId, onEventClick }) {
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', { 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  const getEventTypeEmoji = (type) => {
-    const types = {
-      'MEETING': '👥',
-      'TRAINING': '📚',
-      'DEADLINE': '⏰',
-      'COMPANY_EVENT': '🎉',
-      'TEAM_BUILDING': '🤝',
-      'REVIEW': '📝',
-      'ANNOUNCEMENT': '📢',
-      'OTHER': '📌'
-    };
-    return types[type] || '📌';
-  };
-
-  const getEventTypeLabel = (type) => {
-    const labels = {
-      'MEETING': 'Встреча',
-      'TRAINING': 'Обучение',
-      'DEADLINE': 'Дедлайн',
-      'COMPANY_EVENT': 'Мероприятие',
-      'TEAM_BUILDING': 'Тимбилдинг',
-      'REVIEW': 'Ревью',
-      'ANNOUNCEMENT': 'Объявление',
-      'OTHER': 'Другое'
-    };
-    return labels[type] || 'Событие';
-  };
-
-  const getRSVPStats = () => {
-    if (!nextEvent || !nextEvent.rsvp_responses) return null;
-    
-    const responses = nextEvent.rsvp_responses;
-    const going = Object.values(responses).filter(r => r === 'GOING').length;
-    const maybe = Object.values(responses).filter(r => r === 'MAYBE').length;
-    const notGoing = Object.values(responses).filter(r => r === 'NOT_GOING').length;
-    
-    return { going, maybe, notGoing };
-  };
+  // Helper functions moved to EventDetailsModal component to avoid duplication
 
   const handleWidgetClick = useCallback((e) => {
     e.stopPropagation();
