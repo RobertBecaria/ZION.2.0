@@ -9632,6 +9632,177 @@ async def get_teams(
 
 # ===== END MEMBER SETTINGS & CHANGE REQUEST ENDPOINTS =====
 
+# ===== EVENT REMINDERS SYSTEM =====
+
+async def check_and_send_event_reminders():
+    """
+    Background task to check upcoming events and send reminders.
+    Should be called periodically (e.g., every 5 minutes via cron or scheduler)
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        
+        # Get all upcoming events that have reminders configured
+        events_cursor = db.work_organization_events.find({
+            "scheduled_date": {"$gte": now},
+            "is_cancelled": False,
+            "reminder_intervals": {"$exists": True, "$ne": []}
+        })
+        
+        events = await events_cursor.to_list(length=None)
+        
+        for event in events:
+            event_time = event['scheduled_date']
+            
+            # Check each reminder interval
+            for interval in event.get('reminder_intervals', []):
+                # Calculate when this reminder should be sent
+                if interval == "15_MINUTES":
+                    reminder_time = event_time - timedelta(minutes=15)
+                    interval_key = "15_MINUTES"
+                elif interval == "1_HOUR":
+                    reminder_time = event_time - timedelta(hours=1)
+                    interval_key = "1_HOUR"
+                elif interval == "1_DAY":
+                    reminder_time = event_time - timedelta(days=1)
+                    interval_key = "1_DAY"
+                else:
+                    continue
+                
+                # Check if it's time to send this reminder (within 5-minute window)
+                time_diff = (now - reminder_time).total_seconds()
+                
+                # If within 5-minute window and not already sent
+                if -300 <= time_diff <= 300:  # 5 minutes before and after
+                    reminders_sent = event.get('reminders_sent', {})
+                    
+                    if interval_key not in reminders_sent:
+                        # Get participants who should receive reminder
+                        participants = await get_event_participants(event)
+                        
+                        # Send notifications
+                        for user_id in participants:
+                            await create_event_reminder_notification(
+                                user_id=user_id,
+                                event=event,
+                                interval=interval_key
+                            )
+                        
+                        # Mark reminder as sent
+                        if interval_key not in reminders_sent:
+                            reminders_sent[interval_key] = []
+                        reminders_sent[interval_key].extend(participants)
+                        
+                        # Update event
+                        await db.work_organization_events.update_one(
+                            {"id": event['id']},
+                            {"$set": {"reminders_sent": reminders_sent}}
+                        )
+                        
+                        print(f"✓ Sent {interval_key} reminder for event: {event['title']}")
+        
+    except Exception as e:
+        print(f"Error in check_and_send_event_reminders: {str(e)}")
+
+
+async def get_event_participants(event: dict) -> List[str]:
+    """
+    Get list of user IDs who should receive reminder for this event.
+    Returns users who RSVPed GOING or MAYBE (or all members if RSVP not enabled)
+    """
+    participants = []
+    
+    if event.get('rsvp_enabled'):
+        # Get users who responded GOING or MAYBE
+        rsvp_responses = event.get('rsvp_responses', {})
+        for user_id, response in rsvp_responses.items():
+            if response in ['GOING', 'MAYBE']:
+                participants.append(user_id)
+    else:
+        # Get all organization members based on visibility
+        if event['visibility'] == 'ALL_MEMBERS':
+            members_cursor = db.work_members.find({
+                "organization_id": event['organization_id'],
+                "status": "ACTIVE"
+            })
+            members = await members_cursor.to_list(length=None)
+            participants = [m['user_id'] for m in members]
+            
+        elif event['visibility'] == 'DEPARTMENT' and event.get('department_id'):
+            members_cursor = db.work_members.find({
+                "organization_id": event['organization_id'],
+                "department_id": event['department_id'],
+                "status": "ACTIVE"
+            })
+            members = await members_cursor.to_list(length=None)
+            participants = [m['user_id'] for m in members]
+            
+        elif event['visibility'] == 'TEAM' and event.get('team_id'):
+            # Get team members
+            team_members_cursor = db.work_team_members.find({
+                "team_id": event['team_id']
+            })
+            team_members = await team_members_cursor.to_list(length=None)
+            participants = [tm['user_id'] for tm in team_members]
+    
+    return participants
+
+
+async def create_event_reminder_notification(user_id: str, event: dict, interval: str):
+    """Create in-app notification for event reminder"""
+    try:
+        # Format time remaining message
+        if interval == "15_MINUTES":
+            time_msg = "через 15 минут"
+        elif interval == "1_HOUR":
+            time_msg = "через 1 час"
+        elif interval == "1_DAY":
+            time_msg = "завтра"
+        else:
+            time_msg = "скоро"
+        
+        # Get organization name
+        org = await db.work_organizations.find_one({"id": event['organization_id']})
+        org_name = org.get('name', 'организации') if org else 'организации'
+        
+        # Create notification
+        notification = {
+            "id": str(uuid.uuid4()),
+            "organization_id": event['organization_id'],
+            "user_id": user_id,
+            "type": "EVENT_REMINDER",
+            "title": f"Напоминание о событии",
+            "message": f"Событие \"{event['title']}\" начнется {time_msg}",
+            "metadata": {
+                "event_id": event['id'],
+                "event_title": event['title'],
+                "event_time": event.get('scheduled_time', ''),
+                "location": event.get('location', ''),
+                "organization_name": org_name,
+                "interval": interval
+            },
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc)
+        }
+        
+        await db.work_notifications.insert_one(notification)
+        print(f"✓ Created reminder notification for user {user_id}")
+        
+    except Exception as e:
+        print(f"Error creating reminder notification: {str(e)}")
+
+
+@api_router.post("/work/events/check-reminders")
+async def trigger_reminder_check(current_user: User = Depends(get_current_user)):
+    """
+    Manually trigger reminder check (for testing or cron job).
+    In production, this should be called by a scheduler every 5 minutes.
+    """
+    await check_and_send_event_reminders()
+    return {"success": True, "message": "Reminder check completed"}
+
+# ===== END EVENT REMINDERS SYSTEM =====
+
 @api_router.get("/health")
 async def health_check():
     return {
