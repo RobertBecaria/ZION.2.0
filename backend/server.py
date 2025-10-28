@@ -9370,8 +9370,11 @@ async def get_organization_event(
         
         user_rsvp_status = rsvp_responses.get(current_user.id)
         
+        # Remove MongoDB _id before creating response
+        event_clean = {k: v for k, v in event.items() if k != '_id'}
+        
         event_response = WorkOrganizationEventResponse(
-            **event,
+            **event_clean,
             created_by_name=creator_name,
             department_name=dept_name,
             team_name=team_name,
