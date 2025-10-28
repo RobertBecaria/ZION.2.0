@@ -1090,6 +1090,9 @@ class NotificationType(str, Enum):
     DEPARTMENT_CHANGE_REJECTED = "DEPARTMENT_CHANGE_REJECTED"
     TEAM_CHANGE_APPROVED = "TEAM_CHANGE_APPROVED"
     TEAM_CHANGE_REJECTED = "TEAM_CHANGE_REJECTED"
+    EVENT_CREATED = "EVENT_CREATED"
+    EVENT_UPDATED = "EVENT_UPDATED"
+    EVENT_CANCELLED = "EVENT_CANCELLED"
 
 class WorkNotification(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
