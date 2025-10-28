@@ -1127,7 +1127,7 @@ function Dashboard() {
                     className="avatar-placeholder" 
                     style={{ backgroundColor: currentModule.color }}
                   >
-                    <User size={40} color="white" />
+                    <User size={70} color="white" strokeWidth={2.5} />
                   </div>
                 )}
                 <div className="status-indicator online"></div>
