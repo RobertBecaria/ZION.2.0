@@ -1241,8 +1241,8 @@ body {
 }
 
 .sidebar-header {
-  margin-bottom: 1.5rem;
-  padding: 1rem 0 1rem 0;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
   border-bottom: 2px solid transparent;
   background: linear-gradient(white, white) padding-box,
               linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%) border-box;
