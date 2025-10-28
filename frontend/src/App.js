@@ -1843,6 +1843,12 @@ function Dashboard() {
                 organizationId={selectedOrganizationId}
               />
 
+              {/* Upcoming Events List Widget */}
+              <WorkUpcomingEventsList
+                organizationId={selectedOrganizationId}
+                maxEvents={5}
+              />
+
               {/* Department Navigator Widget */}
               <WorkDepartmentNavigator
                 organizationId={selectedOrganizationId}
