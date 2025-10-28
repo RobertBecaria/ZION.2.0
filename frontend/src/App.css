@@ -15890,9 +15890,10 @@ a,
 }
 
 .day-number {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #1F2937;
+  line-height: 1;
 }
 
 .calendar-day.today .day-number {
