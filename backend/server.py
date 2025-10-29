@@ -7878,6 +7878,10 @@ async def update_department(
         # Get updated department
         updated_dept = await db.departments.find_one({"id": dept_id})
         
+        # Remove MongoDB _id field
+        if "_id" in updated_dept:
+            del updated_dept["_id"]
+        
         # Add member count
         member_count = await db.department_members.count_documents({"department_id": dept_id})
         updated_dept["member_count"] = member_count
