@@ -73,7 +73,7 @@ function WorkAnnouncementCard({ announcement, onEdit, onDelete, onPin, onReact, 
   const reactions = [
     { type: 'thumbsup', icon: ThumbsUp, label: 'Нравится' },
     { type: 'heart', icon: Heart, label: 'Любовь' },
-    { type: 'clap', icon: Clap, label: 'Аплодисменты' },
+    { type: 'smile', icon: Smile, label: 'Улыбка' },
     { type: 'fire', icon: Flame, label: 'Огонь' }
   ];
 
