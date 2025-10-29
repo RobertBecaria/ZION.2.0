@@ -795,6 +795,7 @@ function Dashboard() {
   const [workSetupMode, setWorkSetupMode] = useState('choice'); // 'choice', 'search', 'create'
   const [activeDepartmentId, setActiveDepartmentId] = useState(null);
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
+  const [departmentRefreshTrigger, setDepartmentRefreshTrigger] = useState(0);
   const [viewingPublicOrgId, setViewingPublicOrgId] = useState(null); // For public profile view
   
   // Removed showProfileCompletionModal state - now using full-page FamilySetupPage
