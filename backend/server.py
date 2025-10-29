@@ -8018,6 +8018,10 @@ async def list_department_members(
         # Enrich with user details
         result = []
         for member in members:
+            # Remove MongoDB _id field
+            if "_id" in member:
+                del member["_id"]
+                
             user = await db.users.find_one({"id": member["user_id"]})
             if user:
                 member["user_name"] = f"{user.get('first_name', '')} {user.get('last_name', '')}"
