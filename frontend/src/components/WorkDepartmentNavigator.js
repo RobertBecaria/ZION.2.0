@@ -14,6 +14,21 @@ function WorkDepartmentNavigator({ organizationId, activeDepartmentId, onDepartm
     }
   }, [organizationId]);
 
+  // Expose fetchDepartments for external refresh
+  useEffect(() => {
+    // Store the fetch function in a ref accessible from parent
+    if (window.refreshDepartments) {
+      window.refreshDepartments[organizationId] = fetchDepartments;
+    } else {
+      window.refreshDepartments = { [organizationId]: fetchDepartments };
+    }
+    return () => {
+      if (window.refreshDepartments) {
+        delete window.refreshDepartments[organizationId];
+      }
+    };
+  }, [organizationId]);
+
   const fetchDepartments = async () => {
     try {
       setLoading(true);
