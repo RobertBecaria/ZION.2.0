@@ -829,6 +829,24 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
           gap: 1rem;
         }
 
+        .invite-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.25rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .invite-btn:hover {
+          opacity: 0.8;
+          transform: translateY(-1px);
+        }
+
         .view-toggle {
           display: flex;
           gap: 0.5rem;
