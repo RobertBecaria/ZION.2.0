@@ -18,14 +18,6 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
     head_id: ''
   });
 
-  const handleCloseWithRefresh = () => {
-    // Trigger refresh in the department navigator
-    if (window.refreshDepartments && window.refreshDepartments[organizationId]) {
-      window.refreshDepartments[organizationId]();
-    }
-    onClose();
-  };
-
   useEffect(() => {
     console.log('WorkDepartmentManager useEffect triggered');
     console.log('  organizationId:', organizationId);
