@@ -3,7 +3,7 @@ import { Building2, Users, ChevronRight, Plus, TrendingUp } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
-function WorkDepartmentNavigator({ organizationId, activeDepartmentId, onDepartmentSelect, onCreateDepartment, moduleColor = '#C2410C' }) {
+function WorkDepartmentNavigator({ organizationId, activeDepartmentId, onDepartmentSelect, onCreateDepartment, moduleColor = '#C2410C', refreshTrigger = 0 }) {
   const [expanded, setExpanded] = useState(true);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
