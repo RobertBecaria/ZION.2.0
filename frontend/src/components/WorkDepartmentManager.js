@@ -448,6 +448,8 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         }
 
         .modal-actions {
+          display: flex;
+          gap: 0.75rem;
           padding: 1rem 1.5rem;
           border-bottom: 1px solid #E4E6EB;
         }
@@ -467,6 +469,24 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
 
         .create-dept-btn:hover {
           opacity: 0.9;
+        }
+
+        .view-all-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          background: white;
+          border: 2px solid;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .view-all-btn:hover {
+          opacity: 0.8;
+          transform: translateY(-1px);
         }
 
         .departments-grid {
