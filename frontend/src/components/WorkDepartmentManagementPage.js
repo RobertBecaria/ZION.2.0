@@ -1209,6 +1209,141 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
           color: #65676B;
         }
 
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #050505;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #E4E6EB;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          color: #050505;
+          transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+          outline: none;
+          border-color: #1877F2;
+        }
+
+        .color-options {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        .color-option {
+          width: 40px;
+          height: 40px;
+          border: 3px solid transparent;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .color-option:hover {
+          transform: scale(1.1);
+        }
+
+        .color-option.selected {
+          border-color: #050505;
+          transform: scale(1.15);
+        }
+
+        .modal-actions-row {
+          display: flex;
+          gap: 1rem;
+          margin-top: 2rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid #E4E6EB;
+        }
+
+        .cancel-btn,
+        .save-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.875rem 1.5rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .cancel-btn {
+          background: #F0F2F5;
+          color: #050505;
+        }
+
+        .cancel-btn:hover {
+          background: #E4E6EB;
+        }
+
+        .save-btn {
+          color: white;
+        }
+
+        .save-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+
+        .invite-modal {
+          max-width: 500px;
+        }
+
+        .invite-info {
+          display: flex;
+          gap: 1rem;
+          padding: 1rem;
+          background: #F9FAFB;
+          border: 1px solid #E4E6EB;
+          border-radius: 8px;
+          margin-top: 1rem;
+        }
+
+        .info-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          flex-shrink: 0;
+        }
+
+        .invite-info h4 {
+          margin: 0 0 0.5rem 0;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: #050505;
+        }
+
+        .invite-info p {
+          margin: 0;
+          font-size: 0.875rem;
+          color: #65676B;
+          line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
           .dept-management-page {
             padding: 1rem;
