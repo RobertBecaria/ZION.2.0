@@ -29,6 +29,7 @@ import WorkDepartmentNavigator from './components/WorkDepartmentNavigator';
 import WorkAnnouncementsWidget from './components/WorkAnnouncementsWidget';
 import WorkAnnouncementsList from './components/WorkAnnouncementsList';
 import WorkDepartmentManager from './components/WorkDepartmentManager';
+import WorkDepartmentManagementPage from './components/WorkDepartmentManagementPage';
 import WorkNextEventWidget from './components/WorkNextEventWidget';
 import WorkUpcomingEventsList from './components/WorkUpcomingEventsList';
 import WorkCalendarWidget from './components/WorkCalendarWidget';
