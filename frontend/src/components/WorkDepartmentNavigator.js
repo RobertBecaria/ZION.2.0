@@ -29,6 +29,13 @@ function WorkDepartmentNavigator({ organizationId, activeDepartmentId, onDepartm
     };
   }, [organizationId]);
 
+  // Refresh departments when refreshTrigger changes
+  useEffect(() => {
+    if (organizationId && refreshTrigger > 0) {
+      fetchDepartments();
+    }
+  }, [refreshTrigger, organizationId]);
+
   const fetchDepartments = async () => {
     try {
       setLoading(true);
