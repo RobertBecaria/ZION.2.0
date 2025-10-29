@@ -213,7 +213,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
               <p>{departments.length} отдел(ов)</p>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={handleCloseWithRefresh}>
             <X size={24} />
           </button>
         </div>
