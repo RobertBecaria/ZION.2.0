@@ -7858,7 +7858,7 @@ async def update_department(
             "status": "ACTIVE"
         })
         
-        is_dept_head = department.get("head_id") == current_user["id"]
+        is_dept_head = department.get("head_id") == current_user.id
         is_authorized = membership and (
             membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
         )
@@ -7944,7 +7944,7 @@ async def add_department_member(
             "status": "ACTIVE"
         })
         
-        is_dept_head = department.get("head_id") == current_user["id"]
+        is_dept_head = department.get("head_id") == current_user.id
         is_authorized = membership and (
             membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
         )
@@ -8057,7 +8057,7 @@ async def remove_department_member(
             "status": "ACTIVE"
         })
         
-        is_dept_head = department.get("head_id") == current_user["id"]
+        is_dept_head = department.get("head_id") == current_user.id
         is_authorized = membership and (
             membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
         )
@@ -8107,7 +8107,7 @@ async def create_announcement(
         if announcement_data.department_id:
             dept = await db.departments.find_one({"id": announcement_data.department_id})
             if dept:
-                is_dept_head = dept.get("head_id") == current_user["id"]
+                is_dept_head = dept.get("head_id") == current_user.id
         
         is_authorized = membership and (
             membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
@@ -8123,7 +8123,7 @@ async def create_announcement(
             title=announcement_data.title,
             content=announcement_data.content,
             priority=announcement_data.priority,
-            author_id=current_user["id"],
+            author_id=current_user.id,
             target_type=announcement_data.target_type,
             target_departments=announcement_data.target_departments,
             is_pinned=announcement_data.is_pinned
@@ -8248,7 +8248,7 @@ async def update_announcement(
             "status": "ACTIVE"
         })
         
-        is_author = announcement.get("author_id") == current_user["id"]
+        is_author = announcement.get("author_id") == current_user.id
         is_authorized = is_author or (membership and membership.get("role") in ["OWNER", "ADMIN"])
         
         if not is_authorized:
@@ -8297,7 +8297,7 @@ async def delete_announcement(
             "status": "ACTIVE"
         })
         
-        is_author = announcement.get("author_id") == current_user["id"]
+        is_author = announcement.get("author_id") == current_user.id
         is_authorized = is_author or (membership and membership.get("role") in ["OWNER", "ADMIN"])
         
         if not is_authorized:
@@ -8469,7 +8469,7 @@ async def follow_organization(
         # Check if already following
         existing_follow = await db.organization_follows.find_one({
             "organization_id": organization_id,
-            "follower_id": current_user["id"]
+            "follower_id": current_user.id
         })
         
         if existing_follow:
@@ -8478,7 +8478,7 @@ async def follow_organization(
         # Create follow
         follow = OrganizationFollow(
             organization_id=organization_id,
-            follower_id=current_user["id"]
+            follower_id=current_user.id
         )
         
         await db.organization_follows.insert_one(follow.dict())
@@ -8500,7 +8500,7 @@ async def unfollow_organization(
         # Delete follow
         result = await db.organization_follows.delete_one({
             "organization_id": organization_id,
-            "follower_id": current_user["id"]
+            "follower_id": current_user.id
         })
         
         if result.deleted_count == 0:
@@ -8522,7 +8522,7 @@ async def get_follow_status(
     try:
         follow = await db.organization_follows.find_one({
             "organization_id": organization_id,
-            "follower_id": current_user["id"]
+            "follower_id": current_user.id
         })
         
         return {
@@ -8589,7 +8589,7 @@ async def create_join_request_with_notification(
         # Check if already a member
         existing_member = await db.work_members.find_one({
             "organization_id": organization_id,
-            "user_id": current_user["id"]
+            "user_id": current_user.id
         })
         
         if existing_member:
@@ -8639,7 +8639,7 @@ async def create_join_request_with_notification(
                     "organization_id": organization_id,
                     "organization_name": organization.get("name"),
                     "request_id": join_request["id"],
-                    "requester_id": current_user["id"],
+                    "requester_id": current_user.id,
                     "requester_name": f"{current_user.get('first_name', '')} {current_user.get('last_name', '')}"
                 },
                 "is_read": False,
