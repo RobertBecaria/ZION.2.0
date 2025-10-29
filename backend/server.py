@@ -7860,7 +7860,9 @@ async def update_department(
         
         is_dept_head = department.get("head_id") == current_user.id
         is_authorized = membership and (
-            membership.get("role") in ["OWNER", "ADMIN"] or is_dept_head
+            membership.get("role") in ["OWNER", "ADMIN"] or 
+            membership.get("is_admin") == True or 
+            is_dept_head
         )
         
         if not is_authorized:
