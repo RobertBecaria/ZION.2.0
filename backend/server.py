@@ -978,6 +978,12 @@ class WorkOrganizationCreate(BaseModel):
     is_private: bool = False
     allow_public_discovery: bool = True
     
+    # === SCHOOL-SPECIFIC FIELDS ===
+    school_levels: Optional[List[SchoolLevel]] = None
+    grades_offered: Optional[List[int]] = None
+    school_type: Optional[str] = None
+    principal_name: Optional[str] = None
+    
     # Creator's Role & Position (for initial member)
     creator_role: WorkRole = WorkRole.EMPLOYEE
     custom_role_name: Optional[str] = None
