@@ -82,32 +82,6 @@ function MyProfile({ user, activeModule, moduleColor }) {
     }
   };
 
-  const getVisibilityIcon = (visibility) => {
-    switch (visibility) {
-      case 'PUBLIC':
-        return <Globe size={14} />;
-      case 'ORGANIZATION_ONLY':
-        return <Building2 size={14} />;
-      case 'PRIVATE':
-        return <Lock size={14} />;
-      default:
-        return <Globe size={14} />;
-    }
-  };
-
-  const getVisibilityLabel = (visibility) => {
-    switch (visibility) {
-      case 'PUBLIC':
-        return 'Публично';
-      case 'ORGANIZATION_ONLY':
-        return 'Организация';
-      case 'PRIVATE':
-        return 'Приватно';
-      default:
-        return 'Публично';
-    }
-  };
-
   const calculateWorkAnniversary = (startDate) => {
     if (!startDate) return null;
     const start = new Date(startDate);
