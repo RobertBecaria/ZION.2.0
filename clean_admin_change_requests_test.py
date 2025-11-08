@@ -8,7 +8,7 @@ import uuid
 import time
 
 class CleanAdminChangeRequestsTester:
-    def __init__(self, base_url="https://ui-enhancement-60.preview.emergentagent.com"):
+    def __init__(self, base_url="https://profile-hub-76.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None

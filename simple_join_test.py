@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BASE_URL = "https://ui-enhancement-60.preview.emergentagent.com/api"
+BASE_URL = "https://profile-hub-76.preview.emergentagent.com/api"
 ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "admin123"

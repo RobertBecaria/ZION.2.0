@@ -5,7 +5,7 @@ import sys
 
 def test_existing_user():
     """Test the existing test user that should already be created"""
-    base_url = "https://ui-enhancement-60.preview.emergentagent.com/api"
+    base_url = "https://profile-hub-76.preview.emergentagent.com/api"
     
     print("🔍 Testing existing test user login...")
     

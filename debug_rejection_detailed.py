@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 def debug_rejection():
-    base_url = "https://ui-enhancement-60.preview.emergentagent.com"
+    base_url = "https://profile-hub-76.preview.emergentagent.com"
     timestamp = datetime.now().strftime('%H%M%S')
     
     print("=== DEBUGGING REJECTION FLOW ===")

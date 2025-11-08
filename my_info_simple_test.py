@@ -5,7 +5,7 @@ import json
 
 def test_my_info_endpoints():
     """Simple test of MY INFO module endpoints"""
-    base_url = "https://ui-enhancement-60.preview.emergentagent.com/api"
+    base_url = "https://profile-hub-76.preview.emergentagent.com/api"
     
     # Login
     login_response = requests.post(f"{base_url}/auth/login", json={
