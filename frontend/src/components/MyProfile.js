@@ -586,33 +586,24 @@ function MyProfile({ user, activeModule, moduleColor }) {
   );
 }
 
-// Privacy Control Component
-function PrivacyControl({ label, value, onChange, disabled }) {
-  const options = [
-    { value: 'PUBLIC', label: 'Публично', icon: Globe },
-    { value: 'ORGANIZATION_ONLY', label: 'Организация', icon: Building2 },
-    { value: 'PRIVATE', label: 'Приватно', icon: Lock }
-  ];
-
+// Privacy Toggle Component - Modern iOS-style toggle
+function PrivacyToggle({ icon, label, description, checked, onChange, disabled }) {
   return (
-    <div className="privacy-control">
-      <label>{label}</label>
-      <div className="privacy-options">
-        {options.map(option => {
-          const Icon = option.icon;
-          return (
-            <button
-              key={option.value}
-              className={`privacy-option ${value === option.value ? 'active' : ''}`}
-              onClick={() => onChange(option.value)}
-              disabled={disabled}
-            >
-              <Icon size={14} />
-              <span>{option.label}</span>
-            </button>
-          );
-        })}
+    <div className="privacy-toggle-item">
+      <div className="privacy-toggle-icon">{icon}</div>
+      <div className="privacy-toggle-content">
+        <div className="privacy-toggle-label">{label}</div>
+        <div className="privacy-toggle-description">{description}</div>
       </div>
+      <label className="toggle-switch">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+        />
+        <span className="toggle-slider"></span>
+      </label>
     </div>
   );
 }
