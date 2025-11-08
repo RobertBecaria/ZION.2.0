@@ -331,20 +331,25 @@ class ProfileUpdateRequest(BaseModel):
     education: Optional[str] = None
 
 class ProfilePrivacyUpdateRequest(BaseModel):
-    """Request to update profile privacy settings"""
-    phone_visibility: Optional[ProfileFieldVisibility] = None
-    email_visibility: Optional[ProfileFieldVisibility] = None
-    address_visibility: Optional[ProfileFieldVisibility] = None
-    birth_date_visibility: Optional[ProfileFieldVisibility] = None
-    family_address_visibility: Optional[ProfileFieldVisibility] = None
-    family_members_visibility: Optional[ProfileFieldVisibility] = None
-    business_phone_visibility: Optional[ProfileFieldVisibility] = None
-    business_email_visibility: Optional[ProfileFieldVisibility] = None
-    job_title_visibility: Optional[ProfileFieldVisibility] = None
-    department_visibility: Optional[ProfileFieldVisibility] = None
-    team_visibility: Optional[ProfileFieldVisibility] = None
-    manager_visibility: Optional[ProfileFieldVisibility] = None
-    work_anniversary_visibility: Optional[ProfileFieldVisibility] = None
+    """Request to update profile privacy settings - 13 toggle controls"""
+    # Family Context Settings
+    family_show_address: Optional[bool] = None
+    family_show_phone: Optional[bool] = None
+    family_show_birthdate: Optional[bool] = None
+    family_show_spouse_info: Optional[bool] = None
+    
+    # Work Context Settings
+    work_show_department: Optional[bool] = None
+    work_show_team: Optional[bool] = None
+    work_show_manager: Optional[bool] = None
+    work_show_work_anniversary: Optional[bool] = None
+    work_show_job_title: Optional[bool] = None
+    
+    # Public Context Settings
+    public_show_email: Optional[bool] = None
+    public_show_phone: Optional[bool] = None
+    public_show_location: Optional[bool] = None
+    public_show_bio: Optional[bool] = None
 
 class DynamicProfileResponse(BaseModel):
     """Response for dynamic profile view"""
