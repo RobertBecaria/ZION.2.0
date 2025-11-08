@@ -9632,6 +9632,17 @@ async def get_teacher_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/work/schools/constants")
+async def get_school_constants():
+    """Get Russian school system constants (subjects, grades, structure)"""
+    return {
+        "school_structure": RUSSIAN_SCHOOL_STRUCTURE,
+        "subjects": RUSSIAN_SCHOOL_SUBJECTS,
+        "grades": RUSSIAN_GRADES,
+        "class_letters": CLASS_LETTERS,
+        "school_levels": [level.value for level in SchoolLevel]
+    }
+
 @api_router.get("/work/organizations/{organization_id}/change-requests")
 async def get_change_requests(
     organization_id: str,
