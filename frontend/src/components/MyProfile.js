@@ -199,73 +199,159 @@ function MyProfile({ user, activeModule, moduleColor }) {
       {showPrivacySettings && privacySettings && (
         <div className="privacy-settings-modal">
           <div className="modal-overlay" onClick={() => setShowPrivacySettings(false)} />
-          <div className="modal-content">
+          <div className="modal-content privacy-modal">
             <div className="modal-header">
-              <h2><Shield size={20} /> Настройки приватности</h2>
-              <button onClick={() => setShowPrivacySettings(false)}>×</button>
+              <h2>Настройки Приватности Профиля</h2>
+              <button className="close-btn" onClick={() => setShowPrivacySettings(false)}>×</button>
             </div>
             <div className="modal-body">
-              <div className="privacy-section">
-                <h3>Основная информация</h3>
-                <PrivacyControl
-                  label="Телефон"
-                  value={privacySettings.phone_visibility}
-                  onChange={(val) => updatePrivacySetting('phone_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Email"
-                  value={privacySettings.email_visibility}
-                  onChange={(val) => updatePrivacySetting('email_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Адрес"
-                  value={privacySettings.address_visibility}
-                  onChange={(val) => updatePrivacySetting('address_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Дата рождения"
-                  value={privacySettings.birth_date_visibility}
-                  onChange={(val) => updatePrivacySetting('birth_date_visibility', val)}
-                  disabled={savingPrivacy}
-                />
+              
+              {/* Family Context Section */}
+              <div className="privacy-context-section">
+                <div className="context-header">
+                  <Heart size={20} style={{ color: '#059669' }} />
+                  <div>
+                    <h3>Семейный Контекст</h3>
+                    <p>Что видят члены вашей семьи</p>
+                  </div>
+                </div>
+                
+                <div className="privacy-settings-list">
+                  <PrivacyToggle
+                    icon={<MapPin size={18} />}
+                    label="Показывать адрес"
+                    description="Домашний адрес и местоположение"
+                    checked={privacySettings.family_show_address}
+                    onChange={(val) => updatePrivacySetting('family_show_address', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Phone size={18} />}
+                    label="Показывать телефон"
+                    description="Личный номер телефона"
+                    checked={privacySettings.family_show_phone}
+                    onChange={(val) => updatePrivacySetting('family_show_phone', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Cake size={18} />}
+                    label="Показывать дату рождения"
+                    description="День рождения и возраст"
+                    checked={privacySettings.family_show_birthdate}
+                    onChange={(val) => updatePrivacySetting('family_show_birthdate', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Heart size={18} />}
+                    label="Показывать информацию о супруге"
+                    description="Семейное положение и данные супруга"
+                    checked={privacySettings.family_show_spouse_info}
+                    onChange={(val) => updatePrivacySetting('family_show_spouse_info', val)}
+                    disabled={savingPrivacy}
+                  />
+                </div>
               </div>
 
-              <div className="privacy-section">
-                <h3>Информация об организации</h3>
-                <PrivacyControl
-                  label="Должность"
-                  value={privacySettings.job_title_visibility}
-                  onChange={(val) => updatePrivacySetting('job_title_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Отдел"
-                  value={privacySettings.department_visibility}
-                  onChange={(val) => updatePrivacySetting('department_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Команда"
-                  value={privacySettings.team_visibility}
-                  onChange={(val) => updatePrivacySetting('team_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Руководитель"
-                  value={privacySettings.manager_visibility}
-                  onChange={(val) => updatePrivacySetting('manager_visibility', val)}
-                  disabled={savingPrivacy}
-                />
-                <PrivacyControl
-                  label="Рабочий юбилей"
-                  value={privacySettings.work_anniversary_visibility}
-                  onChange={(val) => updatePrivacySetting('work_anniversary_visibility', val)}
-                  disabled={savingPrivacy}
-                />
+              {/* Work Context Section */}
+              <div className="privacy-context-section">
+                <div className="context-header">
+                  <Building2 size={20} style={{ color: '#ea580c' }} />
+                  <div>
+                    <h3>Рабочий Контекст</h3>
+                    <p>Что видят коллеги в вашей организации</p>
+                  </div>
+                </div>
+                
+                <div className="privacy-settings-list">
+                  <PrivacyToggle
+                    icon={<Building2 size={18} />}
+                    label="Показывать отдел"
+                    description="Ваш отдел в организации"
+                    checked={privacySettings.work_show_department}
+                    onChange={(val) => updatePrivacySetting('work_show_department', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Users size={18} />}
+                    label="Показывать команду"
+                    description="Вашу команду/группу"
+                    checked={privacySettings.work_show_team}
+                    onChange={(val) => updatePrivacySetting('work_show_team', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<User size={18} />}
+                    label="Показывать руководителя"
+                    description="Имя вашего прямого руководителя"
+                    checked={privacySettings.work_show_manager}
+                    onChange={(val) => updatePrivacySetting('work_show_manager', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Calendar size={18} />}
+                    label="Показывать рабочий юбилей"
+                    description="Дата начала работы и стаж"
+                    checked={privacySettings.work_show_work_anniversary}
+                    onChange={(val) => updatePrivacySetting('work_show_work_anniversary', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Briefcase size={18} />}
+                    label="Показывать должность"
+                    description="Ваше название должности/позиции"
+                    checked={privacySettings.work_show_job_title}
+                    onChange={(val) => updatePrivacySetting('work_show_job_title', val)}
+                    disabled={savingPrivacy}
+                  />
+                </div>
               </div>
+
+              {/* Public Context Section */}
+              <div className="privacy-context-section">
+                <div className="context-header">
+                  <Globe size={20} style={{ color: '#6366f1' }} />
+                  <div>
+                    <h3>Публичный Контекст</h3>
+                    <p>Что видят все пользователи</p>
+                  </div>
+                </div>
+                
+                <div className="privacy-settings-list">
+                  <PrivacyToggle
+                    icon={<Mail size={18} />}
+                    label="Показывать email"
+                    description="Ваш адрес электронной почты"
+                    checked={privacySettings.public_show_email}
+                    onChange={(val) => updatePrivacySetting('public_show_email', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<Phone size={18} />}
+                    label="Показывать телефон"
+                    description="Ваш номер телефона"
+                    checked={privacySettings.public_show_phone}
+                    onChange={(val) => updatePrivacySetting('public_show_phone', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<MapPin size={18} />}
+                    label="Показывать местоположение"
+                    description="Город и страна"
+                    checked={privacySettings.public_show_location}
+                    onChange={(val) => updatePrivacySetting('public_show_location', val)}
+                    disabled={savingPrivacy}
+                  />
+                  <PrivacyToggle
+                    icon={<User size={18} />}
+                    label="Показывать био"
+                    description="Раздел 'О себе'"
+                    checked={privacySettings.public_show_bio}
+                    onChange={(val) => updatePrivacySetting('public_show_bio', val)}
+                    disabled={savingPrivacy}
+                  />
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
