@@ -677,6 +677,12 @@ class WorkOrganization(BaseModel):
     is_private: bool = False  # Public by default
     allow_public_discovery: bool = True
     
+    # === SCHOOL-SPECIFIC FIELDS ===
+    school_levels: List[SchoolLevel] = []  # Which levels: PRIMARY, BASIC, SECONDARY
+    grades_offered: List[int] = []  # Grade numbers: 1-11
+    school_type: Optional[str] = None  # "Гимназия", "Лицей", "СОШ", etc.
+    principal_name: Optional[str] = None  # Директор школы
+    
     # Statistics
     member_count: int = 1
     
