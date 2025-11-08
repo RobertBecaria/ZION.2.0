@@ -2654,6 +2654,410 @@ async def get_user_affiliations_endpoint(current_user: User = Depends(get_curren
     affiliations = await get_user_affiliations(current_user.id)
     return {"affiliations": affiliations}
 
+# === DYNAMIC PROFILE API ENDPOINTS ===
+
+@api_router.get("/users/me/profile", response_model=DynamicProfileResponse)
+async def get_my_dynamic_profile(current_user: User = Depends(get_current_user)):
+    """Get current user's own dynamic profile (full access to all data)"""
+    
+    # Get user's privacy settings (if exists)
+    privacy_doc = await db.profile_privacy_settings.find_one({"user_id": current_user.id})
+    privacy_settings = ProfilePrivacySettings(**privacy_doc) if privacy_doc else ProfilePrivacySettings()
+    
+    # Get family information
+    family_info = None
+    upcoming_birthday = None
+    family_unit = await db.family_units.find_one({
+        "member_ids": current_user.id,
+        "is_active": True
+    })
+    
+    if family_unit:
+        # Get family members to find upcoming birthdays
+        family_members = await db.family_unit_members.find({
+            "family_unit_id": family_unit["id"],
+            "is_active": True
+        }).to_list(None)
+        
+        # Find upcoming birthday
+        today = datetime.now(timezone.utc).date()
+        upcoming_birthdays = []
+        for member in family_members:
+            user_doc = await db.users.find_one({"id": member["user_id"]})
+            if user_doc and user_doc.get("date_of_birth"):
+                birth_date = user_doc["date_of_birth"]
+                if isinstance(birth_date, datetime):
+                    birth_date = birth_date.date()
+                # Calculate next birthday
+                next_birthday = birth_date.replace(year=today.year)
+                if next_birthday < today:
+                    next_birthday = birth_date.replace(year=today.year + 1)
+                days_until = (next_birthday - today).days
+                if days_until <= 90:  # Next 90 days
+                    upcoming_birthdays.append({
+                        "name": f"{user_doc.get('first_name', '')} {user_doc.get('last_name', '')}",
+                        "date": next_birthday.isoformat(),
+                        "days_until": days_until
+                    })
+        
+        if upcoming_birthdays:
+            upcoming_birthdays.sort(key=lambda x: x["days_until"])
+            upcoming_birthday = upcoming_birthdays[0]
+        
+        family_info = {
+            "family_name": family_unit.get("family_name", ""),
+            "family_surname": family_unit.get("family_surname", ""),
+            "member_count": family_unit.get("member_count", 0),
+            "address_city": family_unit.get("address_city"),
+            "address_country": family_unit.get("address_country")
+        }
+    
+    # Get organization memberships
+    organizations = []
+    org_members = await db.work_members.find({
+        "user_id": current_user.id,
+        "status": "ACTIVE"
+    }).to_list(None)
+    
+    for member in org_members:
+        org = await db.work_organizations.find_one({"id": member["organization_id"]})
+        if org:
+            # Get department info
+            dept_name = None
+            if member.get("department_id"):
+                dept = await db.work_departments.find_one({"id": member["department_id"]})
+                if dept:
+                    dept_name = dept.get("name")
+            
+            # Get team info
+            team_name = None
+            if member.get("team_id"):
+                team = await db.work_teams.find_one({"id": member["team_id"]})
+                if team:
+                    team_name = team.get("name")
+            
+            # Get manager info
+            manager_name = None
+            if member.get("manager_id"):
+                manager = await db.users.find_one({"id": member["manager_id"]})
+                if manager:
+                    manager_name = f"{manager.get('first_name', '')} {manager.get('last_name', '')}"
+            
+            organizations.append({
+                "id": org["id"],
+                "name": org["name"],
+                "job_title": member.get("job_title"),
+                "department": dept_name,
+                "team": team_name,
+                "manager": manager_name,
+                "role": member.get("role"),
+                "is_admin": member.get("is_admin", False),
+                "start_date": member.get("start_date").isoformat() if member.get("start_date") else None,
+                "work_anniversary": member.get("start_date")
+            })
+    
+    return DynamicProfileResponse(
+        id=current_user.id,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        avatar_url=current_user.avatar_url or current_user.profile_picture,
+        bio=current_user.bio,
+        email=current_user.email,
+        phone=current_user.phone,
+        business_phone=current_user.business_phone,
+        business_email=current_user.business_email,
+        business_address=current_user.business_address,
+        date_of_birth=current_user.date_of_birth,
+        address_city=current_user.address_city,
+        address_state=current_user.address_state,
+        address_country=current_user.address_country,
+        personal_interests=current_user.personal_interests or [],
+        education=current_user.education,
+        family_info=family_info,
+        upcoming_family_birthday=upcoming_birthday,
+        organizations=organizations,
+        viewer_relationship="self",
+        is_own_profile=True
+    )
+
+@api_router.get("/users/{user_id}/profile", response_model=DynamicProfileResponse)
+async def get_user_dynamic_profile(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get another user's dynamic profile with visibility rules applied"""
+    
+    # Get target user
+    target_user_doc = await db.users.find_one({"id": user_id})
+    if not target_user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    target_user = User(**target_user_doc)
+    
+    # Get target user's privacy settings
+    privacy_doc = await db.profile_privacy_settings.find_one({"user_id": user_id})
+    privacy_settings = ProfilePrivacySettings(**privacy_doc) if privacy_doc else ProfilePrivacySettings()
+    
+    # Determine viewer relationship
+    viewer_relationship = "public"
+    shared_organizations = []
+    
+    # Check if users are in same organization
+    viewer_orgs = await db.work_members.find({
+        "user_id": current_user.id,
+        "status": "ACTIVE"
+    }).to_list(None)
+    
+    target_orgs = await db.work_members.find({
+        "user_id": user_id,
+        "status": "ACTIVE"
+    }).to_list(None)
+    
+    viewer_org_ids = {m["organization_id"] for m in viewer_orgs}
+    target_org_ids = {m["organization_id"] for m in target_orgs}
+    shared_org_ids = viewer_org_ids & target_org_ids
+    
+    if shared_org_ids:
+        viewer_relationship = "org_member"
+        # Get shared organization details
+        for org_id in shared_org_ids:
+            org = await db.work_organizations.find_one({"id": org_id})
+            if org:
+                shared_organizations.append(org_id)
+    
+    # Apply visibility rules based on privacy settings and relationship
+    def can_view_field(visibility: ProfileFieldVisibility) -> bool:
+        if visibility == ProfileFieldVisibility.PUBLIC:
+            return True
+        elif visibility == ProfileFieldVisibility.ORGANIZATION_ONLY:
+            return viewer_relationship == "org_member"
+        elif visibility == ProfileFieldVisibility.PRIVATE:
+            return False
+        return False
+    
+    # Build response with visibility filtering
+    response_data = {
+        "id": target_user.id,
+        "first_name": target_user.first_name,
+        "last_name": target_user.last_name,
+        "avatar_url": target_user.avatar_url or target_user.profile_picture,
+        "bio": target_user.bio,
+        "email": target_user.email if can_view_field(privacy_settings.email_visibility) else None,
+        "phone": target_user.phone if can_view_field(privacy_settings.phone_visibility) else None,
+        "business_phone": target_user.business_phone if can_view_field(privacy_settings.business_phone_visibility) else None,
+        "business_email": target_user.business_email if can_view_field(privacy_settings.business_email_visibility) else None,
+        "business_address": target_user.business_address if can_view_field(privacy_settings.business_phone_visibility) else None,
+        "date_of_birth": target_user.date_of_birth if can_view_field(privacy_settings.birth_date_visibility) else None,
+        "address_city": target_user.address_city if can_view_field(privacy_settings.address_visibility) else None,
+        "address_state": target_user.address_state if can_view_field(privacy_settings.address_visibility) else None,
+        "address_country": target_user.address_country if can_view_field(privacy_settings.address_visibility) else None,
+        "personal_interests": target_user.personal_interests or [],
+        "education": target_user.education,
+        "viewer_relationship": viewer_relationship,
+        "is_own_profile": False
+    }
+    
+    # Add family info if visible
+    family_info = None
+    upcoming_birthday = None
+    if can_view_field(privacy_settings.family_address_visibility):
+        family_unit = await db.family_units.find_one({
+            "member_ids": user_id,
+            "is_active": True
+        })
+        if family_unit:
+            family_info = {
+                "family_name": family_unit.get("family_name", ""),
+                "member_count": family_unit.get("member_count", 0),
+                "address_city": family_unit.get("address_city"),
+                "address_country": family_unit.get("address_country")
+            }
+    
+    response_data["family_info"] = family_info
+    response_data["upcoming_family_birthday"] = upcoming_birthday
+    
+    # Add organization info only for shared organizations
+    organizations = []
+    if viewer_relationship == "org_member":
+        for org_id in shared_organizations:
+            member = await db.work_members.find_one({
+                "user_id": user_id,
+                "organization_id": org_id,
+                "status": "ACTIVE"
+            })
+            
+            if member:
+                org = await db.work_organizations.find_one({"id": org_id})
+                if org:
+                    org_data = {
+                        "id": org["id"],
+                        "name": org["name"],
+                        "job_title": member.get("job_title") if can_view_field(privacy_settings.job_title_visibility) else None,
+                        "department": None,
+                        "team": None,
+                        "manager": None,
+                        "role": member.get("role"),
+                        "is_admin": member.get("is_admin", False)
+                    }
+                    
+                    # Add department if visible
+                    if can_view_field(privacy_settings.department_visibility) and member.get("department_id"):
+                        dept = await db.work_departments.find_one({"id": member["department_id"]})
+                        if dept:
+                            org_data["department"] = dept.get("name")
+                    
+                    # Add team if visible
+                    if can_view_field(privacy_settings.team_visibility) and member.get("team_id"):
+                        team = await db.work_teams.find_one({"id": member["team_id"]})
+                        if team:
+                            org_data["team"] = team.get("name")
+                    
+                    # Add manager if visible
+                    if can_view_field(privacy_settings.manager_visibility) and member.get("manager_id"):
+                        manager = await db.users.find_one({"id": member["manager_id"]})
+                        if manager:
+                            org_data["manager"] = f"{manager.get('first_name', '')} {manager.get('last_name', '')}"
+                    
+                    # Add work anniversary if visible
+                    if can_view_field(privacy_settings.work_anniversary_visibility) and member.get("start_date"):
+                        org_data["start_date"] = member["start_date"].isoformat()
+                        org_data["work_anniversary"] = member["start_date"]
+                    
+                    organizations.append(org_data)
+    
+    response_data["organizations"] = organizations
+    
+    return DynamicProfileResponse(**response_data)
+
+@api_router.put("/users/me/profile")
+async def update_my_profile(
+    profile_data: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user's profile information"""
+    
+    update_fields = {}
+    if profile_data.first_name is not None:
+        update_fields["first_name"] = profile_data.first_name
+    if profile_data.last_name is not None:
+        update_fields["last_name"] = profile_data.last_name
+    if profile_data.bio is not None:
+        update_fields["bio"] = profile_data.bio
+    if profile_data.phone is not None:
+        update_fields["phone"] = profile_data.phone
+    if profile_data.business_phone is not None:
+        update_fields["business_phone"] = profile_data.business_phone
+    if profile_data.business_email is not None:
+        update_fields["business_email"] = profile_data.business_email
+    if profile_data.business_address is not None:
+        update_fields["business_address"] = profile_data.business_address
+    if profile_data.personal_interests is not None:
+        update_fields["personal_interests"] = profile_data.personal_interests
+    if profile_data.education is not None:
+        update_fields["education"] = profile_data.education
+    
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc)
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": update_fields}
+        )
+    
+    return {"success": True, "message": "Profile updated successfully"}
+
+@api_router.put("/users/me/profile/privacy")
+async def update_profile_privacy(
+    privacy_data: ProfilePrivacyUpdateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user's profile privacy settings"""
+    
+    # Get existing privacy settings or create new
+    privacy_doc = await db.profile_privacy_settings.find_one({"user_id": current_user.id})
+    
+    if privacy_doc:
+        # Update existing
+        update_fields = {}
+        if privacy_data.phone_visibility is not None:
+            update_fields["phone_visibility"] = privacy_data.phone_visibility.value
+        if privacy_data.email_visibility is not None:
+            update_fields["email_visibility"] = privacy_data.email_visibility.value
+        if privacy_data.address_visibility is not None:
+            update_fields["address_visibility"] = privacy_data.address_visibility.value
+        if privacy_data.birth_date_visibility is not None:
+            update_fields["birth_date_visibility"] = privacy_data.birth_date_visibility.value
+        if privacy_data.family_address_visibility is not None:
+            update_fields["family_address_visibility"] = privacy_data.family_address_visibility.value
+        if privacy_data.family_members_visibility is not None:
+            update_fields["family_members_visibility"] = privacy_data.family_members_visibility.value
+        if privacy_data.business_phone_visibility is not None:
+            update_fields["business_phone_visibility"] = privacy_data.business_phone_visibility.value
+        if privacy_data.business_email_visibility is not None:
+            update_fields["business_email_visibility"] = privacy_data.business_email_visibility.value
+        if privacy_data.job_title_visibility is not None:
+            update_fields["job_title_visibility"] = privacy_data.job_title_visibility.value
+        if privacy_data.department_visibility is not None:
+            update_fields["department_visibility"] = privacy_data.department_visibility.value
+        if privacy_data.team_visibility is not None:
+            update_fields["team_visibility"] = privacy_data.team_visibility.value
+        if privacy_data.manager_visibility is not None:
+            update_fields["manager_visibility"] = privacy_data.manager_visibility.value
+        if privacy_data.work_anniversary_visibility is not None:
+            update_fields["work_anniversary_visibility"] = privacy_data.work_anniversary_visibility.value
+        
+        if update_fields:
+            await db.profile_privacy_settings.update_one(
+                {"user_id": current_user.id},
+                {"$set": update_fields}
+            )
+    else:
+        # Create new privacy settings
+        privacy_settings = ProfilePrivacySettings()
+        if privacy_data.phone_visibility is not None:
+            privacy_settings.phone_visibility = privacy_data.phone_visibility
+        if privacy_data.email_visibility is not None:
+            privacy_settings.email_visibility = privacy_data.email_visibility
+        if privacy_data.address_visibility is not None:
+            privacy_settings.address_visibility = privacy_data.address_visibility
+        if privacy_data.birth_date_visibility is not None:
+            privacy_settings.birth_date_visibility = privacy_data.birth_date_visibility
+        if privacy_data.family_address_visibility is not None:
+            privacy_settings.family_address_visibility = privacy_data.family_address_visibility
+        if privacy_data.family_members_visibility is not None:
+            privacy_settings.family_members_visibility = privacy_data.family_members_visibility
+        if privacy_data.business_phone_visibility is not None:
+            privacy_settings.business_phone_visibility = privacy_data.business_phone_visibility
+        if privacy_data.business_email_visibility is not None:
+            privacy_settings.business_email_visibility = privacy_data.business_email_visibility
+        if privacy_data.job_title_visibility is not None:
+            privacy_settings.job_title_visibility = privacy_data.job_title_visibility
+        if privacy_data.department_visibility is not None:
+            privacy_settings.department_visibility = privacy_data.department_visibility
+        if privacy_data.team_visibility is not None:
+            privacy_settings.team_visibility = privacy_data.team_visibility
+        if privacy_data.manager_visibility is not None:
+            privacy_settings.manager_visibility = privacy_data.manager_visibility
+        if privacy_data.work_anniversary_visibility is not None:
+            privacy_settings.work_anniversary_visibility = privacy_data.work_anniversary_visibility
+        
+        await db.profile_privacy_settings.insert_one({
+            "user_id": current_user.id,
+            **privacy_settings.dict()
+        })
+    
+    return {"success": True, "message": "Privacy settings updated successfully"}
+
+@api_router.get("/users/me/profile/privacy", response_model=ProfilePrivacySettings)
+async def get_my_privacy_settings(current_user: User = Depends(get_current_user)):
+    """Get current user's profile privacy settings"""
+    
+    privacy_doc = await db.profile_privacy_settings.find_one({"user_id": current_user.id})
+    if privacy_doc:
+        return ProfilePrivacySettings(**privacy_doc)
+    else:
+        # Return default settings
+        return ProfilePrivacySettings()
+
 # === FAMILY PROFILE SYSTEM API ENDPOINTS ===
 
 @api_router.post("/family-profiles", response_model=FamilyProfileResponse)
