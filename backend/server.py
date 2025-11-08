@@ -280,6 +280,106 @@ class User(BaseModel):
     # MY INFO MODULE FIELDS
     name_alias: Optional[str] = None  # Display name (vs legal first_name/last_name)
     additional_user_data: Dict[str, Any] = {}  # Extensible field for future user data
+    
+    # DYNAMIC PROFILE FIELDS
+    bio: Optional[str] = None
+    business_phone: Optional[str] = None
+    business_email: Optional[str] = None
+    business_address: Optional[str] = None
+    work_anniversary: Optional[datetime] = None  # When user started at current company
+    personal_interests: List[str] = []
+    education: Optional[str] = None
+
+# === DYNAMIC PROFILE PRIVACY SETTINGS ===
+
+class ProfileFieldVisibility(str, Enum):
+    PUBLIC = "PUBLIC"  # Everyone can see
+    ORGANIZATION_ONLY = "ORGANIZATION_ONLY"  # Only org members can see
+    PRIVATE = "PRIVATE"  # Only me
+
+class ProfilePrivacySettings(BaseModel):
+    """User's privacy settings for their dynamic profile"""
+    # Basic Info Visibility
+    phone_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PRIVATE
+    email_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PUBLIC
+    address_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PRIVATE
+    birth_date_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PRIVATE
+    
+    # Family Module Visibility
+    family_address_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PRIVATE
+    family_members_visibility: ProfileFieldVisibility = ProfileFieldVisibility.PRIVATE
+    
+    # Organization Module Visibility
+    business_phone_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    business_email_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    job_title_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    department_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    team_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    manager_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+    work_anniversary_visibility: ProfileFieldVisibility = ProfileFieldVisibility.ORGANIZATION_ONLY
+
+class ProfileUpdateRequest(BaseModel):
+    """Request to update user profile"""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    bio: Optional[str] = None
+    phone: Optional[str] = None
+    business_phone: Optional[str] = None
+    business_email: Optional[str] = None
+    business_address: Optional[str] = None
+    personal_interests: Optional[List[str]] = None
+    education: Optional[str] = None
+
+class ProfilePrivacyUpdateRequest(BaseModel):
+    """Request to update profile privacy settings"""
+    phone_visibility: Optional[ProfileFieldVisibility] = None
+    email_visibility: Optional[ProfileFieldVisibility] = None
+    address_visibility: Optional[ProfileFieldVisibility] = None
+    birth_date_visibility: Optional[ProfileFieldVisibility] = None
+    family_address_visibility: Optional[ProfileFieldVisibility] = None
+    family_members_visibility: Optional[ProfileFieldVisibility] = None
+    business_phone_visibility: Optional[ProfileFieldVisibility] = None
+    business_email_visibility: Optional[ProfileFieldVisibility] = None
+    job_title_visibility: Optional[ProfileFieldVisibility] = None
+    department_visibility: Optional[ProfileFieldVisibility] = None
+    team_visibility: Optional[ProfileFieldVisibility] = None
+    manager_visibility: Optional[ProfileFieldVisibility] = None
+    work_anniversary_visibility: Optional[ProfileFieldVisibility] = None
+
+class DynamicProfileResponse(BaseModel):
+    """Response for dynamic profile view"""
+    # Basic Info (always visible to some extent)
+    id: str
+    first_name: str
+    last_name: str
+    avatar_url: Optional[str]
+    bio: Optional[str]
+    
+    # Contact Info (visibility-controlled)
+    email: Optional[str]
+    phone: Optional[str]
+    business_phone: Optional[str]
+    business_email: Optional[str]
+    business_address: Optional[str]
+    
+    # Personal Info (visibility-controlled)
+    date_of_birth: Optional[datetime]
+    address_city: Optional[str]
+    address_state: Optional[str]
+    address_country: Optional[str]
+    personal_interests: List[str] = []
+    education: Optional[str]
+    
+    # Family Module Info (visibility-controlled)
+    family_info: Optional[Dict[str, Any]] = None
+    upcoming_family_birthday: Optional[Dict[str, Any]] = None
+    
+    # Organization Module Info (visibility-controlled)
+    organizations: List[Dict[str, Any]] = []
+    
+    # Viewer context
+    viewer_relationship: str  # "self", "org_member", "public"
+    is_own_profile: bool
 
 # === FAMILY PROFILE SYSTEM MODELS ===
 
