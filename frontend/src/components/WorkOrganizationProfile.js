@@ -342,6 +342,19 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
                 <Calendar className="w-4 h-4" />
                 События
               </button>
+              {organization?.organization_type === 'EDUCATIONAL' && (
+                <button
+                  onClick={() => setActiveTab('teachers')}
+                  className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 flex items-center gap-2 ${
+                    activeTab === 'teachers'
+                      ? 'text-orange-600 border-orange-600'
+                      : 'text-gray-600 border-transparent hover:text-gray-900'
+                  }`}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  Учителя
+                </button>
+              )}
               {isAdmin && (
                 <button
                   onClick={() => setActiveTab('requests')}
