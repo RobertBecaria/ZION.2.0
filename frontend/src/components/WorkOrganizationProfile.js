@@ -73,6 +73,12 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
         const membersData = await membersResponse.json();
         setMembers(membersData.members || []);
         setMembersByDept(membersData.departments || {});
+        
+        // Set current user's membership
+        if (currentUserId) {
+          const myMembership = membersData.members?.find(m => m.user_id === currentUserId);
+          setCurrentMembership(myMembership || null);
+        }
       }
 
       // Posts will be handled by UniversalWall in future
