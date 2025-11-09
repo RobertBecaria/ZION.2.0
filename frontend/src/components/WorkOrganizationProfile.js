@@ -125,10 +125,10 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
   }, [organizationId, organization?.user_is_admin]);
 
   useEffect(() => {
-    if (organizationId) {
+    if (organizationId && currentUserId) {
       loadOrganizationData();
     }
-  }, [organizationId, loadOrganizationData]);
+  }, [organizationId, currentUserId]); // Removed loadOrganizationData from deps to prevent infinite loop
 
   useEffect(() => {
     if (organization?.user_is_admin) {
