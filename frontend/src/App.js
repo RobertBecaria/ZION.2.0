@@ -28,6 +28,9 @@ import WorkJoinRequests from './components/WorkJoinRequests';
 import WorkOrganizationPublicProfile from './components/WorkOrganizationPublicProfile';
 import WorkDepartmentNavigator from './components/WorkDepartmentNavigator';
 import WorkAnnouncementsWidget from './components/WorkAnnouncementsWidget';
+// SCHOOL/TEACHER COMPONENTS
+import TeacherProfileForm from './components/TeacherProfileForm';
+import TeacherDirectory from './components/TeacherDirectory';
 import WorkAnnouncementsList from './components/WorkAnnouncementsList';
 import WorkDepartmentManager from './components/WorkDepartmentManager';
 import WorkDepartmentManagementPage from './components/WorkDepartmentManagementPage';
