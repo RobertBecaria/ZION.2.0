@@ -20,6 +20,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
   const [error, setError] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showTeacherForm, setShowTeacherForm] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [pendingChangeRequestsCount, setPendingChangeRequestsCount] = useState(0);
