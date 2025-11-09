@@ -6,7 +6,7 @@ import {
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
-function TeacherDirectory({ organizationId, moduleColor = '#ea580c', onEditProfile }) {
+const TeacherDirectory = React.memo(function TeacherDirectory({ organizationId, moduleColor = '#ea580c', onEditProfile }) {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [schoolConstants, setSchoolConstants] = useState(null);
