@@ -610,6 +610,19 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
           currentMembership={members.find(m => m.user_id === currentUserId)}
         />
       )}
+
+      {/* Teacher Profile Form Modal */}
+      {showTeacherForm && (
+        <TeacherProfileForm
+          organizationId={organizationId}
+          onClose={() => setShowTeacherForm(false)}
+          onSave={() => {
+            setShowTeacherForm(false);
+            loadOrganizationData(); // Reload to get updated teacher info
+          }}
+          moduleColor="#ea580c"
+        />
+      )}
     </div>
   );
 };
