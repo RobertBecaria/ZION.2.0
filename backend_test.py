@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Join Request Notifications Integration Backend Testing
-Testing all join request endpoints for work organizations
+RE-TEST AFTER BUG FIX - School Management Phase 1: Teacher Listing Endpoints
+Testing the field mapping bug fix for teacher endpoints
 """
 
 import requests
@@ -17,7 +17,7 @@ ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organizati
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "admin123"
 
-class JoinRequestTester:
+class TeacherEndpointBugFixTester:
     def __init__(self):
         self.admin_token = None
         self.test_user_token = None
