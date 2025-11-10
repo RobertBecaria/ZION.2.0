@@ -343,8 +343,7 @@ class TeacherEndpointBugFixTester:
             response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers/{teacher_id}", headers=headers)
             
             if response.status_code == 200:
-                data = response.json()
-                teacher = data.get("teacher")
+                teacher = response.json()
                 
                 if teacher and teacher.get("id"):
                     self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", True, 
