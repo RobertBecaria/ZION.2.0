@@ -9786,6 +9786,629 @@ async def get_school_constants():
         "school_levels": [level.value for level in SchoolLevel]
     }
 
+# === STUDENT MANAGEMENT ENDPOINTS ===
+
+@api_router.post("/work/organizations/{organization_id}/students")
+async def create_student(
+    organization_id: str,
+    student_data: StudentCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create new student (admin/teacher only)"""
+    try:
+        # Check if user is admin or teacher
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or (not membership.get("is_admin") and not membership.get("is_teacher")):
+            raise HTTPException(status_code=403, detail="Недостаточно прав для добавления студента")
+        
+        # Check if organization is EDUCATIONAL
+        org = await db.work_organizations.find_one({"id": organization_id})
+        if not org or org.get("organization_type") != "EDUCATIONAL":
+            raise HTTPException(status_code=400, detail="Организация должна быть образовательного типа")
+        
+        # Validate grade
+        if student_data.grade < 1 or student_data.grade > 11:
+            raise HTTPException(status_code=400, detail="Класс должен быть от 1 до 11")
+        
+        # Create student
+        student = WorkStudent(
+            organization_id=organization_id,
+            **student_data.dict()
+        )
+        
+        student_dict = student.dict()
+        # Convert date objects to ISO strings for MongoDB
+        if isinstance(student_dict.get('date_of_birth'), date):
+            student_dict['date_of_birth'] = student_dict['date_of_birth'].isoformat()
+        
+        await db.work_students.insert_one(student_dict)
+        
+        return {
+            "success": True,
+            "message": "Студент добавлен успешно",
+            "student_id": student.student_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/work/organizations/{organization_id}/students", response_model=List[StudentResponse])
+async def get_organization_students(
+    organization_id: str,
+    grade: Optional[int] = None,
+    assigned_class: Optional[str] = None,
+    academic_status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all students in the organization with optional filters"""
+    try:
+        # Check if user is a member or if org is public
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        org = await db.work_organizations.find_one({"id": organization_id})
+        if not org:
+            raise HTTPException(status_code=404, detail="Организация не найдена")
+        
+        # If private and not a member, deny access
+        if org.get("is_private") and not membership:
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
+        # Build query
+        query = {
+            "organization_id": organization_id,
+            "is_active": True
+        }
+        
+        if grade is not None:
+            query["grade"] = grade
+        if assigned_class is not None:
+            query["assigned_class"] = assigned_class
+        if academic_status is not None:
+            query["academic_status"] = academic_status
+        else:
+            query["academic_status"] = "ACTIVE"  # Default to active students
+        
+        # Get students
+        students_cursor = db.work_students.find(query)
+        students = await students_cursor.to_list(None)
+        
+        # Enrich with parent details
+        student_responses = []
+        for student in students:
+            # Parse date_of_birth if it's a string
+            if isinstance(student.get('date_of_birth'), str):
+                student['date_of_birth'] = datetime.fromisoformat(student['date_of_birth']).date()
+            
+            # Calculate age
+            dob = student.get('date_of_birth')
+            age = None
+            if isinstance(dob, date):
+                today = date.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            
+            # Get parent names
+            parent_names = []
+            for parent_id in student.get("parent_ids", []):
+                parent = await db.users.find_one({"id": parent_id})
+                if parent:
+                    parent_names.append(f"{parent['first_name']} {parent['last_name']}")
+            
+            student_responses.append(StudentResponse(
+                student_id=student["student_id"],
+                organization_id=student["organization_id"],
+                user_id=student.get("user_id"),
+                student_first_name=student["student_first_name"],
+                student_last_name=student["student_last_name"],
+                student_middle_name=student.get("student_middle_name"),
+                date_of_birth=student["date_of_birth"],
+                grade=student["grade"],
+                assigned_class=student.get("assigned_class"),
+                enrolled_subjects=student.get("enrolled_subjects", []),
+                parent_ids=student.get("parent_ids", []),
+                parent_names=parent_names,
+                academic_status=student["academic_status"],
+                enrollment_date=student["enrollment_date"],
+                student_number=student.get("student_number"),
+                notes=student.get("notes"),
+                age=age
+            ))
+        
+        return student_responses
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/work/organizations/{organization_id}/students/{student_id}", response_model=StudentResponse)
+async def get_student_profile(
+    organization_id: str,
+    student_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get specific student's profile"""
+    try:
+        # Get student
+        student = await db.work_students.find_one({
+            "student_id": student_id,
+            "organization_id": organization_id,
+            "is_active": True
+        })
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Студент не найден")
+        
+        # Check if user has access (member or parent)
+        is_parent = current_user.id in student.get("parent_ids", [])
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not is_parent and not membership:
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
+        # Parse date_of_birth if it's a string
+        if isinstance(student.get('date_of_birth'), str):
+            student['date_of_birth'] = datetime.fromisoformat(student['date_of_birth']).date()
+        
+        # Calculate age
+        dob = student.get('date_of_birth')
+        age = None
+        if isinstance(dob, date):
+            today = date.today()
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+        
+        # Get parent names
+        parent_names = []
+        for parent_id in student.get("parent_ids", []):
+            parent = await db.users.find_one({"id": parent_id})
+            if parent:
+                parent_names.append(f"{parent['first_name']} {parent['last_name']}")
+        
+        return StudentResponse(
+            student_id=student["student_id"],
+            organization_id=student["organization_id"],
+            user_id=student.get("user_id"),
+            student_first_name=student["student_first_name"],
+            student_last_name=student["student_last_name"],
+            student_middle_name=student.get("student_middle_name"),
+            date_of_birth=student["date_of_birth"],
+            grade=student["grade"],
+            assigned_class=student.get("assigned_class"),
+            enrolled_subjects=student.get("enrolled_subjects", []),
+            parent_ids=student.get("parent_ids", []),
+            parent_names=parent_names,
+            academic_status=student["academic_status"],
+            enrollment_date=student["enrollment_date"],
+            student_number=student.get("student_number"),
+            notes=student.get("notes"),
+            age=age
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/work/organizations/{organization_id}/students/{student_id}")
+async def update_student_profile(
+    organization_id: str,
+    student_id: str,
+    student_update: StudentUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update student profile (admin/teacher only)"""
+    try:
+        # Check if user is admin or teacher
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or (not membership.get("is_admin") and not membership.get("is_teacher")):
+            raise HTTPException(status_code=403, detail="Недостаточно прав для обновления студента")
+        
+        # Get student
+        student = await db.work_students.find_one({
+            "student_id": student_id,
+            "organization_id": organization_id
+        })
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Студент не найден")
+        
+        # Build update dict
+        update_dict = {k: v for k, v in student_update.dict(exclude_unset=True).items() if v is not None}
+        
+        if update_dict:
+            # Convert date objects to ISO strings
+            if 'date_of_birth' in update_dict and isinstance(update_dict['date_of_birth'], date):
+                update_dict['date_of_birth'] = update_dict['date_of_birth'].isoformat()
+            
+            update_dict["updated_at"] = datetime.now(timezone.utc)
+            
+            await db.work_students.update_one(
+                {"student_id": student_id},
+                {"$set": update_dict}
+            )
+        
+        return {
+            "success": True,
+            "message": "Профиль студента обновлен"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/organizations/{organization_id}/students/{student_id}/parents")
+async def link_parent_to_student(
+    organization_id: str,
+    student_id: str,
+    link_request: StudentParentLinkRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Link parent to student (admin/teacher only)"""
+    try:
+        # Check if user is admin or teacher
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or (not membership.get("is_admin") and not membership.get("is_teacher")):
+            raise HTTPException(status_code=403, detail="Недостаточно прав")
+        
+        # Get student
+        student = await db.work_students.find_one({
+            "student_id": student_id,
+            "organization_id": organization_id
+        })
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Студент не найден")
+        
+        # Verify parent user exists
+        parent = await db.users.find_one({"id": link_request.parent_user_id})
+        if not parent:
+            raise HTTPException(status_code=404, detail="Родитель не найден")
+        
+        # Add parent to student's parent_ids if not already linked
+        if link_request.parent_user_id not in student.get("parent_ids", []):
+            await db.work_students.update_one(
+                {"student_id": student_id},
+                {"$push": {"parent_ids": link_request.parent_user_id}}
+            )
+        
+        return {
+            "success": True,
+            "message": "Родитель привязан к студенту"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/users/me/children", response_model=List[StudentResponse])
+async def get_my_children(
+    current_user: User = Depends(get_current_user)
+):
+    """Get all children for the current user (parent)"""
+    try:
+        # Find all students where user is a parent
+        students_cursor = db.work_students.find({
+            "parent_ids": current_user.id,
+            "is_active": True
+        })
+        students = await students_cursor.to_list(None)
+        
+        # Enrich with parent details
+        student_responses = []
+        for student in students:
+            # Parse date_of_birth if it's a string
+            if isinstance(student.get('date_of_birth'), str):
+                student['date_of_birth'] = datetime.fromisoformat(student['date_of_birth']).date()
+            
+            # Calculate age
+            dob = student.get('date_of_birth')
+            age = None
+            if isinstance(dob, date):
+                today = date.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            
+            # Get parent names
+            parent_names = []
+            for parent_id in student.get("parent_ids", []):
+                parent = await db.users.find_one({"id": parent_id})
+                if parent:
+                    parent_names.append(f"{parent['first_name']} {parent['last_name']}")
+            
+            student_responses.append(StudentResponse(
+                student_id=student["student_id"],
+                organization_id=student["organization_id"],
+                user_id=student.get("user_id"),
+                student_first_name=student["student_first_name"],
+                student_last_name=student["student_last_name"],
+                student_middle_name=student.get("student_middle_name"),
+                date_of_birth=student["date_of_birth"],
+                grade=student["grade"],
+                assigned_class=student.get("assigned_class"),
+                enrolled_subjects=student.get("enrolled_subjects", []),
+                parent_ids=student.get("parent_ids", []),
+                parent_names=parent_names,
+                academic_status=student["academic_status"],
+                enrollment_date=student["enrollment_date"],
+                student_number=student.get("student_number"),
+                notes=student.get("notes"),
+                age=age
+            ))
+        
+        return student_responses
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# === ENROLLMENT REQUEST ENDPOINTS ===
+
+@api_router.post("/work/organizations/{organization_id}/enrollment-requests")
+async def create_enrollment_request(
+    organization_id: str,
+    request_data: EnrollmentRequestCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Parent submits enrollment request for their child"""
+    try:
+        # Check if organization exists and is EDUCATIONAL
+        org = await db.work_organizations.find_one({"id": organization_id})
+        if not org:
+            raise HTTPException(status_code=404, detail="Организация не найдена")
+        
+        if org.get("organization_type") != "EDUCATIONAL":
+            raise HTTPException(status_code=400, detail="Организация должна быть образовательного типа")
+        
+        # Validate grade
+        if request_data.requested_grade < 1 or request_data.requested_grade > 11:
+            raise HTTPException(status_code=400, detail="Класс должен быть от 1 до 11")
+        
+        # Create enrollment request
+        enrollment_request = StudentEnrollmentRequest(
+            organization_id=organization_id,
+            parent_user_id=current_user.id,
+            **request_data.dict()
+        )
+        
+        request_dict = enrollment_request.dict()
+        # Convert date objects to ISO strings for MongoDB
+        if isinstance(request_dict.get('student_dob'), date):
+            request_dict['student_dob'] = request_dict['student_dob'].isoformat()
+        
+        await db.student_enrollment_requests.insert_one(request_dict)
+        
+        return {
+            "success": True,
+            "message": "Заявка на зачисление отправлена",
+            "request_id": enrollment_request.request_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/work/organizations/{organization_id}/enrollment-requests", response_model=List[EnrollmentRequestResponse])
+async def get_enrollment_requests(
+    organization_id: str,
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get enrollment requests for organization (admin only)"""
+    try:
+        # Check if user is admin
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or not membership.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра заявок")
+        
+        # Build query
+        query = {"organization_id": organization_id}
+        if status:
+            query["status"] = status
+        else:
+            query["status"] = "PENDING"  # Default to pending
+        
+        # Get requests
+        requests_cursor = db.student_enrollment_requests.find(query)
+        requests = await requests_cursor.to_list(None)
+        
+        # Get organization name
+        org = await db.work_organizations.find_one({"id": organization_id})
+        org_name = org.get("name", "") if org else ""
+        
+        # Enrich with parent details
+        request_responses = []
+        for req in requests:
+            parent = await db.users.find_one({"id": req["parent_user_id"]})
+            if parent:
+                # Parse date if it's a string
+                if isinstance(req.get('student_dob'), str):
+                    req['student_dob'] = datetime.fromisoformat(req['student_dob']).date()
+                
+                request_responses.append(EnrollmentRequestResponse(
+                    request_id=req["request_id"],
+                    organization_id=req["organization_id"],
+                    organization_name=org_name,
+                    parent_user_id=req["parent_user_id"],
+                    parent_name=f"{parent['first_name']} {parent['last_name']}",
+                    parent_email=parent["email"],
+                    student_first_name=req["student_first_name"],
+                    student_last_name=req["student_last_name"],
+                    student_middle_name=req.get("student_middle_name"),
+                    student_dob=req["student_dob"],
+                    requested_grade=req["requested_grade"],
+                    requested_class=req.get("requested_class"),
+                    parent_message=req.get("parent_message"),
+                    status=req["status"],
+                    reviewed_by=req.get("reviewed_by"),
+                    reviewed_at=req.get("reviewed_at"),
+                    rejection_reason=req.get("rejection_reason"),
+                    created_at=req["created_at"]
+                ))
+        
+        return request_responses
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/organizations/{organization_id}/enrollment-requests/{request_id}/approve")
+async def approve_enrollment_request(
+    organization_id: str,
+    request_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Approve enrollment request and create student (admin only)"""
+    try:
+        # Check if user is admin
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or not membership.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Недостаточно прав")
+        
+        # Get request
+        enrollment_request = await db.student_enrollment_requests.find_one({
+            "request_id": request_id,
+            "organization_id": organization_id
+        })
+        
+        if not enrollment_request:
+            raise HTTPException(status_code=404, detail="Заявка не найдена")
+        
+        if enrollment_request["status"] != "PENDING":
+            raise HTTPException(status_code=400, detail="Заявка уже обработана")
+        
+        # Parse date if it's a string
+        student_dob = enrollment_request['student_dob']
+        if isinstance(student_dob, str):
+            student_dob = datetime.fromisoformat(student_dob).date()
+        
+        # Create student
+        student = WorkStudent(
+            organization_id=organization_id,
+            student_first_name=enrollment_request["student_first_name"],
+            student_last_name=enrollment_request["student_last_name"],
+            student_middle_name=enrollment_request.get("student_middle_name"),
+            date_of_birth=student_dob,
+            grade=enrollment_request["requested_grade"],
+            assigned_class=enrollment_request.get("requested_class"),
+            parent_ids=[enrollment_request["parent_user_id"]]
+        )
+        
+        student_dict = student.dict()
+        # Convert date objects to ISO strings for MongoDB
+        if isinstance(student_dict.get('date_of_birth'), date):
+            student_dict['date_of_birth'] = student_dict['date_of_birth'].isoformat()
+        
+        await db.work_students.insert_one(student_dict)
+        
+        # Update request status
+        await db.student_enrollment_requests.update_one(
+            {"request_id": request_id},
+            {"$set": {
+                "status": "APPROVED",
+                "reviewed_by": current_user.id,
+                "reviewed_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        return {
+            "success": True,
+            "message": "Заявка одобрена, студент зачислен",
+            "student_id": student.student_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/work/organizations/{organization_id}/enrollment-requests/{request_id}/reject")
+async def reject_enrollment_request(
+    organization_id: str,
+    request_id: str,
+    rejection_reason: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Reject enrollment request (admin only)"""
+    try:
+        # Check if user is admin
+        membership = await db.work_members.find_one({
+            "organization_id": organization_id,
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or not membership.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Недостаточно прав")
+        
+        # Get request
+        enrollment_request = await db.student_enrollment_requests.find_one({
+            "request_id": request_id,
+            "organization_id": organization_id
+        })
+        
+        if not enrollment_request:
+            raise HTTPException(status_code=404, detail="Заявка не найдена")
+        
+        if enrollment_request["status"] != "PENDING":
+            raise HTTPException(status_code=400, detail="Заявка уже обработана")
+        
+        # Update request status
+        await db.student_enrollment_requests.update_one(
+            {"request_id": request_id},
+            {"$set": {
+                "status": "REJECTED",
+                "reviewed_by": current_user.id,
+                "reviewed_at": datetime.now(timezone.utc),
+                "rejection_reason": rejection_reason
+            }}
+        )
+        
+        return {
+            "success": True,
+            "message": "Заявка отклонена"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/work/organizations/{organization_id}/change-requests")
 async def get_change_requests(
     organization_id: str,
