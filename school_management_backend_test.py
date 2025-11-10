@@ -234,6 +234,38 @@ class SchoolManagementTester:
                         self.log_result("Organization Type Validation", False, 
                                        f"Organization type is {org_type}, failed to update: {update_response.status_code}")
                         return False
+            elif response.status_code == 404:
+                # Organization doesn't exist, create it
+                print("ZION.CITY organization not found, creating it...")
+                create_response = requests.post(
+                    f"{BASE_URL}/work/organizations",
+                    headers=headers,
+                    json={
+                        "name": "ZION.CITY",
+                        "organization_type": "EDUCATIONAL",
+                        "description": "Educational organization for testing",
+                        "school_type": "СОШ",
+                        "principal_name": "Директор Школы",
+                        "school_levels": ["PRIMARY", "BASIC", "SECONDARY"],
+                        "grades_offered": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    }
+                )
+                
+                if create_response.status_code in [200, 201]:
+                    created_org = create_response.json()
+                    # Update the global ORGANIZATION_ID if needed
+                    global ORGANIZATION_ID
+                    if "organization_id" in created_org:
+                        ORGANIZATION_ID = created_org["organization_id"]
+                    elif "id" in created_org:
+                        ORGANIZATION_ID = created_org["id"]
+                    
+                    self.log_result("Organization Type Validation", True, f"Created EDUCATIONAL organization: {ORGANIZATION_ID}")
+                    return True
+                else:
+                    self.log_result("Organization Type Validation", False, 
+                                   f"Failed to create organization: {create_response.status_code}", create_response.text)
+                    return False
             else:
                 self.log_result("Organization Type Validation", False, f"Status: {response.status_code}", response.text)
                 return False
