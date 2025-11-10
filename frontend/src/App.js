@@ -2446,13 +2446,16 @@ function Dashboard() {
         </aside>
       </div>
 
-      {/* Gender Update Modal - Mandatory on First Login */}
+      {/* Gender Update Modal - Skippable on First Login */}
       {showGenderModal && user && (
         <GenderUpdateModal
           isOpen={showGenderModal}
           onClose={() => {
-            // Modal is now mandatory - do nothing on close attempt
-            // User MUST select gender to continue
+            // Allow users to skip gender selection
+            if (user?.id) {
+              localStorage.setItem(`gender_asked_${user.id}`, 'true');
+            }
+            setShowGenderModal(false);
           }}
           onUpdate={async (gender) => {
             // Mark that we've asked this user for gender
