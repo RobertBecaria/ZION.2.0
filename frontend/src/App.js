@@ -1286,6 +1286,44 @@ function Dashboard() {
               </a>
             </div>
 
+            {/* SCHOOL Section */}
+            <div className="nav-section">
+              <span className="nav-section-title">ШКОЛА</span>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'school-my-children' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('school-my-children');
+                }}
+              >
+                <Users size={20} />
+                <span>Мои Дети</span>
+              </a>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'school-enrollment' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('school-enrollment');
+                }}
+              >
+                <FileText size={20} />
+                <span>Подать Заявку</span>
+              </a>
+              <a 
+                href="#" 
+                className={`nav-item ${activeView === 'school-find' ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveView('school-find');
+                }}
+              >
+                <Search size={20} />
+                <span>Найти Школу</span>
+              </a>
+            </div>
+
             {/* MY INFO Module */}
             <div className="nav-group">
               <div className="nav-group-label">МОЯ ИНФОРМАЦИЯ</div>
