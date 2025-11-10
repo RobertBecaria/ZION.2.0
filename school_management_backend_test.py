@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Configuration
 BASE_URL = "https://teacher-mgmt.preview.emergentagent.com/api"
-self.organization_id = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organization
+ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organization
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"
