@@ -9562,21 +9562,26 @@ async def get_organization_teachers(
         for teacher in teachers:
             user = await db.users.find_one({"id": teacher["user_id"]})
             if user:
+                # Handle field mapping for teacher (similar to members endpoint)
+                teacher_data = teacher.copy()
+                if "member_id" in teacher_data:
+                    teacher_data["id"] = teacher_data.pop("member_id")
+                
                 teacher_responses.append(TeacherResponse(
-                    id=teacher["id"],
-                    user_id=teacher["user_id"],
+                    id=teacher_data.get("id"),
+                    user_id=teacher_data["user_id"],
                     user_first_name=user["first_name"],
                     user_last_name=user["last_name"],
                     user_email=user["email"],
                     user_avatar_url=user.get("avatar_url"),
-                    job_title=teacher.get("job_title"),
-                    teaching_subjects=teacher.get("teaching_subjects", []),
-                    teaching_grades=teacher.get("teaching_grades", []),
-                    is_class_supervisor=teacher.get("is_class_supervisor", False),
-                    supervised_class=teacher.get("supervised_class"),
-                    teacher_qualification=teacher.get("teacher_qualification"),
-                    department=teacher.get("department"),
-                    start_date=teacher.get("start_date")
+                    job_title=teacher_data.get("job_title"),
+                    teaching_subjects=teacher_data.get("teaching_subjects", []),
+                    teaching_grades=teacher_data.get("teaching_grades", []),
+                    is_class_supervisor=teacher_data.get("is_class_supervisor", False),
+                    supervised_class=teacher_data.get("supervised_class"),
+                    teacher_qualification=teacher_data.get("teacher_qualification"),
+                    department=teacher_data.get("department"),
+                    start_date=teacher_data.get("start_date")
                 ))
         
         return teacher_responses
