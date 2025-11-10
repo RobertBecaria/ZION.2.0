@@ -223,7 +223,7 @@ class SchoolManagementTester:
                 else:
                     # If not educational, try to update it
                     update_response = requests.put(
-                        f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}",
+                        f"{BASE_URL}/work/organizations/{self.organization_id}",
                         headers=headers,
                         json={"organization_type": "EDUCATIONAL"}
                     )
