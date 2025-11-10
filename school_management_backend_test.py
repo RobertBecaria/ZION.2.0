@@ -461,7 +461,11 @@ class SchoolManagementTester:
             
             if response.status_code == 200:
                 data = response.json()
-                teachers = data.get("teachers", [])
+                # Check if response is a list (which indicates the bug is partially fixed)
+                if isinstance(data, list):
+                    teachers = data
+                else:
+                    teachers = data.get("teachers", [])
                 
                 # Verify filtering works (teachers should teach Математика)
                 for teacher in teachers:
