@@ -1154,19 +1154,19 @@ class StudentUpdate(BaseModel):
 class StudentResponse(BaseModel):
     """Response for student information"""
     student_id: str
-    organization_id: str
+    organization_id: Optional[str]  # Can be None for children not yet enrolled
     user_id: Optional[str]
     student_first_name: str
     student_last_name: str
     student_middle_name: Optional[str]
     date_of_birth: date
-    grade: int
+    grade: Optional[int]  # Can be None for children without grade
     assigned_class: Optional[str]
     enrolled_subjects: List[str]
     parent_ids: List[str]
     parent_names: List[str] = []  # Enriched parent names
     academic_status: str
-    enrollment_date: datetime
+    enrollment_date: Optional[datetime]  # Can be None for children not yet enrolled
     student_number: Optional[str]
     notes: Optional[str]
     age: Optional[int] = None  # Calculated from date_of_birth
