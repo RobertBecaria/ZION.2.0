@@ -254,14 +254,13 @@ class SchoolManagementTester:
                 
                 if create_response.status_code in [200, 201]:
                     created_org = create_response.json()
-                    # Update the global ORGANIZATION_ID if needed
-                    global ORGANIZATION_ID
+                    # Update the organization ID if needed
                     if "organization_id" in created_org:
-                        ORGANIZATION_ID = created_org["organization_id"]
+                        self.organization_id = created_org["organization_id"]
                     elif "id" in created_org:
-                        ORGANIZATION_ID = created_org["id"]
+                        self.organization_id = created_org["id"]
                     
-                    self.log_result("Organization Type Validation", True, f"Created EDUCATIONAL organization: {ORGANIZATION_ID}")
+                    self.log_result("Organization Type Validation", True, f"Created EDUCATIONAL organization: {self.organization_id}")
                     return True
                 else:
                     self.log_result("Organization Type Validation", False, 
