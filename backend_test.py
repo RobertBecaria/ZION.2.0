@@ -239,7 +239,12 @@ class TeacherEndpointBugFixTester:
             
             if response.status_code == 200:
                 data = response.json()
-                teachers = data.get("teachers", [])
+                
+                # Handle both response formats: direct list or {"teachers": [...]}
+                if isinstance(data, list):
+                    teachers = data
+                else:
+                    teachers = data.get("teachers", [])
                 
                 # Verify filtering works
                 for teacher in teachers:
