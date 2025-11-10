@@ -9599,9 +9599,9 @@ async def get_teacher_profile(
 ):
     """Get specific teacher's profile"""
     try:
-        # Get teacher
+        # Get teacher (use member_id since that's the actual field in MongoDB)
         teacher = await db.work_members.find_one({
-            "id": teacher_id,
+            "member_id": teacher_id,
             "organization_id": organization_id,
             "is_teacher": True,
             "status": "ACTIVE"
