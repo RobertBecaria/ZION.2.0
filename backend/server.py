@@ -10162,7 +10162,7 @@ async def get_my_children(
                 parent_ids=student.get("parent_ids", []),
                 parent_names=parent_names,
                 academic_status=student["academic_status"],
-                enrollment_date=student["enrollment_date"],
+                enrollment_date=student.get("enrollment_date"),
                 student_number=student.get("student_number"),
                 notes=student.get("notes"),
                 age=age
