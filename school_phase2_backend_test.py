@@ -12,7 +12,7 @@ import time
 
 # Configuration
 BASE_URL = "https://teacher-mgmt.preview.emergentagent.com/api"
-ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organization
+ORGANIZATION_ID = "d5e2d110-cb59-441f-b2f0-55c9ac715431"  # Test School organization
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"
