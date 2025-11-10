@@ -300,6 +300,23 @@ backend:
         agent: "main"
         comment: "PHASE 1 BACKEND COMPLETE - SCHOOL EMPLOYEE & TEACHER MANAGEMENT: Comprehensive backend implementation for Russian school system. 1) RUSSIAN SCHOOL CONSTANTS: SchoolLevel enum (PRIMARY, BASIC, SECONDARY, VOCATIONAL), RUSSIAN_SCHOOL_STRUCTURE with grade ranges and descriptions (1-4 Начальная, 5-9 Основная with ОГЭ, 10-11 Средняя with ЕГЭ), RUSSIAN_SCHOOL_SUBJECTS covering 25+ subjects (Математика, Русский язык, Физика, Химия, Биология, География, История, Обществознание, Информатика, Физкультура, Музыка, ИЗО, Технология, ОБЖ, languages, etc.), RUSSIAN_GRADES (1-11), CLASS_LETTERS (А-К for class naming). 2) EXTENDED WORKOR GANIZATION MODEL: Added school_levels (List[SchoolLevel]), grades_offered (List[int]), school_type (Гимназия/Лицей/СОШ), principal_name fields. Works seamlessly with existing organization infrastructure. 3) EXTENDED WORKMEMBER MODEL: Added is_teacher (bool), teaching_subjects (List[str]), teaching_grades (List[int]), is_class_supervisor (bool), supervised_class (Optional[str] like '5А', '7Б'), teacher_qualification (Optional[str]). 4) TEACHER-SPECIFIC MODELS: TeacherProfileUpdate for updating teacher data, TeacherResponse for API responses with enriched user info. 5) API ENDPOINTS: PUT /api/work/organizations/{org_id}/teachers/me - teachers update their own profile (subjects, grades, class supervision, qualification, job title), validates organization is EDUCATIONAL type. GET /api/work/organizations/{org_id}/teachers - list all teachers with optional filters by grade or subject, includes user details enrichment, supports public/private org access control. GET /api/work/organizations/{org_id}/teachers/{id} - get specific teacher profile with full details. GET /api/work/schools/constants - returns all Russian school system constants for frontend forms. 6) DATA VALIDATION: Checks organization type is EDUCATIONAL, validates user membership, enforces active status, enriches responses with user data (names, emails, avatars). All endpoints use proper authentication, error handling, and return Russian error messages. System integrates with existing work organization infrastructure, ready for frontend teacher profile forms."
 
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "School Management - Phase 1 Backend"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "BACKEND TESTING NEEDED - School Management Phase 1: Please conduct comprehensive testing of the teacher management backend APIs. Focus on: 1) GET /api/work/schools/constants - verify Russian school constants return properly, 2) PUT /api/work/organizations/{org_id}/teachers/me - test teacher profile updates with subjects, grades, class supervision, 3) GET /api/work/organizations/{org_id}/teachers - test teacher listing with filtering by grade and subject, 4) GET /api/work/organizations/{org_id}/teachers/{id} - test individual teacher profile retrieval. Use existing ZION.CITY organization (ID: d80dbe76-45e7-45fa-b937-a2b5a20b8aaf) and ensure organization type is EDUCATIONAL. Test with admin credentials (admin@test.com/admin123). Verify data validation, authorization controls, and proper response formats."
+
 user_problem_statement_previous: "DYNAMIC PERSONAL PROFILE SYSTEM: Implementation of a comprehensive dynamic personal profile that changes based on the active module (Family/Organization) and viewer relationship. Profile includes: 1) Context-aware information display - Family module shows family info, upcoming birthdays, family address; Organization module shows business card, job details, department, team, manager, work anniversary, 2) Three-tier visibility system - PUBLIC (anyone), ORGANIZATION_ONLY (org members), PRIVATE (only self), 3) Privacy settings management - granular control over what information is visible to whom, 4) Interactive UI with hover effects and smooth animations, 5) Color-coded sections based on active module for visual consistency, 6) Business card information for public view, 7) Detailed organizational hierarchy for company members. Backend APIs include: GET /api/users/me/profile (own profile with full data), GET /api/users/{user_id}/profile (view another user with visibility rules), PUT /api/users/me/profile (update profile), PUT /api/users/me/profile/privacy (manage privacy settings), GET /api/users/me/profile/privacy (get privacy settings). Frontend component MyProfile.js with responsive design, modal privacy settings, and module-specific data rendering."
 
 backend:
