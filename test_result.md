@@ -333,6 +333,19 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+frontend:
+  - task: "School Management Phase 2 - Student & Parent Frontend UI Refactoring"
+    implemented: true
+    working: "NA"
+    file: "App.js, components/ParentChildrenDashboard.js, components/SchoolEnrollment.js, components/SchoolFinder.js, components/SchoolDashboard.js, components/MySchoolsList.js, components/ChildrenSection.js, components/MyInfoPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "PHASE 2 FRONTEND UI REFACTORING COMPLETE: Major architectural refactoring based on user requirements. 1) ШКОЛА BUTTON INTEGRATION: Removed 'ШКОЛА' from top navigation bar, added 'МОЯ ШКОЛА' button in ORGANIZATION section of left sidebar (below 'МОЯ РАБОТА'), integrated school-related views into organizations module rendering. 2) CHILDREN SECTION IN PROFILE: Created ChildrenSection.js component with full CRUD functionality for managing 'Мои Дети' data, integrated ChildrenSection into MyInfoPage.js within user's personal profile (МОЯ ИНФОРМАЦИЯ - ПРОФИЛЬ section), allows parents to add/edit/delete children information directly in their profile. 3) SCHOOL COMPONENTS: ParentChildrenDashboard.js - displays parent's children across all schools, SchoolEnrollment.js - school enrollment form with organization filtering (?type=EDUCATIONAL), SchoolFinder.js - find schools with EDUCATIONAL type filtering, SchoolDashboard.js - navigation hub for school features, MySchoolsList.js - lists schools where children are enrolled. 4) BACKEND INTEGRATION: All components use correct API endpoints with EDUCATIONAL organization filtering, proper authentication with Bearer token, error handling and loading states. 5) ROUTING & NAVIGATION: Updated App.js routing for school views within organizations module, conditional rendering based on activeView state, proper full-width layout for school views, events panel hiding logic. Ready for comprehensive frontend testing to verify UI refactoring, children form in profile, school navigation, and enrollment workflow."
+
 agent_communication:
   - agent: "main"
     message: "BACKEND TESTING NEEDED - School Management Phase 1: Please conduct comprehensive testing of the teacher management backend APIs. Focus on: 1) GET /api/work/schools/constants - verify Russian school constants return properly, 2) PUT /api/work/organizations/{org_id}/teachers/me - test teacher profile updates with subjects, grades, class supervision, 3) GET /api/work/organizations/{org_id}/teachers - test teacher listing with filtering by grade and subject, 4) GET /api/work/organizations/{org_id}/teachers/{id} - test individual teacher profile retrieval. Use existing ZION.CITY organization (ID: d80dbe76-45e7-45fa-b937-a2b5a20b8aaf) and ensure organization type is EDUCATIONAL. Test with admin credentials (admin@test.com/admin123). Verify data validation, authorization controls, and proper response formats."
