@@ -404,6 +404,11 @@ class SchoolManagementTester:
                 else:
                     self.log_result("List Teachers (No Filters)", True, "No teachers found (empty organization)")
                     return True
+            elif response.status_code == 500:
+                # Known backend bug - field mapping issue in teachers endpoint
+                self.log_result("List Teachers (No Filters)", False, 
+                               f"Backend bug detected: {response.text}. Teachers endpoint has field mapping issue - 'id' field not accessible from MongoDB document")
+                return False
             else:
                 self.log_result("List Teachers (No Filters)", False, f"Status: {response.status_code}", response.text)
                 return False
