@@ -19,9 +19,11 @@ import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
 import FamilySetupPage from './components/FamilySetupPage';
 // SCHOOL MODULE COMPONENTS
+import SchoolDashboard from './components/SchoolDashboard';
 import ParentChildrenDashboard from './components/ParentChildrenDashboard';
 import SchoolEnrollment from './components/SchoolEnrollment';
 import SchoolFinder from './components/SchoolFinder';
+import MySchoolsList from './components/MySchoolsList';
 // WORK MODULE COMPONENTS
 import WorkTriggerFlow from './components/WorkTriggerFlow';
 import WorkSetupPage from './components/WorkSetupPage';
