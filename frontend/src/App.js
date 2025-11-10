@@ -1033,10 +1033,11 @@ function Dashboard() {
 
   const modules = [
     { key: 'family', name: 'Семья', color: '#30A67E' },
+    { key: 'school', name: 'Школа', color: '#1E40AF' },
+    { key: 'organizations', name: 'Организации', color: '#C2410C' },
     { key: 'news', name: 'Новости', color: '#1D4ED8' },
     { key: 'journal', name: 'Журнал', color: '#6D28D9' },
     { key: 'services', name: 'Сервисы', color: '#B91C1C' },
-    { key: 'organizations', name: 'Организации', color: '#C2410C' },
     { key: 'marketplace', name: 'Маркетплейс', color: '#BE185D' },
     { key: 'finance', name: 'Финансы', color: '#A16207' },
     { key: 'events', name: 'Мероприятия', color: '#7E22CE' }
