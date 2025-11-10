@@ -884,15 +884,19 @@ function Dashboard() {
   }, [user]);
 
   // Check if user needs onboarding (no affiliations and not yet completed)
+  // TEMPORARILY DISABLED - Will re-enable later
   useEffect(() => {
     if (user) {
-      const onboardingCompleted = localStorage.getItem(`onboarding_completed_${user.id}`);
+      // ONBOARDING DISABLED FOR NOW
+      setShowOnboarding(false);
       
-      if (!onboardingCompleted && (!user.affiliations || user.affiliations.length === 0)) {
-        setShowOnboarding(true);
-      } else {
-        setShowOnboarding(false);
-      }
+      // Original logic (commented out for now):
+      // const onboardingCompleted = localStorage.getItem(`onboarding_completed_${user.id}`);
+      // if (!onboardingCompleted && (!user.affiliations || user.affiliations.length === 0)) {
+      //   setShowOnboarding(true);
+      // } else {
+      //   setShowOnboarding(false);
+      // }
     }
   }, [user]);
 
