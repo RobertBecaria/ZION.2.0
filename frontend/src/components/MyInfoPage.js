@@ -862,6 +862,9 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       {/* Household Section */}
       <HouseholdSection user={user} moduleColor={moduleColor} />
 
+      {/* Children Section */}
+      <ChildrenSection user={user} moduleColor="#1E40AF" />
+
       {/* Password Change Section */}
       <div className="info-section security-section">
         <div className="section-header">
