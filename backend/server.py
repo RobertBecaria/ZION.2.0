@@ -1096,6 +1096,139 @@ class TeacherResponse(BaseModel):
     department: Optional[str]
     start_date: Optional[datetime]
 
+# === STUDENT-SPECIFIC MODELS ===
+
+class AcademicStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    GRADUATED = "GRADUATED"
+    TRANSFERRED = "TRANSFERRED"
+    EXPELLED = "EXPELLED"
+
+class WorkStudent(BaseModel):
+    """Student profile in educational organization"""
+    student_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    user_id: Optional[str] = None  # Student may not have user account initially
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str] = None
+    date_of_birth: date
+    grade: int  # 1-11
+    assigned_class: Optional[str] = None  # Format: 5А, 7Б
+    enrolled_subjects: List[str] = []
+    parent_ids: List[str] = []  # User IDs of parents
+    academic_status: AcademicStatus = AcademicStatus.ACTIVE
+    enrollment_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    student_number: Optional[str] = None  # Unique identifier within school
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class StudentCreate(BaseModel):
+    """Create new student"""
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str] = None
+    date_of_birth: date
+    grade: int
+    assigned_class: Optional[str] = None
+    enrolled_subjects: Optional[List[str]] = []
+    parent_ids: Optional[List[str]] = []
+    student_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class StudentUpdate(BaseModel):
+    """Update student profile"""
+    student_first_name: Optional[str] = None
+    student_last_name: Optional[str] = None
+    student_middle_name: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    grade: Optional[int] = None
+    assigned_class: Optional[str] = None
+    enrolled_subjects: Optional[List[str]] = None
+    academic_status: Optional[AcademicStatus] = None
+    student_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class StudentResponse(BaseModel):
+    """Response for student information"""
+    student_id: str
+    organization_id: str
+    user_id: Optional[str]
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str]
+    date_of_birth: date
+    grade: int
+    assigned_class: Optional[str]
+    enrolled_subjects: List[str]
+    parent_ids: List[str]
+    parent_names: List[str] = []  # Enriched parent names
+    academic_status: str
+    enrollment_date: datetime
+    student_number: Optional[str]
+    notes: Optional[str]
+    age: Optional[int] = None  # Calculated from date_of_birth
+
+class StudentParentLinkRequest(BaseModel):
+    """Link parent to student"""
+    parent_user_id: str
+
+class EnrollmentRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+class StudentEnrollmentRequest(BaseModel):
+    """Parent enrollment request for student"""
+    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    parent_user_id: str
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str] = None
+    student_dob: date
+    requested_grade: int
+    requested_class: Optional[str] = None
+    parent_message: Optional[str] = None
+    status: EnrollmentRequestStatus = EnrollmentRequestStatus.PENDING
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EnrollmentRequestCreate(BaseModel):
+    """Create enrollment request"""
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str] = None
+    student_dob: date
+    requested_grade: int
+    requested_class: Optional[str] = None
+    parent_message: Optional[str] = None
+
+class EnrollmentRequestResponse(BaseModel):
+    """Response for enrollment request"""
+    request_id: str
+    organization_id: str
+    organization_name: str
+    parent_user_id: str
+    parent_name: str
+    parent_email: str
+    student_first_name: str
+    student_last_name: str
+    student_middle_name: Optional[str]
+    student_dob: date
+    requested_grade: int
+    requested_class: Optional[str]
+    parent_message: Optional[str]
+    status: str
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    created_at: datetime
+
 class WorkPostCreate(BaseModel):
     title: Optional[str] = None
     content: str
