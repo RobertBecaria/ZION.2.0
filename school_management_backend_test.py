@@ -158,38 +158,38 @@ class SchoolManagementTester:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Check required fields
-                required_fields = ["RUSSIAN_SCHOOL_STRUCTURE", "RUSSIAN_SCHOOL_SUBJECTS", "RUSSIAN_GRADES", "CLASS_LETTERS"]
+                # Check required fields (actual API response format)
+                required_fields = ["school_structure", "subjects", "grades", "class_letters", "school_levels"]
                 missing_fields = [field for field in required_fields if field not in data]
                 
                 if missing_fields:
                     self.log_result("School Constants Endpoint", False, f"Missing fields: {missing_fields}")
                     return False
                 
-                # Validate RUSSIAN_SCHOOL_STRUCTURE
-                structure = data.get("RUSSIAN_SCHOOL_STRUCTURE", {})
+                # Validate school_structure
+                structure = data.get("school_structure", {})
                 expected_levels = ["PRIMARY", "BASIC", "SECONDARY"]
                 for level in expected_levels:
                     if level not in structure:
                         self.log_result("School Constants Endpoint", False, f"Missing school level: {level}")
                         return False
                 
-                # Validate RUSSIAN_SCHOOL_SUBJECTS
-                subjects = data.get("RUSSIAN_SCHOOL_SUBJECTS", [])
+                # Validate subjects
+                subjects = data.get("subjects", [])
                 expected_subjects = ["Математика", "Русский язык", "Физика", "Химия", "Биология"]
                 for subject in expected_subjects:
                     if subject not in subjects:
                         self.log_result("School Constants Endpoint", False, f"Missing subject: {subject}")
                         return False
                 
-                # Validate RUSSIAN_GRADES
-                grades = data.get("RUSSIAN_GRADES", [])
+                # Validate grades
+                grades = data.get("grades", [])
                 if not isinstance(grades, list) or len(grades) != 11 or grades != list(range(1, 12)):
                     self.log_result("School Constants Endpoint", False, f"Invalid grades: {grades}")
                     return False
                 
-                # Validate CLASS_LETTERS
-                class_letters = data.get("CLASS_LETTERS", [])
+                # Validate class_letters
+                class_letters = data.get("class_letters", [])
                 expected_letters = ["А", "Б", "В", "Г", "Д", "Е", "Ж", "З", "И", "К"]
                 if class_letters != expected_letters:
                     self.log_result("School Constants Endpoint", False, f"Invalid class letters: {class_letters}")
