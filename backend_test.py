@@ -20,10 +20,10 @@ ADMIN_PASSWORD = "admin123"
 class TeacherEndpointBugFixTester:
     def __init__(self):
         self.admin_token = None
-        self.test_user_token = None
-        self.test_user_id = None
-        self.test_user_email = None
-        self.join_request_id = None
+        self.teacher_token = None
+        self.teacher_user_id = None
+        self.teacher_email = None
+        self.organization_id = ORGANIZATION_ID
         self.results = []
         
     def log_result(self, test_name, success, details="", response_data=None):
@@ -64,365 +64,416 @@ class TeacherEndpointBugFixTester:
             self.log_result("Admin Authentication", False, f"Exception: {str(e)}")
             return False
 
-    def create_test_user(self):
-        """Create a test user for join requests"""
+    def get_or_create_teacher(self):
+        """Get existing teacher or create one for testing"""
         try:
-            # Generate unique email
-            unique_id = str(uuid.uuid4())[:8]
-            self.test_user_email = f"jointest_{unique_id}@example.com"
-            test_password = "testpass123"
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
             
-            # Register test user
-            response = requests.post(f"{BASE_URL}/auth/register", json={
-                "email": self.test_user_email,
-                "password": test_password,
-                "first_name": "Join",
-                "last_name": "Tester"
+            # First, try to get existing members
+            members_response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/members", headers=headers)
+            
+            if members_response.status_code == 200:
+                members_data = members_response.json()
+                members = members_data.get("members", [])
+                
+                # Look for existing teacher
+                for member in members:
+                    if member.get("is_teacher", False):
+                        self.teacher_email = member.get("user_email")
+                        self.teacher_user_id = member.get("user_id")
+                        self.log_result("Get/Create Teacher", True, f"Found existing teacher: {self.teacher_email}")
+                        return True
+                
+                # If no teacher found, create one
+                if members:
+                    # Use first member and make them a teacher
+                    first_member = members[0]
+                    self.teacher_email = first_member.get("user_email")
+                    self.teacher_user_id = first_member.get("user_id")
+                    
+                    # Login as this user to update their profile
+                    # We'll assume they have a standard password or create a new teacher
+                    pass
+            
+            # Create a new teacher user
+            unique_id = str(uuid.uuid4())[:8]
+            self.teacher_email = f"teacher_{unique_id}@example.com"
+            teacher_password = "teacher123"
+            
+            # Register teacher user
+            register_response = requests.post(f"{BASE_URL}/auth/register", json={
+                "email": self.teacher_email,
+                "password": teacher_password,
+                "first_name": "Анна",
+                "last_name": "Петрова"
             })
             
-            if response.status_code in [200, 201]:
-                # Login test user
+            if register_response.status_code in [200, 201]:
+                # Login teacher user
                 login_response = requests.post(f"{BASE_URL}/auth/login", json={
-                    "email": self.test_user_email,
-                    "password": test_password
+                    "email": self.teacher_email,
+                    "password": teacher_password
                 })
                 
                 if login_response.status_code == 200:
                     login_data = login_response.json()
-                    self.test_user_token = login_data.get("access_token")
-                    self.test_user_id = login_data.get("user", {}).get("id")
-                    self.log_result("Test User Creation", True, f"Created user: {self.test_user_email}")
-                    return True
-                else:
-                    self.log_result("Test User Creation", False, f"Login failed: {login_response.status_code}", login_response.text)
-                    return False
-            else:
-                self.log_result("Test User Creation", False, f"Registration failed: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Test User Creation", False, f"Exception: {str(e)}")
-            return False
-
-    def test_request_join_organization(self):
-        """Test POST /api/work/organizations/{org_id}/request-join"""
-        try:
-            headers = {"Authorization": f"Bearer {self.test_user_token}"}
-            
-            response = requests.post(
-                f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}/request-join",
-                headers=headers,
-                json={"message": "I would like to join this organization to contribute my skills"}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.join_request_id = data.get("request_id")
-                self.log_result("Request Join Organization", True, 
-                               f"Join request created with ID: {self.join_request_id}")
-                return True
-            else:
-                self.log_result("Request Join Organization", False, 
-                               f"Status: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Request Join Organization", False, f"Exception: {str(e)}")
-            return False
-
-    def test_get_join_requests_admin(self):
-        """Test GET /api/work/organizations/{org_id}/join-requests (admin only)"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            response = requests.get(
-                f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}/join-requests",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                requests_list = data.get("requests", [])
-                
-                # Check if our request is in the list
-                found_request = False
-                for req in requests_list:
-                    if req.get("id") == self.join_request_id:
-                        found_request = True
-                        # Verify required fields
-                        required_fields = ["user_email", "user_name", "message", "status", "requested_at"]
-                        missing_fields = [field for field in required_fields if field not in req]
+                    self.teacher_token = login_data.get("access_token")
+                    self.teacher_user_id = login_data.get("user", {}).get("id")
+                    
+                    # Add teacher to organization as member
+                    add_member_response = requests.post(
+                        f"{BASE_URL}/work/organizations/{self.organization_id}/members",
+                        headers=headers,
+                        json={
+                            "user_email": self.teacher_email,
+                            "role": "EMPLOYEE",
+                            "job_title": "Учитель математики"
+                        }
+                    )
+                    
+                    if add_member_response.status_code == 200:
+                        # Update teacher profile
+                        teacher_headers = {"Authorization": f"Bearer {self.teacher_token}"}
+                        update_response = requests.put(
+                            f"{BASE_URL}/work/organizations/{self.organization_id}/teachers/me",
+                            headers=teacher_headers,
+                            json={
+                                "is_teacher": True,
+                                "teaching_subjects": ["Математика", "Физика"],
+                                "teaching_grades": [9, 10, 11],
+                                "is_class_supervisor": True,
+                                "supervised_class": "10А",
+                                "teacher_qualification": "Высшая категория"
+                            }
+                        )
                         
-                        if missing_fields:
-                            self.log_result("Get Join Requests (Admin)", False, 
-                                           f"Missing fields: {missing_fields}")
+                        if update_response.status_code == 200:
+                            self.log_result("Get/Create Teacher", True, f"Created and configured teacher: {self.teacher_email}")
+                            return True
+                        else:
+                            self.log_result("Get/Create Teacher", False, f"Failed to update teacher profile: {update_response.status_code}")
                             return False
-                        break
-                
-                if found_request:
-                    self.log_result("Get Join Requests (Admin)", True, 
-                                   f"Found {len(requests_list)} requests, including our test request")
-                    return True
-                else:
-                    self.log_result("Get Join Requests (Admin)", False, 
-                                   f"Test request not found in {len(requests_list)} requests")
-                    return False
-            else:
-                self.log_result("Get Join Requests (Admin)", False, 
-                               f"Status: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Get Join Requests (Admin)", False, f"Exception: {str(e)}")
-            return False
-
-    def test_get_join_requests_non_admin(self):
-        """Test GET /api/work/organizations/{org_id}/join-requests (non-admin should get 403)"""
-        try:
-            headers = {"Authorization": f"Bearer {self.test_user_token}"}
-            
-            response = requests.get(
-                f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}/join-requests",
-                headers=headers
-            )
-            
-            if response.status_code == 403:
-                self.log_result("Get Join Requests (Non-Admin)", True, 
-                               "Correctly denied access with 403 Forbidden")
-                return True
-            else:
-                self.log_result("Get Join Requests (Non-Admin)", False, 
-                               f"Expected 403, got {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Get Join Requests (Non-Admin)", False, f"Exception: {str(e)}")
-            return False
-
-    def test_approve_join_request(self):
-        """Test POST /api/work/join-requests/{request_id}/approve"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            response = requests.post(
-                f"{BASE_URL}/work/join-requests/{self.join_request_id}/approve",
-                headers=headers,
-                json={"role": "MEMBER"}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                member_id = data.get("member_id")
-                
-                # Verify user is now a member
-                members_response = requests.get(
-                    f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}/members",
-                    headers=headers
-                )
-                
-                if members_response.status_code == 200:
-                    members_data = members_response.json()
-                    members_list = members_data.get("members", [])
-                    
-                    # Check if test user is now a member
-                    is_member = any(member.get("user_id") == self.test_user_id for member in members_list)
-                    
-                    if is_member:
-                        self.log_result("Approve Join Request", True, 
-                                       f"Request approved and user added as member with ID: {member_id}")
-                        return True
                     else:
-                        self.log_result("Approve Join Request", False, 
-                                       "Request approved but user not found in members list")
+                        self.log_result("Get/Create Teacher", False, f"Failed to add to org: {add_member_response.status_code}")
                         return False
                 else:
-                    self.log_result("Approve Join Request", False, 
-                                   f"Could not verify membership: {members_response.status_code}")
+                    self.log_result("Get/Create Teacher", False, f"Login failed: {login_response.status_code}")
                     return False
             else:
-                self.log_result("Approve Join Request", False, 
-                               f"Status: {response.status_code}", response.text)
+                self.log_result("Get/Create Teacher", False, f"Registration failed: {register_response.status_code}")
                 return False
                 
         except Exception as e:
-            self.log_result("Approve Join Request", False, f"Exception: {str(e)}")
+            self.log_result("Get/Create Teacher", False, f"Exception: {str(e)}")
             return False
 
-    def test_reject_join_request(self):
-        """Test POST /api/work/join-requests/{request_id}/reject"""
-        try:
-            # First create another join request to reject
-            headers_user = {"Authorization": f"Bearer {self.test_user_token}"}
-            
-            # Create second test user for rejection test
-            unique_id = str(uuid.uuid4())[:8]
-            reject_user_email = f"rejecttest_{unique_id}@example.com"
-            
-            # Register second test user
-            register_response = requests.post(f"{BASE_URL}/auth/register", json={
-                "email": reject_user_email,
-                "password": "testpass123",
-                "first_name": "Reject",
-                "last_name": "Tester"
-            })
-            
-            if register_response.status_code not in [200, 201]:
-                self.log_result("Reject Join Request", False, "Could not create second test user")
-                return False
-            
-            # Login second test user
-            login_response = requests.post(f"{BASE_URL}/auth/login", json={
-                "email": reject_user_email,
-                "password": "testpass123"
-            })
-            
-            if login_response.status_code != 200:
-                self.log_result("Reject Join Request", False, "Could not login second test user")
-                return False
-            
-            reject_user_token = login_response.json().get("access_token")
-            headers_reject = {"Authorization": f"Bearer {reject_user_token}"}
-            
-            # Create join request to reject
-            join_response = requests.post(
-                f"{BASE_URL}/work/organizations/{ORGANIZATION_ID}/request-join",
-                headers=headers_reject,
-                json={"message": "Please let me join"}
-            )
-            
-            if join_response.status_code != 200:
-                self.log_result("Reject Join Request", False, "Could not create join request to reject")
-                return False
-            
-            reject_request_id = join_response.json().get("request_id")
-            
-            # Now reject the request as admin
-            headers_admin = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            response = requests.post(
-                f"{BASE_URL}/work/join-requests/{reject_request_id}/reject",
-                headers=headers_admin,
-                params={"rejection_reason": "Position not available at this time"}
-            )
-            
-            if response.status_code == 200:
-                self.log_result("Reject Join Request", True, 
-                               "Join request rejected successfully with reason")
-                return True
-            else:
-                self.log_result("Reject Join Request", False, 
-                               f"Status: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Reject Join Request", False, f"Exception: {str(e)}")
-            return False
-
-    def test_approve_non_admin(self):
-        """Test that non-admin cannot approve join requests"""
-        try:
-            headers = {"Authorization": f"Bearer {self.test_user_token}"}
-            
-            response = requests.post(
-                f"{BASE_URL}/work/join-requests/{self.join_request_id}/approve",
-                headers=headers
-            )
-            
-            if response.status_code == 403:
-                self.log_result("Approve Join Request (Non-Admin)", True, 
-                               "Correctly denied access with 403 Forbidden")
-                return True
-            else:
-                self.log_result("Approve Join Request (Non-Admin)", False, 
-                               f"Expected 403, got {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Approve Join Request (Non-Admin)", False, f"Exception: {str(e)}")
-            return False
-
-    def test_duplicate_membership_prevention(self):
-        """Test that approving already approved request doesn't create duplicate membership"""
+    def test_teachers_list_endpoint_no_filters(self):
+        """Test GET /api/work/organizations/{org_id}/teachers - PREVIOUSLY FAILING WITH 500"""
         try:
             headers = {"Authorization": f"Bearer {self.admin_token}"}
             
-            # Try to approve the same request again
-            response = requests.post(
-                f"{BASE_URL}/work/join-requests/{self.join_request_id}/approve",
-                headers=headers
-            )
+            print("🔍 Testing previously failing endpoint: GET /teachers (no filters)")
+            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
             
-            # Should either return 404 (request not found/already processed) or handle gracefully
-            if response.status_code in [404, 400]:
-                self.log_result("Duplicate Membership Prevention", True, 
-                               f"Correctly handled duplicate approval with status {response.status_code}")
-                return True
-            elif response.status_code == 200:
-                # If it returns 200, check the message
+            if response.status_code == 200:
                 data = response.json()
-                message = data.get("message", "")
-                if "already a member" in message.lower():
-                    self.log_result("Duplicate Membership Prevention", True, 
-                                   "Correctly detected existing membership")
-                    return True
+                teachers = data.get("teachers", [])
+                
+                # Verify response structure
+                if isinstance(teachers, list):
+                    # Check if we have teachers and verify field structure
+                    if teachers:
+                        first_teacher = teachers[0]
+                        required_fields = ["id", "user_first_name", "user_last_name", "user_email", "teaching_subjects", "teaching_grades"]
+                        missing_fields = [field for field in required_fields if field not in first_teacher]
+                        
+                        if missing_fields:
+                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
+                                           f"Missing required fields: {missing_fields}")
+                            return False
+                        
+                        # Verify 'id' field is properly mapped (this was the bug)
+                        if first_teacher.get("id"):
+                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", True, 
+                                           f"✅ BUG FIXED! Endpoint returns 200 OK with {len(teachers)} teachers. 'id' field properly mapped.")
+                            return True
+                        else:
+                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
+                                           "'id' field is empty or null - field mapping still has issues")
+                            return False
+                    else:
+                        self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", True, 
+                                       "✅ BUG FIXED! Endpoint returns 200 OK (no teachers in organization)")
+                        return True
                 else:
-                    self.log_result("Duplicate Membership Prevention", False, 
-                                   "Approved duplicate request without proper handling")
+                    self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
+                                   f"Response is not a list: {type(data)}")
                     return False
+            elif response.status_code == 500:
+                # This was the original bug - should not happen anymore
+                error_text = response.text
+                self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
+                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
+                return False
             else:
-                self.log_result("Duplicate Membership Prevention", False, 
-                               f"Unexpected status: {response.status_code}", response.text)
+                self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
+                               f"Unexpected status code: {response.status_code}", response.text)
                 return False
                 
         except Exception as e:
-            self.log_result("Duplicate Membership Prevention", False, f"Exception: {str(e)}")
+            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
             return False
 
-    def run_all_tests(self):
-        """Run all join request tests"""
-        print("🚀 Starting Join Request Notifications Integration Backend Testing")
-        print("=" * 80)
+    def test_teachers_list_with_grade_filter(self):
+        """Test GET /api/work/organizations/{org_id}/teachers?grade=10 - PREVIOUSLY FAILING WITH 500"""
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            print("🔍 Testing previously failing endpoint: GET /teachers?grade=10")
+            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers?grade=10", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                teachers = data.get("teachers", [])
+                
+                # Verify filtering works
+                for teacher in teachers:
+                    teaching_grades = teacher.get("teaching_grades", [])
+                    if teaching_grades and 10 not in teaching_grades:
+                        self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
+                                       f"Grade filtering not working: teacher doesn't teach grade 10")
+                        return False
+                
+                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", True, 
+                               f"✅ BUG FIXED! Grade filtering returns 200 OK with {len(teachers)} teachers for grade 10")
+                return True
+            elif response.status_code == 500:
+                error_text = response.text
+                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
+                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
+                return False
+            else:
+                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
+                               f"Unexpected status code: {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
+            return False
+
+    def test_teachers_list_with_subject_filter(self):
+        """Test GET /api/work/organizations/{org_id}/teachers?subject=Математика"""
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            print("🔍 Testing endpoint: GET /teachers?subject=Математика")
+            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers?subject=Математика", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                teachers = data.get("teachers", [])
+                
+                # Verify filtering works
+                for teacher in teachers:
+                    teaching_subjects = teacher.get("teaching_subjects", [])
+                    if teaching_subjects and "Математика" not in teaching_subjects:
+                        self.log_result("Teachers List (Subject Filter)", False, 
+                                       f"Subject filtering not working: teacher doesn't teach Математика")
+                        return False
+                
+                self.log_result("Teachers List (Subject Filter)", True, 
+                               f"Subject filtering returns 200 OK with {len(teachers)} teachers for Математика")
+                return True
+            else:
+                self.log_result("Teachers List (Subject Filter)", False, 
+                               f"Status: {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Teachers List (Subject Filter)", False, f"Exception: {str(e)}")
+            return False
+
+    def test_individual_teacher_endpoint(self):
+        """Test GET /api/work/organizations/{org_id}/teachers/{id} - PREVIOUSLY FAILING"""
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # First get list of teachers to find a teacher ID
+            list_response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
+            
+            if list_response.status_code != 200:
+                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
+                               "Cannot get teachers list to test individual retrieval")
+                return False
+            
+            teachers = list_response.json().get("teachers", [])
+            if not teachers:
+                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", True, 
+                               "No teachers to test individual retrieval (organization empty)")
+                return True
+            
+            # Get the first teacher
+            teacher_id = teachers[0].get("id")
+            if not teacher_id:
+                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
+                               "No teacher ID found in teachers list")
+                return False
+            
+            print(f"🔍 Testing previously failing endpoint: GET /teachers/{teacher_id}")
+            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers/{teacher_id}", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                teacher = data.get("teacher")
+                
+                if teacher and teacher.get("id"):
+                    self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", True, 
+                                   f"✅ BUG FIXED! Individual teacher retrieval returns 200 OK with proper 'id' field")
+                    return True
+                else:
+                    self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
+                                   "Teacher data missing or 'id' field not properly mapped")
+                    return False
+            elif response.status_code == 500:
+                error_text = response.text
+                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
+                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
+                return False
+            else:
+                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
+                               f"Unexpected status code: {response.status_code}", response.text)
+                return False
+                
+        except Exception as e:
+            self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
+            return False
+
+    def test_data_structure_integrity(self):
+        """Verify that teacher data structure includes proper 'id' field and other required fields"""
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                teachers = data.get("teachers", [])
+                
+                if teachers:
+                    teacher = teachers[0]
+                    
+                    # Check critical fields that were affected by the bug
+                    required_fields = {
+                        "id": "Teacher ID (was the main bug - member_id not mapped to id)",
+                        "user_id": "User ID reference",
+                        "user_first_name": "Teacher first name",
+                        "user_last_name": "Teacher last name", 
+                        "user_email": "Teacher email",
+                        "teaching_subjects": "Subjects taught",
+                        "teaching_grades": "Grades taught"
+                    }
+                    
+                    missing_fields = []
+                    for field, description in required_fields.items():
+                        if field not in teacher:
+                            missing_fields.append(f"{field} ({description})")
+                    
+                    if missing_fields:
+                        self.log_result("Data Structure Integrity", False, 
+                                       f"Missing critical fields: {', '.join(missing_fields)}")
+                        return False
+                    
+                    # Verify 'id' field has a value (not None/empty)
+                    if not teacher.get("id"):
+                        self.log_result("Data Structure Integrity", False, 
+                                       "'id' field exists but is empty/null - field mapping incomplete")
+                        return False
+                    
+                    self.log_result("Data Structure Integrity", True, 
+                                   f"✅ All critical fields present including properly mapped 'id' field: {teacher.get('id')}")
+                    return True
+                else:
+                    self.log_result("Data Structure Integrity", True, 
+                                   "No teachers to verify structure (empty organization)")
+                    return True
+            else:
+                self.log_result("Data Structure Integrity", False, 
+                               f"Cannot verify structure, endpoint failed: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Data Structure Integrity", False, f"Exception: {str(e)}")
+            return False
+
+    def test_previously_working_endpoints(self):
+        """Verify that previously working endpoints still work after the fix"""
+        try:
+            # Test school constants endpoint (should still work)
+            response = requests.get(f"{BASE_URL}/work/schools/constants")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "subjects" in data and "grades" in data:
+                    self.log_result("Previously Working Endpoints", True, 
+                                   "School constants endpoint still working after bug fix")
+                    return True
+                else:
+                    self.log_result("Previously Working Endpoints", False, 
+                                   "School constants endpoint structure changed")
+                    return False
+            else:
+                self.log_result("Previously Working Endpoints", False, 
+                               f"School constants endpoint broken: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Previously Working Endpoints", False, f"Exception: {str(e)}")
+            return False
+
+    def run_bug_fix_verification(self):
+        """Run focused bug fix verification tests"""
+        print("🔧 RE-TESTING AFTER BUG FIX - School Management Phase 1: Teacher Listing Endpoints")
+        print("=" * 90)
+        print("🎯 FOCUS: Verifying field mapping bug fix (MongoDB 'member_id' → 'id' conversion)")
+        print("📋 PREVIOUSLY FAILING ENDPOINTS:")
+        print("   - GET /api/work/organizations/{org_id}/teachers")
+        print("   - GET /api/work/organizations/{org_id}/teachers?grade=10")
+        print("   - GET /api/work/organizations/{org_id}/teachers/{id}")
+        print("=" * 90)
+        print()
         
         # Authentication
         if not self.authenticate_admin():
             print("❌ Cannot proceed without admin authentication")
             return
         
-        if not self.create_test_user():
-            print("❌ Cannot proceed without test user")
-            return
+        # Get or create teacher for testing
+        if not self.get_or_create_teacher():
+            print("⚠️ No teacher available, but can still test endpoints...")
         
-        # Test join request creation
-        if not self.test_request_join_organization():
-            print("❌ Cannot proceed without join request")
-            return
+        # Test the previously failing endpoints
+        print("🔍 TESTING PREVIOUSLY FAILING ENDPOINTS:")
+        print("-" * 50)
         
-        # Test admin access to join requests
-        self.test_get_join_requests_admin()
+        self.test_teachers_list_endpoint_no_filters()
+        self.test_teachers_list_with_grade_filter()
+        self.test_individual_teacher_endpoint()
         
-        # Test non-admin access (should be denied)
-        self.test_get_join_requests_non_admin()
+        print("\n🔍 ADDITIONAL VERIFICATION TESTS:")
+        print("-" * 50)
         
-        # Test approval process
-        self.test_approve_join_request()
-        
-        # Test rejection process
-        self.test_reject_join_request()
-        
-        # Test authorization controls
-        self.test_approve_non_admin()
-        
-        # Test duplicate prevention
-        self.test_duplicate_membership_prevention()
+        self.test_teachers_list_with_subject_filter()
+        self.test_data_structure_integrity()
+        self.test_previously_working_endpoints()
         
         # Print summary
-        self.print_summary()
+        self.print_bug_fix_summary()
 
-    def print_summary(self):
-        """Print test summary"""
-        print("=" * 80)
-        print("📊 JOIN REQUEST NOTIFICATIONS INTEGRATION TEST SUMMARY")
-        print("=" * 80)
+    def print_bug_fix_summary(self):
+        """Print focused bug fix verification summary"""
+        print("=" * 90)
+        print("📊 BUG FIX VERIFICATION SUMMARY")
+        print("=" * 90)
         
         total_tests = len(self.results)
         passed_tests = sum(1 for result in self.results if "✅ PASS" in result["status"])
@@ -433,6 +484,27 @@ class TeacherEndpointBugFixTester:
         print(f"Passed: {passed_tests}")
         print(f"Failed: {failed_tests}")
         print(f"Success Rate: {success_rate:.1f}%")
+        print()
+        
+        # Check if the critical bug fix tests passed
+        critical_tests = [
+            "Teachers List (No Filters) - BUG FIX VERIFICATION",
+            "Teachers List (Grade Filter) - BUG FIX VERIFICATION", 
+            "Individual Teacher Endpoint - BUG FIX VERIFICATION"
+        ]
+        
+        critical_passed = 0
+        for result in self.results:
+            if result["test"] in critical_tests and "✅ PASS" in result["status"]:
+                critical_passed += 1
+        
+        print("🎯 CRITICAL BUG FIX STATUS:")
+        if critical_passed == len(critical_tests):
+            print("✅ BUG COMPLETELY FIXED! All previously failing endpoints now return 200 OK")
+        elif critical_passed > 0:
+            print(f"⚠️ PARTIAL FIX: {critical_passed}/{len(critical_tests)} critical endpoints fixed")
+        else:
+            print("❌ BUG NOT FIXED: All critical endpoints still failing")
         print()
         
         if failed_tests > 0:
@@ -448,22 +520,18 @@ class TeacherEndpointBugFixTester:
                 print(f"   - {result['test']}")
         
         print()
-        print("🎯 KEY FUNCTIONALITY TESTED:")
-        print("   - POST /api/work/organizations/{org_id}/request-join")
-        print("   - GET /api/work/organizations/{org_id}/join-requests")
-        print("   - POST /api/work/join-requests/{request_id}/approve")
-        print("   - POST /api/work/join-requests/{request_id}/reject")
-        print("   - Authorization controls (admin vs non-admin)")
-        print("   - Duplicate membership prevention")
-        print("   - Data integrity and proper response formats")
+        print("🔧 BUG FIX DETAILS:")
+        print("   - Issue: MongoDB 'member_id' field not mapped to 'id' in TeacherResponse")
+        print("   - Fix Applied: Added field mapping logic teacher_data['id'] = teacher_data.pop('member_id')")
+        print("   - Endpoints Fixed: GET /teachers, GET /teachers?filters, GET /teachers/{id}")
         
-        if success_rate >= 85:
-            print(f"\n🎉 JOIN REQUEST SYSTEM IS PRODUCTION-READY! ({success_rate:.1f}% success rate)")
-        elif success_rate >= 70:
-            print(f"\n⚠️ JOIN REQUEST SYSTEM NEEDS MINOR FIXES ({success_rate:.1f}% success rate)")
+        if success_rate == 100:
+            print(f"\n🎉 BUG FIX SUCCESSFUL! All teacher endpoints working correctly ({success_rate:.1f}% success rate)")
+        elif success_rate >= 80:
+            print(f"\n✅ BUG FIX MOSTLY SUCCESSFUL ({success_rate:.1f}% success rate)")
         else:
-            print(f"\n❌ JOIN REQUEST SYSTEM NEEDS MAJOR FIXES ({success_rate:.1f}% success rate)")
+            print(f"\n❌ BUG FIX INCOMPLETE - Further investigation needed ({success_rate:.1f}% success rate)")
 
 if __name__ == "__main__":
-    tester = JoinRequestTester()
-    tester.run_all_tests()
+    tester = TeacherEndpointBugFixTester()
+    tester.run_bug_fix_verification()
