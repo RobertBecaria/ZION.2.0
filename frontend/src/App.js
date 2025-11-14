@@ -915,6 +915,52 @@ function Dashboard() {
     }
   }, [activeModule]);
 
+  // Fetch school roles when journal module is active
+  useEffect(() => {
+    const fetchSchoolRoles = async () => {
+      if (activeModule === 'journal' && user) {
+        try {
+          setLoadingSchoolRoles(true);
+          const token = localStorage.getItem('zion_token');
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/users/me/school-roles`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const roles = await response.json();
+            setSchoolRoles(roles);
+            
+            // Reset selection when switching to journal
+            setSelectedSchool(null);
+            setSchoolRole(null);
+            
+            // Auto-select first school if only one exists
+            if (roles.is_parent && !roles.is_teacher && roles.schools_as_parent.length === 1) {
+              setSelectedSchool(roles.schools_as_parent[0]);
+              setSchoolRole('parent');
+              setActiveView('journal-dashboard');
+            } else if (!roles.is_parent && roles.is_teacher && roles.schools_as_teacher.length === 1) {
+              setSelectedSchool(roles.schools_as_teacher[0]);
+              setSchoolRole('teacher');
+              setActiveView('journal-dashboard');
+            } else {
+              // Multiple schools or both roles - show selection screen
+              setActiveView('journal-role-select');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching school roles:', error);
+        } finally {
+          setLoadingSchoolRoles(false);
+        }
+      }
+    };
+    
+    fetchSchoolRoles();
+  }, [activeModule, user]);
+
   // Update time every second
   useEffect(() => {
     const timer = setInterval(() => {
