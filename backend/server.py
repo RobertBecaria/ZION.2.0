@@ -10233,6 +10233,90 @@ async def add_child_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/users/me/school-roles")
+async def get_my_school_roles(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get user's roles across all educational organizations
+    Returns:
+    - is_parent: boolean (has children)
+    - is_teacher: boolean (is teacher in any school)
+    - schools_as_parent: list of schools where user has children
+    - schools_as_teacher: list of schools where user is a teacher
+    """
+    try:
+        roles = {
+            "is_parent": False,
+            "is_teacher": False,
+            "schools_as_parent": [],
+            "schools_as_teacher": []
+        }
+        
+        # Check if user is a parent (has children)
+        children_count = await db.work_students.count_documents({
+            "parent_ids": current_user.id,
+            "is_active": True
+        })
+        roles["is_parent"] = children_count > 0
+        
+        # Get schools where user has children
+        if roles["is_parent"]:
+            students_cursor = db.work_students.find({
+                "parent_ids": current_user.id,
+                "is_active": True,
+                "organization_id": {"$ne": None}
+            })
+            students = await students_cursor.to_list(None)
+            
+            # Get unique organization IDs
+            org_ids = list(set([s["organization_id"] for s in students if s.get("organization_id")]))
+            
+            # Get organization details
+            for org_id in org_ids:
+                org = await db.work_organizations.find_one({"organization_id": org_id})
+                if org and org.get("organization_type") == "EDUCATIONAL":
+                    # Count children in this school
+                    children_in_school = [s for s in students if s.get("organization_id") == org_id]
+                    roles["schools_as_parent"].append({
+                        "organization_id": org_id,
+                        "organization_name": org.get("name"),
+                        "children_count": len(children_in_school),
+                        "children_ids": [s["student_id"] for s in children_in_school]
+                    })
+        
+        # Check if user is a teacher in any educational organization
+        teacher_memberships_cursor = db.work_members.find({
+            "user_id": current_user.id,
+            "is_teacher": True,
+            "status": "active"
+        })
+        teacher_memberships = await teacher_memberships_cursor.to_list(None)
+        roles["is_teacher"] = len(teacher_memberships) > 0
+        
+        # Get schools where user is a teacher
+        if roles["is_teacher"]:
+            teacher_org_ids = [m["organization_id"] for m in teacher_memberships]
+            
+            for org_id in teacher_org_ids:
+                org = await db.work_organizations.find_one({"organization_id": org_id})
+                if org and org.get("organization_type") == "EDUCATIONAL":
+                    # Get teacher details
+                    member = next((m for m in teacher_memberships if m["organization_id"] == org_id), None)
+                    roles["schools_as_teacher"].append({
+                        "organization_id": org_id,
+                        "organization_name": org.get("name"),
+                        "teaching_subjects": member.get("teaching_subjects", []),
+                        "teaching_grades": member.get("teaching_grades", []),
+                        "is_class_supervisor": member.get("is_class_supervisor", False),
+                        "supervised_class": member.get("supervised_class")
+                    })
+        
+        return roles
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # === ENROLLMENT REQUEST ENDPOINTS ===
 
 @api_router.post("/work/organizations/{organization_id}/enrollment-requests")
