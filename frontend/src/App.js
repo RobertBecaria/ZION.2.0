@@ -1964,8 +1964,16 @@ function Dashboard() {
                             ) : activeView === 'journal-dashboard' ? (
                               <div className="journal-dashboard-placeholder">
                                 <h2>Журнал - {selectedSchool?.organization_name}</h2>
-                                <p>Dashboard будет здесь. Используйте WORLD ZONE для навигации.</p>
+                                <p>Выберите раздел из навигации справа (WORLD ZONE)</p>
                               </div>
+                            ) : activeView === 'journal-schedule' ? (
+                              <ErrorBoundary>
+                                <ClassSchedule
+                                  selectedSchool={selectedSchool}
+                                  role={schoolRole}
+                                  onBack={() => setActiveView('journal-dashboard')}
+                                />
+                              </ErrorBoundary>
                             ) : (
                               <div className="journal-content-placeholder">
                                 <p>Выберите раздел из WORLD ZONE</p>
