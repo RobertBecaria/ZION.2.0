@@ -20032,3 +20032,196 @@ a,
   }
 }
 
+
+
+/* ============================================
+   JOURNAL UNIVERSAL FEED
+   ============================================ */
+
+.journal-feed-container {
+  padding: 30px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.feed-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.feed-subtitle {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.feed-filters {
+  display: flex;
+  gap: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.post-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.1);
+  border-color: #6D28D9;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.post-author {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.author-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  overflow: hidden;
+}
+
+.author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.author-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.post-role {
+  background: #6D28D920;
+  color: #6D28D9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.post-school {
+  color: #666;
+}
+
+.separator {
+  color: #ccc;
+}
+
+.post-audience-badge {
+  background: #f3f4f6;
+  color: #666;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.post-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.post-content {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+
+.post-actions {
+  display: flex;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.post-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.post-action-btn:hover {
+  background: #f9fafb;
+  border-color: #6D28D9;
+  color: #6D28D9;
+}
+
+.post-action-btn svg {
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .feed-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .post-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .post-audience-badge {
+    align-self: flex-start;
+  }
+}
+
