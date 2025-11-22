@@ -1948,6 +1948,14 @@ function Dashboard() {
                               <div className="empty-state-large">
                                 <p>Не удалось загрузить информацию о школах</p>
                               </div>
+                            ) : (activeView === 'wall' || activeView === 'feed') ? (
+                              <UniversalWall
+                                activeGroup={activeGroup}
+                                moduleColor={currentModule.color}
+                                moduleName={currentModule.name}
+                                user={user}
+                                activeModule="journal"
+                              />
                             ) : activeView === 'journal-role-select' ? (
                               <div className="journal-role-select">
                                 <h2>Выберите Роль</h2>
