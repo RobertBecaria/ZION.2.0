@@ -1373,6 +1373,71 @@ class StudentGradesSummary(BaseModel):
     average: Optional[float] = None
     grade_count: int
 
+# === JOURNAL POST MODELS (МОЯ ЛЕНТА) ===
+
+class JournalAudienceType(str, Enum):
+    PUBLIC = "PUBLIC"  # Everyone subscribed to organization
+    TEACHERS = "TEACHERS"  # Teachers only
+    PARENTS = "PARENTS"  # Parents only
+    STUDENTS_PARENTS = "STUDENTS_PARENTS"  # Students and their parents
+    ADMINS = "ADMINS"  # Admins only
+
+class JournalPostCreate(BaseModel):
+    """Create journal post"""
+    title: Optional[str] = None
+    content: str
+    audience_type: JournalAudienceType = JournalAudienceType.PUBLIC
+    media_file_ids: List[str] = []
+    is_pinned: bool = False
+
+class JournalPost(BaseModel):
+    """Journal post in educational organization"""
+    post_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    posted_by_user_id: str
+    posted_by_role: str  # "teacher", "parent", "admin"
+    
+    # Content
+    title: Optional[str] = None
+    content: str
+    
+    # Audience Control
+    audience_type: JournalAudienceType
+    
+    # Media
+    media_files: List[str] = []
+    
+    # Engagement
+    likes_count: int = 0
+    comments_count: int = 0
+    
+    # Metadata
+    is_published: bool = True
+    is_pinned: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class JournalPostResponse(BaseModel):
+    """Response for journal post"""
+    post_id: str
+    organization_id: str
+    organization_name: Optional[str] = None
+    posted_by_user_id: str
+    posted_by_role: str
+    author: Dict[str, Any]  # Author details
+    
+    title: Optional[str]
+    content: str
+    audience_type: str
+    
+    media_files: List[str]
+    likes_count: int
+    comments_count: int
+    
+    is_published: bool
+    is_pinned: bool
+    created_at: datetime
+
 class WorkPostCreate(BaseModel):
     title: Optional[str] = None
     content: str
