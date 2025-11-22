@@ -1955,6 +1955,7 @@ function Dashboard() {
                                 moduleName={currentModule.name}
                                 user={user}
                                 activeModule="journal"
+                                schoolRoles={schoolRoles}
                               />
                             ) : activeView === 'journal-role-select' ? (
                               <div className="journal-role-select">
