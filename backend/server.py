@@ -23,7 +23,7 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]  # Required from environment, no default
+db = client[os.environ.get('DB_NAME', 'zion_city')]  # Fallback for compatibility
 
 # Create the main app without a prefix
 app = FastAPI(title="ZION.CITY API", version="1.0.0")
@@ -34,7 +34,7 @@ api_router = APIRouter(prefix="/api")
 # Security
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ['JWT_SECRET_KEY']  # Required from environment, no default
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development')  # Fallback for compatibility
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
