@@ -11367,6 +11367,246 @@ async def get_journal_posts(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# === JOURNAL POST INTERACTIONS (Likes & Comments) ===
+
+@api_router.post("/journal/posts/{post_id}/like")
+async def like_journal_post(
+    post_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Like or unlike a journal post"""
+    try:
+        # Find the post
+        post = await db.journal_posts.find_one({"post_id": post_id})
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        
+        # Check if user already liked
+        existing_like = await db.journal_post_likes.find_one({
+            "post_id": post_id,
+            "user_id": current_user.id
+        })
+        
+        if existing_like:
+            # Unlike - remove the like
+            await db.journal_post_likes.delete_one({
+                "post_id": post_id,
+                "user_id": current_user.id
+            })
+            await db.journal_posts.update_one(
+                {"post_id": post_id},
+                {"$inc": {"likes_count": -1}}
+            )
+            return {"liked": False, "likes_count": post.get("likes_count", 1) - 1}
+        else:
+            # Like - add the like
+            like_doc = {
+                "id": str(uuid4()),
+                "post_id": post_id,
+                "user_id": current_user.id,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.journal_post_likes.insert_one(like_doc)
+            await db.journal_posts.update_one(
+                {"post_id": post_id},
+                {"$inc": {"likes_count": 1}}
+            )
+            return {"liked": True, "likes_count": post.get("likes_count", 0) + 1}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/journal/posts/{post_id}/comments")
+async def create_journal_comment(
+    post_id: str,
+    content: str = Form(...),
+    parent_comment_id: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a comment on a journal post"""
+    try:
+        # Find the post
+        post = await db.journal_posts.find_one({"post_id": post_id})
+        if not post:
+            raise HTTPException(status_code=404, detail="Пост не найден")
+        
+        # Create comment
+        comment_id = str(uuid4())
+        comment_doc = {
+            "id": comment_id,
+            "post_id": post_id,
+            "author_id": current_user.id,
+            "content": content,
+            "parent_comment_id": parent_comment_id,
+            "likes_count": 0,
+            "is_edited": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.journal_post_comments.insert_one(comment_doc)
+        
+        # Increment comments count on post
+        await db.journal_posts.update_one(
+            {"post_id": post_id},
+            {"$inc": {"comments_count": 1}}
+        )
+        
+        # Return the created comment with author info
+        return {
+            "id": comment_id,
+            "content": content,
+            "author": {
+                "id": current_user.id,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "profile_picture": current_user.profile_picture
+            },
+            "likes_count": 0,
+            "user_liked": False,
+            "created_at": comment_doc["created_at"],
+            "is_edited": False,
+            "replies": []
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/journal/posts/{post_id}/comments")
+async def get_journal_comments(
+    post_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get comments for a journal post"""
+    try:
+        # Get top-level comments
+        comments_cursor = db.journal_post_comments.find({
+            "post_id": post_id,
+            "parent_comment_id": None
+        }).sort("created_at", 1)
+        
+        comments = await comments_cursor.to_list(100)
+        
+        # Build response with nested replies
+        result = []
+        for comment in comments:
+            author = await db.users.find_one({"id": comment["author_id"]})
+            
+            # Check if current user liked this comment
+            user_liked = await db.journal_comment_likes.find_one({
+                "comment_id": comment["id"],
+                "user_id": current_user.id
+            }) is not None
+            
+            # Get replies
+            replies_cursor = db.journal_post_comments.find({
+                "post_id": post_id,
+                "parent_comment_id": comment["id"]
+            }).sort("created_at", 1)
+            replies = await replies_cursor.to_list(50)
+            
+            replies_result = []
+            for reply in replies:
+                reply_author = await db.users.find_one({"id": reply["author_id"]})
+                reply_user_liked = await db.journal_comment_likes.find_one({
+                    "comment_id": reply["id"],
+                    "user_id": current_user.id
+                }) is not None
+                
+                replies_result.append({
+                    "id": reply["id"],
+                    "content": reply["content"],
+                    "author": {
+                        "id": reply["author_id"],
+                        "first_name": reply_author.get("first_name", "") if reply_author else "",
+                        "last_name": reply_author.get("last_name", "") if reply_author else "",
+                        "profile_picture": reply_author.get("profile_picture") if reply_author else None
+                    },
+                    "likes_count": reply.get("likes_count", 0),
+                    "user_liked": reply_user_liked,
+                    "created_at": reply["created_at"],
+                    "is_edited": reply.get("is_edited", False),
+                    "replies": []
+                })
+            
+            result.append({
+                "id": comment["id"],
+                "content": comment["content"],
+                "author": {
+                    "id": comment["author_id"],
+                    "first_name": author.get("first_name", "") if author else "",
+                    "last_name": author.get("last_name", "") if author else "",
+                    "profile_picture": author.get("profile_picture") if author else None
+                },
+                "likes_count": comment.get("likes_count", 0),
+                "user_liked": user_liked,
+                "created_at": comment["created_at"],
+                "is_edited": comment.get("is_edited", False),
+                "replies": replies_result
+            })
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/journal/comments/{comment_id}/like")
+async def like_journal_comment(
+    comment_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Like or unlike a journal comment"""
+    try:
+        # Find the comment
+        comment = await db.journal_post_comments.find_one({"id": comment_id})
+        if not comment:
+            raise HTTPException(status_code=404, detail="Комментарий не найден")
+        
+        # Check if already liked
+        existing_like = await db.journal_comment_likes.find_one({
+            "comment_id": comment_id,
+            "user_id": current_user.id
+        })
+        
+        if existing_like:
+            # Unlike
+            await db.journal_comment_likes.delete_one({
+                "comment_id": comment_id,
+                "user_id": current_user.id
+            })
+            await db.journal_post_comments.update_one(
+                {"id": comment_id},
+                {"$inc": {"likes_count": -1}}
+            )
+            return {"liked": False}
+        else:
+            # Like
+            await db.journal_comment_likes.insert_one({
+                "id": str(uuid4()),
+                "comment_id": comment_id,
+                "user_id": current_user.id,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            await db.journal_post_comments.update_one(
+                {"id": comment_id},
+                {"$inc": {"likes_count": 1}}
+            )
+            return {"liked": True}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/work/organizations/{organization_id}/change-requests")
 async def get_change_requests(
     organization_id: str,
