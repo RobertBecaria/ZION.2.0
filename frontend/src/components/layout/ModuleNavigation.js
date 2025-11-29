@@ -3,6 +3,7 @@
  * Top navigation bar with module selection buttons
  */
 import React from 'react';
+import { User, Calendar } from 'lucide-react';
 import { MODULES, MODULE_DEFAULT_VIEWS } from '../../config/moduleConfig';
 
 const ModuleNavigation = ({ 
@@ -11,28 +12,16 @@ const ModuleNavigation = ({
   setActiveView,
   user,
   onLogout,
-  currentTime 
+  currentTime,
+  showCalendar,
+  setShowCalendar,
+  setShowOnboarding
 }) => {
   const currentModule = MODULES.find(m => m.key === activeModule) || MODULES[0];
 
   const handleModuleClick = (moduleKey) => {
     setActiveModule(moduleKey);
     setActiveView(MODULE_DEFAULT_VIEWS[moduleKey] || 'wall');
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('ru-RU', { 
-      day: 'numeric', 
-      month: 'long',
-      year: 'numeric'
-    });
   };
 
   return (
@@ -60,24 +49,39 @@ const ModuleNavigation = ({
           ))}
         </div>
 
-        <div className="nav-right">
-          <div className="time-display" style={{ color: currentModule.color }}>
-            <span className="current-date">{formatDate(currentTime)}</span>
-            <span className="current-time">{formatTime(currentTime)}</span>
-          </div>
-          
-          {user && (
-            <div className="nav-profile">
-              <span className="nav-user-name">{user.first_name}</span>
-              <button 
-                className="nav-btn logout-btn" 
-                onClick={onLogout}
-                title="Выйти"
-              >
-                Выйти
-              </button>
+        <div className="user-section">
+          <div 
+            className="clock-widget clickable" 
+            onClick={() => setShowCalendar(!showCalendar)}
+            title="Открыть календарь"
+          >
+            <div className="time">
+              {currentTime.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
             </div>
-          )}
+            <div className="date">
+              {currentTime.toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}
+            </div>
+            <div className="calendar-icon">
+              <Calendar size={16} />
+            </div>
+          </div>
+          <div className="user-menu">
+            <button className="user-button">
+              <User size={20} />
+              <span>{user?.first_name}</span>
+            </button>
+            <div className="user-dropdown">
+              <button onClick={() => setShowOnboarding(true)}>Настройки профиля</button>
+              <button onClick={onLogout}>Выйти</button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
