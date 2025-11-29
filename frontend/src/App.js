@@ -33,6 +33,7 @@ import SchoolFinder from './components/SchoolFinder';
 import MySchoolsList from './components/MySchoolsList';
 import SchoolTiles from './components/SchoolTiles';
 import JournalWorldZone from './components/JournalWorldZone';
+import FamilyWorldZone from './components/FamilyWorldZone';
 import ClassSchedule from './components/ClassSchedule';
 import StudentGradebook from './components/StudentGradebook';
 // WORK MODULE COMPONENTS
