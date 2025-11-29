@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Plus, Heart, MessageCircle, User, Calendar, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Send, Plus, Heart, MessageCircle, User, Calendar, Trash2,
+  Image, Paperclip, X, FileText, MoreHorizontal, Smile
+} from 'lucide-react';
 
-const JournalUniversalFeed = ({ currentUserId, schoolRoles }) => {
+const JournalUniversalFeed = ({ currentUserId, schoolRoles, user }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newPost, setNewPost] = useState('');
@@ -9,14 +12,22 @@ const JournalUniversalFeed = ({ currentUserId, schoolRoles }) => {
   const [selectedAudience, setSelectedAudience] = useState('PUBLIC');
   const [audienceFilter, setAudienceFilter] = useState('all');
   const [showPostModal, setShowPostModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadingFiles, setUploadingFiles] = useState([]);
+  const [uploadedMediaIds, setUploadedMediaIds] = useState([]);
+  const [showComments, setShowComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [newComment, setNewComment] = useState({});
+  const fileInputRef = useRef(null);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+  const moduleColor = '#6D28D9'; // Purple for Journal
 
   const AUDIENCE_OPTIONS = [
-    { value: 'PUBLIC', label: 'Публично (все)' },
-    { value: 'TEACHERS', label: 'Только учителя' },
-    { value: 'PARENTS', label: 'Только родители' },
-    { value: 'STUDENTS_PARENTS', label: 'Ученики и родители' }
+    { value: 'PUBLIC', label: '🌍 Публично (все)', icon: '🌍' },
+    { value: 'TEACHERS', label: '👨‍🏫 Только учителя', icon: '👨‍🏫' },
+    { value: 'PARENTS', label: '👨‍👩‍👧 Только родители', icon: '👨‍👩‍👧' },
+    { value: 'STUDENTS_PARENTS', label: '📚 Ученики и родители', icon: '📚' }
   ];
 
   useEffect(() => {
