@@ -1240,20 +1240,23 @@ function Dashboard() {
               <span>Мой Профиль</span>
             </button>
             
-            <button 
-              className={`profile-btn ${activeView === 'feed' ? 'primary' : 'secondary'}`}
-              style={{ 
-                backgroundColor: activeView === 'feed' ? currentModule.color : undefined,
-                background: activeView === 'feed' 
-                  ? `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`
-                  : undefined,
-                color: activeView === 'feed' ? 'white' : undefined
-              }}
-              onClick={() => setActiveView('feed')}
-            >
-              <Newspaper size={18} />
-              <span>Моя Лента</span>
-            </button>
+            {/* Generic "Моя Лента" button - only show for modules WITHOUT their own feed button */}
+            {activeModule !== 'organizations' && activeModule !== 'journal' && (
+              <button 
+                className={`profile-btn ${activeView === 'feed' ? 'primary' : 'secondary'}`}
+                style={{ 
+                  backgroundColor: activeView === 'feed' ? currentModule.color : undefined,
+                  background: activeView === 'feed' 
+                    ? `linear-gradient(135deg, ${currentModule.color} 0%, ${currentModule.color}dd 100%)`
+                    : undefined,
+                  color: activeView === 'feed' ? 'white' : undefined
+                }}
+                onClick={() => setActiveView('feed')}
+              >
+                <Newspaper size={18} />
+                <span>Моя Лента</span>
+              </button>
+            )}
             
             {/* Family Section - Always visible in Family module */}
             {activeModule === 'family' && (
