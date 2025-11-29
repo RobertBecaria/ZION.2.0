@@ -233,15 +233,127 @@ const JournalUniversalFeed = ({ currentUserId, schoolRoles, user }) => {
   };
 
   const handleLike = async (postId) => {
-    // TODO: Implement like functionality for journal posts
-    console.log('Like post:', postId);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/journal/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Update post in local state
+        setPosts(posts.map(post => {
+          if (post.post_id === postId) {
+            return {
+              ...post,
+              user_liked: result.liked,
+              likes_count: result.likes_count
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
   };
 
-  const toggleComments = (postId) => {
+  const toggleComments = async (postId) => {
+    const newShowState = !showComments[postId];
     setShowComments(prev => ({
       ...prev,
-      [postId]: !prev[postId]
+      [postId]: newShowState
     }));
+    
+    // Load comments if opening and not already loaded
+    if (newShowState && !comments[postId]) {
+      await fetchComments(postId);
+    }
+  };
+
+  const fetchComments = async (postId) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/journal/posts/${postId}/comments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const commentsData = await response.json();
+        setComments(prev => ({
+          ...prev,
+          [postId]: commentsData
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  const handleCommentSubmit = async (postId, content) => {
+    if (!content?.trim()) return;
+
+    try {
+      const token = localStorage.getItem('zion_token');
+      const formData = new FormData();
+      formData.append('content', content);
+
+      const response = await fetch(`${BACKEND_URL}/api/journal/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        // Refresh comments and update post count
+        await fetchComments(postId);
+        
+        // Update post comments count
+        setPosts(posts.map(post => {
+          if (post.post_id === postId) {
+            return {
+              ...post,
+              comments_count: (post.comments_count || 0) + 1
+            };
+          }
+          return post;
+        }));
+        
+        // Clear comment input
+        setNewComment(prev => ({
+          ...prev,
+          [postId]: ''
+        }));
+      }
+    } catch (error) {
+      console.error('Error creating comment:', error);
+    }
+  };
+
+  const handleCommentLike = async (commentId, postId) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/journal/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh comments to get updated like status
+        await fetchComments(postId);
+      }
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
   };
 
   return (
