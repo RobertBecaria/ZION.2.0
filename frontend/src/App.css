@@ -20225,3 +20225,81 @@ a,
   }
 }
 
+
+
+/* ================================= */
+/* JOURNAL FEED SPECIFIC STYLES */
+/* ================================= */
+
+.journal-wall {
+  background: transparent;
+}
+
+.journal-wall .wall-header {
+  margin-bottom: 20px;
+}
+
+.journal-select-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.journal-select-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6D28D9;
+}
+
+.journal-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.journal-select:focus {
+  outline: none;
+  border-color: #6D28D9;
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
+}
+
+.post-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.post-role-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.post-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.audience-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Post title in content */
+.post-content .post-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1F2937;
+}
+
