@@ -1,5 +1,12 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import './App.css';
+// Layout Components
+import { ModuleNavigation, LeftSidebar } from './components/layout';
+// Config
+import { MODULES, getModuleByKey, getSidebarTintStyle, MODULE_DEFAULT_VIEWS, FAMILY_FILTER_OPTIONS } from './config/moduleConfig';
+// Hooks
+import { useJournalModule } from './hooks';
+// Feature Components
 import UniversalChatLayout from './components/UniversalChatLayout';
 import ChatGroupList from './components/ChatGroupList';
 import UniversalCalendar from './components/UniversalCalendar';
