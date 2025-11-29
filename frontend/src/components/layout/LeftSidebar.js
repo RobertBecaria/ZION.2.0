@@ -218,8 +218,8 @@ const LeftSidebar = ({
         </a>
         
         {/* Media Storage Section */}
-        <div className="nav-section">
-          <span className="nav-section-title">Медиа Хранилище</span>
+        <div className="nav-group">
+          <div className="nav-group-label">МЕДИА ХРАНИЛИЩЕ</div>
           <a 
             href="#" 
             className={`nav-item ${activeView === 'media-photos' ? 'active' : ''}`}
@@ -229,18 +229,7 @@ const LeftSidebar = ({
             }}
           >
             <Image size={20} />
-            <span>Мои Фотографии</span>
-          </a>
-          <a 
-            href="#" 
-            className={`nav-item ${activeView === 'media-videos' ? 'active' : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveView('media-videos');
-            }}
-          >
-            <Video size={20} />
-            <span>Мои Видео</span>
+            <span>Мои Фото</span>
           </a>
           <a 
             href="#" 
@@ -253,16 +242,50 @@ const LeftSidebar = ({
             <FileText size={20} />
             <span>Мои Документы</span>
           </a>
-        </div>
-        
-        {/* Settings Section */}
-        <div className="nav-section">
-          <span className="nav-section-title">Настройки</span>
-          <a href="#" className="nav-item">
-            <Settings size={20} />
-            <span>Настройки</span>
+          <a 
+            href="#" 
+            className={`nav-item ${activeView === 'media-videos' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveView('media-videos');
+            }}
+          >
+            <Video size={20} />
+            <span>Мои Видео</span>
           </a>
         </div>
+
+        {/* MY INFO Module */}
+        <div className="nav-group">
+          <div className="nav-group-label">МОЯ ИНФОРМАЦИЯ</div>
+          <a 
+            href="#" 
+            className={`nav-item ${activeView === 'my-info' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveView('my-info');
+            }}
+          >
+            <User size={20} />
+            <span>Профиль</span>
+          </a>
+          <a 
+            href="#" 
+            className={`nav-item ${activeView === 'my-documents' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveView('my-documents');
+            }}
+          >
+            <FileText size={20} />
+            <span>Документы</span>
+          </a>
+        </div>
+        
+        <a href="#" className="nav-item">
+          <Settings size={20} />
+          <span>Настройки</span>
+        </a>
       </nav>
     </aside>
   );
