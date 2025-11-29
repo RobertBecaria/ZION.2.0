@@ -1080,62 +1080,18 @@ function Dashboard() {
 
   return (
     <div className="app">
-      {/* Top Navigation Bar with Dynamic Module Colors */}
-      <nav className="top-nav" style={{ color: currentModule.color }}>
-        <div className="nav-content">
-          <div className="logo-section">
-            <img src="/zion-logo.jpeg" alt="ZION.CITY Logo" className="nav-logo" />
-            <h1 className="platform-logo">ZION.CITY</h1>
-          </div>
-          
-          <div className="module-navigation">
-            {MODULES.map((module) => (
-              <button
-                key={module.key}
-                className={`nav-module ${activeModule === module.key ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveModule(module.key);
-                  setActiveView(MODULE_DEFAULT_VIEWS[module.key] || 'wall');
-                }}
-                style={{
-                  color: activeModule === module.key ? 'white' : module.color,
-                  backgroundColor: activeModule === module.key ? module.color : undefined,
-                  borderColor: `${module.color}20`
-                }}
-              >
-                {module.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="user-section">
-            <div 
-              className="clock-widget clickable" 
-              onClick={() => setShowCalendar(!showCalendar)}
-              title="Открыть календарь"
-            >
-              <div className="time">{currentTime.toLocaleTimeString('ru-RU', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}</div>
-              <div className="date">{currentTime.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-              <div className="calendar-icon">
-                <Calendar size={16} />
-              </div>
-            </div>
-            <div className="user-menu">
-              <button className="user-button">
-                <User size={20} />
-                <span>{user.first_name}</span>
-              </button>
-              <div className="user-dropdown">
-                <button onClick={() => setShowOnboarding(true)}>Настройки профиля</button>
-                <button onClick={logout}>Выйти</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Top Navigation Bar - Using extracted component */}
+      <ModuleNavigation
+        activeModule={activeModule}
+        setActiveModule={setActiveModule}
+        setActiveView={setActiveView}
+        user={user}
+        onLogout={logout}
+        currentTime={currentTime}
+        showCalendar={showCalendar}
+        setShowCalendar={setShowCalendar}
+        setShowOnboarding={setShowOnboarding}
+      />
 
       <div className="main-container">
         {/* Left Sidebar - Using extracted component */}
