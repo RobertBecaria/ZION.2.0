@@ -11590,7 +11590,7 @@ async def like_journal_comment(
         else:
             # Like
             await db.journal_comment_likes.insert_one({
-                "id": str(uuid4()),
+                "id": str(uuid.uuid4()),
                 "comment_id": comment_id,
                 "user_id": current_user.id,
                 "created_at": datetime.now(timezone.utc).isoformat()
