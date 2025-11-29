@@ -936,40 +936,12 @@ function Dashboard() {
     }
   }, [activeModule]);
 
-  // Fetch school roles when journal module is active
+  // Set default view when entering Journal module
   useEffect(() => {
-    const fetchSchoolRoles = async () => {
-      if (activeModule === 'journal' && user) {
-        try {
-          setLoadingSchoolRoles(true);
-          const token = localStorage.getItem('zion_token');
-          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/users/me/school-roles`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const roles = await response.json();
-            setSchoolRoles(roles);
-            
-            // Reset selection when switching to journal
-            setSelectedSchool(null);
-            setSchoolRole(null);
-            
-            // Default to wall/feed view when entering Journal module
-            setActiveView('wall');
-          }
-        } catch (error) {
-          console.error('Error fetching school roles:', error);
-        } finally {
-          setLoadingSchoolRoles(false);
-        }
-      }
-    };
-    
-    fetchSchoolRoles();
-  }, [activeModule, user]);
+    if (activeModule === 'journal' && !loadingSchoolRoles) {
+      setActiveView('wall');
+    }
+  }, [activeModule, loadingSchoolRoles]);
 
   // Update time every second
   useEffect(() => {
