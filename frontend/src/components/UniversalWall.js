@@ -19,7 +19,9 @@ function UniversalWall({
   activeModule = 'family',  // New prop for current module
   activeFilters = [],  // Unified stacked filters array
   userFamilyId = null,  // User's family ID for filtering
-  schoolRoles = null  // School roles for journal module
+  schoolRoles = null,  // School roles for journal module
+  journalSchoolFilter = 'all',  // Journal school filter
+  journalAudienceFilter = 'all'  // Journal audience filter
 }) {
   // If this is the organizations/work module, show WorkUniversalFeed
   if (activeModule === 'organizations') {
@@ -28,7 +30,15 @@ function UniversalWall({
   
   // If this is the journal module, show JournalUniversalFeed
   if (activeModule === 'journal') {
-    return <JournalUniversalFeed currentUserId={user?.id} schoolRoles={schoolRoles} user={user} />;
+    return (
+      <JournalUniversalFeed 
+        currentUserId={user?.id} 
+        schoolRoles={schoolRoles} 
+        user={user}
+        schoolFilter={journalSchoolFilter}
+        audienceFilter={journalAudienceFilter}
+      />
+    );
   }
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
