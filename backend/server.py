@@ -11435,7 +11435,7 @@ async def create_journal_comment(
             raise HTTPException(status_code=404, detail="Пост не найден")
         
         # Create comment
-        comment_id = str(uuid4())
+        comment_id = str(uuid.uuid4())
         comment_doc = {
             "id": comment_id,
             "post_id": post_id,
