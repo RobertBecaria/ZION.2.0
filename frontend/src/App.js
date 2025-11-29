@@ -1089,18 +1089,13 @@ function Dashboard() {
           </div>
           
           <div className="module-navigation">
-            {modules.map((module) => (
+            {MODULES.map((module) => (
               <button
                 key={module.key}
                 className={`nav-module ${activeModule === module.key ? 'active' : ''}`}
                 onClick={() => {
                   setActiveModule(module.key);
-                  // Set appropriate view for Work module
-                  if (module.key === 'organizations') {
-                    setActiveView('my-work');
-                  } else {
-                    setActiveView('wall');
-                  }
+                  setActiveView(MODULE_DEFAULT_VIEWS[module.key] || 'wall');
                 }}
                 style={{
                   color: activeModule === module.key ? 'white' : module.color,
@@ -1123,7 +1118,7 @@ function Dashboard() {
                 hour: '2-digit', 
                 minute: '2-digit' 
               })}</div>
-              <div className="date">{currentDate}</div>
+              <div className="date">{currentTime.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
               <div className="calendar-icon">
                 <Calendar size={16} />
               </div>
