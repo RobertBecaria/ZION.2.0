@@ -306,7 +306,7 @@ const JournalUniversalFeed = ({ currentUserId, schoolRoles, user }) => {
                   </div>
                   <div className="form-author-info">
                     <h5>{user?.first_name} {user?.last_name}</h5>
-                    <p>Публикуется в модуле "Журнал"</p>
+                    <p>Публикуется в модуле «Журнал»</p>
                   </div>
                 </div>
 
