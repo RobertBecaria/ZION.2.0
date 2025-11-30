@@ -11667,13 +11667,30 @@ async def get_academic_events(
             events = [e for e in events if e.get("start_date", "").startswith(target_month)]
         
         # Get organization info
-        org = await db.organizations.find_one({"id": organization_id})
+        org = await db.work_organizations.find_one({"organization_id": organization_id})
+        if not org:
+            org = await db.organizations.find_one({"id": organization_id})
         
         # Build responses
         responses = []
         for event in events:
             # Get creator info
             creator = await db.users.find_one({"id": event.get("created_by_user_id")})
+            
+            # Get creator role and color
+            creator_role = event.get("creator_role", "PARENT")
+            role_color = EVENT_ROLE_COLORS.get(creator_role, "#16A34A")
+            
+            # Calculate RSVP summary
+            rsvp_responses = event.get("rsvp_responses", [])
+            rsvp_summary = {"YES": 0, "NO": 0, "MAYBE": 0}
+            user_rsvp = None
+            for rsvp in rsvp_responses:
+                status = rsvp.get("status")
+                if status in rsvp_summary:
+                    rsvp_summary[status] += 1
+                if rsvp.get("user_id") == current_user.id:
+                    user_rsvp = status
             
             responses.append(AcademicEventResponse(
                 id=event["id"],
@@ -11682,6 +11699,8 @@ async def get_academic_events(
                 title=event["title"],
                 description=event.get("description"),
                 event_type=event["event_type"],
+                creator_role=creator_role,
+                role_color=role_color,
                 start_date=event["start_date"],
                 end_date=event.get("end_date"),
                 start_time=event.get("start_time"),
@@ -11690,7 +11709,13 @@ async def get_academic_events(
                 location=event.get("location"),
                 audience_type=event.get("audience_type", "PUBLIC"),
                 grade_filter=event.get("grade_filter"),
-                color=event.get("color"),
+                color=event.get("color") or role_color,
+                invitees=event.get("invitees", []),
+                requires_rsvp=event.get("requires_rsvp", False),
+                max_attendees=event.get("max_attendees"),
+                rsvp_responses=rsvp_responses,
+                rsvp_summary=rsvp_summary,
+                user_rsvp=user_rsvp,
                 is_active=event.get("is_active", True),
                 created_at=datetime.fromisoformat(event["created_at"]) if isinstance(event["created_at"], str) else event["created_at"],
                 created_by={
