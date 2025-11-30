@@ -11474,12 +11474,20 @@ async def get_journal_posts(
         # Build query
         query = {
             "organization_id": organization_id,
-            "is_published": True,
-            "audience_type": {"$in": allowed_audiences}
+            "is_published": True
         }
         
+        # Apply audience filter with permission check
         if audience_filter:
-            query["audience_type"] = audience_filter
+            # User can only filter by audiences they're allowed to see
+            if audience_filter in [a.value for a in allowed_audiences]:
+                query["audience_type"] = audience_filter.value if hasattr(audience_filter, 'value') else audience_filter
+            else:
+                # User doesn't have permission to view this audience type
+                raise HTTPException(status_code=403, detail="Недостаточно прав для просмотра данной аудитории")
+        else:
+            # No filter specified - show all allowed audiences
+            query["audience_type"] = {"$in": [a.value for a in allowed_audiences]}
         
         # Get posts
         posts_cursor = db.journal_posts.find(query).sort("created_at", -1)
