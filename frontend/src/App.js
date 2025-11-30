@@ -1654,6 +1654,16 @@ function Dashboard() {
                                   onBack={() => setActiveView('journal-dashboard')}
                                 />
                               </ErrorBoundary>
+                            ) : activeView === 'journal-calendar' || activeView === 'event-planner' ? (
+                              <ErrorBoundary>
+                                <EventPlanner
+                                  organizationId={selectedSchool?.organization_id}
+                                  schoolRoles={schoolRoles}
+                                  user={user}
+                                  moduleColor={currentModule.color}
+                                  viewType="full"
+                                />
+                              </ErrorBoundary>
                             ) : (
                               <div className="journal-content-placeholder">
                                 <p>Выберите раздел из WORLD ZONE</p>
