@@ -189,8 +189,8 @@ function UniversalEventsPanel({
           className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
           onClick={() => setActiveTab('upcoming')}
           style={{ 
-            backgroundColor: activeTab === 'upcoming' ? '#4CAF50' : 'transparent',
-            color: activeTab === 'upcoming' ? 'white' : '#1A5E3B'
+            backgroundColor: activeTab === 'upcoming' ? moduleColor : 'transparent',
+            color: activeTab === 'upcoming' ? 'white' : moduleColor
           }}
         >
           Скоро
@@ -199,8 +199,8 @@ function UniversalEventsPanel({
           className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
           style={{ 
-            backgroundColor: activeTab === 'all' ? '#4CAF50' : 'transparent',
-            color: activeTab === 'all' ? 'white' : '#1A5E3B'
+            backgroundColor: activeTab === 'all' ? moduleColor : 'transparent',
+            color: activeTab === 'all' ? 'white' : moduleColor
           }}
         >
           Все события
@@ -208,7 +208,7 @@ function UniversalEventsPanel({
         <button 
           className="create-event-btn"
           onClick={() => setShowActionForm(!showActionForm)}
-          style={{ backgroundColor: '#4CAF50' }}
+          style={{ backgroundColor: moduleColor }}
         >
           <Plus size={16} />
           Создать событие
