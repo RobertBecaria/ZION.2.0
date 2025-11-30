@@ -1681,23 +1681,8 @@ function Dashboard() {
                     )}
                   </div>
 
-                  {/* Right Sidebar - Events Panel or Journal World Zone */}
-                  {activeModule === 'journal' && selectedSchool ? (
-                    <div className="world-zone-area">
-                      <JournalWorldZone
-                        selectedSchool={selectedSchool}
-                        role={schoolRole}
-                        onNavigate={(view) => {
-                          if (view === 'school-list') {
-                            setSelectedSchool(null);
-                            setActiveView('journal-school-tiles');
-                          } else {
-                            setActiveView(`journal-${view}`);
-                          }
-                        }}
-                      />
-                    </div>
-                  ) : !(activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations') && (
+                  {/* Right Events Panel (not for journal with school selected - that uses World Zone) */}
+                  {!(activeModule === 'journal' && selectedSchool) && !(activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations') && (
                     <div className="events-panel-area">
                       {/* Regular Events Panel for other views */}
                       <UniversalEventsPanel
