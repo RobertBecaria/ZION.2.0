@@ -2150,6 +2150,13 @@ body {
   max-width: 58%;
 }
 
+/* Full width when events panel is hidden */
+.main-content-area:only-child,
+.main-content-area.full-width-content {
+  flex: 1 !important;
+  max-width: 100% !important;
+}
+
 .events-panel-area {
   flex: 0 0 42%;
   min-width: 0;
