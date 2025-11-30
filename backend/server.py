@@ -2541,9 +2541,13 @@ async def get_user_by_id(user_id: str):
 async def authenticate_user(email: str, password: str):
     user = await get_user_by_email(email)
     if not user:
+        print(f"DEBUG: User not found for email: {email}")
         return False
+    print(f"DEBUG: User found, password_hash: {user.password_hash[:30] if user.password_hash else 'NONE'}")
     if not verify_password(password, user.password_hash):
+        print(f"DEBUG: Password verification failed")
         return False
+    print(f"DEBUG: Authentication successful")
     return user
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
