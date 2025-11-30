@@ -11731,6 +11731,122 @@ async def get_academic_events(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class RSVPInput(BaseModel):
+    """RSVP input for event"""
+    status: str  # YES, NO, MAYBE
+
+@api_router.post("/journal/calendar/{event_id}/rsvp")
+async def rsvp_to_event(
+    event_id: str,
+    rsvp: RSVPInput,
+    current_user: User = Depends(get_current_user)
+):
+    """RSVP to an academic calendar event"""
+    try:
+        # Validate RSVP status
+        if rsvp.status not in ["YES", "NO", "MAYBE"]:
+            raise HTTPException(status_code=400, detail="Неверный статус RSVP")
+        
+        # Find the event
+        event = await db.academic_events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Событие не найдено")
+        
+        # Check if event requires RSVP
+        if not event.get("requires_rsvp", False):
+            raise HTTPException(status_code=400, detail="Это событие не требует подтверждения")
+        
+        # Check max attendees limit
+        max_attendees = event.get("max_attendees")
+        rsvp_responses = event.get("rsvp_responses", [])
+        
+        if max_attendees and rsvp.status == "YES":
+            current_yes_count = sum(1 for r in rsvp_responses if r.get("status") == "YES" and r.get("user_id") != current_user.id)
+            if current_yes_count >= max_attendees:
+                raise HTTPException(status_code=400, detail="Достигнуто максимальное количество участников")
+        
+        # Remove existing RSVP from this user
+        rsvp_responses = [r for r in rsvp_responses if r.get("user_id") != current_user.id]
+        
+        # Add new RSVP
+        new_rsvp = {
+            "user_id": current_user.id,
+            "user_name": f"{current_user.first_name} {current_user.last_name}",
+            "status": rsvp.status,
+            "responded_at": datetime.now(timezone.utc).isoformat()
+        }
+        rsvp_responses.append(new_rsvp)
+        
+        # Update event
+        await db.academic_events.update_one(
+            {"id": event_id},
+            {
+                "$set": {
+                    "rsvp_responses": rsvp_responses,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        # Calculate summary
+        rsvp_summary = {"YES": 0, "NO": 0, "MAYBE": 0}
+        for r in rsvp_responses:
+            status = r.get("status")
+            if status in rsvp_summary:
+                rsvp_summary[status] += 1
+        
+        return {
+            "message": "RSVP обновлён",
+            "event_id": event_id,
+            "user_rsvp": rsvp.status,
+            "rsvp_summary": rsvp_summary
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/journal/calendar/{event_id}/rsvp")
+async def get_event_rsvp(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get RSVP details for an event"""
+    try:
+        event = await db.academic_events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Событие не найдено")
+        
+        rsvp_responses = event.get("rsvp_responses", [])
+        
+        # Calculate summary
+        rsvp_summary = {"YES": 0, "NO": 0, "MAYBE": 0}
+        user_rsvp = None
+        for r in rsvp_responses:
+            status = r.get("status")
+            if status in rsvp_summary:
+                rsvp_summary[status] += 1
+            if r.get("user_id") == current_user.id:
+                user_rsvp = status
+        
+        return {
+            "event_id": event_id,
+            "requires_rsvp": event.get("requires_rsvp", False),
+            "max_attendees": event.get("max_attendees"),
+            "rsvp_responses": rsvp_responses,
+            "rsvp_summary": rsvp_summary,
+            "user_rsvp": user_rsvp,
+            "total_responses": len(rsvp_responses)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.delete("/journal/calendar/{event_id}")
 async def delete_academic_event(
     event_id: str,
