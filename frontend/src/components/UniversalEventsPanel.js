@@ -302,7 +302,7 @@ function UniversalEventsPanel({
                 className={`event-card ${action.is_completed ? 'completed' : ''}`}
               >
                 {/* Event Image/Icon Header */}
-                <div className="event-card-header" style={{ background: `linear-gradient(135deg, ${moduleColor} 0%, #4CAF50 100%)` }}>
+                <div className="event-card-header" style={{ background: `linear-gradient(135deg, ${moduleColor} 0%, ${moduleColor}CC 100%)` }}>
                   <div className="event-icon-large">
                     {getActionIcon(action.action_type)}
                   </div>
