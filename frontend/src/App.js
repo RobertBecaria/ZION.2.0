@@ -1672,6 +1672,24 @@ function Dashboard() {
                                   viewType="full"
                                 />
                               </ErrorBoundary>
+                            ) : activeView === 'journal-classes' ? (
+                              <ErrorBoundary>
+                                <MyClassesList
+                                  selectedSchool={selectedSchool}
+                                  role={schoolRole}
+                                  onBack={() => setActiveView('journal-dashboard')}
+                                  moduleColor={currentModule.color}
+                                />
+                              </ErrorBoundary>
+                            ) : activeView === 'journal-students' ? (
+                              <ErrorBoundary>
+                                <StudentsList
+                                  selectedSchool={selectedSchool}
+                                  role={schoolRole}
+                                  onBack={() => setActiveView('journal-dashboard')}
+                                  moduleColor={currentModule.color}
+                                />
+                              </ErrorBoundary>
                             ) : (
                               <div className="journal-content-placeholder">
                                 <p>Выберите раздел из WORLD ZONE</p>
