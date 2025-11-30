@@ -1490,3 +1490,35 @@ The RSVP functionality was already working correctly. The previous handoff repor
 - Frontend button click → API call → Database update → UI update
 
 **Agent:** main
+
+---
+## Test Results - November 30, 2025, 21:35 UTC
+
+### Task: Finalize "МОЯ ЛЕНТА" Filtering Logic
+
+**Status:** ✅ COMPLETED
+
+**What was done:**
+1. Fixed backend permission bug in `get_journal_posts` endpoint:
+   - Previously: `audience_filter` overwrote permission check entirely
+   - Now: Validates that user can only filter by audiences they're allowed to see
+   - Returns 403 error if user tries to filter by unauthorized audience type
+
+2. Verified frontend filtering integration:
+   - School filter dropdown working
+   - Audience filter buttons working with proper state management
+   - Posts correctly filtered by audience type
+
+**Testing Results:**
+- ✅ Created test posts with different audience types (PUBLIC, TEACHERS, PARENTS)
+- ✅ Filter by "Все посты" - shows all allowed posts (2 posts for teacher)
+- ✅ Filter by "Публичные" - shows only PUBLIC posts (1 post)
+- ✅ Filter by "Для учителей" - shows only TEACHERS posts (1 post)
+- ✅ Filter by "Для родителей" - returns 403 (teacher doesn't have access)
+- ✅ UI buttons update correctly when clicked
+- ✅ Posts refresh when filter changes
+
+**Files Modified:**
+- `backend/server.py` - Fixed audience filter permission check in `get_journal_posts`
+
+**Agent:** main
