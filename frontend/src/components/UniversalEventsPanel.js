@@ -354,7 +354,7 @@ function UniversalEventsPanel({
                       <button
                         onClick={() => completeAction(action.id)}
                         className="join-event-btn"
-                        style={{ backgroundColor: '#4CAF50' }}
+                        style={{ backgroundColor: moduleColor }}
                       >
                         Присоединиться
                       </button>
