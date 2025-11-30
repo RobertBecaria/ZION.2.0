@@ -1657,7 +1657,7 @@ function Dashboard() {
                             ) : activeView === 'journal-calendar' || activeView === 'event-planner' ? (
                               <ErrorBoundary>
                                 <EventPlanner
-                                  organizationId={selectedSchool?.organization_id}
+                                  organizationId={selectedSchool?.organization_id || (schoolRoles?.schools_as_teacher?.[0]?.organization_id) || (schoolRoles?.schools_as_parent?.[0]?.organization_id)}
                                   schoolRoles={schoolRoles}
                                   user={user}
                                   moduleColor={currentModule.color}
