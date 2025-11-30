@@ -2937,6 +2937,9 @@ async def login_user(login_data: UserLogin):
         first_name=user.first_name,
         last_name=user.last_name,
         middle_name=user.middle_name,
+        name_alias=user.name_alias,
+        gender=user.gender,  # Include gender in login response
+        profile_picture=user.profile_picture,
         role=user.role,
         is_active=user.is_active,
         is_verified=user.is_verified,
