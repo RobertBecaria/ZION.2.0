@@ -42,6 +42,8 @@ import AcademicCalendar from './components/AcademicCalendar';
 import EventPlanner from './components/EventPlanner';
 import ClassSchedule from './components/ClassSchedule';
 import StudentGradebook from './components/StudentGradebook';
+import MyClassesList from './components/MyClassesList';
+import StudentsList from './components/StudentsList';
 // WORK MODULE COMPONENTS
 import WorkTriggerFlow from './components/WorkTriggerFlow';
 import WorkSetupPage from './components/WorkSetupPage';
