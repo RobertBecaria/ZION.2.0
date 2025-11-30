@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraduationCap, Users, Calendar, BookOpen, MessageCircle, Home, Filter, Building2 } from 'lucide-react';
+import { GraduationCap, Users, Calendar, BookOpen, MessageCircle, Home, Filter, Building2, ChevronRight } from 'lucide-react';
 
 const JournalWorldZone = ({ 
   selectedSchool, 
@@ -11,7 +11,8 @@ const JournalWorldZone = ({
   schoolFilter = 'all',
   onSchoolFilterChange = () => {},
   audienceFilter = 'all',
-  onAudienceFilterChange = () => {}
+  onAudienceFilterChange = () => {},
+  onOpenEventPlanner = null
 }) => {
   
   const moduleColor = '#6D28D9';
