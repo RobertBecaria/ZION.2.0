@@ -282,7 +282,7 @@ function UniversalEventsPanel({
       <div className="events-card-list">
         {scheduledActions.length === 0 ? (
           <div className="empty-events-state">
-            <Calendar size={48} color="#A5D6A7" />
+            <Calendar size={48} style={{ color: `${moduleColor}80` }} />
             <p>Нет запланированных событий</p>
             <small>Создайте первое событие для вашей семьи</small>
           </div>
