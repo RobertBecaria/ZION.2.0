@@ -269,7 +269,7 @@ function UniversalEventsPanel({
                 type="submit" 
                 className="btn-create"
                 disabled={loading}
-                style={{ backgroundColor: '#4CAF50' }}
+                style={{ backgroundColor: moduleColor }}
               >
                 {loading ? 'Создание...' : 'Создать'}
               </button>
