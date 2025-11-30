@@ -1449,6 +1449,36 @@ class AcademicEventType(str, Enum):
     VACATION = "VACATION"  # Vacation periods
     CONFERENCE = "CONFERENCE"  # Conferences
     COMPETITION = "COMPETITION"  # Competitions
+    BIRTHDAY = "BIRTHDAY"  # Birthday party (for kids)
+    EXCURSION = "EXCURSION"  # Field trips
+
+class EventCreatorRole(str, Enum):
+    """Role of event creator - determines color coding"""
+    ADMIN = "ADMIN"  # School administration - Red
+    TEACHER = "TEACHER"  # Teachers - Blue
+    PARENT = "PARENT"  # Parents - Green
+    STUDENT = "STUDENT"  # Kids/Students - Yellow
+
+class RSVPStatus(str, Enum):
+    """RSVP response status"""
+    YES = "YES"
+    NO = "NO"
+    MAYBE = "MAYBE"
+
+class RSVPResponse(BaseModel):
+    """Single RSVP response"""
+    user_id: str
+    user_name: str
+    status: RSVPStatus
+    responded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Color mapping for creator roles
+EVENT_ROLE_COLORS = {
+    "ADMIN": "#DC2626",    # Red - School Administration
+    "TEACHER": "#2563EB",  # Blue - Teachers
+    "PARENT": "#16A34A",   # Green - Parents
+    "STUDENT": "#EAB308"   # Yellow - Kids/Students
+}
 
 class AcademicEventCreate(BaseModel):
     """Create academic calendar event"""
@@ -1464,6 +1494,9 @@ class AcademicEventCreate(BaseModel):
     audience_type: str = "PUBLIC"  # PUBLIC, TEACHERS, PARENTS, STUDENTS_PARENTS
     grade_filter: Optional[str] = None  # Filter by grade if applicable
     color: Optional[str] = None  # Custom color for the event
+    requires_rsvp: bool = False  # Whether event requires RSVP
+    max_attendees: Optional[int] = None  # Maximum attendees for birthday parties, etc.
+    invitees: Optional[List[str]] = None  # List of invited user IDs (for private events)
 
 class AcademicEvent(BaseModel):
     """Academic calendar event"""
