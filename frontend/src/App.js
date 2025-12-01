@@ -23,6 +23,10 @@ import FamilyTriggerFlow from './components/FamilyTriggerFlow';
 import MyFamilyProfile from './components/MyFamilyProfile';
 import PublicFamilyProfile from './components/PublicFamilyProfile';
 import GenderUpdateModal from './components/GenderUpdateModal';
+import FamilyProfileList from './components/FamilyProfileList';
+import FamilyProfileCreation from './components/FamilyProfileCreation';
+import FamilyProfilePage from './components/FamilyProfilePage';
+import FamilyInvitationModal from './components/FamilyInvitationModal';
 // MY INFO MODULE COMPONENTS
 import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
