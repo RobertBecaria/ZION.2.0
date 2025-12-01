@@ -27,6 +27,7 @@ import FamilyProfileList from './components/FamilyProfileList';
 import FamilyProfileCreation from './components/FamilyProfileCreation';
 import FamilyProfilePage from './components/FamilyProfilePage';
 import FamilyInvitationModal from './components/FamilyInvitationModal';
+import InvitationManager from './components/InvitationManager';
 // MY INFO MODULE COMPONENTS
 import MyInfoPage from './components/MyInfoPage';
 import MyDocumentsPage from './components/MyDocumentsPage';
