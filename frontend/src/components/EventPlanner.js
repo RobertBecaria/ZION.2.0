@@ -3,6 +3,8 @@
  * Comprehensive event planning system with calendar view, list view,
  * RSVP functionality, role-based color coding, and countdown timers.
  * 
+ * Refactored: Uses modular subcomponents from ./EventPlanner/ folder
+ * 
  * Supports:
  * - School administrators (Red events)
  * - Teachers (Blue events)
@@ -17,33 +19,23 @@ import {
   Edit2, Trash2, UserCheck, Timer, ChevronDown
 } from 'lucide-react';
 
-// Event type configurations
-const EVENT_TYPES = [
-  { value: 'HOLIDAY', label: 'Праздник', icon: '🎉', color: '#10B981' },
-  { value: 'EXAM', label: 'Экзамен', icon: '📝', color: '#EF4444' },
-  { value: 'MEETING', label: 'Родительское собрание', icon: '👥', color: '#3B82F6' },
-  { value: 'EVENT', label: 'Мероприятие', icon: '🎭', color: '#8B5CF6' },
-  { value: 'DEADLINE', label: 'Дедлайн', icon: '⏰', color: '#F59E0B' },
-  { value: 'VACATION', label: 'Каникулы', icon: '🏖️', color: '#06B6D4' },
-  { value: 'CONFERENCE', label: 'Конференция', icon: '🎤', color: '#EC4899' },
-  { value: 'COMPETITION', label: 'Соревнование', icon: '🏆', color: '#F97316' },
-  { value: 'BIRTHDAY', label: 'День рождения', icon: '🎂', color: '#EAB308' },
-  { value: 'EXCURSION', label: 'Экскурсия', icon: '🚌', color: '#14B8A6' }
-];
+// Import from refactored modules
+import {
+  EVENT_TYPES,
+  CREATOR_ROLES,
+  DAYS_OF_WEEK,
+  MONTHS,
+  QUICK_PRESETS,
+  getEventTypeInfo,
+  getCreatorRoleInfo,
+  getCountdown,
+  getCalendarDays,
+  getEventsForDate
+} from './EventPlanner';
 
-// Creator role configurations
-const CREATOR_ROLES = {
-  ADMIN: { label: 'Администрация', color: '#DC2626', icon: '🏫' },
-  TEACHER: { label: 'Учитель', color: '#2563EB', icon: '👨‍🏫' },
-  PARENT: { label: 'Родитель', color: '#16A34A', icon: '👨‍👩‍👧' },
-  STUDENT: { label: 'Ученик', color: '#EAB308', icon: '👧' }
-};
-
-const DAYS_OF_WEEK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const MONTHS = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-];
+// Import subcomponents
+import BirthdayPartyForm from './EventPlanner/BirthdayPartyForm';
+import WishListDisplay from './EventPlanner/WishListDisplay';
 
 const EventPlanner = ({ 
   organizationId, 
