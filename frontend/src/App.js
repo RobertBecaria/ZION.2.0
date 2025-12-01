@@ -84,6 +84,7 @@ function Dashboard() {
   const [mediaStats, setMediaStats] = useState({});
   const [chatGroups, setChatGroups] = useState([]);
   const [activeGroup, setActiveGroup] = useState(null);
+  const [activeDirectChat, setActiveDirectChat] = useState(null); // For direct message chats
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeView, setActiveView] = useState('wall'); // 'wall' or 'chat'
