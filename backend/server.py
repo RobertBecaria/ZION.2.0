@@ -1521,6 +1521,23 @@ class BirthdayPartyData(BaseModel):
     birthday_child_name: Optional[str] = None  # Name of birthday child
     birthday_child_age: Optional[int] = None  # Age they're turning
 
+class WishItem(BaseModel):
+    """Individual wish item with claim tracking"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: Optional[str] = None
+    claimed_by_user_id: Optional[str] = None
+    claimed_by_name: Optional[str] = None
+    claimed_at: Optional[str] = None
+
+class WishListUpdate(BaseModel):
+    """Request model for updating wish list"""
+    wishes: List[str]  # List of wish titles
+
+class WishClaimRequest(BaseModel):
+    """Request model for claiming a wish"""
+    wish_index: int  # Index of the wish to claim
+
 # Color mapping for creator roles
 EVENT_ROLE_COLORS = {
     "ADMIN": "#DC2626",    # Red - School Administration
