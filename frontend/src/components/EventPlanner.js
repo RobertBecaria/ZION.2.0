@@ -1240,7 +1240,7 @@ const EventPlanner = ({
                       background: 'rgba(255,255,255,0.5)',
                       borderRadius: '8px'
                     }}>
-                      "{birthdayPartyData.custom_message}"
+                      &ldquo;{birthdayPartyData.custom_message}&rdquo;
                     </p>
                   )}
                   <div style={{ 
