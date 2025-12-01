@@ -184,6 +184,70 @@ const EventPlanner = ({
     }
   }, [organizationId, BACKEND_URL]);
 
+  // Fetch wish list with claim status for birthday events
+  const fetchWishList = useCallback(async (eventId) => {
+    if (!eventId) return;
+    
+    try {
+      setLoadingWishList(true);
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(
+        `${BACKEND_URL}/api/journal/calendar/${eventId}/wishlist`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setWishListData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching wish list:', error);
+    } finally {
+      setLoadingWishList(false);
+    }
+  }, [BACKEND_URL]);
+
+  // Claim or unclaim a wish item
+  const handleClaimWish = async (eventId, wishIndex) => {
+    try {
+      setClaimingWish(wishIndex);
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(
+        `${BACKEND_URL}/api/journal/calendar/${eventId}/wishlist/claim`,
+        {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ wish_index: wishIndex })
+        }
+      );
+
+      if (response.ok) {
+        // Refresh the wish list data
+        await fetchWishList(eventId);
+      }
+    } catch (error) {
+      console.error('Error claiming wish:', error);
+    } finally {
+      setClaimingWish(null);
+    }
+  };
+
+  // Fetch wish list when a birthday event is selected
+  useEffect(() => {
+    if (selectedEvent?.event_type === 'BIRTHDAY' && selectedEvent?.id) {
+      fetchWishList(selectedEvent.id);
+    } else {
+      setWishListData(null);
+    }
+  }, [selectedEvent, fetchWishList]);
+
   // Fetch classmates when birthday form is shown
   useEffect(() => {
     if (showBirthdayForm && organizationId) {
