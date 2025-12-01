@@ -1,5 +1,7 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+// Auth Components - Extracted
+import { AuthProvider, useAuth, ErrorBoundary, LoginForm, RegistrationForm, OnboardingWizard } from './components/auth';
 // Layout Components
 import { ModuleNavigation, LeftSidebar, RightSidebar } from './components/layout';
 // Config
@@ -64,11 +66,7 @@ import WorkNextEventWidget from './components/WorkNextEventWidget';
 import WorkUpcomingEventsList from './components/WorkUpcomingEventsList';
 import WorkCalendarWidget from './components/WorkCalendarWidget';
 import { 
-  Clock, User, MessageCircle, Video, FileText, Settings, Search, Filter, Users,
-  LogIn, UserPlus, Building2, GraduationCap, Briefcase, Shield, Eye, EyeOff,
-  ChevronRight, Calendar, Heart, MapPin, Bell, Image, Grid, List, 
-  Upload, FolderPlus, Download, Trash2, Newspaper, Book, 
-  Building, ShoppingCart, DollarSign, Plus
+  Search, Bell, ChevronRight, Plus
 } from 'lucide-react';
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
