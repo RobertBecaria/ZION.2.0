@@ -731,6 +731,79 @@ const EventPlanner = ({
             )}
           </div>
           
+          {/* Birthday Party Special Display */}
+          {selectedEvent.event_type === 'BIRTHDAY' && selectedEvent.birthday_party_data && (
+            <div 
+              className="birthday-invitation-display"
+              style={{
+                background: selectedEvent.birthday_party_data.theme === 'PINK' 
+                  ? 'linear-gradient(135deg, #FDF2F8 0%, #FBCFE8 50%, #F9A8D4 100%)'
+                  : 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #93C5FD 100%)',
+                borderRadius: '12px',
+                padding: '20px',
+                textAlign: 'center',
+                margin: '16px 0',
+                border: `2px solid ${selectedEvent.birthday_party_data.theme === 'PINK' ? '#EC4899' : '#3B82F6'}`
+              }}
+            >
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>
+                {selectedEvent.birthday_party_data.theme === 'PINK' ? '🎀🎂🎀' : '🎈🎂🎈'}
+              </div>
+              {selectedEvent.birthday_party_data.birthday_child_name && (
+                <p style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '600',
+                  color: selectedEvent.birthday_party_data.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                  marginBottom: '8px'
+                }}>
+                  {selectedEvent.birthday_party_data.birthday_child_name}
+                  {selectedEvent.birthday_party_data.birthday_child_age && 
+                    ` исполняется ${selectedEvent.birthday_party_data.birthday_child_age}!`
+                  }
+                </p>
+              )}
+              {selectedEvent.birthday_party_data.custom_message && (
+                <p style={{ 
+                  fontStyle: 'italic',
+                  color: selectedEvent.birthday_party_data.theme === 'PINK' ? '#9D174D' : '#1E40AF',
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.6)',
+                  borderRadius: '8px'
+                }}>
+                  "{selectedEvent.birthday_party_data.custom_message}"
+                </p>
+              )}
+              {selectedEvent.birthday_party_data.wish_list?.length > 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <p style={{ 
+                    fontSize: '13px', 
+                    color: selectedEvent.birthday_party_data.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                    marginBottom: '8px'
+                  }}>
+                    <Gift size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                    Список желаний:
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+                    {selectedEvent.birthday_party_data.wish_list.map((wish, idx) => (
+                      <span 
+                        key={idx}
+                        style={{
+                          padding: '4px 10px',
+                          background: 'rgba(255,255,255,0.8)',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          color: selectedEvent.birthday_party_data.theme === 'PINK' ? '#9D174D' : '#1E40AF'
+                        }}
+                      >
+                        🎁 {wish}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* RSVP Section */}
           {selectedEvent.requires_rsvp && (
             <div className="rsvp-section">
@@ -741,7 +814,7 @@ const EventPlanner = ({
                   {selectedEvent.rsvp_summary && ` (подтвердили: ${selectedEvent.rsvp_summary.YES || 0})`}
                 </p>
               )}
-              {renderRSVPButtons(selectedEvent)}
+              {renderRSVPButtons(selectedEvent, true)}
             </div>
           )}
           
