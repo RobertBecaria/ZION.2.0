@@ -279,10 +279,15 @@ const EventPlanner = ({
   };
 
   // RSVP handler
-  const handleRSVP = async (eventId, status) => {
+  const handleRSVP = async (eventId, status, dietaryRestrictionsInput = null) => {
     try {
       setRsvpLoading(eventId);
       const token = localStorage.getItem('zion_token');
+      
+      const body = { status };
+      if (dietaryRestrictionsInput) {
+        body.dietary_restrictions = dietaryRestrictionsInput;
+      }
       
       const response = await fetch(
         `${BACKEND_URL}/api/journal/calendar/${eventId}/rsvp`,
@@ -292,7 +297,7 @@ const EventPlanner = ({
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ status })
+          body: JSON.stringify(body)
         }
       );
 
