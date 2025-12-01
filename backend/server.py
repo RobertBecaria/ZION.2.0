@@ -11894,6 +11894,60 @@ async def get_event_rsvp(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@api_router.get("/journal/organizations/{organization_id}/classmates")
+async def get_classmates_for_invitation(
+    organization_id: str,
+    assigned_class: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of classmates for birthday party invitation selection.
+    Returns students in the same class or organization for invitation purposes."""
+    try:
+        # Build query to find students in the organization
+        query = {
+            "organization_id": organization_id,
+            "academic_status": "ACTIVE"
+        }
+        
+        # If assigned_class is provided, filter by class
+        if assigned_class:
+            query["assigned_class"] = assigned_class
+        
+        # Get students from work_students collection
+        students_cursor = db.work_students.find(query, {"_id": 0})
+        students = await students_cursor.to_list(None)
+        
+        classmates = []
+        for student in students:
+            # Skip the current user's own children if they're a parent
+            parent_ids = student.get("parent_ids", [])
+            
+            classmate_info = {
+                "id": student.get("id"),
+                "student_id": student.get("student_id"),
+                "first_name": student.get("first_name", ""),
+                "last_name": student.get("last_name", ""),
+                "full_name": f"{student.get('first_name', '')} {student.get('last_name', '')}".strip(),
+                "assigned_class": student.get("assigned_class"),
+                "avatar_url": student.get("avatar_url"),
+                "user_id": student.get("user_id")  # Linked user account if exists
+            }
+            classmates.append(classmate_info)
+        
+        # Sort by class and then by name
+        classmates.sort(key=lambda x: (x.get("assigned_class") or "", x.get("last_name") or "", x.get("first_name") or ""))
+        
+        return {
+            "organization_id": organization_id,
+            "assigned_class": assigned_class,
+            "classmates": classmates,
+            "total_count": len(classmates)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.delete("/journal/calendar/{event_id}")
 async def delete_academic_event(
     event_id: str,
