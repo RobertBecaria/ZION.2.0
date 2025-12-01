@@ -31,6 +31,11 @@ import {
 // Import subcomponents
 import BirthdayPartyForm from './EventPlanner/BirthdayPartyForm';
 import WishListDisplay from './EventPlanner/WishListDisplay';
+import CalendarGrid from './EventPlanner/CalendarGrid';
+import UpcomingEventsSidebar from './EventPlanner/UpcomingEventsSidebar';
+
+// Import utility functions
+import { getEventTypeInfo, getCreatorRoleInfo, getCountdown as getCountdownUtil } from './EventPlanner/utils';
 
 const EventPlanner = ({ 
   organizationId, 
