@@ -3448,7 +3448,9 @@ body {
 .universal-chat-layout-full {
   display: flex;
   flex-direction: column;
-  height: 600px;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+  max-height: 700px;
   background: white;
   border-radius: 12px;
   border: 1px solid #E4E6EA;
