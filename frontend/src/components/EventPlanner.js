@@ -79,6 +79,11 @@ const EventPlanner = ({
   const [flashingInvitations, setFlashingInvitations] = useState([]);
   const [dietaryRestrictions, setDietaryRestrictions] = useState('');
   
+  // Wish list claim state
+  const [wishListData, setWishListData] = useState(null);
+  const [loadingWishList, setLoadingWishList] = useState(false);
+  const [claimingWish, setClaimingWish] = useState(null);
+  
   // Preset event templates
   const [showPresets, setShowPresets] = useState(false);
   const eventPresets = [
