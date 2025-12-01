@@ -329,6 +329,20 @@ const EventPlanner = ({
 
     try {
       const token = localStorage.getItem('zion_token');
+      
+      // Build event payload
+      const eventPayload = {
+        ...newEvent,
+        max_attendees: newEvent.max_attendees ? parseInt(newEvent.max_attendees) : null
+      };
+      
+      // Add birthday party specific data if event type is BIRTHDAY
+      if (newEvent.event_type === 'BIRTHDAY') {
+        eventPayload.birthday_party_data = birthdayPartyData;
+        eventPayload.invitees = selectedClassmates.map(c => c.user_id || c.id);
+        eventPayload.requires_rsvp = true; // Birthday parties always need RSVP
+      }
+      
       const response = await fetch(
         `${BACKEND_URL}/api/journal/organizations/${organizationId}/calendar`,
         {
@@ -337,16 +351,14 @@ const EventPlanner = ({
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            ...newEvent,
-            max_attendees: newEvent.max_attendees ? parseInt(newEvent.max_attendees) : null
-          })
+          body: JSON.stringify(eventPayload)
         }
       );
 
       if (response.ok) {
         setShowCreateModal(false);
         resetEventForm();
+        resetBirthdayForm();
         fetchEvents();
       } else {
         const error = await response.json();
