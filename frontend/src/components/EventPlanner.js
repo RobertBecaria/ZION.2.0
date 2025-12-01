@@ -19,18 +19,13 @@ import {
   Edit2, Trash2, UserCheck, Timer, ChevronDown
 } from 'lucide-react';
 
-// Import from refactored modules
+// Import constants from refactored modules
 import {
   EVENT_TYPES,
   CREATOR_ROLES,
   DAYS_OF_WEEK,
   MONTHS,
-  QUICK_PRESETS,
-  getEventTypeInfo,
-  getCreatorRoleInfo,
-  getCountdown,
-  getCalendarDays,
-  getEventsForDate
+  QUICK_PRESETS
 } from './EventPlanner';
 
 // Import subcomponents
