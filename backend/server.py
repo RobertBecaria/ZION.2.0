@@ -12142,6 +12142,200 @@ async def get_event_rsvp(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== BIRTHDAY WISH LIST ENDPOINTS ====================
+
+@api_router.put("/journal/calendar/{event_id}/wishlist")
+async def update_event_wishlist(
+    event_id: str,
+    wishlist_update: WishListUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update the wish list for a birthday event (event creator only)"""
+    try:
+        # Get the event
+        event = await db.academic_events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Событие не найдено")
+        
+        # Check if this is a birthday event
+        if event.get("event_type") != "BIRTHDAY":
+            raise HTTPException(status_code=400, detail="Список желаний доступен только для дней рождения")
+        
+        # Only the event creator can update the wish list
+        if event.get("created_by_user_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Только создатель события может изменять список желаний")
+        
+        # Get existing birthday party data
+        birthday_party_data = event.get("birthday_party_data", {}) or {}
+        
+        # Preserve existing claims if the wish still exists
+        existing_wish_claims = birthday_party_data.get("wish_claims", {})
+        
+        # Update the wish list
+        birthday_party_data["wish_list"] = wishlist_update.wishes
+        
+        # Update the event in database
+        await db.academic_events.update_one(
+            {"id": event_id},
+            {
+                "$set": {
+                    "birthday_party_data": birthday_party_data,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        return {
+            "message": "Список желаний обновлён",
+            "event_id": event_id,
+            "wish_list": wishlist_update.wishes
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/journal/calendar/{event_id}/wishlist/claim")
+async def claim_birthday_wish(
+    event_id: str,
+    claim_request: WishClaimRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Claim a wish item from a birthday party wish list (invited guests only)"""
+    try:
+        # Get the event
+        event = await db.academic_events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Событие не найдено")
+        
+        # Check if this is a birthday event
+        if event.get("event_type") != "BIRTHDAY":
+            raise HTTPException(status_code=400, detail="Только события дня рождения имеют список желаний")
+        
+        # Get birthday party data
+        birthday_party_data = event.get("birthday_party_data", {}) or {}
+        wish_list = birthday_party_data.get("wish_list", [])
+        
+        # Validate wish index
+        if claim_request.wish_index < 0 or claim_request.wish_index >= len(wish_list):
+            raise HTTPException(status_code=400, detail="Неверный индекс желания")
+        
+        # Initialize wish_claims if not exists
+        wish_claims = birthday_party_data.get("wish_claims", {})
+        if not isinstance(wish_claims, dict):
+            wish_claims = {}
+        
+        wish_index_str = str(claim_request.wish_index)
+        
+        # Check if already claimed by someone else
+        if wish_index_str in wish_claims:
+            existing_claim = wish_claims[wish_index_str]
+            if existing_claim.get("user_id") != current_user.id:
+                claimer_name = existing_claim.get("user_name", "Кто-то")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Этот подарок уже выбран пользователем {claimer_name}"
+                )
+            else:
+                # User is unclaiming their own claim
+                del wish_claims[wish_index_str]
+                action = "unclaimed"
+        else:
+            # Claim the wish
+            wish_claims[wish_index_str] = {
+                "user_id": current_user.id,
+                "user_name": f"{current_user.first_name} {current_user.last_name}",
+                "claimed_at": datetime.now(timezone.utc).isoformat()
+            }
+            action = "claimed"
+        
+        # Update birthday party data with claims
+        birthday_party_data["wish_claims"] = wish_claims
+        
+        # Update the event
+        await db.academic_events.update_one(
+            {"id": event_id},
+            {
+                "$set": {
+                    "birthday_party_data": birthday_party_data,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        wish_title = wish_list[claim_request.wish_index]
+        
+        return {
+            "message": "Подарок выбран" if action == "claimed" else "Выбор отменён",
+            "event_id": event_id,
+            "wish_index": claim_request.wish_index,
+            "wish_title": wish_title,
+            "action": action,
+            "claimed_by": wish_claims.get(wish_index_str) if action == "claimed" else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/journal/calendar/{event_id}/wishlist")
+async def get_event_wishlist(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get the wish list and claim status for a birthday event"""
+    try:
+        # Get the event
+        event = await db.academic_events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Событие не найдено")
+        
+        # Check if this is a birthday event
+        if event.get("event_type") != "BIRTHDAY":
+            raise HTTPException(status_code=400, detail="Только события дня рождения имеют список желаний")
+        
+        # Get birthday party data
+        birthday_party_data = event.get("birthday_party_data", {}) or {}
+        wish_list = birthday_party_data.get("wish_list", [])
+        wish_claims = birthday_party_data.get("wish_claims", {})
+        
+        # Build response with claim info
+        wishes_with_status = []
+        for idx, wish_title in enumerate(wish_list):
+            claim_info = wish_claims.get(str(idx))
+            is_claimed_by_me = claim_info and claim_info.get("user_id") == current_user.id
+            
+            wishes_with_status.append({
+                "index": idx,
+                "title": wish_title,
+                "is_claimed": claim_info is not None,
+                "is_claimed_by_me": is_claimed_by_me,
+                "claimed_by_name": claim_info.get("user_name") if claim_info and not is_claimed_by_me else None,
+                "claimed_at": claim_info.get("claimed_at") if claim_info else None
+            })
+        
+        # Check if current user is the event creator
+        is_creator = event.get("created_by_user_id") == current_user.id
+        
+        return {
+            "event_id": event_id,
+            "wishes": wishes_with_status,
+            "total_wishes": len(wish_list),
+            "claimed_count": len(wish_claims),
+            "is_creator": is_creator,
+            "can_edit": is_creator
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/journal/organizations/{organization_id}/classmates")
 async def get_classmates_for_invitation(
     organization_id: str,
