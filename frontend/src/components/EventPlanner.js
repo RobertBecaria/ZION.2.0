@@ -153,6 +153,105 @@ const EventPlanner = ({
     }
   }, [fetchEvents, organizationId]);
 
+  // Fetch classmates for birthday party invitations
+  const fetchClassmates = useCallback(async () => {
+    if (!organizationId) return;
+    
+    try {
+      setLoadingClassmates(true);
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(
+        `${BACKEND_URL}/api/journal/organizations/${organizationId}/classmates`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setClassmates(data.classmates || []);
+      }
+    } catch (error) {
+      console.error('Error fetching classmates:', error);
+    } finally {
+      setLoadingClassmates(false);
+    }
+  }, [organizationId, BACKEND_URL]);
+
+  // Fetch classmates when birthday form is shown
+  useEffect(() => {
+    if (showBirthdayForm && organizationId) {
+      fetchClassmates();
+    }
+  }, [showBirthdayForm, organizationId, fetchClassmates]);
+
+  // Flash animation for pending birthday invitations
+  useEffect(() => {
+    if (events.length > 0) {
+      // Find birthday events where current user is invited but hasn't RSVPed
+      const pendingInvitations = events.filter(e => 
+        e.event_type === 'BIRTHDAY' && 
+        e.requires_rsvp && 
+        !e.user_rsvp && 
+        (e.invitees?.includes(user?.id) || e.audience_type === 'PUBLIC')
+      );
+      
+      if (pendingInvitations.length > 0) {
+        setFlashingInvitations(pendingInvitations.map(e => e.id));
+        
+        // Stop flashing after 3 seconds
+        const timer = setTimeout(() => {
+          setFlashingInvitations([]);
+        }, 3000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [events, user?.id]);
+
+  // Handle classmate selection toggle
+  const toggleClassmateSelection = (classmateId) => {
+    setSelectedClassmates(prev => 
+      prev.includes(classmateId)
+        ? prev.filter(id => id !== classmateId)
+        : [...prev, classmateId]
+    );
+  };
+
+  // Add wish to wish list
+  const addWish = () => {
+    if (wishInput.trim()) {
+      setBirthdayPartyData(prev => ({
+        ...prev,
+        wish_list: [...prev.wish_list, wishInput.trim()]
+      }));
+      setWishInput('');
+    }
+  };
+
+  // Remove wish from list
+  const removeWish = (index) => {
+    setBirthdayPartyData(prev => ({
+      ...prev,
+      wish_list: prev.wish_list.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Reset birthday party form
+  const resetBirthdayForm = () => {
+    setBirthdayPartyData({
+      theme: 'PINK',
+      custom_message: '',
+      wish_list: [],
+      birthday_child_name: '',
+      birthday_child_age: null
+    });
+    setSelectedClassmates([]);
+    setWishInput('');
+    setShowBirthdayForm(false);
+  };
+
   // Countdown timer helper
   const getCountdown = (dateStr, timeStr) => {
     const eventDate = new Date(dateStr);
