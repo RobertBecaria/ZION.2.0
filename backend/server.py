@@ -2861,11 +2861,20 @@ async def get_user_chat_groups(user_id: str):
             if latest_message:
                 latest_message.pop("_id", None)
             
+            # Get unread count (messages not from this user that haven't been read)
+            unread_count = await db.chat_messages.count_documents({
+                "group_id": group["id"],
+                "user_id": {"$ne": user_id},
+                "status": {"$ne": "read"},
+                "is_deleted": False
+            })
+            
             groups.append({
                 "group": group,
                 "user_role": membership["role"],
                 "member_count": member_count,
                 "latest_message": latest_message,
+                "unread_count": unread_count,
                 "joined_at": membership["joined_at"]
             })
     
