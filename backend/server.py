@@ -5695,6 +5695,12 @@ async def get_direct_chat_messages(
     if not chat:
         raise HTTPException(status_code=403, detail="Not authorized to view this chat")
     
+    # Update user's last seen
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"last_seen": datetime.now(timezone.utc), "is_online": True}}
+    )
+    
     # Mark unread messages as read
     await db.chat_messages.update_many(
         {
@@ -5712,7 +5718,7 @@ async def get_direct_chat_messages(
         {"direct_chat_id": chat_id, "is_deleted": False}
     ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
-    # Get sender info for each message
+    # Get sender info and reply message for each message
     for message in messages:
         message.pop("_id", None)
         sender = await get_user_by_id(message["user_id"])
@@ -5723,6 +5729,21 @@ async def get_direct_chat_messages(
                 "last_name": sender.last_name,
                 "profile_picture": sender.profile_picture
             }
+        
+        # Get reply message content if this is a reply
+        if message.get("reply_to"):
+            reply_msg = await db.chat_messages.find_one(
+                {"id": message["reply_to"]},
+                {"_id": 0, "content": 1, "user_id": 1}
+            )
+            if reply_msg:
+                reply_sender = await get_user_by_id(reply_msg["user_id"])
+                message["reply_message"] = {
+                    "content": reply_msg["content"],
+                    "sender": {
+                        "first_name": reply_sender.first_name if reply_sender else "Unknown"
+                    }
+                }
     
     # Reverse to show chronological order
     messages.reverse()
