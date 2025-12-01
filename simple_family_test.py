@@ -5,7 +5,7 @@ import json
 
 def test_family_profile_system():
     """Simple test of Family Profile System core functionality"""
-    base_url = "https://schoolplanner-7.preview.emergentagent.com/api"
+    base_url = "https://partyhub-11.preview.emergentagent.com/api"
     
     # Login
     print("🔍 Testing login...")
