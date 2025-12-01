@@ -770,7 +770,7 @@ const EventPlanner = ({
                   background: 'rgba(255,255,255,0.6)',
                   borderRadius: '8px'
                 }}>
-                  "{selectedEvent.birthday_party_data.custom_message}"
+                  &ldquo;{selectedEvent.birthday_party_data.custom_message}&rdquo;
                 </p>
               )}
               {selectedEvent.birthday_party_data.wish_list?.length > 0 && (
