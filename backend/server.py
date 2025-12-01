@@ -1470,7 +1470,21 @@ class RSVPResponse(BaseModel):
     user_id: str
     user_name: str
     status: RSVPStatus
+    dietary_restrictions: Optional[str] = None  # Food allergies/restrictions
     responded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BirthdayPartyTheme(str, Enum):
+    """Birthday party theme options"""
+    PINK = "PINK"  # Girl party theme
+    BLUE = "BLUE"  # Boy party theme
+
+class BirthdayPartyData(BaseModel):
+    """Birthday party specific data"""
+    theme: BirthdayPartyTheme = BirthdayPartyTheme.PINK
+    custom_message: Optional[str] = None  # Personal invitation message
+    wish_list: List[str] = []  # List of birthday wishes (placeholder for marketplace)
+    birthday_child_name: Optional[str] = None  # Name of birthday child
+    birthday_child_age: Optional[int] = None  # Age they're turning
 
 # Color mapping for creator roles
 EVENT_ROLE_COLORS = {
