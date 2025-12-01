@@ -216,15 +216,21 @@ class BirthdayPartyTester:
             if response.status_code == 200:
                 rsvp_data = response.json()
                 
-                # Check if dietary restrictions are included
-                dietary_restrictions = rsvp_data.get("dietary_restrictions")
-                if dietary_restrictions and "Nut allergy" in dietary_restrictions:
-                    self.log_test("Get RSVP Details", True, 
-                                f"RSVP details retrieved with dietary restrictions: {dietary_restrictions}")
-                    return True
-                else:
+                # Check if dietary restrictions are included in rsvp_responses
+                rsvp_responses = rsvp_data.get("rsvp_responses", [])
+                dietary_restrictions_found = False
+                
+                for rsvp in rsvp_responses:
+                    dietary_restrictions = rsvp.get("dietary_restrictions")
+                    if dietary_restrictions and "Nut allergy" in dietary_restrictions:
+                        dietary_restrictions_found = True
+                        self.log_test("Get RSVP Details", True, 
+                                    f"RSVP details retrieved with dietary restrictions: {dietary_restrictions}")
+                        return True
+                
+                if not dietary_restrictions_found:
                     self.log_test("Get RSVP Details", False, 
-                                f"Dietary restrictions missing or incorrect: {rsvp_data}")
+                                f"Dietary restrictions not found in RSVP responses: {rsvp_responses}")
                     return False
             else:
                 self.log_test("Get RSVP Details", False, 
