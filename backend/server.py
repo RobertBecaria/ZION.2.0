@@ -138,15 +138,34 @@ class ChatGroupMember(BaseModel):
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    group_id: str
+    group_id: Optional[str] = None  # For group chats
+    direct_chat_id: Optional[str] = None  # For direct messages
     user_id: str
     content: str
     message_type: str = "TEXT"  # "TEXT", "IMAGE", "FILE", "SYSTEM"
     reply_to: Optional[str] = None  # ID of message being replied to
+    status: str = "sent"  # "sent", "delivered", "read"
+    delivered_at: Optional[datetime] = None
+    read_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     is_edited: bool = False
     is_deleted: bool = False
+
+# Direct Message (1:1 Chat) Models
+class DirectChat(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    participant_ids: List[str]  # Always 2 user IDs
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class TypingStatus(BaseModel):
+    chat_id: str  # Can be group_id or direct_chat_id
+    chat_type: str  # "group" or "direct"
+    user_id: str
+    is_typing: bool = False
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ScheduledAction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
