@@ -5887,6 +5887,271 @@ async def get_user_contacts(
     
     return {"contacts": users}
 
+# ===== PHASE 2: ENHANCED CHAT FEATURES =====
+
+@api_router.post("/users/heartbeat")
+async def user_heartbeat(current_user: User = Depends(get_current_user)):
+    """Update user's last_seen timestamp for online status tracking"""
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "last_seen": datetime.now(timezone.utc),
+            "is_online": True
+        }}
+    )
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+@api_router.get("/users/{user_id}/status")
+async def get_user_status(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a user's online status and last seen time"""
+    user = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "last_seen": 1, "is_online": 1, "first_name": 1, "last_name": 1}
+    )
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Consider user online if last_seen within 2 minutes
+    last_seen = user.get("last_seen")
+    is_online = False
+    if last_seen:
+        if isinstance(last_seen, str):
+            last_seen = datetime.fromisoformat(last_seen.replace('Z', '+00:00'))
+        time_diff = datetime.now(timezone.utc) - last_seen
+        is_online = time_diff.total_seconds() < 120  # 2 minutes
+    
+    return {
+        "user_id": user_id,
+        "is_online": is_online,
+        "last_seen": last_seen.isoformat() if last_seen else None
+    }
+
+@api_router.get("/direct-chats/{chat_id}/messages/search")
+async def search_direct_chat_messages(
+    chat_id: str,
+    query: str,
+    skip: int = 0,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Search messages in a direct chat"""
+    # Verify user is participant
+    chat = await db.direct_chats.find_one({
+        "id": chat_id,
+        "participant_ids": current_user.id,
+        "is_active": True
+    })
+    
+    if not chat:
+        raise HTTPException(status_code=403, detail="Not authorized to search this chat")
+    
+    # Search messages
+    messages = await db.chat_messages.find({
+        "direct_chat_id": chat_id,
+        "content": {"$regex": query, "$options": "i"},
+        "is_deleted": False
+    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Add sender info
+    for message in messages:
+        message.pop("_id", None)
+        sender = await get_user_by_id(message["user_id"])
+        if sender:
+            message["sender"] = {
+                "id": sender.id,
+                "first_name": sender.first_name,
+                "last_name": sender.last_name,
+                "profile_picture": sender.profile_picture
+            }
+    
+    total = await db.chat_messages.count_documents({
+        "direct_chat_id": chat_id,
+        "content": {"$regex": query, "$options": "i"},
+        "is_deleted": False
+    })
+    
+    return {
+        "messages": messages,
+        "total": total,
+        "query": query
+    }
+
+@api_router.get("/chat-groups/{group_id}/messages/search")
+async def search_group_chat_messages(
+    group_id: str,
+    query: str,
+    skip: int = 0,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Search messages in a group chat"""
+    # Verify user is member
+    membership = await db.chat_group_members.find_one({
+        "group_id": group_id,
+        "user_id": current_user.id,
+        "is_active": True
+    })
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this group")
+    
+    # Search messages
+    messages = await db.chat_messages.find({
+        "group_id": group_id,
+        "content": {"$regex": query, "$options": "i"},
+        "is_deleted": False
+    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Add sender info
+    for message in messages:
+        message.pop("_id", None)
+        sender = await get_user_by_id(message["user_id"])
+        if sender:
+            message["sender"] = {
+                "id": sender.id,
+                "first_name": sender.first_name,
+                "last_name": sender.last_name,
+                "profile_picture": sender.profile_picture
+            }
+    
+    total = await db.chat_messages.count_documents({
+        "group_id": group_id,
+        "content": {"$regex": query, "$options": "i"},
+        "is_deleted": False
+    })
+    
+    return {
+        "messages": messages,
+        "total": total,
+        "query": query
+    }
+
+@api_router.post("/direct-chats/{chat_id}/messages/attachment")
+async def send_message_with_attachment(
+    chat_id: str,
+    file: UploadFile = File(...),
+    content: str = Form(default=""),
+    reply_to: Optional[str] = Form(default=None),
+    current_user: User = Depends(get_current_user)
+):
+    """Send a message with a file attachment in a direct chat"""
+    # Verify user is participant
+    chat = await db.direct_chats.find_one({
+        "id": chat_id,
+        "participant_ids": current_user.id,
+        "is_active": True
+    })
+    
+    if not chat:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Validate and save file
+    is_valid, error = validate_file(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error)
+    
+    # Generate unique filename
+    file_ext = os.path.splitext(file.filename)[1]
+    stored_filename = f"chat_{chat_id}_{str(uuid.uuid4())}{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, stored_filename)
+    
+    # Save file
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Determine message type
+    content_type = file.content_type or ""
+    if content_type.startswith("image/"):
+        message_type = "IMAGE"
+    else:
+        message_type = "FILE"
+    
+    # Create message with attachment
+    new_message = ChatMessage(
+        direct_chat_id=chat_id,
+        user_id=current_user.id,
+        content=content or file.filename,
+        message_type=message_type,
+        reply_to=reply_to,
+        status="sent"
+    )
+    
+    # Store attachment info in message
+    message_dict = new_message.dict()
+    message_dict["attachment"] = {
+        "filename": file.filename,
+        "stored_filename": stored_filename,
+        "file_path": f"/api/media/files/{stored_filename}",
+        "mime_type": content_type,
+        "file_size": os.path.getsize(file_path)
+    }
+    
+    await db.chat_messages.insert_one(message_dict)
+    
+    # Update chat timestamp
+    await db.direct_chats.update_one(
+        {"id": chat_id},
+        {"$set": {"updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Add sender info for response
+    message_dict["sender"] = {
+        "id": current_user.id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "profile_picture": current_user.profile_picture
+    }
+    message_dict.pop("_id", None)
+    
+    return {"message": "File uploaded successfully", "data": message_dict}
+
+@api_router.get("/messages/{message_id}")
+async def get_message_by_id(
+    message_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific message by ID (for reply references)"""
+    message = await db.chat_messages.find_one({"id": message_id}, {"_id": 0})
+    
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    # Verify user has access (is in the chat)
+    if message.get("direct_chat_id"):
+        chat = await db.direct_chats.find_one({
+            "id": message["direct_chat_id"],
+            "participant_ids": current_user.id
+        })
+        if not chat:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif message.get("group_id"):
+        membership = await db.chat_group_members.find_one({
+            "group_id": message["group_id"],
+            "user_id": current_user.id,
+            "is_active": True
+        })
+        if not membership:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Add sender info
+    sender = await get_user_by_id(message["user_id"])
+    if sender:
+        message["sender"] = {
+            "id": sender.id,
+            "first_name": sender.first_name,
+            "last_name": sender.last_name,
+            "profile_picture": sender.profile_picture
+        }
+    
+    return {"message": message}
+
+# ===== END PHASE 2 ENHANCED CHAT FEATURES =====
+
 # ===== END DIRECT MESSAGES ENDPOINTS =====
 
 # Media Upload Endpoints
