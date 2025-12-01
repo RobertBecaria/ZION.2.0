@@ -1168,62 +1168,18 @@ const EventPlanner = ({
                 ))}
               </div>
               
-              <div className="calendar-grid">
-                {days.map((dayInfo, index) => {
-                  const dayEvents = dayInfo.date ? getEventsForDate(dayInfo.date) : [];
-                  const isToday = dayInfo.date === today;
-                  const isSelected = dayInfo.date === selectedDate;
-                  
-                  return (
-                    <div 
-                      key={index}
-                      className={`calendar-day ${!dayInfo.day ? 'empty' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-                      onClick={() => dayInfo.date && setSelectedDate(dayInfo.date)}
-                      style={{
-                        borderColor: isSelected ? moduleColor : undefined,
-                        backgroundColor: isSelected ? `${moduleColor}10` : undefined
-                      }}
-                    >
-                      {dayInfo.day && (
-                        <>
-                          <span className="day-number" style={{ 
-                            color: isToday ? 'white' : undefined,
-                            backgroundColor: isToday ? moduleColor : undefined
-                          }}>
-                            {dayInfo.day}
-                          </span>
-                          <div className="day-events">
-                            {dayEvents.slice(0, 3).map(event => {
-                              const roleInfo = getCreatorRoleInfo(event.creator_role);
-                              const isFlashing = flashingInvitations.includes(event.id);
-                              return (
-                                <div 
-                                  key={event.id}
-                                  className={`event-dot ${isFlashing ? 'birthday-flash' : ''}`}
-                                  style={{ 
-                                    backgroundColor: event.role_color || roleInfo.color,
-                                    animation: isFlashing ? 'birthdayFlash 0.5s ease-in-out infinite' : undefined
-                                  }}
-                                  title={`${event.title} (${roleInfo.label})`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedEvent(event);
-                                  }}
-                                >
-                                  <span className="event-dot-title">{event.title}</span>
-                                </div>
-                              );
-                            })}
-                            {dayEvents.length > 3 && (
-                              <span className="more-events">+{dayEvents.length - 3}</span>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Calendar Grid - Using extracted component */}
+              <CalendarGrid
+                days={days}
+                events={events}
+                today={today}
+                selectedDate={selectedDate}
+                moduleColor={moduleColor}
+                flashingInvitations={flashingInvitations}
+                onDaySelect={setSelectedDate}
+                onEventSelect={setSelectedEvent}
+                getEventsForDate={getEventsForDate}
+              />
             </div>
           ) : (
             <div className="calendar-list-view">
