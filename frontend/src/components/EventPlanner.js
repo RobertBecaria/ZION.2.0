@@ -418,6 +418,14 @@ const EventPlanner = ({
       requires_rsvp: preset.requires_rsvp || false,
       max_attendees: preset.max_attendees || null
     }));
+    
+    // Show birthday form if birthday preset is selected
+    if (preset.event_type === 'BIRTHDAY') {
+      setShowBirthdayForm(true);
+    } else {
+      setShowBirthdayForm(false);
+    }
+    
     setShowPresets(false);
   };
 
