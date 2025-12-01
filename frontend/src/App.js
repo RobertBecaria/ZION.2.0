@@ -1139,6 +1139,9 @@ function Dashboard() {
               handleGroupSelect={handleGroupSelect}
               handleCreateGroup={handleCreateGroup}
               user={user}
+              activeDirectChat={activeDirectChat}
+              setActiveDirectChat={setActiveDirectChat}
+              onRefreshGroups={fetchChatGroups}
             />
           )}
 
