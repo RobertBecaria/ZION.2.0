@@ -778,7 +778,15 @@ const EventPlanner = ({
                   key={type.value}
                   type="button"
                   className={`type-btn ${newEvent.event_type === type.value ? 'active' : ''}`}
-                  onClick={() => setNewEvent(prev => ({ ...prev, event_type: type.value }))}
+                  onClick={() => {
+                    setNewEvent(prev => ({ ...prev, event_type: type.value }));
+                    // Show birthday form when BIRTHDAY type is selected
+                    if (type.value === 'BIRTHDAY') {
+                      setShowBirthdayForm(true);
+                    } else {
+                      setShowBirthdayForm(false);
+                    }
+                  }}
                   style={{
                     borderColor: newEvent.event_type === type.value ? type.color : '#E5E7EB',
                     backgroundColor: newEvent.event_type === type.value ? `${type.color}15` : 'white'
@@ -790,6 +798,389 @@ const EventPlanner = ({
               ))}
             </div>
           </div>
+          
+          {/* Birthday Party Form Section */}
+          {newEvent.event_type === 'BIRTHDAY' && (
+            <div className="birthday-party-section" style={{ 
+              background: birthdayPartyData.theme === 'PINK' 
+                ? 'linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)' 
+                : 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+              padding: '20px',
+              borderRadius: '12px',
+              marginBottom: '16px',
+              border: birthdayPartyData.theme === 'PINK' ? '2px solid #F9A8D4' : '2px solid #93C5FD'
+            }}>
+              <h4 style={{ 
+                color: birthdayPartyData.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🎂 Настройки дня рождения
+              </h4>
+              
+              {/* Theme Selector */}
+              <div className="form-group">
+                <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>
+                  Тема приглашения
+                </label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBirthdayPartyData(prev => ({ ...prev, theme: 'PINK' }))}
+                    style={{
+                      flex: 1,
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: birthdayPartyData.theme === 'PINK' ? '3px solid #EC4899' : '2px solid #F9A8D4',
+                      background: birthdayPartyData.theme === 'PINK' 
+                        ? 'linear-gradient(135deg, #FDF2F8 0%, #FBCFE8 100%)' 
+                        : '#FDF2F8',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '28px' }}>🎀</span>
+                    <span style={{ color: '#BE185D', fontWeight: '600' }}>Розовая тема</span>
+                    <span style={{ fontSize: '12px', color: '#9D174D' }}>Для девочек</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBirthdayPartyData(prev => ({ ...prev, theme: 'BLUE' }))}
+                    style={{
+                      flex: 1,
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: birthdayPartyData.theme === 'BLUE' ? '3px solid #3B82F6' : '2px solid #93C5FD',
+                      background: birthdayPartyData.theme === 'BLUE' 
+                        ? 'linear-gradient(135deg, #EFF6FF 0%, #BFDBFE 100%)' 
+                        : '#EFF6FF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span style={{ fontSize: '28px' }}>🎈</span>
+                    <span style={{ color: '#1D4ED8', fontWeight: '600' }}>Синяя тема</span>
+                    <span style={{ fontSize: '12px', color: '#1E40AF' }}>Для мальчиков</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Birthday Child Info */}
+              <div className="form-row" style={{ marginTop: '16px' }}>
+                <div className="form-group" style={{ flex: 2 }}>
+                  <label>Имя именинника</label>
+                  <input
+                    type="text"
+                    value={birthdayPartyData.birthday_child_name}
+                    onChange={e => setBirthdayPartyData(prev => ({ ...prev, birthday_child_name: e.target.value }))}
+                    placeholder="Например: Маша"
+                    style={{ 
+                      borderColor: birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Исполняется лет</label>
+                  <input
+                    type="number"
+                    value={birthdayPartyData.birthday_child_age || ''}
+                    onChange={e => setBirthdayPartyData(prev => ({ ...prev, birthday_child_age: parseInt(e.target.value) || null }))}
+                    placeholder="7"
+                    min="1"
+                    max="18"
+                    style={{ 
+                      borderColor: birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                </div>
+              </div>
+              
+              {/* Custom Message */}
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label>Персональное сообщение в приглашении</label>
+                <textarea
+                  value={birthdayPartyData.custom_message}
+                  onChange={e => setBirthdayPartyData(prev => ({ ...prev, custom_message: e.target.value }))}
+                  placeholder="Приглашаю тебя на мой день рождения! Будет весело! 🎉"
+                  rows={3}
+                  style={{ 
+                    borderColor: birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD',
+                    backgroundColor: 'white'
+                  }}
+                />
+              </div>
+              
+              {/* Wish List (Placeholder) */}
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Gift size={16} /> Список желаний 
+                  <span style={{ 
+                    fontSize: '11px', 
+                    background: birthdayPartyData.theme === 'PINK' ? '#FDF2F8' : '#EFF6FF',
+                    color: birthdayPartyData.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                    padding: '2px 8px',
+                    borderRadius: '10px'
+                  }}>
+                    Скоро: Маркетплейс
+                  </span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={wishInput}
+                    onChange={e => setWishInput(e.target.value)}
+                    placeholder="Добавить желание..."
+                    onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addWish())}
+                    style={{ 
+                      flex: 1,
+                      borderColor: birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD',
+                      backgroundColor: 'white'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addWish}
+                    style={{
+                      padding: '8px 16px',
+                      background: birthdayPartyData.theme === 'PINK' ? '#EC4899' : '#3B82F6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                {birthdayPartyData.wish_list.length > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {birthdayPartyData.wish_list.map((wish, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          background: 'white',
+                          borderRadius: '20px',
+                          border: `1px solid ${birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD'}`,
+                          fontSize: '14px'
+                        }}
+                      >
+                        🎁 {wish}
+                        <button
+                          type="button"
+                          onClick={() => removeWish(index)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#9CA3AF',
+                            padding: '0',
+                            display: 'flex'
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {/* Classmate Selection */}
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={16} /> Пригласить одноклассников
+                </label>
+                {loadingClassmates ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#6B7280' }}>
+                    Загрузка списка одноклассников...
+                  </div>
+                ) : classmates.length === 0 ? (
+                  <div style={{ 
+                    padding: '20px', 
+                    textAlign: 'center', 
+                    color: '#6B7280',
+                    background: 'white',
+                    borderRadius: '8px',
+                    border: '1px dashed #D1D5DB'
+                  }}>
+                    <Users size={24} style={{ marginBottom: '8px', opacity: 0.5 }} />
+                    <p>Нет доступных одноклассников</p>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto', 
+                    background: 'white',
+                    borderRadius: '8px',
+                    border: `1px solid ${birthdayPartyData.theme === 'PINK' ? '#F9A8D4' : '#93C5FD'}`
+                  }}>
+                    {classmates.map(classmate => (
+                      <div
+                        key={classmate.id}
+                        onClick={() => toggleClassmateSelection(classmate)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #F3F4F6',
+                          background: selectedClassmates.some(c => c.id === classmate.id) 
+                            ? (birthdayPartyData.theme === 'PINK' ? '#FDF2F8' : '#EFF6FF')
+                            : 'white',
+                          transition: 'background 0.2s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '4px',
+                          border: `2px solid ${selectedClassmates.some(c => c.id === classmate.id) 
+                            ? (birthdayPartyData.theme === 'PINK' ? '#EC4899' : '#3B82F6')
+                            : '#D1D5DB'}`,
+                          background: selectedClassmates.some(c => c.id === classmate.id)
+                            ? (birthdayPartyData.theme === 'PINK' ? '#EC4899' : '#3B82F6')
+                            : 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {selectedClassmates.some(c => c.id === classmate.id) && (
+                            <Check size={14} color="white" />
+                          )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '500' }}>{classmate.full_name}</div>
+                          {classmate.assigned_class && (
+                            <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                              Класс: {classmate.assigned_class}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedClassmates.length > 0 && (
+                  <div style={{ marginTop: '8px', fontSize: '14px', color: '#6B7280' }}>
+                    Выбрано: {selectedClassmates.length} {selectedClassmates.length === 1 ? 'гость' : 
+                      selectedClassmates.length < 5 ? 'гостя' : 'гостей'}
+                  </div>
+                )}
+              </div>
+              
+              {/* Invitation Preview */}
+              <div className="form-group" style={{ marginTop: '20px' }}>
+                <label>Предпросмотр приглашения</label>
+                <div style={{
+                  background: birthdayPartyData.theme === 'PINK' 
+                    ? 'linear-gradient(135deg, #FDF2F8 0%, #FBCFE8 50%, #F9A8D4 100%)'
+                    : 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 50%, #93C5FD 100%)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  border: `3px solid ${birthdayPartyData.theme === 'PINK' ? '#EC4899' : '#3B82F6'}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                  <div style={{ fontSize: '40px', marginBottom: '12px' }}>
+                    {birthdayPartyData.theme === 'PINK' ? '🎀🎂🎀' : '🎈🎂🎈'}
+                  </div>
+                  <h3 style={{ 
+                    color: birthdayPartyData.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                    fontSize: '22px',
+                    marginBottom: '8px'
+                  }}>
+                    {newEvent.title || 'День рождения'}
+                  </h3>
+                  {birthdayPartyData.birthday_child_name && (
+                    <p style={{ 
+                      fontSize: '18px', 
+                      color: birthdayPartyData.theme === 'PINK' ? '#9D174D' : '#1E40AF',
+                      marginBottom: '8px'
+                    }}>
+                      {birthdayPartyData.birthday_child_name} 
+                      {birthdayPartyData.birthday_child_age && ` исполняется ${birthdayPartyData.birthday_child_age}!`}
+                    </p>
+                  )}
+                  {birthdayPartyData.custom_message && (
+                    <p style={{ 
+                      fontStyle: 'italic', 
+                      color: birthdayPartyData.theme === 'PINK' ? '#BE185D' : '#1D4ED8',
+                      marginTop: '12px',
+                      padding: '12px',
+                      background: 'rgba(255,255,255,0.5)',
+                      borderRadius: '8px'
+                    }}>
+                      "{birthdayPartyData.custom_message}"
+                    </p>
+                  )}
+                  <div style={{ 
+                    marginTop: '16px', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: '16px',
+                    flexWrap: 'wrap'
+                  }}>
+                    {newEvent.start_date && (
+                      <span style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        color: birthdayPartyData.theme === 'PINK' ? '#9D174D' : '#1E40AF',
+                        fontSize: '14px'
+                      }}>
+                        <Calendar size={16} />
+                        {new Date(newEvent.start_date).toLocaleDateString('ru-RU', { 
+                          day: 'numeric', 
+                          month: 'long' 
+                        })}
+                      </span>
+                    )}
+                    {newEvent.start_time && (
+                      <span style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        color: birthdayPartyData.theme === 'PINK' ? '#9D174D' : '#1E40AF',
+                        fontSize: '14px'
+                      }}>
+                        <Clock size={16} />
+                        {newEvent.start_time}
+                      </span>
+                    )}
+                    {newEvent.location && (
+                      <span style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        color: birthdayPartyData.theme === 'PINK' ? '#9D174D' : '#1E40AF',
+                        fontSize: '14px'
+                      }}>
+                        <MapPin size={16} />
+                        {newEvent.location}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="form-row">
             <div className="form-group">
