@@ -1003,9 +1003,12 @@ function Dashboard() {
 
         {/* Right Sidebar - "World" Zone - Context-Specific */}
         <aside className="right-sidebar" style={sidebarTintStyle}>
-          <div className="sidebar-header">
-            <h3>Мировая Зона</h3>
-          </div>
+          {/* Hide default header for Chat module - it has its own header */}
+          {activeView !== 'chat' && (
+            <div className="sidebar-header">
+              <h3>Мировая Зона</h3>
+            </div>
+          )}
           
           {/* JOURNAL Module - Feed View Filters */}
           {activeModule === 'journal' && (activeView === 'wall' || activeView === 'feed') && (
