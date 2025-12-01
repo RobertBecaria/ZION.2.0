@@ -1222,7 +1222,7 @@ function Dashboard() {
                 {/* Content Area with Split Layout */}
                 <div className="split-content-layout">
                   {/* Main Content Area */}
-                  <div className={`main-content-area ${(activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'school-my-children' || activeView === 'school-enrollment' || activeView === 'school-find' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations' || (activeModule === 'journal' && selectedSchool)) ? 'full-width' : ''}`}>
+                  <div className={`main-content-area ${(activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'school-my-children' || activeView === 'school-enrollment' || activeView === 'school-find' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations' || (activeModule === 'journal' && selectedSchool) || activeView === 'event-planner' || activeView === 'journal-calendar') ? 'full-width' : ''}`}>
                     
                     {/* Family Profile Views - Full Width */}
                     {activeView === 'family-profiles' ? (
