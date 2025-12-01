@@ -1995,3 +1995,69 @@ Recurring `AttributeError: module 'bcrypt' has no attribute '__about__'` error d
 - Emoji and attachment buttons in input
 
 **Agent:** fork-agent
+
+---
+## WhatsApp-Style Chat - Phase 2 Complete - December 1, 2025, 17:20 UTC
+
+### Task: Implement Enhanced Chat Features (Phase 2)
+
+**Status:** ✅ COMPLETED
+
+### Backend Changes:
+
+**1. User Model Update:**
+- Added `last_seen` field (datetime)
+- Added `is_online` field (boolean)
+
+**2. New API Endpoints:**
+- `POST /api/users/heartbeat` - Update user's online status
+- `GET /api/users/{user_id}/status` - Get user's online/last seen status
+- `GET /api/direct-chats/{chat_id}/messages/search` - Search messages in DM
+- `GET /api/chat-groups/{group_id}/messages/search` - Search messages in group
+- `POST /api/direct-chats/{chat_id}/messages/attachment` - Send file/image
+- `GET /api/messages/{message_id}` - Get specific message (for replies)
+
+**3. Updated Endpoints:**
+- `GET /api/direct-chats/{chat_id}/messages` - Now includes reply_message content
+- Messages endpoint now updates user's last_seen on access
+
+### Frontend Changes:
+
+**1. ChatConversation.js - Major Update:**
+- Added search panel with toggle
+- Added search results display
+- Added user online status tracking
+- Added last seen display ("был(а) X минут назад")
+- Added heartbeat for online status
+- Added file upload functionality
+- Improved reply preview
+
+**2. MessageBubble.js - Enhanced:**
+- Added attachment rendering (images + files)
+- Improved reply reference display with sender name
+- Added download button for file attachments
+
+**3. New CSS Styles:**
+- Online indicator (green dot)
+- Search panel styling
+- Search results panel
+- Attachment styles (image preview, file card)
+- Improved reply reference styling
+
+### Features Implemented:
+- ✅ Reply to Messages - Quote and reply functionality
+- ✅ Search Messages - Search within chats with results panel
+- ✅ Online/Last Seen Status - Real-time presence tracking
+- ✅ File Attachments - Upload images and documents
+- ✅ Heartbeat System - Track user activity every minute
+- ✅ Last Seen Display - "был(а) X мин. назад" format
+
+### Testing Verification:
+- ✅ Search panel opens/closes correctly
+- ✅ Online status updates ("был(а) давно" shown for inactive user)
+- ✅ Multiple messages display correctly
+- ✅ Message timestamps and status indicators work
+- ✅ File input button present and functional
+- ✅ Chat list shows latest message preview
+
+**Agent:** fork-agent
