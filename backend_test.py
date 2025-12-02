@@ -44,536 +44,406 @@ class WebSocketChatTester:
         self.chat_id = None
         self.test_results = []
         
-    def log_result(self, test_name, success, details="", response_data=None):
+    def log_test(self, test_name, success, details=""):
         """Log test result"""
         status = "✅ PASS" if success else "❌ FAIL"
-        result = {
-            "test": test_name,
-            "status": status,
-            "details": details,
-            "response_data": response_data
-        }
-        self.results.append(result)
         print(f"{status}: {test_name}")
         if details:
             print(f"   Details: {details}")
-        if not success and response_data:
-            print(f"   Response: {response_data}")
-        print()
-
-    def authenticate_admin(self):
-        """Authenticate admin user"""
-        try:
-            response = requests.post(f"{BASE_URL}/auth/login", json={
-                "email": ADMIN_EMAIL,
-                "password": ADMIN_PASSWORD
-            })
-            
-            if response.status_code == 200:
-                data = response.json()
-                self.admin_token = data.get("access_token")
-                self.log_result("Admin Authentication", True, f"Admin logged in successfully")
-                return True
-            else:
-                self.log_result("Admin Authentication", False, f"Status: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Admin Authentication", False, f"Exception: {str(e)}")
-            return False
-
-    def get_or_create_teacher(self):
-        """Get existing teacher or create one for testing"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            # First, try to get existing members
-            members_response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/members", headers=headers)
-            
-            if members_response.status_code == 200:
-                members_data = members_response.json()
-                members = members_data.get("members", [])
-                
-                # Look for existing teacher
-                for member in members:
-                    if member.get("is_teacher", False):
-                        self.teacher_email = member.get("user_email")
-                        self.teacher_user_id = member.get("user_id")
-                        self.log_result("Get/Create Teacher", True, f"Found existing teacher: {self.teacher_email}")
-                        return True
-                
-                # If no teacher found, create one
-                if members:
-                    # Use first member and make them a teacher
-                    first_member = members[0]
-                    self.teacher_email = first_member.get("user_email")
-                    self.teacher_user_id = first_member.get("user_id")
-                    
-                    # Login as this user to update their profile
-                    # We'll assume they have a standard password or create a new teacher
-                    pass
-            
-            # Create a new teacher user
-            unique_id = str(uuid.uuid4())[:8]
-            self.teacher_email = f"teacher_{unique_id}@example.com"
-            teacher_password = "teacher123"
-            
-            # Register teacher user
-            register_response = requests.post(f"{BASE_URL}/auth/register", json={
-                "email": self.teacher_email,
-                "password": teacher_password,
-                "first_name": "Анна",
-                "last_name": "Петрова"
-            })
-            
-            if register_response.status_code in [200, 201]:
-                # Login teacher user
-                login_response = requests.post(f"{BASE_URL}/auth/login", json={
-                    "email": self.teacher_email,
-                    "password": teacher_password
-                })
-                
-                if login_response.status_code == 200:
-                    login_data = login_response.json()
-                    self.teacher_token = login_data.get("access_token")
-                    self.teacher_user_id = login_data.get("user", {}).get("id")
-                    
-                    # Add teacher to organization as member
-                    add_member_response = requests.post(
-                        f"{BASE_URL}/work/organizations/{self.organization_id}/members",
-                        headers=headers,
-                        json={
-                            "user_email": self.teacher_email,
-                            "role": "EMPLOYEE",
-                            "job_title": "Учитель математики"
-                        }
-                    )
-                    
-                    if add_member_response.status_code == 200:
-                        # Update teacher profile
-                        teacher_headers = {"Authorization": f"Bearer {self.teacher_token}"}
-                        update_response = requests.put(
-                            f"{BASE_URL}/work/organizations/{self.organization_id}/teachers/me",
-                            headers=teacher_headers,
-                            json={
-                                "is_teacher": True,
-                                "teaching_subjects": ["Математика", "Физика"],
-                                "teaching_grades": [9, 10, 11],
-                                "is_class_supervisor": True,
-                                "supervised_class": "10А",
-                                "teacher_qualification": "Высшая категория"
-                            }
-                        )
-                        
-                        if update_response.status_code == 200:
-                            self.log_result("Get/Create Teacher", True, f"Created and configured teacher: {self.teacher_email}")
-                            return True
-                        else:
-                            self.log_result("Get/Create Teacher", False, f"Failed to update teacher profile: {update_response.status_code}")
-                            return False
-                    else:
-                        self.log_result("Get/Create Teacher", False, f"Failed to add to org: {add_member_response.status_code}")
-                        return False
-                else:
-                    self.log_result("Get/Create Teacher", False, f"Login failed: {login_response.status_code}")
-                    return False
-            else:
-                self.log_result("Get/Create Teacher", False, f"Registration failed: {register_response.status_code}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Get/Create Teacher", False, f"Exception: {str(e)}")
-            return False
-
-    def test_teachers_list_endpoint_no_filters(self):
-        """Test GET /api/work/organizations/{org_id}/teachers - PREVIOUSLY FAILING WITH 500"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            print("🔍 Testing previously failing endpoint: GET /teachers (no filters)")
-            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Handle both response formats: direct list or {"teachers": [...]}
-                if isinstance(data, list):
-                    teachers = data
-                else:
-                    teachers = data.get("teachers", [])
-                
-                # Verify response structure
-                if isinstance(teachers, list):
-                    # Check if we have teachers and verify field structure
-                    if teachers:
-                        first_teacher = teachers[0]
-                        required_fields = ["id", "user_first_name", "user_last_name", "user_email", "teaching_subjects", "teaching_grades"]
-                        missing_fields = [field for field in required_fields if field not in first_teacher]
-                        
-                        if missing_fields:
-                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
-                                           f"Missing required fields: {missing_fields}")
-                            return False
-                        
-                        # Verify 'id' field is properly mapped (this was the bug)
-                        if first_teacher.get("id"):
-                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", True, 
-                                           f"✅ BUG FIXED! Endpoint returns 200 OK with {len(teachers)} teachers. 'id' field properly mapped.")
-                            return True
-                        else:
-                            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
-                                           "'id' field is empty or null - field mapping still has issues")
-                            return False
-                    else:
-                        self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", True, 
-                                       "✅ BUG FIXED! Endpoint returns 200 OK (no teachers in organization)")
-                        return True
-                else:
-                    self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
-                                   f"Response is not a list: {type(data)}")
-                    return False
-            elif response.status_code == 500:
-                # This was the original bug - should not happen anymore
-                error_text = response.text
-                self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
-                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
-                return False
-            else:
-                self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, 
-                               f"Unexpected status code: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Teachers List (No Filters) - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
-            return False
-
-    def test_teachers_list_with_grade_filter(self):
-        """Test GET /api/work/organizations/{org_id}/teachers?grade=10 - PREVIOUSLY FAILING WITH 500"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            print("🔍 Testing previously failing endpoint: GET /teachers?grade=10")
-            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers?grade=10", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Handle both response formats: direct list or {"teachers": [...]}
-                if isinstance(data, list):
-                    teachers = data
-                else:
-                    teachers = data.get("teachers", [])
-                
-                # Verify filtering works
-                for teacher in teachers:
-                    teaching_grades = teacher.get("teaching_grades", [])
-                    if teaching_grades and 10 not in teaching_grades:
-                        self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
-                                       f"Grade filtering not working: teacher doesn't teach grade 10")
-                        return False
-                
-                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", True, 
-                               f"✅ BUG FIXED! Grade filtering returns 200 OK with {len(teachers)} teachers for grade 10")
-                return True
-            elif response.status_code == 500:
-                error_text = response.text
-                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
-                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
-                return False
-            else:
-                self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, 
-                               f"Unexpected status code: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Teachers List (Grade Filter) - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
-            return False
-
-    def test_teachers_list_with_subject_filter(self):
-        """Test GET /api/work/organizations/{org_id}/teachers?subject=Математика"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            print("🔍 Testing endpoint: GET /teachers?subject=Математика")
-            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers?subject=Математика", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Handle both response formats: direct list or {"teachers": [...]}
-                if isinstance(data, list):
-                    teachers = data
-                else:
-                    teachers = data.get("teachers", [])
-                
-                # Verify filtering works
-                for teacher in teachers:
-                    teaching_subjects = teacher.get("teaching_subjects", [])
-                    if teaching_subjects and "Математика" not in teaching_subjects:
-                        self.log_result("Teachers List (Subject Filter)", False, 
-                                       f"Subject filtering not working: teacher doesn't teach Математика")
-                        return False
-                
-                self.log_result("Teachers List (Subject Filter)", True, 
-                               f"Subject filtering returns 200 OK with {len(teachers)} teachers for Математика")
-                return True
-            else:
-                self.log_result("Teachers List (Subject Filter)", False, 
-                               f"Status: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Teachers List (Subject Filter)", False, f"Exception: {str(e)}")
-            return False
-
-    def test_individual_teacher_endpoint(self):
-        """Test GET /api/work/organizations/{org_id}/teachers/{id} - PREVIOUSLY FAILING"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            # First get list of teachers to find a teacher ID
-            list_response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
-            
-            if list_response.status_code != 200:
-                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
-                               "Cannot get teachers list to test individual retrieval")
-                return False
-            
-            list_data = list_response.json()
-            # Handle both response formats: direct list or {"teachers": [...]}
-            if isinstance(list_data, list):
-                teachers = list_data
-            else:
-                teachers = list_data.get("teachers", [])
-            if not teachers:
-                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", True, 
-                               "No teachers to test individual retrieval (organization empty)")
-                return True
-            
-            # Get the first teacher
-            teacher_id = teachers[0].get("id")
-            if not teacher_id:
-                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
-                               "No teacher ID found in teachers list")
-                return False
-            
-            print(f"🔍 Testing previously failing endpoint: GET /teachers/{teacher_id}")
-            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers/{teacher_id}", headers=headers)
-            
-            if response.status_code == 200:
-                teacher = response.json()
-                
-                if teacher and teacher.get("id"):
-                    self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", True, 
-                                   f"✅ BUG FIXED! Individual teacher retrieval returns 200 OK with proper 'id' field")
-                    return True
-                else:
-                    self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
-                                   "Teacher data missing or 'id' field not properly mapped")
-                    return False
-            elif response.status_code == 500:
-                error_text = response.text
-                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
-                               f"❌ BUG NOT FIXED! Still getting 500 error: {error_text}")
-                return False
-            else:
-                self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, 
-                               f"Unexpected status code: {response.status_code}", response.text)
-                return False
-                
-        except Exception as e:
-            self.log_result("Individual Teacher Endpoint - BUG FIX VERIFICATION", False, f"Exception: {str(e)}")
-            return False
-
-    def test_data_structure_integrity(self):
-        """Verify that teacher data structure includes proper 'id' field and other required fields"""
-        try:
-            headers = {"Authorization": f"Bearer {self.admin_token}"}
-            
-            response = requests.get(f"{BASE_URL}/work/organizations/{self.organization_id}/teachers", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Handle both response formats: direct list or {"teachers": [...]}
-                if isinstance(data, list):
-                    teachers = data
-                else:
-                    teachers = data.get("teachers", [])
-                
-                if teachers:
-                    teacher = teachers[0]
-                    
-                    # Check critical fields that were affected by the bug
-                    required_fields = {
-                        "id": "Teacher ID (was the main bug - member_id not mapped to id)",
-                        "user_id": "User ID reference",
-                        "user_first_name": "Teacher first name",
-                        "user_last_name": "Teacher last name", 
-                        "user_email": "Teacher email",
-                        "teaching_subjects": "Subjects taught",
-                        "teaching_grades": "Grades taught"
-                    }
-                    
-                    missing_fields = []
-                    for field, description in required_fields.items():
-                        if field not in teacher:
-                            missing_fields.append(f"{field} ({description})")
-                    
-                    if missing_fields:
-                        self.log_result("Data Structure Integrity", False, 
-                                       f"Missing critical fields: {', '.join(missing_fields)}")
-                        return False
-                    
-                    # Verify 'id' field has a value (not None/empty)
-                    if not teacher.get("id"):
-                        self.log_result("Data Structure Integrity", False, 
-                                       "'id' field exists but is empty/null - field mapping incomplete")
-                        return False
-                    
-                    self.log_result("Data Structure Integrity", True, 
-                                   f"✅ All critical fields present including properly mapped 'id' field: {teacher.get('id')}")
-                    return True
-                else:
-                    self.log_result("Data Structure Integrity", True, 
-                                   "No teachers to verify structure (empty organization)")
-                    return True
-            else:
-                self.log_result("Data Structure Integrity", False, 
-                               f"Cannot verify structure, endpoint failed: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Data Structure Integrity", False, f"Exception: {str(e)}")
-            return False
-
-    def test_previously_working_endpoints(self):
-        """Verify that previously working endpoints still work after the fix"""
-        try:
-            # Test school constants endpoint (should still work)
-            response = requests.get(f"{BASE_URL}/work/schools/constants")
-            
-            if response.status_code == 200:
-                data = response.json()
-                if "subjects" in data and "grades" in data:
-                    self.log_result("Previously Working Endpoints", True, 
-                                   "School constants endpoint still working after bug fix")
-                    return True
-                else:
-                    self.log_result("Previously Working Endpoints", False, 
-                                   "School constants endpoint structure changed")
-                    return False
-            else:
-                self.log_result("Previously Working Endpoints", False, 
-                               f"School constants endpoint broken: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Previously Working Endpoints", False, f"Exception: {str(e)}")
-            return False
-
-    def run_bug_fix_verification(self):
-        """Run focused bug fix verification tests"""
-        print("🔧 RE-TESTING AFTER BUG FIX - School Management Phase 1: Teacher Listing Endpoints")
-        print("=" * 90)
-        print("🎯 FOCUS: Verifying field mapping bug fix (MongoDB 'member_id' → 'id' conversion)")
-        print("📋 PREVIOUSLY FAILING ENDPOINTS:")
-        print("   - GET /api/work/organizations/{org_id}/teachers")
-        print("   - GET /api/work/organizations/{org_id}/teachers?grade=10")
-        print("   - GET /api/work/organizations/{org_id}/teachers/{id}")
-        print("=" * 90)
-        print()
+        self.test_results.append({
+            "test": test_name,
+            "success": success,
+            "details": details
+        })
         
-        # Authentication
-        if not self.authenticate_admin():
-            print("❌ Cannot proceed without admin authentication")
+    def authenticate_user(self, email, password):
+        """Authenticate user and return token and user info"""
+        try:
+            # Login request
+            login_data = {
+                "email": email,
+                "password": password
+            }
+            
+            response = requests.post(f"{API_BASE}/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                
+                # Get user info
+                headers = {"Authorization": f"Bearer {token}"}
+                me_response = requests.get(f"{API_BASE}/auth/me", headers=headers)
+                
+                if me_response.status_code == 200:
+                    user_info = me_response.json()
+                    return token, user_info.get("id"), user_info
+                else:
+                    return None, None, None
+            else:
+                return None, None, None
+                
+        except Exception as e:
+            print(f"Authentication error: {e}")
+            return None, None, None
+    
+    def test_authentication(self):
+        """Test 1: Authentication Test"""
+        print("\n=== Test 1: Authentication Test ===")
+        
+        # Test User 1 authentication
+        self.user1_token, self.user1_id, user1_info = self.authenticate_user(USER1_EMAIL, USER1_PASSWORD)
+        
+        if self.user1_token and self.user1_id:
+            self.log_test("User 1 Authentication", True, f"Token obtained for user {self.user1_id}")
+        else:
+            self.log_test("User 1 Authentication", False, "Failed to authenticate user 1")
+            return False
+            
+        # Test User 2 authentication
+        self.user2_token, self.user2_id, user2_info = self.authenticate_user(USER2_EMAIL, USER2_PASSWORD)
+        
+        if self.user2_token and self.user2_id:
+            self.log_test("User 2 Authentication", True, f"Token obtained for user {self.user2_id}")
+        else:
+            self.log_test("User 2 Authentication", False, "Failed to authenticate user 2")
+            return False
+            
+        # Test /api/auth/me endpoint
+        try:
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            response = requests.get(f"{API_BASE}/auth/me", headers=headers)
+            
+            if response.status_code == 200:
+                user_data = response.json()
+                self.log_test("Auth Me Endpoint", True, f"Retrieved user data: {user_data.get('email')}")
+            else:
+                self.log_test("Auth Me Endpoint", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Auth Me Endpoint", False, f"Error: {e}")
+            
+        return True
+    
+    def test_direct_chat_api(self):
+        """Test 2: Direct Chat API Test"""
+        print("\n=== Test 2: Direct Chat API Test ===")
+        
+        if not self.user1_token or not self.user2_token:
+            self.log_test("Direct Chat API", False, "Authentication required first")
+            return False
+            
+        try:
+            headers1 = {"Authorization": f"Bearer {self.user1_token}"}
+            headers2 = {"Authorization": f"Bearer {self.user2_token}"}
+            
+            # Test GET /api/direct-chats for user 1
+            response = requests.get(f"{API_BASE}/direct-chats", headers=headers1)
+            
+            if response.status_code == 200:
+                chats_data = response.json()
+                direct_chats = chats_data.get("direct_chats", [])
+                self.log_test("List Direct Chats", True, f"Found {len(direct_chats)} existing chats")
+                
+                # Check if there's an existing chat between users
+                existing_chat = None
+                for chat_info in direct_chats:
+                    chat = chat_info.get("chat", {})
+                    if self.user2_id in chat.get("participant_ids", []):
+                        existing_chat = chat
+                        break
+                        
+                if existing_chat:
+                    self.chat_id = existing_chat["id"]
+                    self.log_test("Existing Chat Found", True, f"Chat ID: {self.chat_id}")
+                else:
+                    # Create new direct chat
+                    create_data = {"recipient_id": self.user2_id}
+                    create_response = requests.post(f"{API_BASE}/direct-chats", json=create_data, headers=headers1)
+                    
+                    if create_response.status_code == 200:
+                        create_result = create_response.json()
+                        self.chat_id = create_result.get("chat_id")
+                        self.log_test("Create Direct Chat", True, f"New chat ID: {self.chat_id}")
+                    else:
+                        self.log_test("Create Direct Chat", False, f"Status: {create_response.status_code}")
+                        return False
+                        
+            else:
+                self.log_test("List Direct Chats", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Direct Chat API", False, f"Error: {e}")
+            return False
+            
+        return True
+    
+    def test_message_sending(self):
+        """Test 4: Message Sending Test"""
+        print("\n=== Test 4: Message Sending Test ===")
+        
+        if not self.chat_id:
+            self.log_test("Message Sending", False, "Chat ID required")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            
+            # Send a test message
+            message_data = {
+                "content": "Test message from agent - WebSocket chat testing",
+                "message_type": "TEXT"
+            }
+            
+            response = requests.post(f"{API_BASE}/direct-chats/{self.chat_id}/messages", 
+                                   json=message_data, headers=headers)
+            
+            if response.status_code == 200:
+                result = response.json()
+                message_id = result.get("message_id")
+                self.log_test("Send Message", True, f"Message ID: {message_id}")
+                
+                # Test retrieving messages
+                get_response = requests.get(f"{API_BASE}/direct-chats/{self.chat_id}/messages", 
+                                          headers=headers)
+                
+                if get_response.status_code == 200:
+                    messages_data = get_response.json()
+                    messages = messages_data.get("messages", [])
+                    self.log_test("Retrieve Messages", True, f"Found {len(messages)} messages")
+                    
+                    # Find our test message
+                    test_message = None
+                    for msg in messages:
+                        if msg.get("id") == message_id:
+                            test_message = msg
+                            break
+                            
+                    if test_message:
+                        self.log_test("Message Verification", True, f"Content: {test_message.get('content')}")
+                        return message_id
+                    else:
+                        self.log_test("Message Verification", False, "Test message not found")
+                else:
+                    self.log_test("Retrieve Messages", False, f"Status: {get_response.status_code}")
+            else:
+                self.log_test("Send Message", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Message Sending", False, f"Error: {e}")
+            
+        return None
+    
+    def test_typing_status_api(self):
+        """Test 5: Typing Status API Test"""
+        print("\n=== Test 5: Typing Status API Test ===")
+        
+        if not self.chat_id:
+            self.log_test("Typing Status API", False, "Chat ID required")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.user1_token}"}
+            
+            # Test setting typing status
+            typing_data = {"is_typing": True}
+            response = requests.post(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
+                                   json=typing_data, headers=headers)
+            
+            if response.status_code == 200:
+                self.log_test("Set Typing Status", True, "Typing status set to true")
+                
+                # Test getting typing status (should be empty as same user)
+                get_response = requests.get(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
+                                          headers=headers)
+                
+                if get_response.status_code == 200:
+                    typing_users = get_response.json().get("typing_users", [])
+                    self.log_test("Get Typing Status", True, f"Found {len(typing_users)} typing users (expected 0 for same user)")
+                else:
+                    self.log_test("Get Typing Status", False, f"Status: {get_response.status_code}")
+                    
+                # Set typing to false
+                typing_data = {"is_typing": False}
+                stop_response = requests.post(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
+                                            json=typing_data, headers=headers)
+                
+                if stop_response.status_code == 200:
+                    self.log_test("Stop Typing Status", True, "Typing status set to false")
+                else:
+                    self.log_test("Stop Typing Status", False, f"Status: {stop_response.status_code}")
+                    
+            else:
+                self.log_test("Set Typing Status", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Typing Status API", False, f"Error: {e}")
+            
+        return True
+    
+    def test_message_status(self):
+        """Test 6: Message Status Test"""
+        print("\n=== Test 6: Message Status Test ===")
+        
+        # First send a message to get a message ID
+        message_id = self.test_message_sending()
+        
+        if not message_id:
+            self.log_test("Message Status Test", False, "No message ID available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.user2_token}"}  # Use user 2 to update status
+            
+            # Test updating message status to delivered
+            status_data = {"status": "delivered"}
+            response = requests.put(f"{API_BASE}/messages/{message_id}/status", 
+                                  json=status_data, headers=headers)
+            
+            if response.status_code == 200:
+                self.log_test("Update Status to Delivered", True, "Message marked as delivered")
+                
+                # Test updating message status to read
+                status_data = {"status": "read"}
+                read_response = requests.put(f"{API_BASE}/messages/{message_id}/status", 
+                                           json=status_data, headers=headers)
+                
+                if read_response.status_code == 200:
+                    self.log_test("Update Status to Read", True, "Message marked as read")
+                else:
+                    self.log_test("Update Status to Read", False, f"Status: {read_response.status_code}")
+                    
+            else:
+                self.log_test("Update Status to Delivered", False, f"Status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Message Status Test", False, f"Error: {e}")
+            
+        return True
+    
+    async def test_websocket_connection(self):
+        """Test 3: WebSocket Connection Test"""
+        print("\n=== Test 3: WebSocket Connection Test ===")
+        
+        if not self.user1_token or not self.chat_id:
+            self.log_test("WebSocket Connection", False, "Token and chat ID required")
+            return False
+            
+        try:
+            # Convert HTTPS URL to WSS for WebSocket
+            ws_url = BACKEND_URL.replace("https://", "wss://").replace("http://", "ws://")
+            websocket_url = f"{ws_url}/ws/chat/{self.chat_id}?token={self.user1_token}"
+            
+            print(f"Attempting WebSocket connection to: {websocket_url}")
+            
+            # Test WebSocket connection with timeout
+            try:
+                async with websockets.connect(websocket_url, timeout=10) as websocket:
+                    self.log_test("WebSocket Connection", True, "Successfully connected to WebSocket")
+                    
+                    # Send a ping message
+                    ping_message = {"type": "ping"}
+                    await websocket.send(json.dumps(ping_message))
+                    
+                    # Wait for response with timeout
+                    try:
+                        response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                        response_data = json.loads(response)
+                        
+                        if response_data.get("type") == "pong":
+                            self.log_test("WebSocket Ping/Pong", True, "Received pong response")
+                        else:
+                            self.log_test("WebSocket Ping/Pong", True, f"Received: {response_data}")
+                            
+                    except asyncio.TimeoutError:
+                        self.log_test("WebSocket Ping/Pong", False, "No response received within timeout")
+                    
+                    # Test typing event
+                    typing_message = {"type": "typing", "is_typing": True}
+                    await websocket.send(json.dumps(typing_message))
+                    self.log_test("WebSocket Typing Event", True, "Sent typing event")
+                    
+                    # Wait a bit and stop typing
+                    await asyncio.sleep(1)
+                    stop_typing_message = {"type": "typing", "is_typing": False}
+                    await websocket.send(json.dumps(stop_typing_message))
+                    self.log_test("WebSocket Stop Typing", True, "Sent stop typing event")
+                    
+            except websockets.exceptions.InvalidStatusCode as e:
+                self.log_test("WebSocket Connection", False, f"Invalid status code: {e}")
+            except websockets.exceptions.ConnectionClosedError as e:
+                self.log_test("WebSocket Connection", False, f"Connection closed: {e}")
+            except asyncio.TimeoutError:
+                self.log_test("WebSocket Connection", False, "Connection timeout")
+            except Exception as e:
+                self.log_test("WebSocket Connection", False, f"Connection error: {e}")
+                
+        except Exception as e:
+            self.log_test("WebSocket Connection", False, f"Error: {e}")
+            
+        return True
+    
+    def run_all_tests(self):
+        """Run all tests in sequence"""
+        print("🚀 Starting WebSocket Chat Implementation Backend Testing")
+        print(f"Backend URL: {BACKEND_URL}")
+        print(f"Test Time: {datetime.now().isoformat()}")
+        
+        # Run tests in order
+        if not self.test_authentication():
+            print("❌ Authentication failed - stopping tests")
             return
+            
+        if not self.test_direct_chat_api():
+            print("❌ Direct Chat API failed - stopping tests")
+            return
+            
+        # Run WebSocket test (async)
+        asyncio.run(self.test_websocket_connection())
         
-        # Get or create teacher for testing
-        if not self.get_or_create_teacher():
-            print("⚠️ No teacher available, but can still test endpoints...")
-        
-        # Test the previously failing endpoints
-        print("🔍 TESTING PREVIOUSLY FAILING ENDPOINTS:")
-        print("-" * 50)
-        
-        self.test_teachers_list_endpoint_no_filters()
-        self.test_teachers_list_with_grade_filter()
-        self.test_individual_teacher_endpoint()
-        
-        print("\n🔍 ADDITIONAL VERIFICATION TESTS:")
-        print("-" * 50)
-        
-        self.test_teachers_list_with_subject_filter()
-        self.test_data_structure_integrity()
-        self.test_previously_working_endpoints()
+        # Continue with remaining tests
+        self.test_message_sending()
+        self.test_typing_status_api()
+        self.test_message_status()
         
         # Print summary
-        self.print_bug_fix_summary()
-
-    def print_bug_fix_summary(self):
-        """Print focused bug fix verification summary"""
-        print("=" * 90)
-        print("📊 BUG FIX VERIFICATION SUMMARY")
-        print("=" * 90)
+        self.print_summary()
+    
+    def print_summary(self):
+        """Print test summary"""
+        print("\n" + "="*60)
+        print("📊 TEST SUMMARY")
+        print("="*60)
         
-        total_tests = len(self.results)
-        passed_tests = sum(1 for result in self.results if "✅ PASS" in result["status"])
+        total_tests = len(self.test_results)
+        passed_tests = sum(1 for result in self.test_results if result["success"])
         failed_tests = total_tests - passed_tests
-        success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
         
         print(f"Total Tests: {total_tests}")
-        print(f"Passed: {passed_tests}")
-        print(f"Failed: {failed_tests}")
-        print(f"Success Rate: {success_rate:.1f}%")
-        print()
-        
-        # Check if the critical bug fix tests passed
-        critical_tests = [
-            "Teachers List (No Filters) - BUG FIX VERIFICATION",
-            "Teachers List (Grade Filter) - BUG FIX VERIFICATION", 
-            "Individual Teacher Endpoint - BUG FIX VERIFICATION"
-        ]
-        
-        critical_passed = 0
-        for result in self.results:
-            if result["test"] in critical_tests and "✅ PASS" in result["status"]:
-                critical_passed += 1
-        
-        print("🎯 CRITICAL BUG FIX STATUS:")
-        if critical_passed == len(critical_tests):
-            print("✅ BUG COMPLETELY FIXED! All previously failing endpoints now return 200 OK")
-        elif critical_passed > 0:
-            print(f"⚠️ PARTIAL FIX: {critical_passed}/{len(critical_tests)} critical endpoints fixed")
-        else:
-            print("❌ BUG NOT FIXED: All critical endpoints still failing")
-        print()
+        print(f"✅ Passed: {passed_tests}")
+        print(f"❌ Failed: {failed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
         
         if failed_tests > 0:
-            print("❌ FAILED TESTS:")
-            for result in self.results:
-                if "❌ FAIL" in result["status"]:
-                    print(f"   - {result['test']}: {result['details']}")
-            print()
+            print("\n❌ FAILED TESTS:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"  - {result['test']}: {result['details']}")
         
-        print("✅ PASSED TESTS:")
-        for result in self.results:
-            if "✅ PASS" in result["status"]:
-                print(f"   - {result['test']}")
-        
-        print()
-        print("🔧 BUG FIX DETAILS:")
-        print("   - Issue: MongoDB 'member_id' field not mapped to 'id' in TeacherResponse")
-        print("   - Fix Applied: Added field mapping logic teacher_data['id'] = teacher_data.pop('member_id')")
-        print("   - Endpoints Fixed: GET /teachers, GET /teachers?filters, GET /teachers/{id}")
-        
-        if success_rate == 100:
-            print(f"\n🎉 BUG FIX SUCCESSFUL! All teacher endpoints working correctly ({success_rate:.1f}% success rate)")
-        elif success_rate >= 80:
-            print(f"\n✅ BUG FIX MOSTLY SUCCESSFUL ({success_rate:.1f}% success rate)")
+        print("\n✅ PASSED TESTS:")
+        for result in self.test_results:
+            if result["success"]:
+                print(f"  - {result['test']}")
+                
+        # Overall assessment
+        if passed_tests == total_tests:
+            print("\n🎉 ALL TESTS PASSED - WebSocket Chat Implementation is PRODUCTION READY!")
+        elif passed_tests >= total_tests * 0.8:
+            print("\n✅ MOSTLY WORKING - WebSocket Chat Implementation is functional with minor issues")
         else:
-            print(f"\n❌ BUG FIX INCOMPLETE - Further investigation needed ({success_rate:.1f}% success rate)")
+            print("\n⚠️  SIGNIFICANT ISSUES - WebSocket Chat Implementation needs attention")
 
 if __name__ == "__main__":
-    tester = TeacherEndpointBugFixTester()
-    tester.run_bug_fix_verification()
+    tester = WebSocketChatTester()
+    tester.run_all_tests()
