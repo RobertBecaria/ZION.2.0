@@ -1,23 +1,41 @@
 #!/usr/bin/env python3
 """
-RE-TEST AFTER BUG FIX - School Management Phase 1: Teacher Listing Endpoints
-Testing the field mapping bug fix for teacher endpoints
+WebSocket Chat Implementation Backend Testing
+Testing the new WebSocket chat implementation for real-time messaging.
+
+Test Scope:
+1. Authentication Test - Login with admin@test.com to get JWT token
+2. Direct Chat API Test - GET /api/direct-chats
+3. WebSocket Connection Test - ws://backend_url/ws/chat/{chat_id}?token={jwt_token}
+4. Message Sending Test - POST /api/direct-chats/{chat_id}/messages
+5. Typing Status API Test - POST/GET /api/chats/{chat_id}/typing?chat_type=direct
+6. Message Status Test - PUT /api/messages/{message_id}/status
+
+Test Credentials:
+- User 1: admin@test.com / testpassword123
+- User 2: testuser@test.com / testpassword123
 """
 
 import requests
 import json
-import uuid
+import asyncio
+import websockets
+import time
 from datetime import datetime
+import sys
+import os
 
-# Configuration
-BASE_URL = "https://messagehub-387.preview.emergentagent.com/api"
-ORGANIZATION_ID = "d5e2d110-cb59-441f-b2f0-55c9ac715431"  # Test School organization
+# Get backend URL from environment
+BACKEND_URL = "https://messagehub-387.preview.emergentagent.com"
+API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials
-ADMIN_EMAIL = "admin@test.com"
-ADMIN_PASSWORD = "admin123"
+USER1_EMAIL = "admin@test.com"
+USER1_PASSWORD = "testpassword123"
+USER2_EMAIL = "testuser@test.com"
+USER2_PASSWORD = "testpassword123"
 
-class TeacherEndpointBugFixTester:
+class WebSocketChatTester:
     def __init__(self):
         self.admin_token = None
         self.teacher_token = None
