@@ -409,13 +409,6 @@ const ChatConversation = ({
     return formatLastSeen(userStatus.last_seen);
   };
 
-  // WebSocket connection indicator component
-  const ConnectionIndicator = () => (
-    <div className={`ws-connection-indicator ${wsConnected ? 'connected' : 'disconnected'}`} title={wsConnected ? 'Подключено' : 'Переподключение...'}>
-      {wsConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-    </div>
-  );
-
   if (!chat) {
     return (
       <div className="chat-conversation empty">
