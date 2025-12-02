@@ -10,6 +10,16 @@ import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import { useChatWebSocket } from '../../hooks';
 
+// WebSocket connection indicator component - defined outside to avoid re-creation
+const ConnectionIndicator = ({ isConnected }) => (
+  <div 
+    className={`ws-connection-indicator ${isConnected ? 'connected' : 'disconnected'}`} 
+    title={isConnected ? 'Подключено' : 'Переподключение...'}
+  >
+    {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+  </div>
+);
+
 const ChatConversation = ({
   chat,
   chatType = 'direct', // 'direct' or 'group'
