@@ -5896,6 +5896,13 @@ async def send_direct_message(
         "profile_picture": current_user.profile_picture
     }
     
+    # Convert datetime objects to ISO strings for JSON serialization
+    if message_dict.get("created_at"):
+        message_dict["created_at"] = message_dict["created_at"].isoformat()
+    
+    # Broadcast message via WebSocket to all connected users in this chat
+    await broadcast_new_message(chat_id, message_dict, current_user.id)
+    
     return {"message": "Message sent successfully", "message_id": new_message.id, "data": message_dict}
 
 @api_router.put("/messages/{message_id}/status")
