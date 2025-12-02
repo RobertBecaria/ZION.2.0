@@ -339,7 +339,7 @@ class WebSocketChatTester:
             
             # Test WebSocket connection with timeout
             try:
-                async with websockets.connect(websocket_url, timeout=10) as websocket:
+                async with websockets.connect(websocket_url) as websocket:
                     self.log_test("WebSocket Connection", True, "Successfully connected to WebSocket")
                     
                     # Send a ping message
