@@ -8,7 +8,7 @@ import uuid
 import time
 
 class AdminChangeRequestsTester:
-    def __init__(self, base_url="https://partyhub-11.preview.emergentagent.com"):
+    def __init__(self, base_url="https://messagehub-387.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None

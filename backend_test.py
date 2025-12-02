@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://partyhub-11.preview.emergentagent.com/api"
+BASE_URL = "https://messagehub-387.preview.emergentagent.com/api"
 ORGANIZATION_ID = "d5e2d110-cb59-441f-b2f0-55c9ac715431"  # Test School organization
 
 # Test credentials
