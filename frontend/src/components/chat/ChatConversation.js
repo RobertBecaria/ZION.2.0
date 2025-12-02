@@ -451,7 +451,7 @@ const ChatConversation = ({
         </div>
         
         <div className="header-actions">
-          <ConnectionIndicator />
+          <ConnectionIndicator isConnected={wsConnected} />
           <button 
             className="action-btn" 
             title="Поиск"
