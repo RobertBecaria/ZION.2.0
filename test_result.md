@@ -2164,3 +2164,49 @@ Recurring `AttributeError: module 'bcrypt' has no attribute '__about__'` error d
 
 **Agent:** fork-agent
 
+
+---
+
+## Bug Fix Session - December 2, 2025
+
+### Issue Fixed:
+**ReferenceError: Cannot access 'wsSendDelivered' before initialization**
+
+**Root Cause:** 
+In `/app/frontend/src/components/chat/ChatConversation.js`, the `onMessage` callback passed to `useChatWebSocket` hook was referencing `wsSendDelivered` (a function returned by the same hook). This created a circular dependency that JavaScript couldn't resolve during initialization.
+
+**Solution:**
+1. Added a `pendingDelivery` state to queue message IDs that need delivery notification
+2. Instead of calling `wsSendDelivered` directly in the `onMessage` callback, we now update the `pendingDelivery` state
+3. Added a new `useEffect` that watches `pendingDelivery` and calls `wsSendDelivered` when there are pending notifications
+
+**Code Change:**
+```javascript
+// Added state for pending delivery notifications
+const [pendingDelivery, setPendingDelivery] = useState([]);
+
+// In onMessage callback, queue the message ID instead of calling wsSendDelivered directly
+if (newMsg.user_id !== user?.id) {
+  setPendingDelivery(prev => [...prev, newMsg.id]);
+}
+
+// New useEffect to handle delivery notifications
+useEffect(() => {
+  if (pendingDelivery.length > 0 && wsSendDelivered) {
+    wsSendDelivered(pendingDelivery);
+    setPendingDelivery([]);
+  }
+}, [pendingDelivery, wsSendDelivered]);
+```
+
+### Verified Working:
+- ✅ Chat welcome screen displays correctly (no "Create Group" page as default)
+- ✅ Opening direct chat with "Тест Пользователь" works without errors
+- ✅ Messages load correctly
+- ✅ Sending new messages works
+- ✅ No console errors
+
+### Files Modified:
+- `/app/frontend/src/components/chat/ChatConversation.js` - Fixed circular dependency bug
+
+**Agent:** fork-agent
