@@ -141,6 +141,24 @@ class ChatConnectionManager:
 # Initialize the connection manager
 chat_manager = ChatConnectionManager()
 
+# Helper function to broadcast new message via WebSocket (defined early for use in API routes)
+async def broadcast_new_message(chat_id: str, message_data: dict, sender_id: str):
+    """Broadcast a new message to all users in a chat via WebSocket"""
+    await chat_manager.broadcast_to_chat(chat_id, {
+        "type": "message",
+        "message": message_data,
+        "chat_id": chat_id
+    })
+    
+    # Also mark as delivered for all connected users
+    connected_count = chat_manager.get_online_users_in_chat(chat_id)
+    if connected_count > 1:  # More than just sender
+        # Update message status to delivered
+        await db.direct_chat_messages.update_one(
+            {"id": message_data.get("id")},
+            {"$set": {"status": "delivered"}}
+        )
+
 # Enums for better type safety
 class UserRole(str, Enum):
     ADMIN = "ADMIN"
