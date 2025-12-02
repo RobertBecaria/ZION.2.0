@@ -3,7 +3,7 @@
  * Main chat view that handles both direct messages and group chats
  */
 import React, { useState, useEffect } from 'react';
-import { Users, Plus } from 'lucide-react';
+import { MessageCircle, Users, Plus, ArrowRight } from 'lucide-react';
 import { ChatConversation } from './chat';
 
 function UniversalChatLayout({ 
@@ -33,17 +33,25 @@ function UniversalChatLayout({
       <div className="universal-chat-layout">
         <div className="chat-welcome">
           <div className="welcome-content">
-            <Users size={64} color={moduleColor} />
-            <h3>Выберите чат для общения</h3>
-            <p>Выберите чат или группу из списка справа</p>
-            <button 
-              className="btn-primary"
-              onClick={onCreateGroup}
-              style={{ backgroundColor: moduleColor }}
-            >
-              <Plus size={20} />
-              Создать группу
-            </button>
+            <div className="welcome-icon" style={{ backgroundColor: `${moduleColor}15` }}>
+              <MessageCircle size={64} color={moduleColor} />
+            </div>
+            <h3>Добро пожаловать в чат!</h3>
+            <p>Выберите чат из списка справа, чтобы начать общение</p>
+            <div className="welcome-hint">
+              <ArrowRight size={20} color={moduleColor} />
+              <span>Ваши чаты находятся в панели "Сообщения" справа</span>
+            </div>
+            <div className="welcome-actions">
+              <button 
+                className="btn-secondary"
+                onClick={onCreateGroup}
+                style={{ borderColor: moduleColor, color: moduleColor }}
+              >
+                <Users size={18} />
+                Создать группу
+              </button>
+            </div>
           </div>
         </div>
       </div>
