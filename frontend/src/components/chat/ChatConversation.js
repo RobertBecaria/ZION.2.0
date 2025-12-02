@@ -1,13 +1,14 @@
 /**
  * ChatConversation Component
- * WhatsApp-style chat conversation view with search, reply, and attachments
+ * WhatsApp-style chat conversation view with WebSocket real-time updates
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Send, Smile, Paperclip, ArrowLeft, MoreVertical, Search, User, X, Image, File
+  Send, Smile, Paperclip, ArrowLeft, MoreVertical, Search, User, X, Image, File, Wifi, WifiOff
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import { useChatWebSocket } from '../../hooks';
 
 const ChatConversation = ({
   chat,
@@ -32,6 +33,7 @@ const ChatConversation = ({
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const lastTypingSentRef = useRef(false);
 
   const chatId = chatType === 'direct' ? chat?.chat?.id : chat?.group?.id;
   const otherUserId = chatType === 'direct' ? chat?.other_user?.id : null;
@@ -42,37 +44,157 @@ const ChatConversation = ({
     ? chat?.other_user?.profile_picture 
     : null;
 
+  // WebSocket integration
+  const {
+    isConnected: wsConnected,
+    sendTyping: wsSendTyping,
+    sendRead: wsSendRead,
+    sendDelivered: wsSendDelivered
+  } = useChatWebSocket(chatId, {
+    enabled: !!chatId,
+    onMessage: useCallback((newMsg) => {
+      // Add new message to the list if not already present
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+      
+      // Mark as delivered if from other user
+      if (newMsg.user_id !== user?.id) {
+        wsSendDelivered([newMsg.id]);
+      }
+    }, [user?.id, wsSendDelivered]),
+    onTyping: useCallback((data) => {
+      if (data.user_id === user?.id) return;
+      
+      setTypingUsers(prev => {
+        if (data.is_typing) {
+          if (!prev.some(u => u.user_id === data.user_id)) {
+            return [...prev, { user_id: data.user_id, user_name: data.user_name }];
+          }
+        } else {
+          return prev.filter(u => u.user_id !== data.user_id);
+        }
+        return prev;
+      });
+    }, [user?.id]),
+    onStatus: useCallback((data) => {
+      // Update message status (delivered/read)
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.message_id 
+          ? { ...msg, status: data.status }
+          : msg
+      ));
+    }, []),
+    onOnline: useCallback((data) => {
+      if (data.user_id === otherUserId) {
+        setUserStatus(prev => ({
+          ...prev,
+          is_online: data.is_online,
+          last_seen: data.is_online ? null : new Date().toISOString()
+        }));
+      }
+    }, [otherUserId])
+  });
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Fetch messages
+  // Fetch messages - used for initial load and fallback polling
+  const fetchMessages = useCallback(async () => {
+    if (!chatId) return;
+    try {
+      const token = localStorage.getItem('zion_token');
+      const endpoint = chatType === 'direct' 
+        ? `/api/direct-chats/${chatId}/messages`
+        : `/api/chat-groups/${chatId}/messages`;
+      
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        
+        // Mark unread messages as read via WebSocket
+        const unreadMessages = (data.messages || [])
+          .filter(m => m.user_id !== user?.id && m.status !== 'read')
+          .map(m => m.id);
+        if (unreadMessages.length > 0 && wsConnected) {
+          wsSendRead(unreadMessages);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  }, [chatId, chatType, user?.id, wsConnected, wsSendRead]);
+
+  // Initial fetch and fallback polling when WebSocket is not connected
   useEffect(() => {
     if (chatId) {
       fetchMessages();
-      const interval = setInterval(fetchMessages, 3000);
+      // Use longer polling interval when WebSocket is connected, shorter when not
+      const pollInterval = wsConnected ? 30000 : 3000;
+      const interval = setInterval(fetchMessages, pollInterval);
       return () => clearInterval(interval);
     }
-  }, [chatId]);
+  }, [chatId, wsConnected, fetchMessages]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Fetch typing status
+  // Fetch typing status (fallback for when WebSocket is not connected)
   useEffect(() => {
-    if (chatId) {
+    if (chatId && !wsConnected) {
+      const fetchTypingStatus = async () => {
+        try {
+          const token = localStorage.getItem('zion_token');
+          const response = await fetch(
+            `${process.env.REACT_APP_BACKEND_URL}/api/chats/${chatId}/typing?chat_type=${chatType}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            setTypingUsers(data.typing_users || []);
+          }
+        } catch (error) {
+          console.error('Error fetching typing status:', error);
+        }
+      };
+      
       const typingInterval = setInterval(fetchTypingStatus, 2000);
       return () => clearInterval(typingInterval);
     }
-  }, [chatId]);
+  }, [chatId, chatType, wsConnected]);
 
   // Fetch user online status for direct chats
   useEffect(() => {
     if (chatType === 'direct' && otherUserId) {
+      const fetchUserStatus = async () => {
+        try {
+          const token = localStorage.getItem('zion_token');
+          const response = await fetch(
+            `${process.env.REACT_APP_BACKEND_URL}/api/users/${otherUserId}/status`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            setUserStatus(data);
+          }
+        } catch (error) {
+          console.error('Error fetching user status:', error);
+        }
+      };
+      
       fetchUserStatus();
-      const statusInterval = setInterval(fetchUserStatus, 30000); // Every 30 seconds
+      const statusInterval = setInterval(fetchUserStatus, 30000);
       return () => clearInterval(statusInterval);
     }
   }, [otherUserId, chatType]);
@@ -92,70 +214,21 @@ const ChatConversation = ({
     };
     
     sendHeartbeat();
-    const heartbeatInterval = setInterval(sendHeartbeat, 60000); // Every minute
+    const heartbeatInterval = setInterval(sendHeartbeat, 60000);
     return () => clearInterval(heartbeatInterval);
   }, []);
 
-  const fetchMessages = async () => {
+  // Set typing status (via WebSocket if connected, otherwise via HTTP)
+  const setTypingStatus = useCallback(async (isTyping) => {
     if (!chatId) return;
-    try {
-      const token = localStorage.getItem('zion_token');
-      const endpoint = chatType === 'direct' 
-        ? `/api/direct-chats/${chatId}/messages`
-        : `/api/chat-groups/${chatId}/messages`;
-      
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages || []);
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    
+    // Use WebSocket if connected
+    if (wsConnected) {
+      wsSendTyping(isTyping);
+      return;
     }
-  };
-
-  const fetchTypingStatus = async () => {
-    if (!chatId) return;
-    try {
-      const token = localStorage.getItem('zion_token');
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/chats/${chatId}/typing?chat_type=${chatType}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTypingUsers(data.typing_users || []);
-      }
-    } catch (error) {
-      console.error('Error fetching typing status:', error);
-    }
-  };
-
-  const fetchUserStatus = async () => {
-    if (!otherUserId) return;
-    try {
-      const token = localStorage.getItem('zion_token');
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/users/${otherUserId}/status`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserStatus(data);
-      }
-    } catch (error) {
-      console.error('Error fetching user status:', error);
-    }
-  };
-
-  const setTypingStatus = async (isTyping) => {
-    if (!chatId) return;
+    
+    // Fallback to HTTP
     try {
       const token = localStorage.getItem('zion_token');
       await fetch(
@@ -172,18 +245,25 @@ const ChatConversation = ({
     } catch (error) {
       console.error('Error setting typing status:', error);
     }
-  };
+  }, [chatId, chatType, wsConnected, wsSendTyping]);
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
-    setTypingStatus(true);
     
+    // Send typing indicator
+    if (!lastTypingSentRef.current) {
+      setTypingStatus(true);
+      lastTypingSentRef.current = true;
+    }
+    
+    // Clear and reset typing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     
     typingTimeoutRef.current = setTimeout(() => {
       setTypingStatus(false);
+      lastTypingSentRef.current = false;
     }, 2000);
   };
 
