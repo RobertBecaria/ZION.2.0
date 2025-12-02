@@ -2210,3 +2210,42 @@ useEffect(() => {
 - `/app/frontend/src/components/chat/ChatConversation.js` - Fixed circular dependency bug
 
 **Agent:** fork-agent
+
+---
+
+## Chat Phase 3 - WebSocket Real-time Features Completed
+
+### Changes Made:
+
+1. **Fixed WebSocket URL Routing:**
+   - Updated frontend hook to use `/api/ws/chat/{chatId}` instead of `/ws/chat/{chatId}`
+   - Updated backend WebSocket endpoint to `/api/ws/chat/{chat_id}` for proper Kubernetes ingress routing
+
+### Verified Working Features:
+
+1. **WebSocket Connection:**
+   - ✅ WebSocket connects successfully (console shows "WebSocket connected to chat: ...")
+   - ✅ Connection indicator visible in chat header
+
+2. **Real-time Messaging:**
+   - ✅ Messages sent via API appear instantly in recipient's chat (no page refresh needed)
+   - ✅ Chat list preview updates with latest message
+
+3. **Message Status Indicators:**
+   - ✅ Single checkmark (✓) for "sent" status
+   - ✅ Double checkmarks (✓✓) for "delivered" status (gray)
+   - ✅ Blue double checkmarks for "read" status
+
+4. **Typing Indicators:**
+   - ✅ Component implemented with animated dots
+   - ✅ Shows "[name] печатает..." when someone is typing
+
+5. **User Online Status:**
+   - ✅ Shows "в сети" (online) when user is connected
+   - ✅ Shows "был(а) давно" (was online long ago) when offline
+
+### Files Modified:
+- `/app/frontend/src/hooks/useChatWebSocket.js` - Fixed WebSocket URL to use /api prefix
+- `/app/backend/server.py` - Updated WebSocket endpoint path to /api/ws/chat/{chat_id}
+
+**Agent:** fork-agent
