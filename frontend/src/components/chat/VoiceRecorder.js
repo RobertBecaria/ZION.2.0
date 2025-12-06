@@ -94,36 +94,37 @@ const VoiceRecorder = ({
   };
 
   // Visualize audio waveform
-  const visualize = useCallback(() => {
+  const visualize = () => {
     if (!analyserRef.current) return;
     
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
     const draw = () => {
-      if (!isRecording && !isPaused) return;
-      
       animationRef.current = requestAnimationFrame(draw);
-      analyserRef.current.getByteFrequencyData(dataArray);
       
-      // Get average of frequency data for simple visualization
-      const bars = [];
-      const barCount = 30;
-      const step = Math.floor(bufferLength / barCount);
-      
-      for (let i = 0; i < barCount; i++) {
-        let sum = 0;
-        for (let j = 0; j < step; j++) {
-          sum += dataArray[i * step + j];
+      if (analyserRef.current) {
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
+        // Get average of frequency data for simple visualization
+        const bars = [];
+        const barCount = 30;
+        const step = Math.floor(bufferLength / barCount);
+        
+        for (let i = 0; i < barCount; i++) {
+          let sum = 0;
+          for (let j = 0; j < step; j++) {
+            sum += dataArray[i * step + j];
+          }
+          bars.push(sum / step / 255); // Normalize to 0-1
         }
-        bars.push(sum / step / 255); // Normalize to 0-1
+        
+        setWaveformData(bars);
       }
-      
-      setWaveformData(bars);
     };
     
     draw();
-  }, [isRecording, isPaused]);
+  };
 
   // Stop recording
   const stopRecording = () => {
