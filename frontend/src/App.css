@@ -23520,6 +23520,8 @@ a,
 .message-input-form .send-btn {
   width: 40px;
   height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: 50%;
   border: none;
   color: white;
@@ -23527,7 +23529,8 @@ a,
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  flex-shrink: 0;
 }
 
 .message-input-form .send-btn:hover:not(:disabled) {
