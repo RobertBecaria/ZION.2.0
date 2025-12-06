@@ -25654,12 +25654,13 @@ a,
   }
   
   .message-actions {
-    display: flex !important;
-    position: static;
-    transform: none;
-    background: transparent;
-    box-shadow: none;
-    padding: 0;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    transform: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     margin-top: 4px;
     justify-content: flex-end;
   }
@@ -25670,6 +25671,10 @@ a,
   
   .quick-reactions-bar {
     display: none;
+  }
+  
+  .messages-container {
+    padding: 10px 16px;
   }
 }
 
