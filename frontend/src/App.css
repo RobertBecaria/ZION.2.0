@@ -23224,9 +23224,11 @@ a,
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px 60px;
   display: flex;
   flex-direction: column;
+  scroll-behavior: smooth;
 }
 
 .loading-messages, .no-messages {
