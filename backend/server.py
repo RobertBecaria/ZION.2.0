@@ -6573,6 +6573,40 @@ async def get_media_file(file_id: str):
         media_type=media_file["mime_type"]
     )
 
+@api_router.get("/media/files/{filename}")
+async def get_media_file_by_name(filename: str):
+    """Serve uploaded files (voice messages, chat attachments) by filename"""
+    from fastapi.responses import FileResponse
+    
+    # Security: prevent path traversal
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine mime type from extension
+    ext = file_path.suffix.lower()
+    mime_types = {
+        '.webm': 'audio/webm',
+        '.ogg': 'audio/ogg',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+    }
+    mime_type = mime_types.get(ext, 'application/octet-stream')
+    
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type=mime_type
+    )
+
 # Helper function to check if user can see post based on visibility
 async def can_user_see_post(post: dict, current_user: User, user_family_membership: dict = None) -> bool:
     """
