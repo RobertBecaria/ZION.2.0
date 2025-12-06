@@ -6259,6 +6259,89 @@ async def send_message_with_attachment(
     
     return {"message": "File uploaded successfully", "data": message_dict}
 
+@api_router.post("/direct-chats/{chat_id}/messages/voice")
+async def send_voice_message(
+    chat_id: str,
+    file: UploadFile = File(...),
+    content: str = Form(default=""),
+    duration: int = Form(default=0),
+    reply_to: Optional[str] = Form(default=None),
+    current_user: User = Depends(get_current_user)
+):
+    """Send a voice message in a direct chat"""
+    # Verify user is participant
+    chat = await db.direct_chats.find_one({
+        "id": chat_id,
+        "participant_ids": current_user.id,
+        "is_active": True
+    })
+    
+    if not chat:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Validate audio file
+    allowed_audio_types = ["audio/webm", "audio/ogg", "audio/mp3", "audio/mpeg", "audio/wav", "audio/x-wav"]
+    content_type = file.content_type or ""
+    
+    if not any(audio_type in content_type for audio_type in allowed_audio_types):
+        # Also accept webm without proper content type
+        if not file.filename.endswith(('.webm', '.ogg', '.mp3', '.wav')):
+            raise HTTPException(status_code=400, detail="Invalid audio file format")
+    
+    # Generate unique filename
+    file_ext = os.path.splitext(file.filename)[1] or '.webm'
+    stored_filename = f"voice_{chat_id}_{str(uuid.uuid4())}{file_ext}"
+    file_path = os.path.join(UPLOAD_DIR, stored_filename)
+    
+    # Save file
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    file_content = await file.read()
+    with open(file_path, "wb") as buffer:
+        buffer.write(file_content)
+    
+    # Create voice message
+    new_message = ChatMessage(
+        direct_chat_id=chat_id,
+        user_id=current_user.id,
+        content=content or f"🎤 Голосовое сообщение",
+        message_type="VOICE",
+        reply_to=reply_to,
+        status="sent"
+    )
+    
+    # Store voice message info
+    message_dict = new_message.dict()
+    message_dict["voice"] = {
+        "filename": file.filename,
+        "stored_filename": stored_filename,
+        "file_path": f"/api/media/files/{stored_filename}",
+        "mime_type": content_type or "audio/webm",
+        "duration": duration,
+        "file_size": len(file_content)
+    }
+    
+    await db.chat_messages.insert_one(message_dict)
+    
+    # Update chat timestamp
+    await db.direct_chats.update_one(
+        {"id": chat_id},
+        {"$set": {"updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Broadcast message via WebSocket
+    await broadcast_new_message(chat_id, message_dict)
+    
+    # Add sender info for response
+    message_dict["sender"] = {
+        "id": current_user.id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "profile_picture": current_user.profile_picture
+    }
+    message_dict.pop("_id", None)
+    
+    return {"message": "Voice message sent successfully", "data": message_dict}
+
 @api_router.get("/messages/{message_id}")
 async def get_message_by_id(
     message_id: str,
