@@ -186,6 +186,7 @@ const ChatConversation = ({
 
   // Keep track of message count to detect new messages
   const prevMessageCountRef = useRef(0);
+  const initialScrollDoneRef = useRef(false);
   
   // Scroll to bottom only on initial load, not when sending/receiving messages
   useEffect(() => {
@@ -193,14 +194,25 @@ const ChatConversation = ({
     const prevCount = prevMessageCountRef.current;
     
     // Only scroll on initial load (when we first get messages)
-    if (prevCount === 0 && currentCount > 0) {
-      // Initial load - scroll to bottom once
-      scrollToBottom(true);
+    if (prevCount === 0 && currentCount > 0 && !initialScrollDoneRef.current) {
+      // Initial load - scroll to bottom with a small delay to ensure DOM is ready
+      initialScrollDoneRef.current = true;
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 100);
     }
     // Don't auto-scroll for new messages - let user control scroll position
     
     prevMessageCountRef.current = currentCount;
-  }, [messages, scrollToBottom]);
+  }, [messages]);
+  
+  // Reset initial scroll flag when chat changes
+  useEffect(() => {
+    initialScrollDoneRef.current = false;
+    prevMessageCountRef.current = 0;
+  }, [chatId]);
 
   // Fetch typing status (fallback for when WebSocket is not connected)
   useEffect(() => {
