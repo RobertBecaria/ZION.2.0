@@ -23228,7 +23228,8 @@ a,
   padding: 20px 60px;
   display: flex;
   flex-direction: column;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  overflow-anchor: none; /* Prevent automatic scroll anchoring */
 }
 
 .loading-messages, .no-messages {
