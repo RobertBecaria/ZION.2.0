@@ -617,7 +617,7 @@ const ChatConversation = ({
 
   if (!chat) {
     return (
-      <div className="chat-conversation empty">
+      <div className="chat-conversation empty" style={{ backgroundColor: `${moduleColor}10` }}>
         <div className="empty-chat-placeholder">
           <User size={64} color="#9ca3af" />
           <h3>Выберите чат</h3>
@@ -628,7 +628,7 @@ const ChatConversation = ({
   }
 
   return (
-    <div className="chat-conversation">
+    <div className="chat-conversation" style={{ backgroundColor: `${moduleColor}10` }}>
       {/* Chat Header */}
       <div className="conversation-header" style={{ backgroundColor: `${moduleColor}10` }}>
         <button className="back-btn mobile-only" onClick={onBack}>
