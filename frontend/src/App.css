@@ -23493,6 +23493,7 @@ a,
   gap: 8px;
   padding: 10px 16px;
   background: #f0f2f5;
+  min-height: 60px; /* Prevent layout shift */
 }
 
 .input-action-btn {
