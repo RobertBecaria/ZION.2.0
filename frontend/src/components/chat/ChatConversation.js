@@ -4,11 +4,12 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Send, Smile, Paperclip, ArrowLeft, MoreVertical, Search, User, X, Image, File, Wifi, WifiOff
+  Send, Smile, Paperclip, ArrowLeft, MoreVertical, Search, User, X, Image, File, Wifi, WifiOff, ChevronDown
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import VoiceRecorder from './VoiceRecorder';
+import EmojiPicker from './EmojiPicker';
 import { useChatWebSocket } from '../../hooks';
 
 // WebSocket connection indicator component - defined outside to avoid re-creation
