@@ -11,3 +11,5 @@ export { default as TypingIndicator } from './TypingIndicator';
 export { default as ChatConversation } from './ChatConversation';
 export { default as VoiceRecorder } from './VoiceRecorder';
 export { default as VoiceMessagePlayer } from './VoiceMessagePlayer';
+export { default as EmojiPicker } from './EmojiPicker';
+export { default as MessageContextMenu } from './MessageContextMenu';
