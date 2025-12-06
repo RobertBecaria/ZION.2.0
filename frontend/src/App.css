@@ -24878,12 +24878,183 @@ a,
     color: #e9edef;
   }
   
+  /* Dark theme message bubbles - improved contrast */
   .message-bubble.other-bubble {
-    background: #202c33;
+    background: #202c33 !important;
   }
   
-  .message-text {
-    color: #e9edef;
+  .message-bubble.other-bubble .message-text {
+    color: #e9edef !important;
+  }
+  
+  /* Own messages - ensure text is readable on green background */
+  .message-bubble.own-bubble {
+    background: #005c4b !important;
+  }
+  
+  .message-bubble.own-bubble .message-text {
+    color: #e9edef !important;
+  }
+  
+  .message-bubble.own-bubble .message-meta {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .message-bubble.own-bubble .message-time {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .message-bubble.own-bubble .edited-label {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+  
+  /* Other messages meta */
+  .message-bubble.other-bubble .message-meta {
+    color: rgba(233, 237, 239, 0.7) !important;
+  }
+  
+  .message-bubble.other-bubble .message-time {
+    color: rgba(233, 237, 239, 0.7) !important;
+  }
+  
+  /* Date separator */
+  .date-separator span {
+    background: #182229 !important;
+    color: #8696a0 !important;
+  }
+  
+  /* Reply reference in dark mode */
+  .reply-reference {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  .reply-reference .reply-text {
+    color: rgba(233, 237, 239, 0.8) !important;
+  }
+  
+  /* Voice message player dark mode */
+  .voice-message-player.other .voice-player-btn {
+    background: #00a884 !important;
+  }
+  
+  .voice-message-player .voice-player-time {
+    color: #e9edef !important;
+  }
+  
+  /* Message actions bar dark mode */
+  .message-actions {
+    background: rgba(32, 44, 51, 0.95) !important;
+  }
+  
+  .message-actions .action-btn {
+    background: #2a3942 !important;
+    color: #e9edef !important;
+  }
+  
+  .quick-react-btn {
+    background: #2a3942 !important;
+  }
+  
+  /* Context menu dark mode */
+  .message-context-menu {
+    background: #233138 !important;
+  }
+  
+  .context-reactions {
+    background: #182229 !important;
+  }
+  
+  .context-divider {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .context-action {
+    color: #e9edef !important;
+  }
+  
+  .context-action:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Emoji picker dark mode */
+  .emoji-picker {
+    background: #233138 !important;
+  }
+  
+  .emoji-picker-header {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .emoji-search {
+    background: #2a3942 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e9edef !important;
+  }
+  
+  .emoji-categories {
+    background: #182229 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .emoji-category-btn {
+    color: #8696a0 !important;
+  }
+  
+  .emoji-category-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .emoji-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Reaction badges dark mode */
+  .reaction-badge {
+    background: #2a3942 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .reaction-count {
+    color: #8696a0 !important;
+  }
+  
+  /* Edit modal dark mode */
+  .edit-message-modal {
+    background: #233138 !important;
+  }
+  
+  .edit-message-modal h3 {
+    color: #e9edef !important;
+  }
+  
+  .edit-message-textarea {
+    background: #2a3942 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e9edef !important;
+  }
+  
+  .edit-cancel-btn {
+    background: #2a3942 !important;
+    color: #e9edef !important;
+  }
+  
+  /* Reply preview dark mode */
+  .reply-preview {
+    background: #1f2c33 !important;
+  }
+  
+  .reply-preview .reply-to-label {
+    color: #00a884 !important;
+  }
+  
+  .reply-preview .reply-text {
+    color: #8696a0 !important;
+  }
+  
+  /* Scroll button dark mode */
+  .scroll-to-bottom-btn {
+    background: #2a3942 !important;
+    color: #e9edef !important;
   }
 }
 
