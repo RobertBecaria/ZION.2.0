@@ -217,13 +217,14 @@ class ChatEnhancementTester:
             
             if response.status_code == 200:
                 result = response.json()
-                is_edited = result.get("is_edited", False)
-                updated_content = result.get("content", "")
+                data = result.get("data", {})
+                is_edited = data.get("is_edited", False)
+                updated_content = data.get("content", "")
                 
                 if is_edited and "Updated content" in updated_content:
                     self.log_test("Edit Message", True, f"Message edited successfully. is_edited: {is_edited}")
                 else:
-                    self.log_test("Edit Message", False, f"Edit flag not set correctly. is_edited: {is_edited}")
+                    self.log_test("Edit Message", False, f"Edit flag not set correctly. is_edited: {is_edited}, content: {updated_content}")
                     
             else:
                 self.log_test("Edit Message", False, f"Status: {response.status_code}, Response: {response.text}")
