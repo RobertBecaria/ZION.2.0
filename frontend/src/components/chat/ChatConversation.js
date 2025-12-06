@@ -620,42 +620,62 @@ const ChatConversation = ({
 
       {/* Message Input */}
       <form className="message-input-form" onSubmit={sendMessage}>
-        <button type="button" className="input-action-btn" title="Эмодзи">
-          <Smile size={24} color="#8696A0" />
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          style={{ display: 'none' }}
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-        />
-        <button 
-          type="button" 
-          className="input-action-btn" 
-          title="Прикрепить файл"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingFile}
-        >
-          <Paperclip size={24} color={uploadingFile ? moduleColor : "#8696A0"} />
-        </button>
-        <input
-          ref={inputRef}
-          type="text"
-          value={newMessage}
-          onChange={handleInputChange}
-          placeholder={uploadingFile ? "Загрузка файла..." : "Введите сообщение"}
-          className="message-input"
-          disabled={sending || uploadingFile}
-        />
-        <button
-          type="submit"
-          className="send-btn"
-          disabled={!newMessage.trim() || sending || uploadingFile}
-          style={{ backgroundColor: moduleColor }}
-        >
-          <Send size={20} />
-        </button>
+        {isRecordingVoice ? (
+          <VoiceRecorder
+            onSend={sendVoiceMessage}
+            onCancel={() => setIsRecordingVoice(false)}
+            moduleColor={moduleColor}
+            disabled={sendingVoice}
+          />
+        ) : (
+          <>
+            <button type="button" className="input-action-btn" title="Эмодзи">
+              <Smile size={24} color="#8696A0" />
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            />
+            <button 
+              type="button" 
+              className="input-action-btn" 
+              title="Прикрепить файл"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+            >
+              <Paperclip size={24} color={uploadingFile ? moduleColor : "#8696A0"} />
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={newMessage}
+              onChange={handleInputChange}
+              placeholder={uploadingFile ? "Загрузка файла..." : "Введите сообщение"}
+              className="message-input"
+              disabled={sending || uploadingFile}
+            />
+            {newMessage.trim() ? (
+              <button
+                type="submit"
+                className="send-btn"
+                disabled={sending || uploadingFile}
+                style={{ backgroundColor: moduleColor }}
+              >
+                <Send size={20} />
+              </button>
+            ) : (
+              <VoiceRecorder
+                onSend={sendVoiceMessage}
+                onCancel={() => {}}
+                moduleColor={moduleColor}
+                disabled={sending || uploadingFile || sendingVoice}
+              />
+            )}
+          </>
+        )}
       </form>
     </div>
   );
