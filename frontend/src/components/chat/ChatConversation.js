@@ -184,10 +184,29 @@ const ChatConversation = ({
     }
   }, [chatId, wsConnected, fetchMessages]);
 
-  // Scroll to bottom when messages change
+  // Keep track of message count to detect new messages
+  const prevMessageCountRef = useRef(0);
+  
+  // Scroll to bottom only when new messages arrive, not on every render
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    const currentCount = messages.length;
+    const prevCount = prevMessageCountRef.current;
+    
+    // Only scroll if new messages were added (not on initial load or user viewing)
+    if (currentCount > prevCount && prevCount > 0) {
+      // Check if the new message is from current user (should always scroll)
+      const lastMessage = messages[messages.length - 1];
+      const isOwnMessage = lastMessage?.user_id === user?.id;
+      
+      // Always scroll for own messages, otherwise respect scroll position
+      scrollToBottom(isOwnMessage);
+    } else if (prevCount === 0 && currentCount > 0) {
+      // Initial load - scroll to bottom once
+      scrollToBottom(true);
+    }
+    
+    prevMessageCountRef.current = currentCount;
+  }, [messages, user?.id, scrollToBottom]);
 
   // Fetch typing status (fallback for when WebSocket is not connected)
   useEffect(() => {
