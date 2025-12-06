@@ -1,9 +1,10 @@
 /**
  * MessageBubble Component
- * WhatsApp-style message bubble with status indicators, replies, and attachments
+ * WhatsApp-style message bubble with status indicators, replies, attachments, and voice messages
  */
 import React from 'react';
 import { Check, CheckCheck, Reply, Image, File, Download } from 'lucide-react';
+import VoiceMessagePlayer from './VoiceMessagePlayer';
 
 const MessageBubble = ({
   message,
@@ -29,6 +30,21 @@ const MessageBubble = ({
       default:
         return <Check size={14} className="status-icon sent" />;
     }
+  };
+
+  const renderVoiceMessage = () => {
+    if (message.message_type !== 'VOICE' || !message.voice) return null;
+    
+    const audioUrl = `${process.env.REACT_APP_BACKEND_URL}${message.voice.file_path}`;
+    
+    return (
+      <VoiceMessagePlayer
+        audioUrl={audioUrl}
+        duration={message.voice.duration}
+        isOwn={isOwn}
+        moduleColor={moduleColor}
+      />
+    );
   };
 
   const renderAttachment = () => {
@@ -69,21 +85,23 @@ const MessageBubble = ({
     );
   };
 
+  const isVoiceMessage = message.message_type === 'VOICE';
+
   return (
     <div className={`message-bubble-wrapper ${isOwn ? 'own' : 'other'}`}>
       <div 
-        className={`message-bubble ${isOwn ? 'own-bubble' : 'other-bubble'}`}
-        style={isOwn ? { backgroundColor: `${moduleColor}20` } : {}}
+        className={`message-bubble ${isOwn ? 'own-bubble' : 'other-bubble'} ${isVoiceMessage ? 'voice-bubble' : ''}`}
+        style={isOwn ? { backgroundColor: isVoiceMessage ? moduleColor : `${moduleColor}20` } : {}}
       >
         {/* Reply reference */}
         {message.reply_to && message.reply_message && (
           <div className="reply-reference">
-            <div className="reply-bar" style={{ backgroundColor: moduleColor }}></div>
+            <div className="reply-bar" style={{ backgroundColor: isOwn && isVoiceMessage ? '#fff' : moduleColor }}></div>
             <div className="reply-content">
-              <span className="reply-sender" style={{ color: moduleColor }}>
+              <span className="reply-sender" style={{ color: isOwn && isVoiceMessage ? '#fff' : moduleColor }}>
                 {message.reply_message.sender?.first_name || 'Unknown'}
               </span>
-              <span className="reply-text">
+              <span className="reply-text" style={{ color: isOwn && isVoiceMessage ? 'rgba(255,255,255,0.8)' : undefined }}>
                 {message.reply_message.content?.substring(0, 60)}{message.reply_message.content?.length > 60 ? '...' : ''}
               </span>
             </div>
@@ -97,18 +115,21 @@ const MessageBubble = ({
           </div>
         )}
         
+        {/* Voice message */}
+        {renderVoiceMessage()}
+        
         {/* Attachment */}
         {renderAttachment()}
         
         {/* Message content */}
         <div className="message-content">
-          {message.message_type !== 'IMAGE' && message.message_type !== 'FILE' && (
+          {!isVoiceMessage && message.message_type !== 'IMAGE' && message.message_type !== 'FILE' && (
             <span className="message-text">{message.content}</span>
           )}
           {(message.message_type === 'IMAGE' || message.message_type === 'FILE') && !message.attachment && (
             <span className="message-text">{message.content}</span>
           )}
-          <span className="message-meta">
+          <span className={`message-meta ${isVoiceMessage && isOwn ? 'voice-meta' : ''}`}>
             {message.is_edited && <span className="edited-label">изменено</span>}
             <span className="message-time">{formatTime(message.created_at)}</span>
             {getStatusIcon()}
