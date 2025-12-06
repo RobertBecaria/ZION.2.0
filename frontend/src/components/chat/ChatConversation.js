@@ -410,6 +410,115 @@ const ChatConversation = ({
     setReplyingTo(null);
   };
 
+  // Handle message reaction
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/messages/${messageId}/react`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ emoji })
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Update message in state
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, reactions: data.reactions, user_reaction: data.user_reaction }
+            : msg
+        ));
+      }
+    } catch (error) {
+      console.error('Error reacting to message:', error);
+    }
+  };
+
+  // Handle message edit
+  const handleEditMessage = async () => {
+    if (!editingMessage || !editContent.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/messages/${editingMessage.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ content: editContent })
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(prev => prev.map(msg => 
+          msg.id === editingMessage.id 
+            ? { ...msg, content: editContent, is_edited: true }
+            : msg
+        ));
+        setEditingMessage(null);
+        setEditContent('');
+      }
+    } catch (error) {
+      console.error('Error editing message:', error);
+    }
+  };
+
+  // Handle message delete
+  const handleDeleteMessage = async (message) => {
+    if (!window.confirm('Удалить это сообщение?')) return;
+    
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/messages/${message.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      
+      if (response.ok) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === message.id 
+            ? { ...msg, is_deleted: true, content: '' }
+            : msg
+        ));
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+  };
+
+  // Open edit modal
+  const openEditModal = (message) => {
+    setEditingMessage(message);
+    setEditContent(message.content);
+  };
+
+  // Handle emoji selection for message input
+  const handleEmojiSelect = (emoji) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    inputRef.current?.focus();
+  };
+
+  // Handle scroll to detect when to show scroll button
+  const handleScroll = (e) => {
+    const container = e.target;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollButton(distanceFromBottom > 200);
+  };
+
   // Send voice message
   const sendVoiceMessage = async (audioBlob, duration) => {
     if (!audioBlob || !chatId) return;
