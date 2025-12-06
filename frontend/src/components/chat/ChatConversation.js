@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import VoiceRecorder from './VoiceRecorder';
 import { useChatWebSocket } from '../../hooks';
 
 // WebSocket connection indicator component - defined outside to avoid re-creation
@@ -39,6 +40,8 @@ const ChatConversation = ({
   const [searching, setSearching] = useState(false);
   const [userStatus, setUserStatus] = useState({ is_online: false, last_seen: null });
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [sendingVoice, setSendingVoice] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
