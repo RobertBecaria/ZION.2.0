@@ -2249,3 +2249,67 @@ useEffect(() => {
 - `/app/backend/server.py` - Updated WebSocket endpoint path to /api/ws/chat/{chat_id}
 
 **Agent:** fork-agent
+
+---
+
+## Chat Refinements - Voice Messages & WhatsApp 2025 UI - December 6, 2025
+
+### New Features Implemented:
+
+1. **Voice Message Recording:**
+   - New `VoiceRecorder.js` component with WhatsApp-style UI
+   - Uses Web Audio API and MediaRecorder for recording
+   - Features:
+     - Recording with timer display
+     - Real-time waveform visualization
+     - Pause/Resume recording
+     - Preview playback before sending
+     - Cancel recording
+   - Microphone button appears when text input is empty (WhatsApp behavior)
+   - Send button appears when text is typed
+
+2. **Voice Message Playback:**
+   - New `VoiceMessagePlayer.js` component
+   - WhatsApp-style waveform visualization
+   - Play/pause functionality
+   - Seek by clicking waveform
+   - Playback speed toggle (1x, 1.5x, 2x)
+   - Duration display
+
+3. **Backend Voice Message Support:**
+   - New endpoint: `POST /api/direct-chats/{chat_id}/messages/voice`
+   - Stores voice files in uploads directory
+   - Supports webm, ogg, mp3, wav formats
+   - WebSocket broadcast for real-time delivery
+
+4. **WhatsApp 2025 UI Updates:**
+   - Chat background with subtle pattern
+   - Improved message input bar styling
+   - Better message bubble design with rounded corners
+   - Improved chat list styling
+   - Online indicator styling
+   - Dark mode support (auto-detect)
+   - Chat filters styling (foundation added)
+
+### Files Created:
+- `/app/frontend/src/components/chat/VoiceRecorder.js`
+- `/app/frontend/src/components/chat/VoiceMessagePlayer.js`
+
+### Files Modified:
+- `/app/frontend/src/components/chat/index.js` - Added exports
+- `/app/frontend/src/components/chat/ChatConversation.js` - Voice recorder integration
+- `/app/frontend/src/components/chat/MessageBubble.js` - Voice message display
+- `/app/backend/server.py` - Voice message endpoint
+- `/app/frontend/src/App.css` - WhatsApp 2025 styling
+
+### Verified Working:
+- ✅ Voice mic button visible when input empty
+- ✅ Send button appears when text typed
+- ✅ UI matches WhatsApp 2025 style
+- ✅ Messages display correctly
+- ✅ Chat background pattern applied
+
+### Note:
+Voice recording requires microphone permission from browser. Testing in Playwright cannot simulate microphone access.
+
+**Agent:** fork-agent
