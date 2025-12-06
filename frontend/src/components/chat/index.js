@@ -9,3 +9,5 @@ export { default as NewChatModal } from './NewChatModal';
 export { default as MessageBubble } from './MessageBubble';
 export { default as TypingIndicator } from './TypingIndicator';
 export { default as ChatConversation } from './ChatConversation';
+export { default as VoiceRecorder } from './VoiceRecorder';
+export { default as VoiceMessagePlayer } from './VoiceMessagePlayer';
