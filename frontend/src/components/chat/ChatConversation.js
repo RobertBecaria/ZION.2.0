@@ -751,8 +751,13 @@ const ChatConversation = ({
           />
         ) : (
           <>
-            <button type="button" className="input-action-btn" title="Эмодзи">
-              <Smile size={24} color="#8696A0" />
+            <button 
+              type="button" 
+              className="input-action-btn" 
+              title="Эмодзи"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile size={24} color={showEmojiPicker ? moduleColor : "#8696A0"} />
             </button>
             <input
               type="file"
