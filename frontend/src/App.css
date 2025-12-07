@@ -26449,9 +26449,9 @@ a,
 
 .work-universal-feed-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 24px;
-  max-width: 1200px;
+  grid-template-columns: 1fr 300px 280px;
+  gap: 20px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -26459,10 +26459,14 @@ a,
   min-width: 0;
 }
 
-.work-feed-sidebar {
+.work-feed-tasks {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.work-feed-worldzone {
+  min-width: 0;
 }
 
 /* Planner Widget */
