@@ -282,6 +282,68 @@ const WorkUniversalFeed = ({ currentUserId }) => {
           </p>
         </div>
       )}
+      </div>
+
+      {/* Right Column - Tasks & Events */}
+      <div className="work-feed-sidebar">
+        {/* Planner Quick Actions */}
+        <div className="planner-widget" style={{ '--module-color': moduleColor }}>
+          <div className="planner-header">
+            <Calendar size={18} color={moduleColor} />
+            <span>ПЛАНИРОВЩИК</span>
+          </div>
+          <div className="planner-actions">
+            <button className="planner-btn event-btn">
+              <Calendar size={16} />
+              <span>+ Событие</span>
+            </button>
+            <button 
+              className="planner-btn task-btn"
+              onClick={() => {/* Will open modal from TasksPanel */}}
+              style={{ backgroundColor: `${moduleColor}15`, color: moduleColor, borderColor: moduleColor }}
+            >
+              <CheckCircle2 size={16} />
+              <span>+ Задача</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tasks Panel - Show for selected org or first org */}
+        {organizations.length > 0 && (
+          <WorkTasksPanel
+            organizationId={selectedOrg || organizations[0]?.id}
+            currentUser={{ id: currentUserId }}
+            moduleColor={moduleColor}
+            onTaskDiscuss={handleTaskDiscuss}
+            onRefreshFeed={refreshFeed}
+          />
+        )}
+
+        {/* My Organizations */}
+        {organizations.length > 0 && (
+          <div className="my-orgs-widget">
+            <div className="widget-header">
+              <Building2 size={18} color={moduleColor} />
+              <span>МОИ ОРГАНИЗАЦИИ</span>
+            </div>
+            <div className="orgs-list">
+              {organizations.slice(0, 5).map(org => (
+                <div 
+                  key={org.id} 
+                  className={`org-item ${selectedOrg === org.id ? 'active' : ''}`}
+                  onClick={() => setSelectedOrg(org.id)}
+                  style={selectedOrg === org.id ? { borderColor: moduleColor, backgroundColor: `${moduleColor}10` } : {}}
+                >
+                  <div className="org-avatar" style={{ background: `linear-gradient(135deg, ${moduleColor}, ${moduleColor}cc)` }}>
+                    {org.name.charAt(0)}
+                  </div>
+                  <span className="org-name">{org.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
