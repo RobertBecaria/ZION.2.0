@@ -1176,7 +1176,7 @@ function Dashboard() {
           {/* ORGANIZATIONS Module - Work WorldZone */}
           {activeModule === 'organizations' && (
             <WorkWorldZone
-              organizations={[]} // Will be populated from feed
+              organizations={myOrganizations}
               selectedOrg={selectedOrganizationId}
               onOrgChange={setSelectedOrganizationId}
               moduleColor={currentModule?.color || '#C2410C'}
