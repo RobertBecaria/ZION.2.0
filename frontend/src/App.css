@@ -26589,28 +26589,32 @@ a,
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+  .work-universal-feed-layout {
+    grid-template-columns: 1fr 280px;
+  }
+  
+  .work-feed-worldzone {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
   .work-universal-feed-layout {
     grid-template-columns: 1fr;
   }
   
-  .work-feed-sidebar {
+  .work-feed-tasks {
     order: -1;
-    flex-direction: row;
-    flex-wrap: wrap;
   }
   
-  .work-feed-sidebar > * {
-    flex: 1;
-    min-width: 280px;
+  .work-feed-worldzone {
+    display: block;
+    order: -2;
   }
 }
 
 @media (max-width: 640px) {
-  .work-feed-sidebar > * {
-    min-width: 100%;
-  }
-  
   .planner-actions {
     grid-template-columns: 1fr;
   }
