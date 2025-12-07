@@ -284,7 +284,7 @@ const WorkUniversalFeed = ({ currentUserId }) => {
       )}
       </div>
 
-      {/* Center Column - Tasks */}
+      {/* Right Column - Tasks */}
       <div className="work-feed-tasks">
         {/* Planner Quick Actions */}
         <div className="planner-widget" style={{ '--module-color': moduleColor }}>
@@ -318,16 +318,6 @@ const WorkUniversalFeed = ({ currentUserId }) => {
             onRefreshFeed={refreshFeed}
           />
         )}
-      </div>
-
-      {/* Right Column - WorldZone with Filters */}
-      <div className="work-feed-worldzone">
-        <WorkWorldZone
-          organizations={organizations}
-          selectedOrg={selectedOrg}
-          onOrgChange={(orgId) => setSelectedOrg(orgId)}
-          moduleColor={moduleColor}
-        />
       </div>
     </div>
   );
