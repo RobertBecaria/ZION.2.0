@@ -2191,6 +2191,213 @@ class WorkTeam(BaseModel):
 
 # ===== END MEMBER SETTINGS & CHANGE REQUESTS MODELS =====
 
+# ===== WORK TASK MANAGEMENT MODELS =====
+
+class TaskStatus(str, Enum):
+    NEW = "NEW"  # Новая
+    ACCEPTED = "ACCEPTED"  # Принято
+    IN_PROGRESS = "IN_PROGRESS"  # В работе
+    REVIEW = "REVIEW"  # На проверке
+    DONE = "DONE"  # Готово
+    CANCELLED = "CANCELLED"  # Отменено
+
+class TaskPriority(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    URGENT = "URGENT"
+
+class TaskAssignmentType(str, Enum):
+    PERSONAL = "PERSONAL"  # Personal task (self-assigned)
+    USER = "USER"  # Assigned to specific user
+    TEAM = "TEAM"  # Assigned to team (anyone can accept)
+    DEPARTMENT = "DEPARTMENT"  # Assigned to department (anyone can accept)
+
+class WorkTask(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    created_by: str  # User ID who created the task
+    
+    # Task details
+    title: str
+    description: Optional[str] = None
+    
+    # Assignment
+    assignment_type: TaskAssignmentType = TaskAssignmentType.PERSONAL
+    assigned_to: Optional[str] = None  # Specific user ID
+    team_id: Optional[str] = None
+    department_id: Optional[str] = None
+    accepted_by: Optional[str] = None  # Who claimed/accepted the task
+    accepted_at: Optional[datetime] = None
+    
+    # Status & Priority
+    status: TaskStatus = TaskStatus.NEW
+    priority: TaskPriority = TaskPriority.MEDIUM
+    
+    # Deadline
+    deadline: Optional[datetime] = None
+    
+    # Subtasks/Checklist
+    subtasks: List[Dict[str, Any]] = []  # [{id, title, is_completed}]
+    
+    # Completion
+    requires_photo_proof: bool = False
+    completion_photos: List[str] = []  # Media IDs
+    completion_note: Optional[str] = None
+    completed_at: Optional[datetime] = None
+    completed_by: Optional[str] = None
+    
+    # Discussion post link
+    discussion_post_id: Optional[str] = None
+    completion_post_id: Optional[str] = None
+    
+    # Template
+    is_template: bool = False
+    template_name: Optional[str] = None
+    created_from_template_id: Optional[str] = None
+    
+    # Metadata
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_deleted: bool = False
+
+class WorkTaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    assignment_type: TaskAssignmentType = TaskAssignmentType.PERSONAL
+    assigned_to: Optional[str] = None
+    team_id: Optional[str] = None
+    department_id: Optional[str] = None
+    priority: TaskPriority = TaskPriority.MEDIUM
+    deadline: Optional[str] = None  # ISO format datetime
+    subtasks: List[str] = []  # List of subtask titles
+    requires_photo_proof: bool = False
+    # For creating from template
+    template_id: Optional[str] = None
+    # For saving as template
+    save_as_template: bool = False
+    template_name: Optional[str] = None
+
+class WorkTaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    assignment_type: Optional[TaskAssignmentType] = None
+    assigned_to: Optional[str] = None
+    team_id: Optional[str] = None
+    department_id: Optional[str] = None
+    priority: Optional[TaskPriority] = None
+    deadline: Optional[str] = None
+    requires_photo_proof: Optional[bool] = None
+
+class WorkTaskStatusUpdate(BaseModel):
+    status: TaskStatus
+    completion_note: Optional[str] = None
+    completion_photo_ids: List[str] = []
+
+class WorkTaskSubtaskUpdate(BaseModel):
+    subtask_id: str
+    is_completed: bool
+
+class WorkTaskSubtaskAdd(BaseModel):
+    title: str
+
+class WorkTaskAccept(BaseModel):
+    """Accept/claim a team or department task"""
+    pass  # No additional data needed, just the action
+
+class WorkTaskResponse(BaseModel):
+    id: str
+    organization_id: str
+    created_by: str
+    created_by_name: str
+    created_by_avatar: Optional[str] = None
+    
+    title: str
+    description: Optional[str]
+    
+    assignment_type: TaskAssignmentType
+    assigned_to: Optional[str]
+    assigned_to_name: Optional[str] = None
+    assigned_to_avatar: Optional[str] = None
+    team_id: Optional[str]
+    team_name: Optional[str] = None
+    department_id: Optional[str]
+    department_name: Optional[str] = None
+    accepted_by: Optional[str]
+    accepted_by_name: Optional[str] = None
+    accepted_at: Optional[datetime]
+    
+    status: TaskStatus
+    priority: TaskPriority
+    deadline: Optional[datetime]
+    time_remaining: Optional[str] = None  # "2д 5ч" formatted
+    is_overdue: bool = False
+    
+    subtasks: List[Dict[str, Any]]
+    subtasks_completed: int = 0
+    subtasks_total: int = 0
+    
+    requires_photo_proof: bool
+    completion_photos: List[str]
+    completion_note: Optional[str]
+    completed_at: Optional[datetime]
+    completed_by: Optional[str]
+    completed_by_name: Optional[str] = None
+    
+    discussion_post_id: Optional[str]
+    completion_post_id: Optional[str]
+    
+    is_template: bool
+    template_name: Optional[str]
+    
+    created_at: datetime
+    updated_at: datetime
+    
+    # Permissions for current user
+    can_edit: bool = False
+    can_delete: bool = False
+    can_accept: bool = False
+    can_complete: bool = False
+
+class WorkTaskTemplate(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    created_by: str
+    name: str
+    title: str
+    description: Optional[str] = None
+    priority: TaskPriority = TaskPriority.MEDIUM
+    subtasks: List[str] = []  # List of subtask titles
+    requires_photo_proof: bool = False
+    default_assignment_type: TaskAssignmentType = TaskAssignmentType.PERSONAL
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class WorkTaskTemplateCreate(BaseModel):
+    name: str
+    title: str
+    description: Optional[str] = None
+    priority: TaskPriority = TaskPriority.MEDIUM
+    subtasks: List[str] = []
+    requires_photo_proof: bool = False
+    default_assignment_type: TaskAssignmentType = TaskAssignmentType.PERSONAL
+
+class WorkTaskTemplateResponse(BaseModel):
+    id: str
+    organization_id: str
+    created_by: str
+    created_by_name: str
+    name: str
+    title: str
+    description: Optional[str]
+    priority: TaskPriority
+    subtasks: List[str]
+    requires_photo_proof: bool
+    default_assignment_type: TaskAssignmentType
+    created_at: datetime
+
+# ===== END WORK TASK MANAGEMENT MODELS =====
+
 # ===== END DEPARTMENTS & ANNOUNCEMENTS MODELS =====
 
 class ChatMessageCreate(BaseModel):
