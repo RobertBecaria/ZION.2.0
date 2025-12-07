@@ -157,6 +157,17 @@ const WorkUniversalFeed = ({ currentUserId }) => {
     ));
   };
 
+  const moduleColor = '#C2410C';
+
+  const handleTaskDiscuss = (postId) => {
+    // Refresh feed to show the new discussion post
+    loadFeed();
+  };
+
+  const refreshFeed = useCallback(() => {
+    loadFeed();
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -187,7 +198,9 @@ const WorkUniversalFeed = ({ currentUserId }) => {
   }
 
   return (
-    <div>
+    <div className="work-universal-feed-layout">
+      {/* Left Column - Feed */}
+      <div className="work-feed-main">
       {/* Post Composer */}
       {organizations.length > 0 && (
         <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 mb-6">
