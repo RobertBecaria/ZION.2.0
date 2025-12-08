@@ -9953,6 +9953,28 @@ async def get_work_feed(
                 "user_id": current_user.id
             })
             post["user_has_liked"] = like is not None
+            
+            # Ensure post_type is set (default to REGULAR for legacy posts)
+            if "post_type" not in post:
+                post["post_type"] = "REGULAR"
+            
+            # Ensure task_metadata is set
+            if "task_metadata" not in post:
+                post["task_metadata"] = None
+            
+            # Get author info if not present
+            if "author_name" not in post:
+                author_id = post.get("posted_by_user_id") or post.get("author_id")
+                if author_id:
+                    author = await db.users.find_one({"id": author_id}, {"_id": 0})
+                    if author:
+                        post["author_name"] = f"{author.get('first_name', '')} {author.get('last_name', '')}".strip()
+                        post["author_id"] = author_id
+                        post["author_avatar"] = author.get("avatar_url") or author.get("profile_picture")
+                    else:
+                        post["author_name"] = "Неизвестный пользователь"
+                        post["author_id"] = author_id
+                        post["author_avatar"] = None
         
         return {"posts": posts, "count": len(posts)}
         
