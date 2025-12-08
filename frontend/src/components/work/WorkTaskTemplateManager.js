@@ -48,11 +48,7 @@ const WorkTaskTemplateManager = ({
   });
   const [newSubtask, setNewSubtask] = useState('');
 
-  useEffect(() => {
-    loadTemplates();
-  }, [organizationId]);
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -74,7 +70,11 @@ const WorkTaskTemplateManager = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId]);
+
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   const resetForm = () => {
     setFormData({
