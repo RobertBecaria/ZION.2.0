@@ -27,23 +27,24 @@ const WorkTaskCreateModal = ({
   currentUser,
   moduleColor = '#C2410C',
   onClose,
-  onTaskCreated
+  onTaskCreated,
+  initialTemplate = null
 }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    assignment_type: 'PERSONAL',
+    title: initialTemplate?.title || '',
+    description: initialTemplate?.description || '',
+    assignment_type: initialTemplate?.default_assignment_type || 'PERSONAL',
     assigned_to: '',
     team_id: '',
     department_id: '',
-    priority: 'MEDIUM',
+    priority: initialTemplate?.priority || 'MEDIUM',
     deadline: '',
     deadline_time: '',
-    subtasks: [],
-    requires_photo_proof: false,
+    subtasks: initialTemplate?.subtasks || [],
+    requires_photo_proof: initialTemplate?.requires_photo_proof || false,
     save_as_template: false,
     template_name: '',
-    template_id: ''
+    template_id: initialTemplate?.id || ''
   });
 
   const [newSubtask, setNewSubtask] = useState('');
