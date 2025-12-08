@@ -358,7 +358,8 @@ class TaskToPostIntegrationTester:
             
             if task_response.status_code == 200:
                 task_result = task_response.json()
-                self.discussion_task_id = task_result.get("task_id") or task_result.get("id")
+                task_data = task_result.get("task", {})
+                self.discussion_task_id = task_data.get("id")
                 
                 if self.discussion_task_id:
                     # Create discussion post
