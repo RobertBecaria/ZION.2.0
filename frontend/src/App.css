@@ -26698,6 +26698,323 @@ a,
 }
 
 /* ============================================
+
+/* ========== TEMPLATE MANAGER STYLES ========== */
+
+.template-manager-content {
+  padding: 20px 24px;
+}
+
+.template-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin: 0 24px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.template-error button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.template-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.template-list-header span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.create-template-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.create-template-btn:hover {
+  opacity: 0.9;
+}
+
+.templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.template-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.template-card:hover {
+  border-color: #d1d5db;
+}
+
+.template-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.template-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-info .template-title {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.template-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.template-meta .priority-badge {
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.template-details {
+  padding: 0 16px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.template-description {
+  margin: 14px 0;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.template-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.template-attributes .attribute {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.template-subtasks {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.template-subtasks .subtasks-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.template-subtasks ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.template-subtasks li {
+  font-size: 12px;
+  color: #4b5563;
+  margin: 4px 0;
+}
+
+.template-footer {
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.template-footer .created-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.template-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.template-actions .use-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.template-actions .use-btn:hover {
+  opacity: 0.9;
+}
+
+.template-actions .edit-btn,
+.template-actions .delete-btn {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-actions .edit-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+.template-actions .delete-btn:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* Template Form */
+.template-form {
+  padding: 0;
+}
+
+.template-form h3 {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.template-form .form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.template-form .cancel-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.template-form .save-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+}
+
+.template-form .save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Empty & Loading States */
+.template-manager-content .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.template-manager-content .empty-state p {
+  margin: 16px 0 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.template-manager-content .empty-state span {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.template-manager-content .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 20px;
+}
+
+.template-manager-content .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== END TEMPLATE MANAGER STYLES ========== */
+
    WORK UNIVERSAL FEED LAYOUT
 ============================================ */
 
