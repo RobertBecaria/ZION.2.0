@@ -126,14 +126,15 @@ class TaskToPostIntegrationTester:
             
             if response.status_code == 200:
                 result = response.json()
-                self.task_id = result.get("task_id") or result.get("id")
-                task_status = result.get("status")
+                task_data = result.get("task", {})
+                self.task_id = task_data.get("id")
+                task_status = task_data.get("status")
                 
                 if self.task_id and task_status == "ACCEPTED":
                     self.log_test("Task Creation", True, f"Task created with ID: {self.task_id}, Status: {task_status}")
                     return True
                 else:
-                    self.log_test("Task Creation", False, f"Task created but missing ID or wrong status. Response: {result}")
+                    self.log_test("Task Creation", False, f"Task created but missing ID or wrong status. Task ID: {self.task_id}, Status: {task_status}")
                     return False
             else:
                 self.log_test("Task Creation", False, f"Status: {response.status_code}, Response: {response.text}")
