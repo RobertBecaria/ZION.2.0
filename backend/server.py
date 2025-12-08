@@ -15616,14 +15616,18 @@ async def update_task_status(
             
             completion_post = WorkPost(
                 organization_id=organization_id,
-                user_id=current_user.id,
+                posted_by_user_id=current_user.id,
                 content=post_content,
-                post_type="TASK_COMPLETION",
-                visibility="ORGANIZATION",
-                media_ids=status_update.completion_photo_ids,
-                metadata={
+                post_type=WorkPostType.TASK_COMPLETION,
+                privacy_level="ORGANIZATION_ONLY",
+                media_files=status_update.completion_photo_ids,
+                task_metadata={
                     "task_id": task_id,
-                    "task_title": task["title"]
+                    "task_title": task["title"],
+                    "completion_photos": status_update.completion_photo_ids,
+                    "completion_note": status_update.completion_note,
+                    "completed_by": current_user.id,
+                    "completed_by_name": f"{current_user.first_name} {current_user.last_name}"
                 }
             )
             
