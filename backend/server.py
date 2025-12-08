@@ -15767,13 +15767,17 @@ async def create_task_discussion(
         
         discussion_post = WorkPost(
             organization_id=organization_id,
-            user_id=current_user.id,
+            posted_by_user_id=current_user.id,
             content=post_content,
-            post_type="TASK_DISCUSSION",
-            visibility="ORGANIZATION",
-            metadata={
+            post_type=WorkPostType.TASK_DISCUSSION,
+            privacy_level="ORGANIZATION_ONLY",
+            task_metadata={
                 "task_id": task_id,
-                "task_title": task["title"]
+                "task_title": task["title"],
+                "task_status": task.get("status", "NEW"),
+                "task_priority": task.get("priority", "MEDIUM"),
+                "task_deadline": task.get("deadline").isoformat() if task.get("deadline") else None,
+                "created_by_name": f"{current_user.first_name} {current_user.last_name}"
             }
         )
         
