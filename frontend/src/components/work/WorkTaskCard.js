@@ -1,13 +1,15 @@
 /**
  * WorkTaskCard Component
- * Individual task card with metadata and actions
+ * Individual task card with metadata, real-time countdown, and actions
  */
 import React, { useState } from 'react';
 import {
   Clock, CheckCircle2, Circle, AlertCircle, User, Users, Building,
-  MessageSquare, MoreVertical, Play, Check, Trash2, Edit, Image
+  MessageSquare, MoreVertical, Play, Check, Trash2, Edit, Image,
+  AlertTriangle, Timer
 } from 'lucide-react';
 import WorkTaskCompleteModal from './WorkTaskCompleteModal';
+import useCountdown from './useCountdown';
 
 const WorkTaskCard = ({
   task,
@@ -22,6 +24,9 @@ const WorkTaskCard = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Real-time countdown
+  const { timeRemaining, isOverdue, urgencyLevel } = useCountdown(task.deadline);
 
   const getPriorityInfo = (priority) => {
     switch (priority) {
@@ -40,6 +45,16 @@ const WorkTaskCard = ({
       case 'REVIEW': return { icon: AlertCircle, color: '#8b5cf6', label: 'На проверке' };
       case 'DONE': return { icon: CheckCircle2, color: '#22c55e', label: 'Готово' };
       default: return { icon: Circle, color: '#6b7280', label: status };
+    }
+  };
+
+  const getUrgencyColor = () => {
+    switch (urgencyLevel) {
+      case 'overdue': return '#dc2626';
+      case 'critical': return '#dc2626';
+      case 'warning': return '#f59e0b';
+      case 'soon': return '#eab308';
+      default: return '#6b7280';
     }
   };
 
