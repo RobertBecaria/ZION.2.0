@@ -25903,6 +25903,27 @@ a,
   font-weight: 600;
 }
 
+.tasks-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.templates-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.templates-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--module-color);
+}
+
 .add-task-btn {
   background: none;
   border: none;
