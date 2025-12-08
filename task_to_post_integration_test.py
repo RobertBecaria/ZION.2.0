@@ -310,11 +310,11 @@ class TaskToPostIntegrationTester:
                         
                         # Check author_name exists
                         author = completion_post.get("author", {})
-                        author_name = author.get("first_name") or author.get("name")
+                        author_name = author.get("first_name") or author.get("name") or author.get("user_first_name")
                         if author_name:
                             success_checks.append(f"✓ author_name = {author_name}")
                         else:
-                            success_checks.append("✗ author_name missing")
+                            success_checks.append(f"✗ author_name missing (author object: {author})")
                         
                         all_checks_passed = all("✓" in check for check in success_checks)
                         
