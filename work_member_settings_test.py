@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class WorkMemberSettingsAPITester:
-    def __init__(self, base_url="https://workcraft-3.preview.emergentagent.com"):
+    def __init__(self, base_url="https://orgplanner.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
