@@ -203,10 +203,11 @@ class TaskToPostIntegrationTester:
             
             if response.status_code == 200:
                 result = response.json()
-                task_status = result.get("status")
-                self.completion_post_id = result.get("completion_post_id")
-                completed_by = result.get("completed_by")
-                completed_at = result.get("completed_at")
+                task_data = result.get("task", {})
+                task_status = task_data.get("status")
+                self.completion_post_id = task_data.get("completion_post_id")
+                completed_by = task_data.get("completed_by")
+                completed_at = task_data.get("completed_at")
                 
                 success_checks = []
                 
