@@ -1,3 +1,152 @@
+/* ========== TASK POST CARDS ========== */
+
+.task-post-card {
+  position: relative;
+}
+
+.task-post-card.border-green-200 {
+  border-color: #bbf7d0;
+}
+
+.task-post-card.border-blue-200 {
+  border-color: #bfdbfe;
+}
+
+/* Task Post Badge */
+.task-post-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.task-post-badge.completion {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #15803d;
+}
+
+.task-post-badge.discussion {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1d4ed8;
+}
+
+/* Task Post Title */
+.task-post-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+/* Task Completion Note */
+.task-completion-note {
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 8px 0 12px 0;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #22c55e;
+}
+
+/* Task Completion Photos */
+.task-completion-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.completion-photo {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.completion-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+.completion-photo:hover img {
+  transform: scale(1.05);
+}
+
+/* Task Completed By */
+.task-completed-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Task Discussion Post */
+.task-discussion-post {
+  /* Discussion specific styles */
+}
+
+/* Task Meta Info */
+.task-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.task-meta-info .priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.task-meta-info .priority-badge.urgent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.task-meta-info .priority-badge.high {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.task-meta-info .priority-badge.medium {
+  background: #fefce8;
+  color: #ca8a04;
+}
+
+.task-meta-info .priority-badge.low {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+.task-meta-info .deadline-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ========== END TASK POST CARDS ========== */
+
+
 /* ZION.CITY Smart Adaptive Design System - MODERNIZED */
 /* Enhanced with gradients, glassmorphism, and modern design principles */
 
