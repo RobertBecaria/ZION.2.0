@@ -72,6 +72,9 @@ import WorkDepartmentManagementPage from './components/WorkDepartmentManagementP
 import WorkNextEventWidget from './components/WorkNextEventWidget';
 import WorkUpcomingEventsList from './components/WorkUpcomingEventsList';
 import WorkCalendarWidget from './components/WorkCalendarWidget';
+// NEWS MODULE COMPONENTS
+import FriendsPage from './components/FriendsPage';
+import ChannelsPage from './components/ChannelsPage';
 import { 
   Search, Bell, ChevronRight, Plus, GraduationCap, Briefcase, Eye
 } from 'lucide-react';
