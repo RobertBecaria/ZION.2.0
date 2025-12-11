@@ -1075,6 +1075,17 @@ function Dashboard() {
             />
           )}
 
+          {/* NEWS Module - Social World Zone */}
+          {activeModule === 'news' && (
+            <NewsWorldZone
+              user={user}
+              moduleColor={currentModule.color}
+              onViewFriends={() => setActiveView('friends')}
+              onViewFollowers={() => setActiveView('followers')}
+              onViewFollowing={() => setActiveView('following')}
+            />
+          )}
+
           {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
           {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
             <div className="widget public-view-widget">
