@@ -235,10 +235,13 @@ const LeftSidebar = ({
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
-        <a href="#" className="nav-item">
-          <Users size={20} />
-          <span>Мои Друзья</span>
-        </a>
+        {/* Friends link - hidden in News module (moved to right sidebar) */}
+        {activeModule !== 'news' && (
+          <a href="#" className="nav-item">
+            <Users size={20} />
+            <span>Мои Друзья</span>
+          </a>
+        )}
         <a href="#" className="nav-item">
           <MessageCircle size={20} />
           <span>Мои Сообщения</span>
