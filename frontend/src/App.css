@@ -27039,29 +27039,34 @@ a,
    WORK UNIVERSAL FEED LAYOUT
 ============================================ */
 
+/* Work Feed Layout - Using higher specificity to ensure styles are applied */
+.main-content-area .work-universal-feed-layout,
+.main-content-area.full-width .work-universal-feed-layout,
 .work-universal-feed-layout {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 20px;
-  width: 100%;
+  display: grid !important;
+  grid-template-columns: 1fr 320px !important;
+  gap: 20px !important;
+  width: 100% !important;
 }
 
+.main-content-area .work-feed-main,
 .work-feed-main {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
 }
 
+.main-content-area .work-feed-tasks,
 .work-feed-tasks {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: sticky;
-  top: 20px;
-  align-self: start;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  position: sticky !important;
+  top: 20px !important;
+  align-self: start !important;
+  max-height: calc(100vh - 120px) !important;
+  overflow-y: auto !important;
 }
 
 /* Planner Widget */
