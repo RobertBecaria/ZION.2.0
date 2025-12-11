@@ -15431,6 +15431,133 @@ async def get_my_tasks(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/work/tasks/calendar")
+async def get_tasks_for_calendar(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2020, le=2100),
+    status_filter: Optional[str] = None,  # ALL, ACTIVE, COMPLETED
+    priority_filter: Optional[str] = None,  # ALL, URGENT, HIGH, MEDIUM, LOW
+    assignment_filter: Optional[str] = None,  # ALL, MY, TEAM, CREATED
+    current_user: User = Depends(get_current_user)
+):
+    """Get all tasks for calendar view across user's organizations"""
+    try:
+        # Get user's organizations
+        memberships = await db.work_organization_members.find({
+            "user_id": current_user.id,
+            "status": "ACTIVE"
+        }, {"_id": 0}).to_list(100)
+        
+        org_ids = [m["organization_id"] for m in memberships]
+        
+        if not org_ids:
+            return {"tasks": [], "month": month, "year": year}
+        
+        # Calculate date range for the month
+        from calendar import monthrange
+        days_in_month = monthrange(year, month)[1]
+        start_date = datetime(year, month, 1, 0, 0, 0, tzinfo=timezone.utc)
+        end_date = datetime(year, month, days_in_month, 23, 59, 59, tzinfo=timezone.utc)
+        
+        # Base query
+        query = {
+            "organization_id": {"$in": org_ids},
+            "is_deleted": {"$ne": True},
+            "is_template": {"$ne": True},
+            "$or": [
+                # Tasks with deadlines in this month
+                {"deadline": {"$gte": start_date, "$lte": end_date}},
+                # Tasks created in this month
+                {"created_at": {"$gte": start_date, "$lte": end_date}}
+            ]
+        }
+        
+        # Apply status filter
+        if status_filter and status_filter != "ALL":
+            if status_filter == "ACTIVE":
+                query["status"] = {"$ne": "DONE"}
+            elif status_filter == "COMPLETED":
+                query["status"] = "DONE"
+        
+        # Apply priority filter
+        if priority_filter and priority_filter != "ALL":
+            query["priority"] = priority_filter
+        
+        # Apply assignment filter
+        if assignment_filter and assignment_filter != "ALL":
+            if assignment_filter == "MY":
+                query["$or"] = [
+                    {"assigned_to": current_user.id},
+                    {"accepted_by": current_user.id}
+                ]
+            elif assignment_filter == "TEAM":
+                query["assignment_type"] = {"$in": ["TEAM", "DEPARTMENT"]}
+            elif assignment_filter == "CREATED":
+                query["created_by"] = current_user.id
+        
+        # Fetch tasks
+        tasks = await db.work_tasks.find(query, {"_id": 0}).to_list(500)
+        
+        # Build calendar task responses
+        calendar_tasks = []
+        for task in tasks:
+            # Get creator info
+            creator = await db.users.find_one({"id": task["created_by"]}, {"_id": 0})
+            
+            # Get assignee info if assigned
+            assignee = None
+            if task.get("assigned_to"):
+                assignee = await db.users.find_one({"id": task["assigned_to"]}, {"_id": 0})
+            elif task.get("accepted_by"):
+                assignee = await db.users.find_one({"id": task["accepted_by"]}, {"_id": 0})
+            
+            # Get organization info
+            org = await db.work_organizations.find_one({"id": task["organization_id"]}, {"_id": 0})
+            
+            calendar_task = {
+                "id": task["id"],
+                "title": task["title"],
+                "description": task.get("description"),
+                "organization_id": task["organization_id"],
+                "organization_name": org.get("name") if org else "Unknown",
+                "status": task.get("status", "NEW"),
+                "priority": task.get("priority", "MEDIUM"),
+                "assignment_type": task.get("assignment_type", "PERSONAL"),
+                
+                # Dates for calendar display
+                "created_at": task.get("created_at").isoformat() if task.get("created_at") else None,
+                "deadline": task.get("deadline").isoformat() if task.get("deadline") else None,
+                "completed_at": task.get("completed_at").isoformat() if task.get("completed_at") else None,
+                
+                # Creator info
+                "created_by": task["created_by"],
+                "created_by_name": f"{creator.get('first_name', '')} {creator.get('last_name', '')}".strip() if creator else "Unknown",
+                
+                # Assignee info
+                "assignee_id": assignee.get("id") if assignee else None,
+                "assignee_name": f"{assignee.get('first_name', '')} {assignee.get('last_name', '')}".strip() if assignee else None,
+                
+                # Progress
+                "subtasks_total": len(task.get("subtasks", [])),
+                "subtasks_completed": len([s for s in task.get("subtasks", []) if s.get("is_completed")]),
+                
+                # Flags
+                "requires_photo_proof": task.get("requires_photo_proof", False),
+                "is_overdue": task.get("deadline") and task.get("deadline") < datetime.now(timezone.utc) and task.get("status") != "DONE"
+            }
+            calendar_tasks.append(calendar_task)
+        
+        return {
+            "tasks": calendar_tasks,
+            "month": month,
+            "year": year,
+            "total_count": len(calendar_tasks)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching calendar tasks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/work/organizations/{organization_id}/tasks/{task_id}")
 async def get_task(
     organization_id: str,
