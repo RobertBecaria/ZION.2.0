@@ -17058,6 +17058,228 @@ async def get_user_public_profile(
         "is_self": user_id == current_user.id
     }
 
+# ===== NEWS CHANNELS ENDPOINTS =====
+
+class ChannelCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    categories: List[str] = []
+
+@api_router.post("/news/channels")
+async def create_channel(
+    channel_data: ChannelCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new news channel"""
+    # Create channel
+    channel = NewsChannel(
+        owner_id=current_user.id,
+        name=channel_data.name,
+        description=channel_data.description,
+        categories=[NewsChannelCategory(c) for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]]
+    )
+    
+    await db.news_channels.insert_one(channel.model_dump())
+    
+    return {
+        "message": "Channel created successfully",
+        "channel_id": channel.id,
+        "channel": channel.model_dump()
+    }
+
+@api_router.get("/news/channels")
+async def get_channels(
+    category: Optional[str] = None,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all public channels, optionally filtered by category"""
+    query = {"is_active": True}
+    
+    if category:
+        query["categories"] = category
+    
+    channels = await db.news_channels.find(
+        query,
+        {"_id": 0}
+    ).sort("subscribers_count", -1).limit(limit).to_list(limit)
+    
+    # Add owner info
+    for channel in channels:
+        owner = await db.users.find_one(
+            {"id": channel["owner_id"]},
+            {"_id": 0, "password_hash": 0, "first_name": 1, "last_name": 1}
+        )
+        channel["owner"] = owner
+    
+    return {"channels": channels}
+
+@api_router.get("/news/channels/my")
+async def get_my_channels(
+    current_user: User = Depends(get_current_user)
+):
+    """Get channels owned by the current user"""
+    channels = await db.news_channels.find(
+        {"owner_id": current_user.id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return {"channels": channels}
+
+@api_router.get("/news/channels/subscriptions")
+async def get_channel_subscriptions(
+    current_user: User = Depends(get_current_user)
+):
+    """Get channels the user is subscribed to"""
+    subscriptions = await db.channel_subscriptions.find(
+        {"subscriber_id": current_user.id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get channel details
+    for sub in subscriptions:
+        channel = await db.news_channels.find_one(
+            {"id": sub["channel_id"]},
+            {"_id": 0}
+        )
+        sub["channel"] = channel
+    
+    return {"subscriptions": subscriptions}
+
+@api_router.get("/news/channels/{channel_id}")
+async def get_channel(
+    channel_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific channel"""
+    channel = await db.news_channels.find_one(
+        {"id": channel_id},
+        {"_id": 0}
+    )
+    
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    # Check if user is subscribed
+    is_subscribed = await db.channel_subscriptions.find_one({
+        "channel_id": channel_id,
+        "subscriber_id": current_user.id
+    }) is not None
+    
+    # Get owner info
+    owner = await db.users.find_one(
+        {"id": channel["owner_id"]},
+        {"_id": 0, "password_hash": 0, "first_name": 1, "last_name": 1}
+    )
+    
+    return {
+        **channel,
+        "is_subscribed": is_subscribed,
+        "is_owner": channel["owner_id"] == current_user.id,
+        "owner": owner
+    }
+
+@api_router.post("/news/channels/{channel_id}/subscribe")
+async def subscribe_to_channel(
+    channel_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Subscribe to a channel"""
+    # Check channel exists
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    # Check if already subscribed
+    existing = await db.channel_subscriptions.find_one({
+        "channel_id": channel_id,
+        "subscriber_id": current_user.id
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Already subscribed")
+    
+    # Create subscription
+    subscription = ChannelSubscription(
+        channel_id=channel_id,
+        subscriber_id=current_user.id
+    )
+    
+    await db.channel_subscriptions.insert_one(subscription.model_dump())
+    
+    # Update subscriber count
+    await db.news_channels.update_one(
+        {"id": channel_id},
+        {"$inc": {"subscribers_count": 1}}
+    )
+    
+    return {"message": "Subscribed successfully"}
+
+@api_router.delete("/news/channels/{channel_id}/subscribe")
+async def unsubscribe_from_channel(
+    channel_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Unsubscribe from a channel"""
+    result = await db.channel_subscriptions.delete_one({
+        "channel_id": channel_id,
+        "subscriber_id": current_user.id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Not subscribed to this channel")
+    
+    # Update subscriber count
+    await db.news_channels.update_one(
+        {"id": channel_id},
+        {"$inc": {"subscribers_count": -1}}
+    )
+    
+    return {"message": "Unsubscribed successfully"}
+
+@api_router.put("/news/channels/{channel_id}")
+async def update_channel(
+    channel_id: str,
+    channel_data: ChannelCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a channel (owner only)"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    if channel["owner_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this channel")
+    
+    await db.news_channels.update_one(
+        {"id": channel_id},
+        {"$set": {
+            "name": channel_data.name,
+            "description": channel_data.description,
+            "categories": [c for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]]
+        }}
+    )
+    
+    return {"message": "Channel updated successfully"}
+
+@api_router.delete("/news/channels/{channel_id}")
+async def delete_channel(
+    channel_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a channel (owner only)"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    if channel["owner_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this channel")
+    
+    # Delete channel and all subscriptions
+    await db.news_channels.delete_one({"id": channel_id})
+    await db.channel_subscriptions.delete_many({"channel_id": channel_id})
+    
+    return {"message": "Channel deleted successfully"}
+
 # ===== END NEWS MODULE ENDPOINTS =====
 
 @api_router.get("/health")
