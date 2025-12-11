@@ -5,7 +5,7 @@
 import React from 'react';
 import { 
   User, Newspaper, Heart, Briefcase, GraduationCap, 
-  Users, MessageCircle, Image, Video, FileText, Settings 
+  Users, MessageCircle, Image, Video, FileText, Settings, Tv 
 } from 'lucide-react';
 import { getModuleByKey, getSidebarTintStyle } from '../../config/moduleConfig';
 
