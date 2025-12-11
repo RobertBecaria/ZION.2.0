@@ -27041,20 +27041,27 @@ a,
 
 .work-universal-feed-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 320px;
   gap: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .work-feed-main {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .work-feed-tasks {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 /* Planner Widget */
