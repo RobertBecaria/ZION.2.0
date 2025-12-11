@@ -119,6 +119,9 @@ function Dashboard() {
   }, []);
   const [viewingPublicOrgId, setViewingPublicOrgId] = useState(null); // For public profile view
   
+  // News Module State
+  const [selectedChannelId, setSelectedChannelId] = useState(null);
+  
   // Removed showProfileCompletionModal state - now using full-page FamilySetupPage
   const [showGenderModal, setShowGenderModal] = useState(false);
   
