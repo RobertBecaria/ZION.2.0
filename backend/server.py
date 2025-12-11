@@ -2413,6 +2413,97 @@ class WorkTaskTemplateResponse(BaseModel):
 
 # ===== END DEPARTMENTS & ANNOUNCEMENTS MODELS =====
 
+# ===== NEWS MODULE - SOCIAL NETWORK MODELS =====
+
+class FriendRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+class FriendRequest(BaseModel):
+    """Friend request between users"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sender_id: str  # User who sent the request
+    receiver_id: str  # User who receives the request
+    status: FriendRequestStatus = FriendRequestStatus.PENDING
+    message: Optional[str] = None  # Optional message with request
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    responded_at: Optional[datetime] = None
+
+class UserFriendship(BaseModel):
+    """Mutual friendship between two users"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user1_id: str  # First user (alphabetically smaller ID)
+    user2_id: str  # Second user (alphabetically larger ID)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Friendship source
+    from_request_id: Optional[str] = None
+
+class UserFollow(BaseModel):
+    """One-way follow relationship (follower follows target)"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    follower_id: str  # User who is following
+    target_id: str  # User being followed
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class NewsChannelCategory(str, Enum):
+    WORLD_NEWS = "WORLD_NEWS"
+    POLITICS = "POLITICS"
+    ECONOMY = "ECONOMY"
+    TECHNOLOGY = "TECHNOLOGY"
+    SCIENCE = "SCIENCE"
+    SPORTS = "SPORTS"
+    CULTURE = "CULTURE"
+    ENTERTAINMENT = "ENTERTAINMENT"
+    HEALTH = "HEALTH"
+    EDUCATION = "EDUCATION"
+    LOCAL_NEWS = "LOCAL_NEWS"
+    AUTO = "AUTO"
+    TRAVEL = "TRAVEL"
+    FOOD = "FOOD"
+    FASHION = "FASHION"
+
+class NewsChannel(BaseModel):
+    """User-created news channel"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    owner_id: str  # User who created the channel
+    organization_id: Optional[str] = None  # If official channel, linked to org
+    
+    # Channel info
+    name: str
+    description: Optional[str] = None
+    avatar_url: Optional[str] = None
+    cover_url: Optional[str] = None
+    categories: List[NewsChannelCategory] = []
+    
+    # Verification
+    is_verified: bool = False  # True if linked to organization
+    is_official: bool = False  # Official news outlet
+    
+    # Stats (denormalized for performance)
+    subscribers_count: int = 0
+    posts_count: int = 0
+    
+    # Status
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ChannelSubscription(BaseModel):
+    """User subscription to a news channel"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    channel_id: str
+    subscriber_id: str
+    subscribed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notifications_enabled: bool = True
+
+class NewsPostVisibility(str, Enum):
+    FRIENDS_ONLY = "FRIENDS_ONLY"
+    FRIENDS_AND_FOLLOWERS = "FRIENDS_AND_FOLLOWERS"
+    PUBLIC = "PUBLIC"
+
+# ===== END NEWS MODULE MODELS =====
+
 class ChatMessageCreate(BaseModel):
     group_id: Optional[str] = None
     direct_chat_id: Optional[str] = None
