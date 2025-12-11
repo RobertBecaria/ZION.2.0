@@ -29,6 +29,30 @@
 
 ---
 
+### МОЯ ЛЕНТА Layout Fix - COMPLETED ✅
+
+**Issue:** The Tasks Panel (ПЛАНИРОВЩИК + МОИ ЗАДАЧИ) was not appearing alongside the feed in the МОЯ ЛЕНТА view for Organizations module.
+
+**Root Cause:** CSS file rules for `.work-universal-feed-layout` were not being applied (possibly due to CSS file size or build caching issues).
+
+**Fix Applied (December 11, 2025):**
+- Added inline styles to `WorkUniversalFeed.js` component to ensure grid layout displays correctly
+- The component now uses `style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', width: '100%' }}`
+
+**Result:**
+- ✅ Post feed displays on the left
+- ✅ ПЛАНИРОВЩИК section with "+ Событие" and "+ Задача" buttons on the right
+- ✅ МОИ ЗАДАЧИ panel with task count, filters, and task cards
+- ✅ Countdown timers working (e.g., "2д 4ч")
+- ✅ Right sidebar (ФИЛЬТРЫ, БЫСТРЫЕ ДЕЙСТВИЯ) displays correctly
+
+**Files Modified:**
+- `/app/frontend/src/components/WorkUniversalFeed.js` - Added inline styles for grid layout
+
+**Status: 🎉 LAYOUT FIX VERIFIED - Matches reference design!**
+
+---
+
 ### Frontend Testing Agent Login Issue - RESOLVED ✅
 
 **Issue:** The frontend testing agent has been failing to log in during automated tests across multiple fork sessions.
