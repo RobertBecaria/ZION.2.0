@@ -46,6 +46,17 @@ const RightSidebar = ({
           onAudienceFilterChange={setJournalAudienceFilter}
         />
       )}
+
+      {/* NEWS Module - Social World Zone */}
+      {activeModule === 'news' && (
+        <NewsWorldZone
+          user={user}
+          moduleColor={currentModule.color}
+          onViewFriends={onViewFriends}
+          onViewFollowers={onViewFollowers}
+          onViewFollowing={onViewFollowing}
+        />
+      )}
       
       {/* FAMILY Module - Wall/Feed specific widgets */}
       {activeModule === 'family' && (activeView === 'wall' || activeView === 'feed') && (
