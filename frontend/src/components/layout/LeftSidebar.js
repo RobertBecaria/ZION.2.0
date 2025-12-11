@@ -86,7 +86,7 @@ const LeftSidebar = ({
         </button>
         
         {/* Generic Feed Button - Only for modules without dedicated feed button */}
-        {activeModule !== 'organizations' && activeModule !== 'journal' && (
+        {activeModule !== 'organizations' && activeModule !== 'journal' && activeModule !== 'news' && (
           <button 
             className={`profile-btn ${activeView === 'feed' ? 'primary' : 'secondary'}`}
             style={getButtonStyle(activeView === 'feed')}
