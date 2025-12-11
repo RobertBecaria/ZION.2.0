@@ -27190,12 +27190,15 @@ a,
 
 /* Responsive */
 @media (max-width: 900px) {
+  .main-content-area .work-universal-feed-layout,
+  .main-content-area.full-width .work-universal-feed-layout,
   .work-universal-feed-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
   
+  .main-content-area .work-feed-tasks,
   .work-feed-tasks {
-    order: -1;
+    order: -1 !important;
   }
 }
 
