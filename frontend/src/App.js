@@ -855,14 +855,24 @@ function Dashboard() {
 
                         {(activeModule === 'news') && (
                           <>
-                            {/* Feed View */}
-                            {(activeView === 'wall' || activeView === 'feed') && (
-                              <UniversalWall
-                                activeGroup={activeGroup}
-                                moduleColor={currentModule.color}
-                                moduleName={currentModule.name}
-                                activeModule={activeModule}
+                            {/* News Feed View */}
+                            {(activeView === 'wall' || activeView === 'feed') && !selectedChannelId && (
+                              <NewsFeed
                                 user={user}
+                                moduleColor={currentModule.color}
+                              />
+                            )}
+
+                            {/* Channel View */}
+                            {activeView === 'channel-view' && selectedChannelId && (
+                              <ChannelView
+                                channelId={selectedChannelId}
+                                user={user}
+                                moduleColor={currentModule.color}
+                                onBack={() => {
+                                  setSelectedChannelId(null);
+                                  setActiveView('channels');
+                                }}
                               />
                             )}
                             
@@ -881,13 +891,13 @@ function Dashboard() {
                             )}
                             
                             {/* Channels Page */}
-                            {activeView === 'channels' && (
+                            {activeView === 'channels' && !selectedChannelId && (
                               <ChannelsPage
                                 user={user}
                                 moduleColor={currentModule.color}
                                 onViewChannel={(channel) => {
-                                  // TODO: Navigate to channel view
-                                  console.log('View channel', channel);
+                                  setSelectedChannelId(channel.id);
+                                  setActiveView('channel-view');
                                 }}
                               />
                             )}
