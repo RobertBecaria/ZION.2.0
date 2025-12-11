@@ -15451,13 +15451,13 @@ async def get_tasks_for_calendar(
         org_ids = [m["organization_id"] for m in memberships]
         
         if not org_ids:
-            return {"tasks": [], "month": month, "year": year}
+            return {"tasks": [], "month": month, "year": year, "total_count": 0}
         
-        # Calculate date range for the month
+        # Calculate date range for the month (naive datetimes for MongoDB compatibility)
         from calendar import monthrange
         days_in_month = monthrange(year, month)[1]
-        start_date = datetime(year, month, 1, 0, 0, 0, tzinfo=timezone.utc)
-        end_date = datetime(year, month, days_in_month, 23, 59, 59, tzinfo=timezone.utc)
+        start_date = datetime(year, month, 1, 0, 0, 0)
+        end_date = datetime(year, month, days_in_month, 23, 59, 59)
         
         # Base query
         query = {
