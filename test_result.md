@@ -320,3 +320,43 @@ Task-to-Post Integration backend testing completed successfully! All core functi
 - Recommendation: Populate author details in feed response for better UX
 
 **RECOMMENDATION:** The Task-to-Post Integration feature is ready for production. The minor author issue can be addressed in a future update.
+
+---
+
+### Task Calendar Implementation - COMPLETED ✅
+
+**Date: December 11, 2025**
+
+**Feature:** Full Task Calendar for Organizations module integrated with existing calendar system
+
+**Implementation Summary:**
+
+**Phase 1: Backend API (Completed)**
+- Added `GET /api/work/tasks/calendar` endpoint
+- Parameters: month, year, status_filter, priority_filter, assignment_filter
+- Returns tasks with deadline/creation dates, priority colors, status, assignee info
+
+**Phase 2: Frontend Calendar Updates (Completed)**
+- Updated `UniversalCalendar.js` with task integration
+- Added task fetching when `activeModule === 'organizations'`
+- Task indicators on calendar days (🎯 with priority colors)
+- Task detail cards in the date panel
+
+**Phase 3: Task Filters (Completed)**
+- Status filter: Все / Активные / Завершённые
+- Priority filter: Все / Срочный / Высокий / Средний / Низкий
+- Assignment filter: Все / Мои / Команды / Созданные мной
+
+**Phase 4: UI/UX Polish (Completed)**
+- Priority color legend at bottom
+- Task cards with status badges, countdown timers
+- Overdue task highlighting
+- Responsive design
+
+**Files Modified:**
+- `/app/backend/server.py` - Added calendar API endpoint
+- `/app/frontend/src/components/UniversalCalendar.js` - Complete rewrite with task support
+- `/app/frontend/src/App.css` - Added task calendar styles
+
+**Testing Status:** ✅ Verified via screenshots and API tests
+
