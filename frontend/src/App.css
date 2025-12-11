@@ -28058,3 +28058,351 @@ a,
     font-size: 12px;
   }
 }
+
+
+/* ============================================
+   NEWS MODULE - SOCIAL NETWORK STYLES
+============================================ */
+
+.news-world-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Social Stats Widget */
+.social-stats-widget .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.social-stats-widget .stat-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.social-stats-widget .stat-item.clickable:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.social-stats-widget .stat-number {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.social-stats-widget .stat-label {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Friend Requests Widget */
+.friend-requests-widget .badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.request-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.request-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.request-avatar img,
+.request-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.request-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.request-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.request-message {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.request-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.request-actions .btn-accept,
+.request-actions .btn-reject {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.request-actions .btn-accept {
+  background: #10b981;
+  color: white;
+}
+
+.request-actions .btn-accept:hover {
+  background: #059669;
+  transform: scale(1.1);
+}
+
+.request-actions .btn-reject {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.request-actions .btn-reject:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Online Friends Widget */
+.online-friends-widget .friends-list,
+.suggestions-widget .suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.friend-item,
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.friend-item:hover,
+.suggestion-item:hover {
+  background: #f3f4f6;
+}
+
+.friend-avatar,
+.suggestion-avatar {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.friend-avatar img,
+.suggestion-avatar img,
+.friend-avatar .avatar-placeholder,
+.suggestion-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.friend-avatar .online-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.friend-info,
+.suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-name,
+.suggestion-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mutual-count {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.message-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.message-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+/* Suggestion Actions */
+.suggestion-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.suggestion-actions .btn-add-friend {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.suggestion-actions .btn-add-friend:hover {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.suggestion-actions .btn-follow {
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestion-actions .btn-follow:hover {
+  border-color: #1D4ED8;
+  color: #1D4ED8;
+  background: rgba(29, 78, 216, 0.05);
+}
+
+/* View All Button */
+.view-all-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-all-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+/* Search People Widget */
+.search-people-widget .search-input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.search-people-widget .search-input:focus {
+  outline: none;
+  border-color: #1D4ED8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+}
+
+/* ============================================
+   END NEWS MODULE STYLES
+============================================ */
