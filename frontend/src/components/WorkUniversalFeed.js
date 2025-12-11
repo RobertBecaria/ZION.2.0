@@ -197,9 +197,9 @@ const WorkUniversalFeed = ({ currentUserId }) => {
   }
 
   return (
-    <div className="work-universal-feed-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', width: '100%' }}>
+    <div className="work-universal-feed-layout">
       {/* Left Column - Feed */}
-      <div className="work-feed-main" style={{ minWidth: 0 }}>
+      <div className="work-feed-main">
       {/* Post Composer */}
       {organizations.length > 0 && (
         <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100 mb-6">
