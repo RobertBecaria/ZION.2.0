@@ -393,10 +393,34 @@ const CreateChannelModal = ({ moduleColor, onClose, onCreated }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedOrganization, setSelectedOrganization] = useState('');
+  const [adminOrganizations, setAdminOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingOrgs, setLoadingOrgs] = useState(true);
   const [error, setError] = useState('');
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  // Load organizations where user is admin
+  useEffect(() => {
+    const loadAdminOrgs = async () => {
+      try {
+        const token = localStorage.getItem('zion_token');
+        const response = await fetch(`${BACKEND_URL}/api/users/me/admin-organizations`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setAdminOrganizations(data.organizations || []);
+        }
+      } catch (err) {
+        console.error('Error loading organizations:', err);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+    loadAdminOrgs();
+  }, [BACKEND_URL]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -423,7 +447,8 @@ const CreateChannelModal = ({ moduleColor, onClose, onCreated }) => {
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim(),
-          categories: selectedCategories
+          categories: selectedCategories,
+          organization_id: selectedOrganization || null
         })
       });
 
@@ -479,6 +504,33 @@ const CreateChannelModal = ({ moduleColor, onClose, onCreated }) => {
             />
           </div>
 
+          {/* Official Organization Selection */}
+          {!loadingOrgs && adminOrganizations.length > 0 && (
+            <div className="form-group">
+              <label>
+                <Building2 size={16} className="label-icon" />
+                Официальный канал организации
+              </label>
+              <select
+                value={selectedOrganization}
+                onChange={(e) => setSelectedOrganization(e.target.value)}
+                className="org-select"
+              >
+                <option value="">Личный канал (без организации)</option>
+                {adminOrganizations.map(org => (
+                  <option key={org.id} value={org.id}>
+                    ✓ {org.name}
+                  </option>
+                ))}
+              </select>
+              {selectedOrganization && (
+                <p className="form-hint official-hint">
+                  <Check size={14} /> Канал будет отмечен как официальный и верифицированный
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="form-group">
             <label>Категории * (выберите минимум одну)</label>
             <div className="categories-grid">
@@ -512,9 +564,9 @@ const CreateChannelModal = ({ moduleColor, onClose, onCreated }) => {
               type="submit" 
               className="submit-btn"
               disabled={loading}
-              style={{ backgroundColor: moduleColor }}
+              style={{ backgroundColor: selectedOrganization ? '#B45309' : moduleColor }}
             >
-              {loading ? 'Создание...' : 'Создать канал'}
+              {loading ? 'Создание...' : (selectedOrganization ? 'Создать официальный канал' : 'Создать канал')}
             </button>
           </div>
         </form>
