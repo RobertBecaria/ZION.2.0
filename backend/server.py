@@ -17226,7 +17226,7 @@ async def get_channel(
     channel_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific channel"""
+    """Get a specific channel with detailed info"""
     channel = await db.news_channels.find_one(
         {"id": channel_id},
         {"_id": 0}
@@ -17248,11 +17248,36 @@ async def get_channel(
     )
     owner = {"first_name": owner_data.get("first_name"), "last_name": owner_data.get("last_name")} if owner_data else None
     
+    # Check if user is moderator
+    is_moderator = await db.channel_moderators.find_one({
+        "channel_id": channel_id,
+        "user_id": current_user.id,
+        "is_active": True
+    }) is not None
+    
+    # Get organization info if official channel
+    organization = None
+    if channel.get("organization_id"):
+        org_data = await db.work_organizations.find_one(
+            {"id": channel["organization_id"]},
+            {"_id": 0, "id": 1, "name": 1, "logo_url": 1, "organization_type": 1}
+        )
+        organization = org_data
+    
+    # Get moderators count
+    moderators_count = await db.channel_moderators.count_documents({
+        "channel_id": channel_id,
+        "is_active": True
+    })
+    
     return {
         **channel,
         "is_subscribed": is_subscribed,
         "is_owner": channel["owner_id"] == current_user.id,
-        "owner": owner
+        "is_moderator": is_moderator,
+        "owner": owner,
+        "organization": organization,
+        "moderators_count": moderators_count
     }
 
 @api_router.post("/news/channels/{channel_id}/subscribe")
