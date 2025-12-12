@@ -17130,7 +17130,7 @@ async def create_channel(
         if not org:
             raise HTTPException(status_code=404, detail="Organization not found")
         
-        membership = await db.work_memberships.find_one({
+        membership = await db.work_members.find_one({
             "user_id": current_user.id,
             "organization_id": channel_data.organization_id,
             "status": "ACTIVE"
