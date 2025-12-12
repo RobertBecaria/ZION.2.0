@@ -17108,19 +17108,47 @@ class ChannelCreate(BaseModel):
     name: str
     description: Optional[str] = None
     categories: List[str] = []
+    organization_id: Optional[str] = None  # If creating as official org channel
 
 @api_router.post("/news/channels")
 async def create_channel(
     channel_data: ChannelCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new news channel"""
+    """Create a new news channel. If organization_id is provided, creates as official channel."""
+    is_official = False
+    is_verified = False
+    org_id = None
+    
+    # If creating as official organization channel
+    if channel_data.organization_id:
+        # Verify user is admin/owner of the organization
+        org = await db.work_organizations.find_one({"id": channel_data.organization_id})
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        membership = await db.work_memberships.find_one({
+            "user_id": current_user.id,
+            "organization_id": channel_data.organization_id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership or membership.get("role") not in ["OWNER", "ADMIN"]:
+            raise HTTPException(status_code=403, detail="Must be organization admin/owner to create official channel")
+        
+        is_official = True
+        is_verified = True
+        org_id = channel_data.organization_id
+    
     # Create channel
     channel = NewsChannel(
         owner_id=current_user.id,
+        organization_id=org_id,
         name=channel_data.name,
         description=channel_data.description,
-        categories=[NewsChannelCategory(c) for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]]
+        categories=[NewsChannelCategory(c) for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]],
+        is_official=is_official,
+        is_verified=is_verified
     )
     
     await db.news_channels.insert_one(channel.model_dump())
