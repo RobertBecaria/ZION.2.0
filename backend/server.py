@@ -17727,6 +17727,166 @@ async def link_channel_to_organization(
     
     return {"message": "Channel linked to organization and verified"}
 
+# ===== CHANNEL MODERATOR MANAGEMENT =====
+
+class AddModeratorRequest(BaseModel):
+    user_id: str
+    can_post: bool = True
+    can_delete_posts: bool = True
+    can_pin_posts: bool = True
+
+@api_router.get("/news/channels/{channel_id}/moderators")
+async def get_channel_moderators(
+    channel_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all moderators for a channel"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    moderators = await db.channel_moderators.find(
+        {"channel_id": channel_id, "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Enrich with user info
+    for mod in moderators:
+        user = await db.users.find_one(
+            {"id": mod["user_id"]},
+            {"_id": 0, "password_hash": 0, "id": 1, "first_name": 1, "last_name": 1, "profile_picture": 1, "email": 1}
+        )
+        mod["user"] = user
+    
+    return {"moderators": moderators}
+
+@api_router.post("/news/channels/{channel_id}/moderators")
+async def add_channel_moderator(
+    channel_id: str,
+    mod_data: AddModeratorRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Add a moderator to a channel (owner only)"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    if channel["owner_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Only channel owner can add moderators")
+    
+    # Check if user exists
+    target_user = await db.users.find_one({"id": mod_data.user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already a moderator
+    existing = await db.channel_moderators.find_one({
+        "channel_id": channel_id,
+        "user_id": mod_data.user_id,
+        "is_active": True
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="User is already a moderator")
+    
+    # Don't add owner as moderator
+    if mod_data.user_id == channel["owner_id"]:
+        raise HTTPException(status_code=400, detail="Channel owner doesn't need to be added as moderator")
+    
+    # Create moderator entry
+    moderator = ChannelModerator(
+        channel_id=channel_id,
+        user_id=mod_data.user_id,
+        assigned_by=current_user.id,
+        can_post=mod_data.can_post,
+        can_delete_posts=mod_data.can_delete_posts,
+        can_pin_posts=mod_data.can_pin_posts
+    )
+    
+    await db.channel_moderators.insert_one(moderator.model_dump())
+    
+    return {
+        "message": "Moderator added successfully",
+        "moderator": moderator.model_dump()
+    }
+
+@api_router.delete("/news/channels/{channel_id}/moderators/{user_id}")
+async def remove_channel_moderator(
+    channel_id: str,
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove a moderator from a channel (owner only)"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    if channel["owner_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Only channel owner can remove moderators")
+    
+    result = await db.channel_moderators.update_one(
+        {"channel_id": channel_id, "user_id": user_id, "is_active": True},
+        {"$set": {"is_active": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Moderator not found")
+    
+    return {"message": "Moderator removed successfully"}
+
+@api_router.put("/news/channels/{channel_id}/moderators/{user_id}")
+async def update_moderator_permissions(
+    channel_id: str,
+    user_id: str,
+    mod_data: AddModeratorRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Update moderator permissions (owner only)"""
+    channel = await db.news_channels.find_one({"id": channel_id})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    
+    if channel["owner_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Only channel owner can update moderator permissions")
+    
+    result = await db.channel_moderators.update_one(
+        {"channel_id": channel_id, "user_id": user_id, "is_active": True},
+        {"$set": {
+            "can_post": mod_data.can_post,
+            "can_delete_posts": mod_data.can_delete_posts,
+            "can_pin_posts": mod_data.can_pin_posts
+        }}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Moderator not found")
+    
+    return {"message": "Moderator permissions updated"}
+
+# ===== USER ADMIN ORGANIZATIONS =====
+
+@api_router.get("/users/me/admin-organizations")
+async def get_my_admin_organizations(
+    current_user: User = Depends(get_current_user)
+):
+    """Get organizations where the current user is admin or owner"""
+    memberships = await db.work_memberships.find({
+        "user_id": current_user.id,
+        "status": "ACTIVE",
+        "role": {"$in": ["OWNER", "ADMIN"]}
+    }, {"_id": 0}).to_list(100)
+    
+    org_ids = [m["organization_id"] for m in memberships]
+    
+    if not org_ids:
+        return {"organizations": []}
+    
+    organizations = await db.work_organizations.find(
+        {"id": {"$in": org_ids}, "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return {"organizations": organizations}
+
 # ===== END NEWS MODULE ENDPOINTS =====
 
 @api_router.get("/health")
