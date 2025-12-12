@@ -17796,9 +17796,18 @@ async def get_channel_moderators(
     for mod in moderators:
         user = await db.users.find_one(
             {"id": mod["user_id"]},
-            {"_id": 0, "password_hash": 0, "id": 1, "first_name": 1, "last_name": 1, "profile_picture": 1, "email": 1}
+            {"_id": 0, "password_hash": 0}
         )
-        mod["user"] = user
+        if user:
+            mod["user"] = {
+                "id": user.get("id"),
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "profile_picture": user.get("profile_picture"),
+                "email": user.get("email")
+            }
+        else:
+            mod["user"] = None
     
     return {"moderators": moderators}
 
