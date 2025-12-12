@@ -7,7 +7,7 @@ import requests
 import json
 
 # Configuration
-BASE_URL = "https://planner-integration.preview.emergentagent.com/api"
+BASE_URL = "https://connect-news.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "admin123"
 
