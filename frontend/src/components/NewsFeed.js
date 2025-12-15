@@ -630,6 +630,7 @@ const NewsFeed = ({
                 moduleColor={moduleColor}
                 onLike={handleLike}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
                 onCommentAdded={handleCommentAdded}
                 formatDate={formatDate}
                 getVisibilityOption={getVisibilityOption}
@@ -652,13 +653,14 @@ const NewsFeed = ({
   );
 };
 
-// Post Card Component with Comments
+// Post Card Component with Comments and Edit
 const PostCard = ({ 
   post, 
   currentUser, 
   moduleColor, 
   onLike, 
   onDelete,
+  onEdit,
   onCommentAdded,
   formatDate,
   getVisibilityOption,
@@ -668,6 +670,12 @@ const PostCard = ({
   const [playingVideo, setPlayingVideo] = useState(null);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
+  
+  // Edit mode states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editVisibility, setEditVisibility] = useState(post.visibility);
+  const [saving, setSaving] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
