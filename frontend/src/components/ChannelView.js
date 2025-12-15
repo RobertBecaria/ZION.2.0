@@ -220,6 +220,7 @@ const ChannelView = ({
                 </button>
                 <button 
                   className="settings-btn"
+                  onClick={() => setShowSettingsModal(true)}
                   style={{ borderColor: accentColor, color: accentColor }}
                 >
                   <Settings size={18} />
@@ -254,12 +255,20 @@ const ChannelView = ({
               </>
             )}
             
-            <button className="share-btn" title="Поделиться">
+            <button className="share-btn" title="Поделиться" onClick={handleShare}>
               <Share2 size={18} />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Share Toast Notification */}
+      {showShareToast && (
+        <div className="share-toast">
+          <CheckCircle size={18} />
+          <span>Ссылка скопирована!</span>
+        </div>
+      )}
 
       {/* Channel Posts */}
       <div className="channel-content">
@@ -279,6 +288,22 @@ const ChannelView = ({
           onClose={() => {
             setShowModeratorModal(false);
             loadChannel(); // Refresh channel data
+          }}
+        />
+      )}
+
+      {/* Channel Settings Modal */}
+      {showSettingsModal && (
+        <ChannelSettingsModal
+          channel={channel}
+          accentColor={accentColor}
+          onClose={() => {
+            setShowSettingsModal(false);
+            loadChannel(); // Refresh channel data
+          }}
+          onDelete={() => {
+            setShowSettingsModal(false);
+            onBack(); // Go back to channels list
           }}
         />
       )}
