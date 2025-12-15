@@ -706,6 +706,24 @@ const PostCard = ({
     }
   };
 
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    setSaving(true);
+    const success = await onEdit(post.id, editContent, editVisibility);
+    if (success) {
+      setIsEditing(false);
+    }
+    setSaving(false);
+  };
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditContent(post.content);
+    setEditVisibility(post.visibility);
+    setIsEditing(false);
+  };
+
   // Toggle comments visibility
   const toggleComments = () => {
     if (!showComments) {
