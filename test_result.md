@@ -213,3 +213,21 @@ Enhanced Events panel (СОБЫТИЯ) in NEWS module with:
 - Back navigation preserving state ✅
 
 **Note:** No channel events exist currently, so "Перейти в канал" button testing not applicable (as expected per requirements)
+
+## Enhanced Post Composer Feature Test - December 15, 2025
+
+### Features Implemented:
+1. **Image Upload** - Multi-image selection with preview and removal
+2. **YouTube Embedding** - Paste YouTube URL, see thumbnail preview  
+3. **Link Preview** - OpenGraph metadata extraction for non-YouTube links
+4. **Emoji Picker** - Quick access to 12 common emojis
+
+### Backend Endpoint Added:
+- POST /api/utils/link-preview - Fetches OpenGraph metadata and detects YouTube links
+
+### Testing Required:
+1. Add a YouTube link → verify preview shows
+2. Add a regular website link → verify metadata preview
+3. Upload images → verify preview and removal
+4. Click emojis → verify they appear in text
+5. Create post with all attachments → verify post shows them
