@@ -17365,10 +17365,10 @@ async def unsubscribe_from_channel(
 @api_router.put("/news/channels/{channel_id}")
 async def update_channel(
     channel_id: str,
-    channel_data: ChannelCreate,
+    channel_data: ChannelUpdate,
     current_user: User = Depends(get_current_user)
 ):
-    """Update a channel (owner only)"""
+    """Update a channel settings (owner only)"""
     channel = await db.news_channels.find_one({"id": channel_id})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
@@ -17376,16 +17376,28 @@ async def update_channel(
     if channel["owner_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to update this channel")
     
-    await db.news_channels.update_one(
-        {"id": channel_id},
-        {"$set": {
-            "name": channel_data.name,
-            "description": channel_data.description,
-            "categories": [c for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]]
-        }}
-    )
+    # Build update dict with only provided fields
+    update_data = {}
+    if channel_data.name is not None:
+        update_data["name"] = channel_data.name
+    if channel_data.description is not None:
+        update_data["description"] = channel_data.description
+    if channel_data.categories is not None:
+        update_data["categories"] = [c for c in channel_data.categories if c in [e.value for e in NewsChannelCategory]]
+    if channel_data.avatar_url is not None:
+        update_data["avatar_url"] = channel_data.avatar_url
+    if channel_data.cover_url is not None:
+        update_data["cover_url"] = channel_data.cover_url
     
-    return {"message": "Channel updated successfully"}
+    if update_data:
+        await db.news_channels.update_one(
+            {"id": channel_id},
+            {"$set": update_data}
+        )
+    
+    # Return updated channel data
+    updated_channel = await db.news_channels.find_one({"id": channel_id}, {"_id": 0})
+    return {"message": "Channel updated successfully", "channel": updated_channel}
 
 @api_router.delete("/news/channels/{channel_id}")
 async def delete_channel(
