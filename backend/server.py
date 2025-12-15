@@ -3944,7 +3944,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
     
     # Get user's privacy settings (if exists)
     privacy_doc = await db.profile_privacy_settings.find_one({"user_id": current_user.id})
-    privacy_settings = ProfilePrivacySettings(**privacy_doc) if privacy_doc else ProfilePrivacySettings()
+    _privacy_settings = ProfilePrivacySettings(**privacy_doc) if privacy_doc else ProfilePrivacySettings()
     
     # Get family information
     family_info = None
