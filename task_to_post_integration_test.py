@@ -25,7 +25,7 @@ import sys
 import os
 
 # Get backend URL from environment
-BACKEND_URL = "https://connect-news.preview.emergentagent.com"
+BACKEND_URL = "https://mod-official-news.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials and organization

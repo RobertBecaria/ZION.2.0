@@ -11,7 +11,7 @@ from datetime import datetime, date
 import time
 
 # Configuration
-BASE_URL = "https://connect-news.preview.emergentagent.com/api"
+BASE_URL = "https://mod-official-news.preview.emergentagent.com/api"
 ORGANIZATION_ID = "d5e2d110-cb59-441f-b2f0-55c9ac715431"  # Test School organization
 
 # Test credentials

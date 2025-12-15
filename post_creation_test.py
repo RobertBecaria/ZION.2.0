@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class PostCreationTester:
-    def __init__(self, base_url="https://connect-news.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://mod-official-news.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
