@@ -401,6 +401,16 @@ function Dashboard() {
     return user.affiliations.filter(a => a.affiliation.type === type);
   };
 
+  // Custom setActiveView that also tracks module history
+  const handleSetActiveView = (view) => {
+    setActiveView(view);
+    // Save this view for the current module
+    setModuleViewHistory(prev => ({
+      ...prev,
+      [activeModule]: view
+    }));
+  };
+
   return (
     <div className="app">
       {/* Top Navigation Bar - Using extracted component */}
@@ -408,6 +418,7 @@ function Dashboard() {
         activeModule={activeModule}
         setActiveModule={setActiveModule}
         setActiveView={setActiveView}
+        moduleViewHistory={moduleViewHistory}
         user={user}
         onLogout={logout}
         currentTime={currentTime}
