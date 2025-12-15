@@ -17204,11 +17204,6 @@ async def get_link_preview(
     youtube_id = None
     is_youtube = False
     
-    # YouTube URL patterns
-    youtube_patterns = [
-        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})',
-    ]
-    
     parsed_url = urlparse(url)
     
     # Check for youtube.com/watch?v=
