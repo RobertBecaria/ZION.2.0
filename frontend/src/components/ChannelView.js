@@ -2,11 +2,11 @@
  * ChannelView Component
  * View a single channel with its posts and moderator management
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronLeft, Users, Check, Plus, Bell, BellOff, 
   Settings, Tv, Building2, Share2, UserPlus, X, Search,
-  Shield, Trash2
+  Shield, Trash2, Camera, Image, AlertTriangle, Copy, CheckCircle
 } from 'lucide-react';
 import NewsFeed from './NewsFeed';
 
@@ -19,6 +19,8 @@ const ChannelView = ({
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModeratorModal, setShowModeratorModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showShareToast, setShowShareToast] = useState(false);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,6 +43,17 @@ const ChannelView = ({
       console.error('Error loading channel:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/channel/${channelId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
