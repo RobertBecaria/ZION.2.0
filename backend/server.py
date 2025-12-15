@@ -17526,6 +17526,244 @@ async def delete_channel(
     
     return {"message": "Channel deleted successfully"}
 
+# ===== NEWS EVENTS ENDPOINTS =====
+
+@api_router.post("/news/events")
+async def create_news_event(
+    event_data: NewsEventCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new news event (personal or channel-based)"""
+    # If channel_id provided, verify user is owner or moderator
+    if event_data.channel_id:
+        channel = await db.news_channels.find_one({"id": event_data.channel_id})
+        if not channel:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        is_owner = channel["owner_id"] == current_user.id
+        is_moderator = await db.channel_moderators.find_one({
+            "channel_id": event_data.channel_id,
+            "user_id": current_user.id,
+            "is_active": True
+        }) is not None
+        
+        if not is_owner and not is_moderator:
+            raise HTTPException(status_code=403, detail="Not authorized to create events for this channel")
+    
+    # Create the event
+    event = NewsEvent(
+        title=event_data.title,
+        description=event_data.description,
+        event_type=event_data.event_type,
+        event_date=event_data.event_date,
+        duration_minutes=event_data.duration_minutes,
+        creator_id=current_user.id,
+        channel_id=event_data.channel_id,
+        event_link=event_data.event_link,
+        cover_url=event_data.cover_url
+    )
+    
+    await db.news_events.insert_one(event.dict())
+    
+    return {"message": "Event created successfully", "event_id": event.id}
+
+@api_router.get("/news/events")
+async def get_news_events(
+    channel_id: Optional[str] = None,
+    event_type: Optional[str] = None,
+    upcoming_only: bool = True,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Get news events - personal feed or channel-specific"""
+    query = {"is_active": True}
+    
+    if upcoming_only:
+        query["event_date"] = {"$gte": datetime.now(timezone.utc)}
+    
+    if channel_id:
+        # Get events for a specific channel
+        query["channel_id"] = channel_id
+    else:
+        # Get events from:
+        # 1. User's own events
+        # 2. Events from subscribed channels
+        # 3. Events from friends
+        
+        # Get subscribed channel IDs
+        subscriptions = await db.channel_subscriptions.find(
+            {"subscriber_id": current_user.id}
+        ).to_list(1000)
+        subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
+        
+        # Get friend IDs
+        friendships = await db.friendships.find({
+            "$or": [
+                {"user_id": current_user.id, "status": "ACCEPTED"},
+                {"friend_id": current_user.id, "status": "ACCEPTED"}
+            ]
+        }).to_list(1000)
+        friend_ids = [
+            f["friend_id"] if f["user_id"] == current_user.id else f["user_id"]
+            for f in friendships
+        ]
+        
+        query["$or"] = [
+            {"creator_id": current_user.id},  # Own events
+            {"channel_id": {"$in": subscribed_channel_ids}},  # Subscribed channels
+            {"creator_id": {"$in": friend_ids}, "channel_id": None}  # Friends' personal events
+        ]
+    
+    if event_type:
+        query["event_type"] = event_type
+    
+    events = await db.news_events.find(query, {"_id": 0}).sort("event_date", 1).limit(limit).to_list(limit)
+    
+    # Enrich events with creator and channel info
+    enriched_events = []
+    for event in events:
+        # Get creator info
+        creator = await db.users.find_one(
+            {"id": event["creator_id"]},
+            {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "profile_picture": 1}
+        )
+        
+        # Get channel info if applicable
+        channel = None
+        if event.get("channel_id"):
+            channel = await db.news_channels.find_one(
+                {"id": event["channel_id"]},
+                {"_id": 0, "id": 1, "name": 1, "avatar_url": 1}
+            )
+        
+        enriched_events.append({
+            **event,
+            "attendees_count": len(event.get("attendees", [])),
+            "is_attending": current_user.id in event.get("attendees", []),
+            "has_reminder": current_user.id in event.get("reminders", []),
+            "creator": creator,
+            "channel": channel
+        })
+    
+    return {"events": enriched_events}
+
+@api_router.get("/news/events/{event_id}")
+async def get_news_event(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single news event details"""
+    event = await db.news_events.find_one({"id": event_id, "is_active": True}, {"_id": 0})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Get creator info
+    creator = await db.users.find_one(
+        {"id": event["creator_id"]},
+        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "profile_picture": 1}
+    )
+    
+    # Get channel info if applicable
+    channel = None
+    if event.get("channel_id"):
+        channel = await db.news_channels.find_one(
+            {"id": event["channel_id"]},
+            {"_id": 0, "id": 1, "name": 1, "avatar_url": 1}
+        )
+    
+    # Get attendees list
+    attendee_ids = event.get("attendees", [])[:10]  # First 10
+    attendees = await db.users.find(
+        {"id": {"$in": attendee_ids}},
+        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "profile_picture": 1}
+    ).to_list(10)
+    
+    return {
+        **event,
+        "attendees_count": len(event.get("attendees", [])),
+        "is_attending": current_user.id in event.get("attendees", []),
+        "has_reminder": current_user.id in event.get("reminders", []),
+        "creator": creator,
+        "channel": channel,
+        "attendees_preview": attendees
+    }
+
+@api_router.post("/news/events/{event_id}/attend")
+async def toggle_event_attendance(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Toggle attendance (RSVP) for an event"""
+    event = await db.news_events.find_one({"id": event_id, "is_active": True})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    attendees = event.get("attendees", [])
+    is_attending = current_user.id in attendees
+    
+    if is_attending:
+        # Remove from attendees
+        await db.news_events.update_one(
+            {"id": event_id},
+            {"$pull": {"attendees": current_user.id}}
+        )
+        return {"message": "Attendance cancelled", "is_attending": False}
+    else:
+        # Add to attendees
+        await db.news_events.update_one(
+            {"id": event_id},
+            {"$addToSet": {"attendees": current_user.id}}
+        )
+        return {"message": "Attendance confirmed", "is_attending": True}
+
+@api_router.post("/news/events/{event_id}/remind")
+async def toggle_event_reminder(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Toggle reminder for an event"""
+    event = await db.news_events.find_one({"id": event_id, "is_active": True})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    reminders = event.get("reminders", [])
+    has_reminder = current_user.id in reminders
+    
+    if has_reminder:
+        # Remove reminder
+        await db.news_events.update_one(
+            {"id": event_id},
+            {"$pull": {"reminders": current_user.id}}
+        )
+        return {"message": "Reminder cancelled", "has_reminder": False}
+    else:
+        # Add reminder
+        await db.news_events.update_one(
+            {"id": event_id},
+            {"$addToSet": {"reminders": current_user.id}}
+        )
+        return {"message": "Reminder set", "has_reminder": True}
+
+@api_router.delete("/news/events/{event_id}")
+async def delete_news_event(
+    event_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a news event (creator only)"""
+    event = await db.news_events.find_one({"id": event_id})
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    if event["creator_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this event")
+    
+    await db.news_events.update_one(
+        {"id": event_id},
+        {"$set": {"is_active": False}}
+    )
+    
+    return {"message": "Event deleted successfully"}
+
 # ===== NEWS POSTS ENDPOINTS =====
 
 @api_router.post("/news/posts")
