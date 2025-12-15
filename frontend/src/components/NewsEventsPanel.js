@@ -229,11 +229,12 @@ const NewsEventsPanel = ({
           СОБЫТИЯ
         </h3>
         <button 
-          className="create-event-btn"
+          className="create-event-btn-text"
           onClick={() => setShowCreateModal(true)}
-          style={{ backgroundColor: moduleColor }}
+          style={{ color: moduleColor }}
         >
-          <Plus size={16} />
+          <Plus size={14} />
+          СОЗДАТЬ
         </button>
       </div>
 
