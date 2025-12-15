@@ -301,6 +301,39 @@ const NewsFeed = ({
     }
   };
 
+  // Handle post edit
+  const handleEdit = async (postId, newContent, newVisibility) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/news/posts/${postId}`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: newContent,
+          visibility: newVisibility
+        })
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            return { ...post, content: updatedPost.content, visibility: updatedPost.visibility };
+          }
+          return post;
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error editing post:', error);
+      return false;
+    }
+  };
+
   // Update comments count after adding a comment
   const handleCommentAdded = (postId) => {
     setPosts(prev => prev.map(post => {
