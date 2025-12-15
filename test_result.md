@@ -157,3 +157,20 @@
 - User profile API functionality: ✅ PASS  
 - Profile navigation between users: ✅ PASS
 - Social stats and relationship data: ✅ PASS
+
+## News Events Navigation Feature Test - December 15, 2025
+
+### Feature Description
+Enhanced Events panel (СОБЫТИЯ) in NEWS module with:
+1. Visual indicator showing event source (channel or person avatar/name)
+2. "Перейти в канал" button for channel events
+3. "Перейти в профиль" button for personal events
+4. Full user profile view with stats, events, and posts
+
+### Backend Test Results ✅
+- GET /api/news/events - returns creator and channel objects correctly
+- GET /api/users/{user_id}/profile - returns profile with social stats
+- Profile navigation working with proper relationship identification
+
+### Frontend Test Required
+Test navigation flow: NEWS → Events Panel → Profile → Back
