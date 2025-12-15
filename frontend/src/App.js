@@ -122,6 +122,9 @@ function Dashboard() {
   // News Module State
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   
+  // Track last active view per module to preserve navigation state
+  const [moduleViewHistory, setModuleViewHistory] = useState({});
+  
   // Removed showProfileCompletionModal state - now using full-page FamilySetupPage
   const [showGenderModal, setShowGenderModal] = useState(false);
   
