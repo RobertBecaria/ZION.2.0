@@ -17260,11 +17260,13 @@ async def get_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     
-    # Check if user is subscribed
-    is_subscribed = await db.channel_subscriptions.find_one({
+    # Check if user is subscribed and get notification preference
+    subscription = await db.channel_subscriptions.find_one({
         "channel_id": channel_id,
         "subscriber_id": current_user.id
-    }) is not None
+    })
+    is_subscribed = subscription is not None
+    notifications_enabled = subscription.get("notifications_enabled", True) if subscription else False
     
     # Get owner info
     owner_data = await db.users.find_one(
@@ -17298,6 +17300,7 @@ async def get_channel(
     return {
         **channel,
         "is_subscribed": is_subscribed,
+        "notifications_enabled": notifications_enabled,
         "is_owner": channel["owner_id"] == current_user.id,
         "is_moderator": is_moderator,
         "owner": owner,
