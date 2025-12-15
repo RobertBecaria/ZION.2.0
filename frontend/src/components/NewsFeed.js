@@ -295,9 +295,13 @@ const NewsFeed = ({
 
       if (response.ok) {
         setPosts(prev => prev.filter(p => p.id !== postId));
+      } else {
+        const data = await response.json();
+        alert(data.detail || 'Не удалось удалить пост');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
+      alert('Ошибка при удалении поста');
     }
   };
 
