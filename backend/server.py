@@ -2509,6 +2509,78 @@ class ChannelModerator(BaseModel):
     can_pin_posts: bool = True  # Can pin posts
     is_active: bool = True
 
+# ===== NEWS EVENTS MODELS =====
+
+class NewsEventType(str, Enum):
+    """Types of events in the NEWS module"""
+    PREMIERE = "PREMIERE"           # 🎬 Video/Movie premiere
+    STREAM = "STREAM"               # 📺 Live stream
+    BROADCAST = "BROADCAST"         # 🎤 Live broadcast/podcast
+    ONLINE_EVENT = "ONLINE_EVENT"   # 🎪 Webinar, virtual meetup
+    ANNOUNCEMENT = "ANNOUNCEMENT"   # 📢 General announcement
+    AMA = "AMA"                     # ❓ Ask Me Anything / Q&A
+
+class NewsEvent(BaseModel):
+    """Event in the NEWS module - can be personal or channel-based"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    
+    # Event details
+    title: str
+    description: Optional[str] = None
+    event_type: NewsEventType = NewsEventType.ANNOUNCEMENT
+    
+    # Date and time
+    event_date: datetime
+    duration_minutes: Optional[int] = None  # Duration in minutes
+    
+    # Creator info
+    creator_id: str
+    channel_id: Optional[str] = None  # If created by a channel
+    
+    # Link (for streams, online events, etc.)
+    event_link: Optional[str] = None
+    
+    # Cover image
+    cover_url: Optional[str] = None
+    
+    # Tracking
+    attendees: List[str] = []  # User IDs who will attend
+    reminders: List[str] = []  # User IDs who want reminders
+    
+    # Metadata
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class NewsEventCreate(BaseModel):
+    """Model for creating a news event"""
+    title: str
+    description: Optional[str] = None
+    event_type: NewsEventType = NewsEventType.ANNOUNCEMENT
+    event_date: datetime
+    duration_minutes: Optional[int] = None
+    channel_id: Optional[str] = None
+    event_link: Optional[str] = None
+    cover_url: Optional[str] = None
+
+class NewsEventResponse(BaseModel):
+    """Response model for news events"""
+    id: str
+    title: str
+    description: Optional[str]
+    event_type: str
+    event_date: datetime
+    duration_minutes: Optional[int]
+    creator_id: str
+    channel_id: Optional[str]
+    event_link: Optional[str]
+    cover_url: Optional[str]
+    attendees_count: int
+    is_attending: bool
+    has_reminder: bool
+    creator: Optional[dict]
+    channel: Optional[dict]
+    created_at: datetime
+
 class NewsPostVisibility(str, Enum):
     FRIENDS_ONLY = "FRIENDS_ONLY"
     FRIENDS_AND_FOLLOWERS = "FRIENDS_AND_FOLLOWERS"
