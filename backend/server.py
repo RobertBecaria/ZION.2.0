@@ -10485,12 +10485,12 @@ async def add_post_comment(
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/work/posts/{post_id}/comments")
-async def get_post_comments(
+async def get_work_post_comments(
     post_id: str,
     limit: int = 50,
     current_user: User = Depends(get_current_user)
 ):
-    """Get comments for a post"""
+    """Get comments for a work post"""
     try:
         # Check if post exists
         post = await db.work_posts.find_one({"id": post_id})
