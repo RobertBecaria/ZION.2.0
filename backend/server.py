@@ -17110,6 +17110,14 @@ class ChannelCreate(BaseModel):
     categories: List[str] = []
     organization_id: Optional[str] = None  # If creating as official org channel
 
+class ChannelUpdate(BaseModel):
+    """Model for updating channel settings"""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    categories: Optional[List[str]] = None
+    avatar_url: Optional[str] = None
+    cover_url: Optional[str] = None
+
 @api_router.post("/news/channels")
 async def create_channel(
     channel_data: ChannelCreate,
