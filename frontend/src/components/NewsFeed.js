@@ -1,14 +1,14 @@
 /**
  * NewsFeed Component
  * News feed with post creation and visibility options
- * Enhanced with: Image Upload, YouTube Embedding, Link Preview
+ * Enhanced with: Image Upload, YouTube Embedding, Link Preview, Comments
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Users, Globe, Lock, UserCheck, Image, Video, Link2, 
   Heart, MessageCircle, Share2, MoreHorizontal, Send,
   Trash2, ChevronDown, X, Play, ExternalLink, Loader2,
-  Upload, Plus, Smile
+  Upload, Plus, Smile, CornerDownRight, ChevronUp
 } from 'lucide-react';
 
 const VISIBILITY_OPTIONS = [
@@ -50,7 +50,7 @@ const NewsFeed = ({
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   
-  // NEW: Media and link states
+  // Media and link states
   const [selectedImages, setSelectedImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [youtubeLinks, setYoutubeLinks] = useState([]);
@@ -106,11 +106,9 @@ const NewsFeed = ({
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
-    // Limit to 10 images
     const remainingSlots = 10 - selectedImages.length;
     const newFiles = files.slice(0, remainingSlots);
     
-    // Create preview URLs
     const newImages = newFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file),
@@ -119,24 +117,20 @@ const NewsFeed = ({
     
     setSelectedImages(prev => [...prev, ...newImages]);
     
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Remove selected image
   const removeImage = (imageId) => {
     setSelectedImages(prev => {
       const updated = prev.filter(img => img.id !== imageId);
-      // Revoke URL to prevent memory leak
       const removed = prev.find(img => img.id === imageId);
       if (removed) URL.revokeObjectURL(removed.preview);
       return updated;
     });
   };
 
-  // Upload images to server
   const uploadImages = async () => {
     if (selectedImages.length === 0) return [];
     
@@ -171,7 +165,6 @@ const NewsFeed = ({
     return uploadedIds;
   };
 
-  // Handle link input
   const handleAddLink = async () => {
     if (!linkInputValue.trim()) return;
     
@@ -191,14 +184,12 @@ const NewsFeed = ({
         const preview = await response.json();
         
         if (preview.is_youtube && preview.youtube_id) {
-          // It's a YouTube link
           setYoutubeLinks(prev => [...prev, {
             id: preview.youtube_id,
             url: linkInputValue.trim(),
             thumbnail: preview.image
           }]);
         } else if (preview.title || preview.image) {
-          // It's a regular link with preview
           setLinkPreviews(prev => [...prev, {
             ...preview,
             localId: Math.random().toString(36).substr(2, 9)
@@ -215,30 +206,25 @@ const NewsFeed = ({
     }
   };
 
-  // Remove YouTube link
   const removeYoutubeLink = (youtubeId) => {
     setYoutubeLinks(prev => prev.filter(link => link.id !== youtubeId));
   };
 
-  // Remove link preview
   const removeLinkPreview = (localId) => {
     setLinkPreviews(prev => prev.filter(link => link.localId !== localId));
   };
 
-  // Add emoji to content
   const addEmoji = (emoji) => {
     setNewPostContent(prev => prev + emoji);
     setShowEmojiPicker(false);
     textareaRef.current?.focus();
   };
 
-  // Create post with media
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && selectedImages.length === 0 && youtubeLinks.length === 0) return;
     
     setPosting(true);
     try {
-      // Upload images first
       const mediaIds = await uploadImages();
       
       const token = localStorage.getItem('zion_token');
@@ -259,12 +245,11 @@ const NewsFeed = ({
       });
 
       if (response.ok) {
-        // Reset all states
         setNewPostContent('');
         setSelectedImages([]);
         setYoutubeLinks([]);
         setLinkPreviews([]);
-        loadPosts(true); // Refresh feed
+        loadPosts(true);
       }
     } catch (error) {
       console.error('Error creating post:', error);
@@ -314,6 +299,16 @@ const NewsFeed = ({
     } catch (error) {
       console.error('Error deleting post:', error);
     }
+  };
+
+  // Update comments count after adding a comment
+  const handleCommentAdded = (postId) => {
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, comments_count: (post.comments_count || 0) + 1 };
+      }
+      return post;
+    }));
   };
 
   const getVisibilityOption = (id) => {
@@ -526,7 +521,6 @@ const NewsFeed = ({
           </div>
 
           <div className="composer-actions">
-            {/* Visibility Selector - Only for personal posts */}
             {!channelId && (
               <div className="visibility-selector">
                 <button 
@@ -599,10 +593,11 @@ const NewsFeed = ({
               <PostCard
                 key={post.id}
                 post={post}
-                currentUserId={user?.id}
+                currentUser={user}
                 moduleColor={moduleColor}
                 onLike={handleLike}
                 onDelete={handleDelete}
+                onCommentAdded={handleCommentAdded}
                 formatDate={formatDate}
                 getVisibilityOption={getVisibilityOption}
                 backendUrl={BACKEND_URL}
@@ -624,21 +619,173 @@ const NewsFeed = ({
   );
 };
 
-// Post Card Component with Media Display
+// Post Card Component with Comments
 const PostCard = ({ 
   post, 
-  currentUserId, 
+  currentUser, 
   moduleColor, 
   onLike, 
   onDelete,
+  onCommentAdded,
   formatDate,
   getVisibilityOption,
   backendUrl
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(null);
-  const isAuthor = post.user_id === currentUserId;
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  
+  const commentInputRef = useRef(null);
+  
+  const isAuthor = post.user_id === currentUser?.id;
   const visibility = getVisibilityOption(post.visibility);
+
+  // Load comments
+  const loadComments = async () => {
+    setLoadingComments(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/news/posts/${post.id}/comments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments || []);
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // Toggle comments visibility
+  const toggleComments = () => {
+    if (!showComments) {
+      loadComments();
+    }
+    setShowComments(!showComments);
+  };
+
+  // Submit comment
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    
+    setSubmittingComment(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/news/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: newComment,
+          parent_comment_id: replyingTo?.id || null
+        })
+      });
+      
+      if (response.ok) {
+        const newCommentData = await response.json();
+        
+        if (replyingTo) {
+          // Add reply to parent comment
+          setComments(prev => prev.map(c => {
+            if (c.id === replyingTo.id) {
+              return { ...c, replies: [...(c.replies || []), newCommentData] };
+            }
+            return c;
+          }));
+        } else {
+          // Add as top-level comment
+          setComments(prev => [...prev, newCommentData]);
+          onCommentAdded(post.id);
+        }
+        
+        setNewComment('');
+        setReplyingTo(null);
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  // Delete comment
+  const handleDeleteComment = async (commentId, isReply = false, parentId = null) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/news/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        if (isReply && parentId) {
+          setComments(prev => prev.map(c => {
+            if (c.id === parentId) {
+              return { ...c, replies: c.replies.filter(r => r.id !== commentId) };
+            }
+            return c;
+          }));
+        } else {
+          setComments(prev => prev.filter(c => c.id !== commentId));
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
+  // Like comment
+  const handleLikeComment = async (commentId, isReply = false, parentId = null) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/news/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        const updateComment = (comment) => {
+          if (comment.id === commentId) {
+            return { ...comment, user_liked: data.liked, likes_count: data.likes_count };
+          }
+          return comment;
+        };
+        
+        if (isReply && parentId) {
+          setComments(prev => prev.map(c => {
+            if (c.id === parentId) {
+              return { ...c, replies: c.replies.map(updateComment) };
+            }
+            return c;
+          }));
+        } else {
+          setComments(prev => prev.map(updateComment));
+        }
+      }
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
+  };
+
+  // Set reply mode
+  const handleReply = (comment) => {
+    setReplyingTo(comment);
+    commentInputRef.current?.focus();
+  };
 
   // Extract YouTube ID from URL
   const getYoutubeId = (url) => {
@@ -769,6 +916,7 @@ const PostCard = ({
         </div>
       )}
 
+      {/* Post Actions */}
       <div className="post-actions">
         <button 
           className={`action-btn like-btn ${post.is_liked ? 'liked' : ''}`}
@@ -779,7 +927,11 @@ const PostCard = ({
           <span>{post.likes_count || 0}</span>
         </button>
         
-        <button className="action-btn comment-btn">
+        <button 
+          className={`action-btn comment-btn ${showComments ? 'active' : ''}`}
+          onClick={toggleComments}
+          style={showComments ? { color: moduleColor } : {}}
+        >
           <MessageCircle size={18} />
           <span>{post.comments_count || 0}</span>
         </button>
@@ -788,6 +940,176 @@ const PostCard = ({
           <Share2 size={18} />
           <span>{post.shares_count || 0}</span>
         </button>
+      </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="comments-section">
+          {/* Comment Input */}
+          <form className="comment-input-form" onSubmit={handleSubmitComment}>
+            {replyingTo && (
+              <div className="replying-to">
+                <CornerDownRight size={14} />
+                <span>Ответ для {replyingTo.author?.first_name}</span>
+                <button type="button" onClick={() => setReplyingTo(null)}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            <div className="comment-input-row">
+              <div className="comment-input-avatar">
+                {currentUser?.profile_picture ? (
+                  <img src={currentUser.profile_picture} alt="" />
+                ) : (
+                  <div className="avatar-placeholder small" style={{ backgroundColor: moduleColor }}>
+                    {currentUser?.first_name?.[0] || '?'}
+                  </div>
+                )}
+              </div>
+              <input
+                ref={commentInputRef}
+                type="text"
+                placeholder={replyingTo ? "Написать ответ..." : "Написать комментарий..."}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+              <button 
+                type="submit"
+                disabled={!newComment.trim() || submittingComment}
+                style={{ color: moduleColor }}
+              >
+                {submittingComment ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
+              </button>
+            </div>
+          </form>
+
+          {/* Comments List */}
+          {loadingComments ? (
+            <div className="comments-loading">
+              <Loader2 size={20} className="spin" />
+              <span>Загрузка комментариев...</span>
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="no-comments">
+              <MessageCircle size={24} />
+              <span>Пока нет комментариев</span>
+            </div>
+          ) : (
+            <div className="comments-list">
+              {comments.map(comment => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUserId={currentUser?.id}
+                  moduleColor={moduleColor}
+                  onReply={handleReply}
+                  onDelete={handleDeleteComment}
+                  onLike={handleLikeComment}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Comment Item Component
+const CommentItem = ({ 
+  comment, 
+  currentUserId, 
+  moduleColor, 
+  onReply, 
+  onDelete, 
+  onLike,
+  formatDate,
+  isReply = false,
+  parentId = null
+}) => {
+  const [showReplies, setShowReplies] = useState(false);
+  const isAuthor = comment.user_id === currentUserId;
+  const hasReplies = comment.replies && comment.replies.length > 0;
+
+  return (
+    <div className={`comment-item ${isReply ? 'reply' : ''}`}>
+      <div className="comment-avatar">
+        {comment.author?.profile_picture ? (
+          <img src={comment.author.profile_picture} alt="" />
+        ) : (
+          <div className="avatar-placeholder small" style={{ backgroundColor: moduleColor }}>
+            {comment.author?.first_name?.[0] || '?'}
+          </div>
+        )}
+      </div>
+      
+      <div className="comment-body">
+        <div className="comment-bubble">
+          <span className="comment-author-name">
+            {comment.author?.first_name} {comment.author?.last_name}
+          </span>
+          <p className="comment-text">{comment.content}</p>
+        </div>
+        
+        <div className="comment-actions">
+          <span className="comment-time">{formatDate(comment.created_at)}</span>
+          <button 
+            className={`comment-action-btn ${comment.user_liked ? 'liked' : ''}`}
+            onClick={() => onLike(comment.id, isReply, parentId)}
+          >
+            {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
+            ❤️ Нравится
+          </button>
+          {!isReply && (
+            <button 
+              className="comment-action-btn"
+              onClick={() => onReply(comment)}
+            >
+              Ответить
+            </button>
+          )}
+          {isAuthor && (
+            <button 
+              className="comment-action-btn delete"
+              onClick={() => onDelete(comment.id, isReply, parentId)}
+            >
+              Удалить
+            </button>
+          )}
+        </div>
+
+        {/* Replies */}
+        {hasReplies && !isReply && (
+          <div className="comment-replies">
+            <button 
+              className="show-replies-btn"
+              onClick={() => setShowReplies(!showReplies)}
+            >
+              {showReplies ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showReplies ? 'Скрыть ответы' : `Показать ответы (${comment.replies.length})`}
+            </button>
+            
+            {showReplies && (
+              <div className="replies-list">
+                {comment.replies.map(reply => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    currentUserId={currentUserId}
+                    moduleColor={moduleColor}
+                    onReply={onReply}
+                    onDelete={onDelete}
+                    onLike={onLike}
+                    formatDate={formatDate}
+                    isReply={true}
+                    parentId={comment.id}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
