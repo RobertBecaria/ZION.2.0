@@ -231,3 +231,13 @@ Enhanced Events panel (СОБЫТИЯ) in NEWS module with:
 3. Upload images → verify preview and removal
 4. Click emojis → verify they appear in text
 5. Create post with all attachments → verify post shows them
+
+## Enhanced Post Composer Testing - December 15, 2025
+
+### Features to Test:
+1. **YouTube Link Embedding** - Click link button (🔗), paste YouTube URL, verify thumbnail preview with play button, verify removal
+2. **Emoji Picker** - Click emoji button (😊), verify 12 emojis display, click emoji and verify it appears in textarea
+3. **Visibility Selector** - Click "Публичный" dropdown, verify 3 options available
+4. **Create Post** - Type text with emoji, add YouTube link, click "Опубликовать", verify post appears in feed
+
+### Test Status: READY FOR TESTING
