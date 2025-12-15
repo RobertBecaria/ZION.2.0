@@ -15975,7 +15975,7 @@ async def update_task_status(
             update_dict["completion_photos"] = status_update.completion_photo_ids
             
             # Create completion post in feed
-            org = await db.work_organizations.find_one({"id": organization_id})
+            _org = await db.work_organizations.find_one({"id": organization_id})
             
             post_content = f"✅ Задача выполнена: {task['title']}"
             if status_update.completion_note:
