@@ -1,12 +1,14 @@
 /**
  * NewsFeed Component
  * News feed with post creation and visibility options
+ * Enhanced with: Image Upload, YouTube Embedding, Link Preview
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Users, Globe, Lock, UserCheck, Image, Video, Link2, 
   Heart, MessageCircle, Share2, MoreHorizontal, Send,
-  Trash2, ChevronDown
+  Trash2, ChevronDown, X, Play, ExternalLink, Loader2,
+  Upload, Plus, Smile
 } from 'lucide-react';
 
 const VISIBILITY_OPTIONS = [
@@ -30,6 +32,9 @@ const VISIBILITY_OPTIONS = [
   }
 ];
 
+// Common emojis for quick access
+const QUICK_EMOJIS = ['😀', '😂', '❤️', '👍', '🎉', '🔥', '✨', '🙌', '💪', '🤔', '👏', '💯'];
+
 const NewsFeed = ({ 
   user, 
   moduleColor = '#1D4ED8',
@@ -44,6 +49,19 @@ const NewsFeed = ({
   const [posting, setPosting] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  
+  // NEW: Media and link states
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [youtubeLinks, setYoutubeLinks] = useState([]);
+  const [linkPreviews, setLinkPreviews] = useState([]);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkInputValue, setLinkInputValue] = useState('');
+  const [fetchingPreview, setFetchingPreview] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
   const LIMIT = 20;
@@ -83,11 +101,146 @@ const NewsFeed = ({
     loadPosts(true);
   }, [channelId]);
 
+  // Handle image selection
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    // Limit to 10 images
+    const remainingSlots = 10 - selectedImages.length;
+    const newFiles = files.slice(0, remainingSlots);
+    
+    // Create preview URLs
+    const newImages = newFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      id: Math.random().toString(36).substr(2, 9)
+    }));
+    
+    setSelectedImages(prev => [...prev, ...newImages]);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Remove selected image
+  const removeImage = (imageId) => {
+    setSelectedImages(prev => {
+      const updated = prev.filter(img => img.id !== imageId);
+      // Revoke URL to prevent memory leak
+      const removed = prev.find(img => img.id === imageId);
+      if (removed) URL.revokeObjectURL(removed.preview);
+      return updated;
+    });
+  };
+
+  // Upload images to server
+  const uploadImages = async () => {
+    if (selectedImages.length === 0) return [];
+    
+    setUploadingImages(true);
+    const uploadedIds = [];
+    
+    try {
+      const token = localStorage.getItem('zion_token');
+      
+      for (const img of selectedImages) {
+        const formData = new FormData();
+        formData.append('file', img.file);
+        formData.append('source_module', 'community');
+        
+        const response = await fetch(`${BACKEND_URL}/api/media/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          uploadedIds.push(data.id || data.file_id);
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+    } finally {
+      setUploadingImages(false);
+    }
+    
+    return uploadedIds;
+  };
+
+  // Handle link input
+  const handleAddLink = async () => {
+    if (!linkInputValue.trim()) return;
+    
+    setFetchingPreview(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/utils/link-preview`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: linkInputValue.trim() })
+      });
+      
+      if (response.ok) {
+        const preview = await response.json();
+        
+        if (preview.is_youtube && preview.youtube_id) {
+          // It's a YouTube link
+          setYoutubeLinks(prev => [...prev, {
+            id: preview.youtube_id,
+            url: linkInputValue.trim(),
+            thumbnail: preview.image
+          }]);
+        } else if (preview.title || preview.image) {
+          // It's a regular link with preview
+          setLinkPreviews(prev => [...prev, {
+            ...preview,
+            localId: Math.random().toString(36).substr(2, 9)
+          }]);
+        }
+        
+        setLinkInputValue('');
+        setShowLinkInput(false);
+      }
+    } catch (error) {
+      console.error('Error fetching link preview:', error);
+    } finally {
+      setFetchingPreview(false);
+    }
+  };
+
+  // Remove YouTube link
+  const removeYoutubeLink = (youtubeId) => {
+    setYoutubeLinks(prev => prev.filter(link => link.id !== youtubeId));
+  };
+
+  // Remove link preview
+  const removeLinkPreview = (localId) => {
+    setLinkPreviews(prev => prev.filter(link => link.localId !== localId));
+  };
+
+  // Add emoji to content
+  const addEmoji = (emoji) => {
+    setNewPostContent(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  };
+
+  // Create post with media
   const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return;
+    if (!newPostContent.trim() && selectedImages.length === 0 && youtubeLinks.length === 0) return;
     
     setPosting(true);
     try {
+      // Upload images first
+      const mediaIds = await uploadImages();
+      
       const token = localStorage.getItem('zion_token');
       const response = await fetch(`${BACKEND_URL}/api/news/posts`, {
         method: 'POST',
@@ -99,13 +252,18 @@ const NewsFeed = ({
           content: newPostContent,
           visibility: postVisibility,
           channel_id: channelId,
-          media_files: [],
-          youtube_urls: []
+          media_files: mediaIds,
+          youtube_urls: youtubeLinks.map(l => l.url),
+          link_previews: linkPreviews.map(l => ({ url: l.url, title: l.title, image: l.image }))
         })
       });
 
       if (response.ok) {
+        // Reset all states
         setNewPostContent('');
+        setSelectedImages([]);
+        setYoutubeLinks([]);
+        setLinkPreviews([]);
         loadPosts(true); // Refresh feed
       }
     } catch (error) {
@@ -125,7 +283,6 @@ const NewsFeed = ({
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      // Update local state
       setPosts(prev => prev.map(post => {
         if (post.id === postId) {
           return {
@@ -180,11 +337,12 @@ const NewsFeed = ({
   };
 
   const selectedVisibility = getVisibilityOption(postVisibility);
+  const hasContent = newPostContent.trim() || selectedImages.length > 0 || youtubeLinks.length > 0;
 
   return (
     <div className="news-feed">
       {/* Post Composer */}
-      <div className="post-composer">
+      <div className="post-composer enhanced">
         <div className="composer-header">
           <div className="composer-avatar">
             {user?.profile_picture ? (
@@ -200,6 +358,7 @@ const NewsFeed = ({
           </div>
           <div className="composer-input-wrapper">
             <textarea
+              ref={textareaRef}
               placeholder={channelId ? `Написать в ${channelName || 'канал'}...` : "Что нового?"}
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
@@ -208,16 +367,161 @@ const NewsFeed = ({
           </div>
         </div>
 
+        {/* Selected Images Preview */}
+        {selectedImages.length > 0 && (
+          <div className="composer-images-preview">
+            {selectedImages.map(img => (
+              <div key={img.id} className="image-preview-item">
+                <img src={img.preview} alt="Preview" />
+                <button 
+                  className="remove-image-btn"
+                  onClick={() => removeImage(img.id)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {selectedImages.length < 10 && (
+              <button 
+                className="add-more-images-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Plus size={20} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* YouTube Previews */}
+        {youtubeLinks.length > 0 && (
+          <div className="composer-youtube-preview">
+            {youtubeLinks.map(link => (
+              <div key={link.id} className="youtube-preview-item">
+                <div className="youtube-thumbnail">
+                  <img src={link.thumbnail} alt="YouTube" />
+                  <div className="play-overlay">
+                    <Play size={24} fill="white" />
+                  </div>
+                </div>
+                <button 
+                  className="remove-youtube-btn"
+                  onClick={() => removeYoutubeLink(link.id)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Link Previews */}
+        {linkPreviews.length > 0 && (
+          <div className="composer-link-previews">
+            {linkPreviews.map(link => (
+              <div key={link.localId} className="link-preview-item">
+                {link.image && (
+                  <div className="link-preview-image">
+                    <img src={link.image} alt="" />
+                  </div>
+                )}
+                <div className="link-preview-content">
+                  <div className="link-preview-site">{link.site_name || new URL(link.url).hostname}</div>
+                  <div className="link-preview-title">{link.title || link.url}</div>
+                  {link.description && (
+                    <div className="link-preview-desc">{link.description}</div>
+                  )}
+                </div>
+                <button 
+                  className="remove-link-btn"
+                  onClick={() => removeLinkPreview(link.localId)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Link Input Field */}
+        {showLinkInput && (
+          <div className="link-input-wrapper">
+            <input
+              type="url"
+              placeholder="Вставьте ссылку (YouTube, веб-сайт)..."
+              value={linkInputValue}
+              onChange={(e) => setLinkInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
+              autoFocus
+            />
+            <button 
+              className="add-link-btn"
+              onClick={handleAddLink}
+              disabled={fetchingPreview || !linkInputValue.trim()}
+            >
+              {fetchingPreview ? <Loader2 size={16} className="spin" /> : <Plus size={16} />}
+            </button>
+            <button 
+              className="cancel-link-btn"
+              onClick={() => {
+                setShowLinkInput(false);
+                setLinkInputValue('');
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* Emoji Picker */}
+        {showEmojiPicker && (
+          <div className="emoji-picker">
+            {QUICK_EMOJIS.map(emoji => (
+              <button 
+                key={emoji}
+                className="emoji-btn"
+                onClick={() => addEmoji(emoji)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="composer-footer">
           <div className="composer-attachments">
-            <button className="attachment-btn" title="Добавить фото">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              style={{ display: 'none' }}
+            />
+            <button 
+              className={`attachment-btn ${selectedImages.length > 0 ? 'active' : ''}`}
+              title="Добавить фото"
+              onClick={() => fileInputRef.current?.click()}
+              style={selectedImages.length > 0 ? { color: moduleColor } : {}}
+            >
               <Image size={20} />
+              {selectedImages.length > 0 && (
+                <span className="attachment-count">{selectedImages.length}</span>
+              )}
             </button>
-            <button className="attachment-btn" title="Добавить видео">
-              <Video size={20} />
-            </button>
-            <button className="attachment-btn" title="Добавить ссылку">
+            <button 
+              className={`attachment-btn ${youtubeLinks.length > 0 || linkPreviews.length > 0 ? 'active' : ''}`}
+              title="Добавить ссылку"
+              onClick={() => setShowLinkInput(!showLinkInput)}
+              style={youtubeLinks.length > 0 || linkPreviews.length > 0 ? { color: moduleColor } : {}}
+            >
               <Link2 size={20} />
+            </button>
+            <button 
+              className="attachment-btn"
+              title="Добавить эмодзи"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile size={20} />
             </button>
           </div>
 
@@ -260,10 +564,17 @@ const NewsFeed = ({
             <button 
               className="post-btn"
               onClick={handleCreatePost}
-              disabled={!newPostContent.trim() || posting}
+              disabled={!hasContent || posting || uploadingImages}
               style={{ backgroundColor: moduleColor }}
             >
-              {posting ? 'Публикация...' : 'Опубликовать'}
+              {posting || uploadingImages ? (
+                <>
+                  <Loader2 size={16} className="spin" />
+                  {uploadingImages ? 'Загрузка...' : 'Публикация...'}
+                </>
+              ) : (
+                'Опубликовать'
+              )}
             </button>
           </div>
         </div>
@@ -294,6 +605,7 @@ const NewsFeed = ({
                 onDelete={handleDelete}
                 formatDate={formatDate}
                 getVisibilityOption={getVisibilityOption}
+                backendUrl={BACKEND_URL}
               />
             ))}
             
@@ -312,7 +624,7 @@ const NewsFeed = ({
   );
 };
 
-// Post Card Component
+// Post Card Component with Media Display
 const PostCard = ({ 
   post, 
   currentUserId, 
@@ -320,11 +632,19 @@ const PostCard = ({
   onLike, 
   onDelete,
   formatDate,
-  getVisibilityOption
+  getVisibilityOption,
+  backendUrl
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState(null);
   const isAuthor = post.user_id === currentUserId;
   const visibility = getVisibilityOption(post.visibility);
+
+  // Extract YouTube ID from URL
+  const getYoutubeId = (url) => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  };
 
   return (
     <div className="post-card">
@@ -392,7 +712,62 @@ const PostCard = ({
         <p>{post.content}</p>
       </div>
 
-      {/* Media would go here */}
+      {/* Media Gallery */}
+      {post.media_files && post.media_files.length > 0 && (
+        <div className={`post-media-gallery gallery-${Math.min(post.media_files.length, 4)}`}>
+          {post.media_files.slice(0, 4).map((mediaId, index) => (
+            <div key={mediaId} className="media-item">
+              <img 
+                src={`${backendUrl}/api/media/${mediaId}`} 
+                alt=""
+                loading="lazy"
+              />
+              {index === 3 && post.media_files.length > 4 && (
+                <div className="more-overlay">
+                  +{post.media_files.length - 4}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* YouTube Embeds */}
+      {post.youtube_urls && post.youtube_urls.length > 0 && (
+        <div className="post-youtube-embeds">
+          {post.youtube_urls.map((url, index) => {
+            const youtubeId = getYoutubeId(url);
+            if (!youtubeId) return null;
+            
+            return (
+              <div key={index} className="youtube-embed">
+                {playingVideo === youtubeId ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                    title="YouTube video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div 
+                    className="youtube-thumbnail-wrapper"
+                    onClick={() => setPlayingVideo(youtubeId)}
+                  >
+                    <img 
+                      src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+                      alt="YouTube thumbnail"
+                    />
+                    <div className="play-button">
+                      <Play size={48} fill="white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="post-actions">
         <button 
