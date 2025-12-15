@@ -13926,7 +13926,7 @@ async def get_classmates_for_invitation(
         classmates = []
         for student in students:
             # Skip the current user's own children if they're a parent
-            parent_ids = student.get("parent_ids", [])
+            _parent_ids = student.get("parent_ids", [])
             
             classmate_info = {
                 "id": student.get("id"),
