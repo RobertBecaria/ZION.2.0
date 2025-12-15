@@ -888,7 +888,7 @@ const PostCard = ({
           </div>
         </div>
 
-        {isAuthor && (
+        {isAuthor && !isEditing && (
           <div className="post-menu-wrapper">
             <button 
               className="menu-btn"
@@ -898,6 +898,16 @@ const PostCard = ({
             </button>
             {showMenu && (
               <div className="post-menu">
+                <button 
+                  className="menu-item edit"
+                  onClick={() => {
+                    setShowMenu(false);
+                    setIsEditing(true);
+                  }}
+                >
+                  <Edit2 size={16} />
+                  Редактировать
+                </button>
                 <button 
                   className="menu-item delete"
                   onClick={() => {
@@ -914,9 +924,41 @@ const PostCard = ({
         )}
       </div>
 
-      <div className="post-content">
-        <p>{post.content}</p>
-      </div>
+      {/* Post Content - Edit Mode or View Mode */}
+      {isEditing ? (
+        <div className="post-edit-mode">
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            placeholder="Введите текст поста..."
+            rows={4}
+            autoFocus
+          />
+          <div className="edit-actions">
+            <button 
+              className="cancel-edit-btn"
+              onClick={handleCancelEdit}
+              disabled={saving}
+            >
+              <X size={16} />
+              Отмена
+            </button>
+            <button 
+              className="save-edit-btn"
+              onClick={handleSaveEdit}
+              disabled={saving || !editContent.trim()}
+              style={{ backgroundColor: moduleColor }}
+            >
+              {saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
+              {saving ? 'Сохранение...' : 'Сохранить'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="post-content">
+          <p>{post.content}</p>
+        </div>
+      )}
 
       {/* Media Gallery */}
       {post.media_files && post.media_files.length > 0 && (
