@@ -11814,7 +11814,7 @@ async def get_organization_classes(
             if current_user.role != "admin":
                 raise HTTPException(status_code=403, detail="Нет доступа к этой организации")
         
-        is_admin = membership and membership.get("is_admin")
+        _is_admin = membership and membership.get("is_admin")
         is_teacher = membership and membership.get("is_teacher") or teacher is not None
         
         # Get unique classes from students
