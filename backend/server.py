@@ -18209,6 +18209,213 @@ async def delete_news_post(
     
     return {"message": "Post deleted"}
 
+# ===== NEWS POST COMMENTS =====
+
+class NewsCommentCreate(BaseModel):
+    content: str
+    parent_comment_id: Optional[str] = None
+
+@api_router.get("/news/posts/{post_id}/comments")
+async def get_news_post_comments(
+    post_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get comments for a news post"""
+    post = await db.news_posts.find_one({"id": post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Get all comments for this post
+    comments = await db.news_post_comments.find({
+        "post_id": post_id,
+        "is_deleted": {"$ne": True}
+    }).sort("created_at", 1).to_list(None)
+    
+    # Build response with author info and nested replies
+    comments_dict = {}
+    top_level_comments = []
+    
+    for comment in comments:
+        comment.pop("_id", None)
+        
+        # Get author info
+        author = await get_user_by_id(comment["user_id"])
+        comment["author"] = {
+            "id": author.id if author else "",
+            "first_name": author.first_name if author else "Deleted",
+            "last_name": author.last_name if author else "User",
+            "profile_picture": author.profile_picture if author else None
+        }
+        
+        # Check if current user liked this comment
+        liked = await db.news_comment_likes.find_one({
+            "comment_id": comment["id"],
+            "user_id": current_user.id
+        })
+        comment["user_liked"] = liked is not None
+        
+        comment["replies"] = []
+        comments_dict[comment["id"]] = comment
+        
+        if comment.get("parent_comment_id"):
+            parent = comments_dict.get(comment["parent_comment_id"])
+            if parent:
+                parent["replies"].append(comment)
+        else:
+            top_level_comments.append(comment)
+    
+    return {"comments": top_level_comments, "total": len(top_level_comments)}
+
+@api_router.post("/news/posts/{post_id}/comments")
+async def create_news_post_comment(
+    post_id: str,
+    comment_data: NewsCommentCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a comment on a news post"""
+    post = await db.news_posts.find_one({"id": post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Validate parent comment if provided
+    if comment_data.parent_comment_id:
+        parent = await db.news_post_comments.find_one({"id": comment_data.parent_comment_id})
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent comment not found")
+    
+    # Create comment
+    new_comment = {
+        "id": str(uuid4()),
+        "post_id": post_id,
+        "user_id": current_user.id,
+        "content": comment_data.content,
+        "parent_comment_id": comment_data.parent_comment_id,
+        "likes_count": 0,
+        "replies_count": 0,
+        "is_deleted": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.news_post_comments.insert_one(new_comment)
+    
+    # Update counts
+    if comment_data.parent_comment_id:
+        await db.news_post_comments.update_one(
+            {"id": comment_data.parent_comment_id},
+            {"$inc": {"replies_count": 1}}
+        )
+    else:
+        await db.news_posts.update_one(
+            {"id": post_id},
+            {"$inc": {"comments_count": 1}}
+        )
+    
+    # Create notification
+    notification_user_id = post["user_id"]
+    if comment_data.parent_comment_id:
+        parent = await db.news_post_comments.find_one({"id": comment_data.parent_comment_id})
+        if parent:
+            notification_user_id = parent["user_id"]
+    
+    if notification_user_id != current_user.id:
+        notification = {
+            "id": str(uuid4()),
+            "user_id": notification_user_id,
+            "sender_id": current_user.id,
+            "type": "reply" if comment_data.parent_comment_id else "comment",
+            "title": "Новый комментарий",
+            "message": f"{current_user.first_name} {current_user.last_name} {'ответил на ваш комментарий' if comment_data.parent_comment_id else 'прокомментировал ваш пост'}",
+            "related_post_id": post_id,
+            "related_comment_id": new_comment["id"],
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.notifications.insert_one(notification)
+    
+    # Return with author info
+    new_comment.pop("_id", None)
+    new_comment["author"] = {
+        "id": current_user.id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "profile_picture": current_user.profile_picture
+    }
+    new_comment["user_liked"] = False
+    new_comment["replies"] = []
+    
+    return new_comment
+
+@api_router.delete("/news/comments/{comment_id}")
+async def delete_news_comment(
+    comment_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a news post comment"""
+    comment = await db.news_post_comments.find_one({"id": comment_id})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    if comment["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Soft delete
+    await db.news_post_comments.update_one(
+        {"id": comment_id},
+        {"$set": {"is_deleted": True}}
+    )
+    
+    # Update counts
+    if comment.get("parent_comment_id"):
+        await db.news_post_comments.update_one(
+            {"id": comment["parent_comment_id"]},
+            {"$inc": {"replies_count": -1}}
+        )
+    else:
+        await db.news_posts.update_one(
+            {"id": comment["post_id"]},
+            {"$inc": {"comments_count": -1}}
+        )
+    
+    return {"message": "Comment deleted"}
+
+@api_router.post("/news/comments/{comment_id}/like")
+async def like_news_comment(
+    comment_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Like/unlike a news comment"""
+    comment = await db.news_post_comments.find_one({"id": comment_id})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    existing_like = await db.news_comment_likes.find_one({
+        "comment_id": comment_id,
+        "user_id": current_user.id
+    })
+    
+    if existing_like:
+        # Unlike
+        await db.news_comment_likes.delete_one({"_id": existing_like["_id"]})
+        await db.news_post_comments.update_one(
+            {"id": comment_id},
+            {"$inc": {"likes_count": -1}}
+        )
+        return {"liked": False, "likes_count": comment["likes_count"] - 1}
+    else:
+        # Like
+        await db.news_comment_likes.insert_one({
+            "id": str(uuid4()),
+            "comment_id": comment_id,
+            "user_id": current_user.id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.news_post_comments.update_one(
+            {"id": comment_id},
+            {"$inc": {"likes_count": 1}}
+        )
+        return {"liked": True, "likes_count": comment["likes_count"] + 1}
+
 # ===== OFFICIAL CHANNELS (Organization-linked) =====
 
 @api_router.post("/news/channels/{channel_id}/link-organization")
