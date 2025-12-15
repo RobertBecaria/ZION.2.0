@@ -4061,7 +4061,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
         is_own_profile=True
     )
 
-@api_router.get("/users/{user_id}/profile", response_model=DynamicProfileResponse)
+@api_router.get("/users/{user_id}/dynamic-profile", response_model=DynamicProfileResponse)
 async def get_user_dynamic_profile(
     user_id: str,
     current_user: User = Depends(get_current_user)
