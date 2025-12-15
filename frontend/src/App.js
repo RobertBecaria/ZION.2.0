@@ -893,6 +893,23 @@ function Dashboard() {
                                 }}
                               />
                             )}
+
+                            {/* User Profile View in News */}
+                            {activeView === 'news-user-profile' && selectedNewsUserId && (
+                              <NewsUserProfile
+                                userId={selectedNewsUserId}
+                                user={user}
+                                moduleColor={currentModule.color}
+                                onBack={() => {
+                                  setSelectedNewsUserId(null);
+                                  setActiveView('feed');
+                                }}
+                                onOpenChat={(person) => {
+                                  // TODO: Open chat with person
+                                  console.log('Open chat with', person);
+                                }}
+                              />
+                            )}
                             
                             {/* Friends Page */}
                             {(activeView === 'friends' || activeView === 'followers' || activeView === 'following') && (
