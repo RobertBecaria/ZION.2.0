@@ -18181,6 +18181,44 @@ async def unlike_news_post(
     
     return {"message": "Post unliked"}
 
+class NewsPostUpdate(BaseModel):
+    content: Optional[str] = None
+    visibility: Optional[str] = None
+
+@api_router.put("/news/posts/{post_id}")
+async def update_news_post(
+    post_id: str,
+    update_data: NewsPostUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a news post (author only)"""
+    post = await db.news_posts.find_one({"id": post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    if post["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Build update fields
+    update_fields = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if update_data.content is not None:
+        update_fields["content"] = update_data.content
+    
+    if update_data.visibility is not None:
+        update_fields["visibility"] = update_data.visibility
+    
+    # Update the post
+    await db.news_posts.update_one(
+        {"id": post_id},
+        {"$set": update_fields}
+    )
+    
+    # Get updated post
+    updated_post = await db.news_posts.find_one({"id": post_id}, {"_id": 0})
+    
+    return updated_post
+
 @api_router.delete("/news/posts/{post_id}")
 async def delete_news_post(
     post_id: str,
