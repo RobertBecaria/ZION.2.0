@@ -2821,8 +2821,8 @@ class HouseholdCreateRequest(BaseModel):
     address_postal_code: Optional[str] = None
     members: List[dict] = []  # Initial members
 
-class HouseholdResponse(BaseModel):
-    """Response model for household"""
+class HouseholdBasicResponse(BaseModel):
+    """Basic response model for household"""
     id: str
     household_name: str
     address_street: Optional[str] = None
