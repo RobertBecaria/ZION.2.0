@@ -31727,6 +31727,9 @@ a,
   margin-bottom: 12px;
   background: #f9fafb;
   border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  position: relative;
+  z-index: 10;
 }
 
 .emoji-btn {
