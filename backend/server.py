@@ -12372,7 +12372,7 @@ async def add_child_profile(
         # Parse date_of_birth
         try:
             dob = datetime.fromisoformat(child_data['date_of_birth']).date()
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Неверный формат даты рождения")
         
         # Create student record
