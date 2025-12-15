@@ -564,4 +564,401 @@ const CATEGORY_LABELS = {
 
 const getCategoryLabel = (cat) => CATEGORY_LABELS[cat] || cat;
 
+// Channel categories for selection
+const CHANNEL_CATEGORIES = [
+  { id: 'WORLD_NEWS', label: 'Мировые новости', icon: '🌍' },
+  { id: 'POLITICS', label: 'Политика', icon: '🏛️' },
+  { id: 'ECONOMY', label: 'Экономика и Бизнес', icon: '📈' },
+  { id: 'TECHNOLOGY', label: 'Технологии', icon: '💻' },
+  { id: 'SCIENCE', label: 'Наука', icon: '🔬' },
+  { id: 'SPORTS', label: 'Спорт', icon: '⚽' },
+  { id: 'CULTURE', label: 'Культура и Искусство', icon: '🎭' },
+  { id: 'ENTERTAINMENT', label: 'Развлечения', icon: '🎬' },
+  { id: 'HEALTH', label: 'Здоровье', icon: '💊' },
+  { id: 'EDUCATION', label: 'Образование', icon: '📚' },
+  { id: 'LOCAL_NEWS', label: 'Местные новости', icon: '📍' },
+  { id: 'AUTO', label: 'Авто', icon: '🚗' },
+  { id: 'TRAVEL', label: 'Путешествия', icon: '✈️' },
+  { id: 'FOOD', label: 'Кулинария', icon: '🍳' },
+  { id: 'FASHION', label: 'Мода и Стиль', icon: '👗' }
+];
+
+// Channel Settings Modal Component
+const ChannelSettingsModal = ({ channel, accentColor, onClose, onDelete }) => {
+  const [name, setName] = useState(channel?.name || '');
+  const [description, setDescription] = useState(channel?.description || '');
+  const [selectedCategories, setSelectedCategories] = useState(channel?.categories || []);
+  const [avatarUrl, setAvatarUrl] = useState(channel?.avatar_url || '');
+  const [coverUrl, setCoverUrl] = useState(channel?.cover_url || '');
+  const [avatarPreview, setAvatarPreview] = useState(channel?.avatar_url || '');
+  const [coverPreview, setCoverPreview] = useState(channel?.cover_url || '');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+
+  const avatarInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+  const handleImageUpload = (file, type) => {
+    if (!file) return;
+    
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Размер файла не должен превышать 2MB');
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      setError('Пожалуйста, выберите изображение');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      if (type === 'avatar') {
+        setAvatarUrl(base64);
+        setAvatarPreview(base64);
+      } else {
+        setCoverUrl(base64);
+        setCoverPreview(base64);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const toggleCategory = (catId) => {
+    setSelectedCategories(prev => 
+      prev.includes(catId) 
+        ? prev.filter(c => c !== catId)
+        : [...prev, catId]
+    );
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      setError('Введите название канала');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/news/channels/${channel.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+          categories: selectedCategories,
+          avatar_url: avatarUrl || null,
+          cover_url: coverUrl || null
+        })
+      });
+
+      if (response.ok) {
+        setSuccessMessage('Настройки сохранены!');
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      } else {
+        const data = await response.json();
+        setError(data.detail || 'Ошибка сохранения');
+      }
+    } catch (err) {
+      setError('Ошибка сети. Попробуйте снова.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/news/channels/${channel.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        onDelete();
+      } else {
+        const data = await response.json();
+        setError(data.detail || 'Ошибка удаления');
+      }
+    } catch (err) {
+      setError('Ошибка сети');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content channel-settings-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2><Settings size={20} /> Настройки канала</h2>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="settings-tabs">
+          <button 
+            className={`settings-tab ${activeTab === 'general' ? 'active' : ''}`}
+            onClick={() => setActiveTab('general')}
+            style={activeTab === 'general' ? { borderBottomColor: accentColor, color: accentColor } : {}}
+          >
+            Основная информация
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'appearance' ? 'active' : ''}`}
+            onClick={() => setActiveTab('appearance')}
+            style={activeTab === 'appearance' ? { borderBottomColor: accentColor, color: accentColor } : {}}
+          >
+            Оформление
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'categories' ? 'active' : ''}`}
+            onClick={() => setActiveTab('categories')}
+            style={activeTab === 'categories' ? { borderBottomColor: accentColor, color: accentColor } : {}}
+          >
+            Категории
+          </button>
+          <button 
+            className={`settings-tab danger ${activeTab === 'danger' ? 'active' : ''}`}
+            onClick={() => setActiveTab('danger')}
+          >
+            Опасная зона
+          </button>
+        </div>
+
+        <div className="modal-body settings-body">
+          {/* General Tab */}
+          {activeTab === 'general' && (
+            <div className="settings-section">
+              <div className="form-group">
+                <label>Название канала *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Введите название"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Описание</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="О чём ваш канал?"
+                  rows={4}
+                  maxLength={500}
+                />
+                <span className="char-count">{description.length}/500</span>
+              </div>
+
+              {channel.is_official && (
+                <div className="info-banner official-info">
+                  <Building2 size={16} />
+                  <span>Официальный канал организации: <strong>{channel.organization?.name}</strong></span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Appearance Tab */}
+          {activeTab === 'appearance' && (
+            <div className="settings-section appearance-section">
+              {/* Cover Image */}
+              <div className="image-upload-section">
+                <label>Обложка канала</label>
+                <div 
+                  className="cover-upload-area"
+                  style={{ 
+                    backgroundImage: coverPreview ? `url(${coverPreview})` : 'none',
+                    backgroundColor: coverPreview ? 'transparent' : '#f3f4f6'
+                  }}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {!coverPreview && (
+                    <div className="upload-placeholder">
+                      <Image size={32} />
+                      <span>Нажмите, чтобы загрузить обложку</span>
+                      <span className="upload-hint">Рекомендуемый размер: 1200x400px</span>
+                    </div>
+                  )}
+                  <div className="upload-overlay">
+                    <Camera size={24} />
+                    <span>Изменить</span>
+                  </div>
+                </div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0], 'cover')}
+                  style={{ display: 'none' }}
+                />
+                {coverPreview && (
+                  <button 
+                    className="remove-image-btn"
+                    onClick={() => { setCoverUrl(''); setCoverPreview(''); }}
+                  >
+                    <Trash2 size={14} /> Удалить обложку
+                  </button>
+                )}
+              </div>
+
+              {/* Avatar Image */}
+              <div className="image-upload-section">
+                <label>Аватар канала</label>
+                <div className="avatar-upload-container">
+                  <div 
+                    className="avatar-upload-area"
+                    style={{ 
+                      backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
+                      backgroundColor: avatarPreview ? 'transparent' : accentColor
+                    }}
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {!avatarPreview && (
+                      <Tv size={32} color="white" />
+                    )}
+                    <div className="avatar-upload-overlay">
+                      <Camera size={20} />
+                    </div>
+                  </div>
+                  <div className="avatar-upload-info">
+                    <span>Нажмите на аватар, чтобы изменить</span>
+                    <span className="upload-hint">Рекомендуемый размер: 200x200px</span>
+                    {avatarPreview && (
+                      <button 
+                        className="remove-image-btn"
+                        onClick={() => { setAvatarUrl(''); setAvatarPreview(''); }}
+                      >
+                        <Trash2 size={14} /> Удалить аватар
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e.target.files[0], 'avatar')}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Categories Tab */}
+          {activeTab === 'categories' && (
+            <div className="settings-section">
+              <label>Выберите категории для вашего канала</label>
+              <div className="categories-grid">
+                {CHANNEL_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    className={`category-select-btn ${selectedCategories.includes(cat.id) ? 'selected' : ''}`}
+                    onClick={() => toggleCategory(cat.id)}
+                    style={selectedCategories.includes(cat.id) ? { 
+                      backgroundColor: accentColor, 
+                      borderColor: accentColor,
+                      color: 'white' 
+                    } : {}}
+                  >
+                    <span className="cat-icon">{cat.icon}</span>
+                    <span className="cat-label">{cat.label}</span>
+                    {selectedCategories.includes(cat.id) && <Check size={14} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Danger Zone Tab */}
+          {activeTab === 'danger' && (
+            <div className="settings-section danger-section">
+              <div className="danger-warning">
+                <AlertTriangle size={24} />
+                <div>
+                  <h4>Удалить канал</h4>
+                  <p>Это действие необратимо. Все публикации и подписчики будут удалены.</p>
+                </div>
+              </div>
+              
+              {!showDeleteConfirm ? (
+                <button 
+                  className="delete-channel-btn"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 size={18} />
+                  Удалить канал
+                </button>
+              ) : (
+                <div className="delete-confirm-box">
+                  <p>Вы уверены? Это действие нельзя отменить.</p>
+                  <div className="delete-confirm-actions">
+                    <button 
+                      className="confirm-delete-btn"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Удаление...' : 'Да, удалить'}
+                    </button>
+                    <button 
+                      className="cancel-delete-btn"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && <div className="error-message">{error}</div>}
+          {successMessage && <div className="success-message"><CheckCircle size={16} /> {successMessage}</div>}
+        </div>
+
+        <div className="modal-footer">
+          <button className="cancel-btn" onClick={onClose}>
+            Отмена
+          </button>
+          {activeTab !== 'danger' && (
+            <button 
+              className="save-btn"
+              onClick={handleSave}
+              disabled={saving}
+              style={{ backgroundColor: accentColor }}
+            >
+              {saving ? 'Сохранение...' : 'Сохранить'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default ChannelView;
