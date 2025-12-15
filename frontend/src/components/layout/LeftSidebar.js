@@ -19,7 +19,8 @@ const LeftSidebar = ({
   loadingSchoolRoles,
   schoolRole,
   setSchoolRole,
-  setSelectedSchool
+  setSelectedSchool,
+  setSelectedChannelId
 }) => {
   const currentModule = getModuleByKey(activeModule);
   const sidebarTintStyle = getSidebarTintStyle(currentModule.color);
