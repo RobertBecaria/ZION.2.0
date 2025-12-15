@@ -6731,7 +6731,7 @@ async def send_voice_message(
     new_message = ChatMessage(
         direct_chat_id=chat_id,
         user_id=current_user.id,
-        content=content or f"🎤 Голосовое сообщение",
+        content=content or "🎤 Голосовое сообщение",
         message_type="VOICE",
         reply_to=reply_to,
         status="sent"
