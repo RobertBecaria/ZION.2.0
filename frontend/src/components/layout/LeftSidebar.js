@@ -281,12 +281,12 @@ const LeftSidebar = ({
             </button>
             
             <button 
-              className={`profile-btn ${activeView === 'services-reviews' ? 'primary' : 'secondary'}`}
-              style={getButtonStyle(activeView === 'services-reviews', '#B91C1C')}
-              onClick={() => setActiveView('services-reviews')}
+              className={`profile-btn ${activeView === 'services-calendar' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-calendar', '#B91C1C')}
+              onClick={() => setActiveView('services-calendar')}
             >
-              <span style={{ fontSize: '18px' }}>⭐</span>
-              <span>ОТЗЫВЫ</span>
+              <span style={{ fontSize: '18px' }}>📅</span>
+              <span>КАЛЕНДАРЬ</span>
             </button>
             
             <div className="sidebar-divider"></div>
