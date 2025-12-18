@@ -944,7 +944,43 @@ function Dashboard() {
                           </>
                         )}
 
-                        {(activeModule === 'services' || activeModule === 'marketplace' || 
+                        {/* SERVICES MODULE */}
+                        {activeModule === 'services' && (
+                          <>
+                            {activeView === 'services-search' || activeView === 'wall' || activeView === 'feed' ? (
+                              <ServicesSearch
+                                user={user}
+                                moduleColor={currentModule.color}
+                                onViewListing={(listing) => {
+                                  setSelectedServiceListing(listing);
+                                  setActiveView('services-listing-detail');
+                                }}
+                              />
+                            ) : activeView === 'services-listing-detail' && selectedServiceListing ? (
+                              <ServiceProviderProfile
+                                listing={selectedServiceListing}
+                                onBack={() => setActiveView('services-search')}
+                                moduleColor={currentModule.color}
+                                user={user}
+                              />
+                            ) : activeView === 'services-feed' ? (
+                              <UniversalWall
+                                activeGroup={activeGroup}
+                                moduleColor={currentModule.color}
+                                moduleName={currentModule.name}
+                                activeModule={activeModule}
+                                user={user}
+                              />
+                            ) : (
+                              <div className="coming-soon-section">
+                                <h3>🚧 В разработке</h3>
+                                <p>Этот раздел скоро будет доступен</p>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {(activeModule === 'marketplace' || 
                           activeModule === 'finance' || activeModule === 'events') && (
                           <>
                             {(activeView === 'wall' || activeView === 'feed') ? (
