@@ -19132,14 +19132,23 @@ async def create_service_listing(
     """Create a new service listing (requires organization membership)"""
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("user_id")
+        user_id = payload.get("sub")  # JWT uses 'sub' for user_id
         
-        # Verify user is a member/admin of the organization
+        # Verify user is a member/admin of the organization - check both membership collection and org members list
         membership = await db.work_organization_members.find_one({
             "user_id": user_id,
             "organization_id": listing_data.organization_id,
             "status": "ACTIVE"
         })
+        
+        # Also check if user is in the organization's members array
+        if not membership:
+            org_check = await db.work_organizations.find_one({
+                "id": listing_data.organization_id,
+                "members.user_id": user_id
+            })
+            if org_check:
+                membership = True  # User is a member via org's members array
         
         if not membership:
             raise HTTPException(status_code=403, detail="You must be a member of the organization to create listings")
