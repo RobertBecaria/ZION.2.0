@@ -254,9 +254,22 @@ class ChatBackendTester:
                 
                 if response.status_code == 200:
                     message_data = response.json()
-                    self.test_messages.append(message_data.get('message', {}))
+                    # Handle different response structures
+                    if isinstance(message_data, dict) and 'message' in message_data:
+                        message_obj = message_data['message']
+                    else:
+                        message_obj = message_data
+                    
+                    self.test_messages.append(message_obj)
                     self.log(f"✅ Message {i+1} sent successfully")
-                    self.log(f"   Message ID: {message_data.get('message', {}).get('id')}")
+                    
+                    # Safely get message ID
+                    if isinstance(message_obj, dict):
+                        msg_id = message_obj.get('id', 'Unknown')
+                    else:
+                        msg_id = 'Unknown'
+                    
+                    self.log(f"   Message ID: {msg_id}")
                     self.log(f"   Content: {message_content}")
                 else:
                     self.log(f"❌ Message {i+1} sending failed: {response.status_code}")
