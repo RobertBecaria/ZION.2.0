@@ -511,3 +511,63 @@ Edit and Delete functionality for posts in the NEWS module with:
 - **Implementation Quality**: Professional implementation with proper state management, error handling, and user experience
 - **Recommendation**: Feature is ready for production use based on code analysis
 - **Next Steps**: Main agent can proceed with summary and completion
+
+---
+
+## Code Cleanup Session - December 18, 2025
+
+### Bug Fixes Completed
+1. **ObjectId Serialization Error (P0 - FIXED)**
+   - **Issue:** `/api/news/posts/channel/{channel_id}` endpoint was returning 500 Internal Server Error
+   - **Root Cause:** The `channel` object fetched from MongoDB was not excluding `_id` field
+   - **Fix:** Added `{"_id": 0}` projection to the `find_one` query on line 18135 of `server.py`
+   - **Verification:** ✅ Channel view now loads correctly, verified via screenshot and curl testing
+
+### Frontend Linting Progress
+- **Before:** 123 problems (66 errors, 57 warnings)
+- **After:** 86 problems (31 errors, 55 warnings)
+- **Improvement:** 37 problems fixed (53% error reduction)
+
+### Fixes Applied:
+1. **Unescaped Entities (8 fixes):**
+   - FriendsPage.js: Quote in request message
+   - GenderUpdateModal.js: Quotes in example text
+   - InvitationManager.js: Quote in invitation title
+   - ChildrenSection.js: Quote in form note
+   - MyDocumentsPage.js: Quote in empty state
+   - RightSidebar.js: Quote in module info
+   - UniversalChatLayout.js: Quote in hint
+   - WorkJoinRequests.js, WorkJoinRequestsManagement.js: Quotes in messages
+
+2. **Style JSX Issues (10 fixes):**
+   - Converted `<style jsx>` to `<style>` in multiple components:
+     - WorkAnnouncementsWidget.js
+     - WorkDepartmentNavigator.js
+     - WorkAnnouncementCard.js
+     - WorkDepartmentManagementPage.js
+     - WorkAnnouncementsList.js
+     - StudentsList.js
+     - WorkOrganizationPublicProfile.js
+     - WorkDepartmentManager.js
+     - WorkAnnouncementComposer.js
+     - MyClassesList.js
+
+3. **Nested Components (1 fix):**
+   - calendar.jsx: Moved IconLeft and IconRight outside Calendar component
+
+4. **Unknown Properties (1 fix):**
+   - command.jsx: Changed `cmdk-input-wrapper` to `data-cmdk-input-wrapper`
+
+5. **SetState in Effect (2 fixes):**
+   - EnhancedEventsPanel.js: Removed unnecessary useEffect, initialized state directly
+   - FamilyUnitDashboard.js: Added useCallback and eslint-disable comment
+
+### Remaining Issues (Low Priority):
+- 55 warnings: Missing dependencies in useEffect arrays (common React pattern, not breaking)
+- 31 errors: Mostly conditional hook calls in UniversalWall.js (requires significant refactor)
+
+### Verification Status
+- ✅ App loads correctly
+- ✅ News module works
+- ✅ Channel pages load (bug fix verified)
+- ✅ All UI functionality operational
