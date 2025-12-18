@@ -83,12 +83,8 @@ function EnhancedEventsPanel({
     { key: 'events', label: 'События' }
   ];
 
-  useEffect(() => {
-    // For now, use mock data
-    setScheduledActions(mockEvents);
-  }, [activeGroup]);
-
-  const filteredEvents = scheduledActions.filter(event => {
+  // Filter events based on search and filter
+  const filteredEvents = mockEvents.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = activeFilter === 'all' || event.type === activeFilter;
     return matchesSearch && matchesFilter;
