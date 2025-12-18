@@ -1121,7 +1121,7 @@ const PostCard = ({
   );
 };
 
-// Comment Item Component
+// Comment Item Component with Edit functionality
 const CommentItem = ({ 
   comment, 
   currentUserId, 
@@ -1129,13 +1129,40 @@ const CommentItem = ({
   onReply, 
   onDelete, 
   onLike,
+  onEdit,
   formatDate,
   isReply = false,
   parentId = null
 }) => {
   const [showReplies, setShowReplies] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
+  const [saving, setSaving] = useState(false);
+  
   const isAuthor = comment.user_id === currentUserId;
   const hasReplies = comment.replies && comment.replies.length > 0;
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim() || editText === comment.content) {
+      setIsEditing(false);
+      setEditText(comment.content);
+      return;
+    }
+    
+    setSaving(true);
+    const success = await onEdit(comment.id, editText, isReply, parentId);
+    if (success) {
+      setIsEditing(false);
+    } else {
+      setEditText(comment.content);
+    }
+    setSaving(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditText(comment.content);
+    setIsEditing(false);
+  };
 
   return (
     <div className={`comment-item ${isReply ? 'reply' : ''}`}>
@@ -1154,33 +1181,83 @@ const CommentItem = ({
           <span className="comment-author-name">
             {comment.author?.first_name} {comment.author?.last_name}
           </span>
-          <p className="comment-text">{comment.content}</p>
+          
+          {isEditing ? (
+            <div className="comment-edit-inline">
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="comment-edit-input"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveEdit();
+                  if (e.key === 'Escape') handleCancelEdit();
+                }}
+              />
+              <div className="comment-edit-buttons">
+                <button 
+                  onClick={handleSaveEdit} 
+                  disabled={saving}
+                  className="save-btn"
+                  style={{ color: moduleColor }}
+                >
+                  {saving ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
+                </button>
+                <button onClick={handleCancelEdit} className="cancel-btn">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="comment-text">{comment.content}</p>
+          )}
+          
+          {comment.is_edited && !isEditing && (
+            <span className="comment-edited-badge">изменено</span>
+          )}
         </div>
         
         <div className="comment-actions">
           <span className="comment-time">{formatDate(comment.created_at)}</span>
+          
           <button 
-            className={`comment-action-btn ${comment.user_liked ? 'liked' : ''}`}
+            className={`comment-action-btn like-btn ${comment.user_liked ? 'liked' : ''}`}
             onClick={() => onLike(comment.id, isReply, parentId)}
           >
+            <Heart 
+              size={14} 
+              fill={comment.user_liked ? '#ef4444' : 'none'} 
+              color={comment.user_liked ? '#ef4444' : 'currentColor'}
+            />
             {comment.likes_count > 0 && <span>{comment.likes_count}</span>}
-            ❤️ Нравится
           </button>
+          
           {!isReply && (
             <button 
-              className="comment-action-btn"
+              className="comment-action-btn reply-btn"
               onClick={() => onReply(comment)}
             >
+              <CornerDownRight size={14} />
               Ответить
             </button>
           )}
-          {isAuthor && (
-            <button 
-              className="comment-action-btn delete"
-              onClick={() => onDelete(comment.id, isReply, parentId)}
-            >
-              Удалить
-            </button>
+          
+          {isAuthor && !isEditing && (
+            <>
+              <button 
+                className="comment-action-btn edit-btn"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit2 size={14} />
+              </button>
+              <button 
+                className="comment-action-btn delete-btn"
+                onClick={() => onDelete(comment.id, isReply, parentId)}
+              >
+                <Trash2 size={14} />
+              </button>
+            </>
           )}
         </div>
 
@@ -1190,6 +1267,7 @@ const CommentItem = ({
             <button 
               className="show-replies-btn"
               onClick={() => setShowReplies(!showReplies)}
+              style={{ color: moduleColor }}
             >
               {showReplies ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               {showReplies ? 'Скрыть ответы' : `Показать ответы (${comment.replies.length})`}
@@ -1206,6 +1284,7 @@ const CommentItem = ({
                     onReply={onReply}
                     onDelete={onDelete}
                     onLike={onLike}
+                    onEdit={onEdit}
                     formatDate={formatDate}
                     isReply={true}
                     parentId={comment.id}
