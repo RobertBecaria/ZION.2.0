@@ -33,6 +33,10 @@ const ChatConversation = ({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  // Pagination state for infinite scroll
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const MESSAGES_PER_PAGE = 50;
   const [typingUsers, setTypingUsers] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
