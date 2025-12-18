@@ -128,45 +128,46 @@ class ZionCityTester:
             self.log(f"❌ Error finding test post: {str(e)}", "ERROR")
             return False
     
-    def test_channel_posts_endpoint(self, channel_id):
-        """Test 2: CRITICAL - Test the fixed channel posts endpoint"""
-        self.log(f"🔧 Testing FIXED endpoint GET /api/news/posts/channel/{channel_id}")
+    def test_get_comments(self):
+        """Test 1: Get comments for a post"""
+        self.log(f"💬 Testing GET /api/news/posts/{self.test_post_id}/comments")
         
         try:
             response = self.session.get(
-                f"{BACKEND_URL}/news/posts/channel/{channel_id}",
+                f"{BACKEND_URL}/news/posts/{self.test_post_id}/comments",
                 headers=self.get_auth_headers()
             )
             
             if response.status_code == 200:
                 data = response.json()
-                self.log("✅ Channel posts endpoint working - ObjectId serialization fix successful!")
+                comments = data.get("comments", [])
+                self.log(f"✅ Comments retrieved successfully - Found {len(comments)} comments")
                 
-                # Verify response structure
-                if "channel" in data and "posts" in data:
-                    channel_obj = data["channel"]
-                    posts_array = data["posts"]
+                # Store existing comment IDs for later tests
+                for comment in comments:
+                    if comment.get("parent_comment_id") is None:  # Top-level comments
+                        self.test_comment_ids.append(comment.get("id"))
+                    else:  # Replies
+                        self.test_reply_ids.append(comment.get("id"))
+                
+                if comments:
+                    # Verify comment structure
+                    first_comment = comments[0]
+                    required_fields = ["id", "content", "user_id", "created_at"]
+                    missing_fields = [field for field in required_fields if field not in first_comment]
                     
-                    self.log(f"✅ Response structure correct - Channel: {channel_obj.get('name', 'Unknown')}")
-                    self.log(f"✅ Posts array present - Found {len(posts_array)} posts")
-                    
-                    # Verify channel object doesn't contain ObjectId
-                    if "_id" in channel_obj:
-                        self.log("❌ Channel object still contains _id field (ObjectId not excluded)", "ERROR")
-                        return False
+                    if missing_fields:
+                        self.log(f"⚠️ Missing fields in comment: {missing_fields}", "WARNING")
                     else:
-                        self.log("✅ Channel object properly excludes _id field - Fix verified!")
-                        
-                    return True
-                else:
-                    self.log("❌ Invalid response structure - missing 'channel' or 'posts'", "ERROR")
-                    return False
+                        self.log("✅ Comment structure validation passed")
+                
+                return True
             else:
-                self.log(f"❌ Channel posts endpoint failed: {response.status_code} - {response.text}", "ERROR")
+                self.log(f"❌ Get comments failed: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ Channel posts endpoint error: {str(e)}", "ERROR")
+            self.log(f"❌ Get comments error: {str(e)}", "ERROR")
             return False
     
     def test_news_feed(self):
