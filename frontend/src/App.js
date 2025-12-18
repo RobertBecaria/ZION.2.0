@@ -55,8 +55,7 @@ import WorkOrganizationProfile from './components/WorkOrganizationProfile';
 import WorkSearchOrganizations from './components/WorkSearchOrganizations';
 import WorkJoinRequests from './components/WorkJoinRequests';
 import WorkOrganizationPublicProfile from './components/WorkOrganizationPublicProfile';
-import WorkDepartmentNavigator from './components/WorkDepartmentNavigator';
-import WorkAnnouncementsWidget from './components/WorkAnnouncementsWidget';
+// WorkDepartmentNavigator and WorkAnnouncementsWidget are now imported inside RightSidebar
 // SCHOOL/TEACHER COMPONENTS
 import TeacherProfileForm from './components/TeacherProfileForm';
 import TeacherDirectory from './components/TeacherDirectory';
