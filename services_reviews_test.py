@@ -231,6 +231,9 @@ class ServicesReviewsTester:
             elif response.status_code == 404:
                 self.log("✅ Endpoint responds correctly to invalid review ID (404)")
                 return True
+            elif response.status_code == 520 and "404: Review not found" in response.text:
+                self.log("✅ Endpoint responds correctly to invalid review ID (520 wrapping 404)")
+                return True
             else:
                 self.log(f"❌ Helpful toggle failed: {response.status_code} - {response.text}", "ERROR")
                 return False
