@@ -202,7 +202,7 @@ class ZionCityTester:
                 suggestions = response.json()
                 self.log(f"✅ User suggestions loaded successfully - Found {len(suggestions)} suggestions")
                 
-                if suggestions:
+                if suggestions and len(suggestions) > 0:
                     # Verify suggestion structure
                     first_suggestion = suggestions[0]
                     required_fields = ["id", "first_name", "last_name"]
@@ -212,6 +212,8 @@ class ZionCityTester:
                         self.log(f"⚠️ Missing fields in suggestion: {missing_fields}", "WARNING")
                     else:
                         self.log("✅ User suggestion structure validation passed")
+                else:
+                    self.log("⚠️ No user suggestions found", "WARNING")
                         
                 return True
             else:
