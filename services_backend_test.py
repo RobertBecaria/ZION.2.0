@@ -301,6 +301,11 @@ class ServicesModuleTester:
                 else:
                     self.log("❌ Service listing created but response format unexpected", "ERROR")
                     return False
+            elif response.status_code == 403:
+                self.log("❌ CRITICAL ISSUE: Organization membership validation failing", "ERROR")
+                self.log("   User appears to have role in organization but membership check fails", "ERROR")
+                self.log("   This indicates a data consistency issue in work_organization_members collection", "ERROR")
+                return False
             else:
                 self.log(f"❌ Create listing failed: {response.status_code} - {response.text}", "ERROR")
                 return False
