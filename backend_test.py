@@ -81,40 +81,52 @@ class ZionCityTester:
         token = self.admin_token if user_type == "admin" else self.test_user_token
         return {"Authorization": f"Bearer {token}"}
     
-    def test_news_channels_list(self):
-        """Test 1: Get list of news channels"""
-        self.log("📺 Testing GET /api/news/channels")
+    def find_test_post(self):
+        """Find a post to test comments on"""
+        self.log("🔍 Finding a post with comments for testing")
         
         try:
+            # First try the specific post ID from test data
+            test_post_id = "9b3bbb64-1e3a-42f6-9940-50141e9d9d0b"
+            
             response = self.session.get(
-                f"{BACKEND_URL}/news/channels",
+                f"{BACKEND_URL}/news/posts/feed",
                 headers=self.get_auth_headers()
             )
             
             if response.status_code == 200:
                 data = response.json()
-                channels = data.get("channels", [])  # Handle wrapped response
-                self.log(f"✅ Channels list retrieved successfully - Found {len(channels)} channels")
+                posts = data.get("posts", [])
                 
-                if channels and len(channels) > 0:
-                    # Verify channel structure
-                    first_channel = channels[0]
-                    required_fields = ["id", "name"]
-                    missing_fields = [field for field in required_fields if field not in first_channel]
-                    
-                    if missing_fields:
-                        self.log(f"⚠️ Missing fields in channel: {missing_fields}", "WARNING")
-                    else:
-                        self.log("✅ Channel structure validation passed")
-                        
-                return True, channels
+                # Look for the specific test post first
+                for post in posts:
+                    if post.get("id") == test_post_id:
+                        self.test_post_id = test_post_id
+                        self.log(f"✅ Found specific test post: {test_post_id}")
+                        return True
+                
+                # If not found, look for any post with comments
+                for post in posts:
+                    if post.get("comments_count", 0) > 0:
+                        self.test_post_id = post.get("id")
+                        self.log(f"✅ Found post with comments: {self.test_post_id} (comments: {post.get('comments_count')})")
+                        return True
+                
+                # If no posts with comments, use the first available post
+                if posts and len(posts) > 0:
+                    self.test_post_id = posts[0].get("id")
+                    self.log(f"✅ Using first available post: {self.test_post_id}")
+                    return True
+                else:
+                    self.log("❌ No posts found in news feed", "ERROR")
+                    return False
             else:
-                self.log(f"❌ Channels list failed: {response.status_code} - {response.text}", "ERROR")
-                return False, None
+                self.log(f"❌ Failed to get news feed: {response.status_code} - {response.text}", "ERROR")
+                return False
                 
         except Exception as e:
-            self.log(f"❌ Channels list error: {str(e)}", "ERROR")
-            return False, None
+            self.log(f"❌ Error finding test post: {str(e)}", "ERROR")
+            return False
     
     def test_channel_posts_endpoint(self, channel_id):
         """Test 2: CRITICAL - Test the fixed channel posts endpoint"""
