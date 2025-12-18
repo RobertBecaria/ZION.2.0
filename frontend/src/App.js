@@ -973,7 +973,7 @@ function Dashboard() {
                                 onBack={() => setActiveView('services-search')}
                                 onBookAppointment={(listing) => {
                                   setSelectedServiceListing(listing);
-                                  setActiveView('services-booking');
+                                  setActiveView('services-booking-calendar');
                                 }}
                                 moduleColor={currentModule.color}
                                 user={user}
@@ -991,6 +991,34 @@ function Dashboard() {
                               <ServicesBookings
                                 user={user}
                                 moduleColor={currentModule.color}
+                              />
+                            ) : activeView === 'services-calendar' ? (
+                              <ServiceBookingCalendar
+                                user={user}
+                                isProvider={true}
+                                moduleColor={currentModule.color}
+                                onBack={() => setActiveView('services-my-profile')}
+                              />
+                            ) : activeView === 'services-booking-calendar' && selectedServiceListing ? (
+                              <ServiceBookingCalendar
+                                user={user}
+                                serviceId={selectedServiceListing.id}
+                                serviceName={selectedServiceListing.name}
+                                isProvider={false}
+                                moduleColor={currentModule.color}
+                                onBack={() => setActiveView('services-listing-detail')}
+                                onBookingCreated={() => {
+                                  // Show success feedback
+                                }}
+                              />
+                            ) : activeView === 'services-reviews' && selectedServiceListing ? (
+                              <ServicesReviews
+                                serviceId={selectedServiceListing.id}
+                                serviceName={selectedServiceListing.name}
+                                user={user}
+                                isProvider={false}
+                                moduleColor={currentModule.color}
+                                onBack={() => setActiveView('services-listing-detail')}
                               />
                             ) : activeView === 'services-feed' ? (
                               <UniversalWall
