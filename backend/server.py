@@ -18808,6 +18808,887 @@ async def get_my_admin_organizations(
 
 # ===== END NEWS MODULE ENDPOINTS =====
 
+# ===== SERVICES MODULE =====
+
+# Service Categories (Standard List)
+SERVICE_CATEGORIES = {
+    "beauty": {
+        "name": "Красота и здоровье",
+        "name_en": "Beauty & Wellness",
+        "icon": "Sparkles",
+        "subcategories": [
+            {"id": "beauty_salon", "name": "Салоны красоты", "name_en": "Beauty Salons"},
+            {"id": "barbershop", "name": "Барбершопы", "name_en": "Barbershops"},
+            {"id": "spa_massage", "name": "СПА и массаж", "name_en": "Spa & Massage"},
+            {"id": "nail_services", "name": "Маникюр/Педикюр", "name_en": "Nail Services"},
+            {"id": "fitness_yoga", "name": "Фитнес и йога", "name_en": "Fitness & Yoga"}
+        ]
+    },
+    "medical": {
+        "name": "Медицина и здоровье",
+        "name_en": "Medical & Health",
+        "icon": "Stethoscope",
+        "subcategories": [
+            {"id": "dental", "name": "Стоматология", "name_en": "Dental Clinics"},
+            {"id": "medical_center", "name": "Медицинские центры", "name_en": "Medical Centers"},
+            {"id": "veterinary", "name": "Ветеринарные клиники", "name_en": "Veterinary"},
+            {"id": "psychology", "name": "Психология", "name_en": "Psychology"},
+            {"id": "optical", "name": "Оптика", "name_en": "Optical"}
+        ]
+    },
+    "food": {
+        "name": "Еда и рестораны",
+        "name_en": "Food & Dining",
+        "icon": "UtensilsCrossed",
+        "subcategories": [
+            {"id": "restaurant", "name": "Рестораны", "name_en": "Restaurants"},
+            {"id": "cafe", "name": "Кафе", "name_en": "Cafes"},
+            {"id": "food_delivery", "name": "Доставка еды", "name_en": "Food Delivery"},
+            {"id": "catering", "name": "Кейтеринг", "name_en": "Catering"},
+            {"id": "bakery", "name": "Кондитерские", "name_en": "Bakeries"}
+        ]
+    },
+    "auto": {
+        "name": "Авто услуги",
+        "name_en": "Auto Services",
+        "icon": "Car",
+        "subcategories": [
+            {"id": "auto_repair", "name": "Автосервис", "name_en": "Auto Repair"},
+            {"id": "car_wash", "name": "Автомойка", "name_en": "Car Wash"},
+            {"id": "tire_service", "name": "Шиномонтаж", "name_en": "Tire Service"},
+            {"id": "towing", "name": "Эвакуатор", "name_en": "Towing"}
+        ]
+    },
+    "home": {
+        "name": "Дом и ремонт",
+        "name_en": "Home Services",
+        "icon": "Home",
+        "subcategories": [
+            {"id": "cleaning", "name": "Клининг", "name_en": "Cleaning"},
+            {"id": "renovation", "name": "Ремонт квартир", "name_en": "Home Renovation"},
+            {"id": "plumbing", "name": "Сантехника", "name_en": "Plumbing"},
+            {"id": "electrical", "name": "Электрика", "name_en": "Electrical"},
+            {"id": "furniture", "name": "Мебель на заказ", "name_en": "Custom Furniture"}
+        ]
+    },
+    "education": {
+        "name": "Образование",
+        "name_en": "Education & Training",
+        "icon": "GraduationCap",
+        "subcategories": [
+            {"id": "tutors", "name": "Репетиторы", "name_en": "Tutors"},
+            {"id": "language_school", "name": "Языковые школы", "name_en": "Language Schools"},
+            {"id": "courses", "name": "Курсы и тренинги", "name_en": "Courses & Training"},
+            {"id": "children_center", "name": "Детские центры", "name_en": "Children's Centers"}
+        ]
+    },
+    "professional": {
+        "name": "Профессиональные услуги",
+        "name_en": "Professional Services",
+        "icon": "Briefcase",
+        "subcategories": [
+            {"id": "legal", "name": "Юридические услуги", "name_en": "Legal Services"},
+            {"id": "accounting", "name": "Бухгалтерия", "name_en": "Accounting"},
+            {"id": "notary", "name": "Нотариус", "name_en": "Notary"},
+            {"id": "translation", "name": "Переводы", "name_en": "Translation"}
+        ]
+    },
+    "events": {
+        "name": "Мероприятия",
+        "name_en": "Events & Entertainment",
+        "icon": "PartyPopper",
+        "subcategories": [
+            {"id": "event_planning", "name": "Организация мероприятий", "name_en": "Event Planning"},
+            {"id": "photo_video", "name": "Фото и видео", "name_en": "Photo & Video"},
+            {"id": "mc_dj", "name": "Ведущие и DJ", "name_en": "MCs & DJs"},
+            {"id": "venue_rental", "name": "Аренда площадок", "name_en": "Venue Rental"}
+        ]
+    },
+    "pets": {
+        "name": "Услуги для животных",
+        "name_en": "Pet Services",
+        "icon": "PawPrint",
+        "subcategories": [
+            {"id": "grooming", "name": "Груминг", "name_en": "Pet Grooming"},
+            {"id": "pet_boarding", "name": "Передержка", "name_en": "Pet Boarding"},
+            {"id": "pet_training", "name": "Дрессировка", "name_en": "Pet Training"}
+        ]
+    },
+    "other": {
+        "name": "Другие услуги",
+        "name_en": "Other Services",
+        "icon": "MoreHorizontal",
+        "subcategories": [
+            {"id": "it_services", "name": "IT услуги", "name_en": "IT Services"},
+            {"id": "tech_repair", "name": "Ремонт техники", "name_en": "Tech Repair"},
+            {"id": "courier", "name": "Курьерские услуги", "name_en": "Courier"},
+            {"id": "printing", "name": "Печать и полиграфия", "name_en": "Printing"}
+        ]
+    }
+}
+
+# Service Listing Status
+class ServiceStatus(str, Enum):
+    DRAFT = "DRAFT"
+    ACTIVE = "ACTIVE"
+    PAUSED = "PAUSED"
+    ARCHIVED = "ARCHIVED"
+
+# Booking Status
+class BookingStatus(str, Enum):
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    CANCELLED = "CANCELLED"
+    COMPLETED = "COMPLETED"
+    NO_SHOW = "NO_SHOW"
+
+# Service Listing Model
+class ServiceListing(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str  # Link to WorkOrganization
+    owner_user_id: str  # User who created the listing
+    
+    # Basic Info
+    name: str
+    description: str
+    short_description: Optional[str] = None
+    
+    # Category
+    category_id: str  # e.g., "beauty", "medical"
+    subcategory_id: str  # e.g., "dental", "barbershop"
+    
+    # Pricing
+    price_from: Optional[float] = None
+    price_to: Optional[float] = None
+    price_type: str = "fixed"  # "fixed", "hourly", "from", "negotiable"
+    currency: str = "RUB"
+    
+    # Location
+    address: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = "Russia"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    
+    # Contact
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    
+    # Working Hours
+    working_hours: Optional[Dict[str, Any]] = None  # {"monday": {"open": "09:00", "close": "18:00"}, ...}
+    
+    # Media
+    images: List[str] = []
+    logo: Optional[str] = None
+    
+    # Booking Settings
+    accepts_online_booking: bool = True
+    booking_duration_minutes: int = 60  # Default appointment duration
+    booking_advance_days: int = 30  # How far in advance can book
+    
+    # Status & Stats
+    status: ServiceStatus = ServiceStatus.ACTIVE
+    rating: float = 0.0
+    review_count: int = 0
+    view_count: int = 0
+    booking_count: int = 0
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    # Tags for search
+    tags: List[str] = []
+
+class ServiceListingCreate(BaseModel):
+    organization_id: str
+    name: str
+    description: str
+    short_description: Optional[str] = None
+    category_id: str
+    subcategory_id: str
+    price_from: Optional[float] = None
+    price_to: Optional[float] = None
+    price_type: str = "fixed"
+    address: Optional[str] = None
+    city: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    working_hours: Optional[Dict[str, Any]] = None
+    images: List[str] = []
+    logo: Optional[str] = None
+    accepts_online_booking: bool = True
+    booking_duration_minutes: int = 60
+    tags: List[str] = []
+
+class ServiceListingUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    short_description: Optional[str] = None
+    category_id: Optional[str] = None
+    subcategory_id: Optional[str] = None
+    price_from: Optional[float] = None
+    price_to: Optional[float] = None
+    price_type: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    working_hours: Optional[Dict[str, Any]] = None
+    images: Optional[List[str]] = None
+    logo: Optional[str] = None
+    accepts_online_booking: Optional[bool] = None
+    booking_duration_minutes: Optional[int] = None
+    booking_advance_days: Optional[int] = None
+    status: Optional[ServiceStatus] = None
+    tags: Optional[List[str]] = None
+
+# Service Booking Model
+class ServiceBooking(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    service_id: str
+    organization_id: str
+    client_user_id: str
+    provider_user_id: str  # Owner of the service
+    
+    # Booking Details
+    booking_date: datetime
+    duration_minutes: int = 60
+    
+    # Client Info
+    client_name: str
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    client_notes: Optional[str] = None
+    
+    # Status
+    status: BookingStatus = BookingStatus.PENDING
+    
+    # Provider Notes
+    provider_notes: Optional[str] = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    confirmed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+class ServiceBookingCreate(BaseModel):
+    service_id: str
+    booking_date: datetime
+    client_name: str
+    client_phone: Optional[str] = None
+    client_email: Optional[str] = None
+    client_notes: Optional[str] = None
+
+# Service Review Model
+class ServiceReview(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    service_id: str
+    organization_id: str
+    user_id: str
+    booking_id: Optional[str] = None  # Link to completed booking
+    
+    # Review Content
+    rating: int  # 1-5
+    title: Optional[str] = None
+    content: str
+    
+    # Provider Response
+    provider_response: Optional[str] = None
+    provider_response_at: Optional[datetime] = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ServiceReviewCreate(BaseModel):
+    service_id: str
+    rating: int
+    title: Optional[str] = None
+    content: str
+    booking_id: Optional[str] = None
+
+# ===== SERVICES API ENDPOINTS =====
+
+@api_router.get("/services/categories")
+async def get_service_categories():
+    """Get all service categories and subcategories"""
+    return {"categories": SERVICE_CATEGORIES}
+
+@api_router.post("/services/listings")
+async def create_service_listing(
+    listing_data: ServiceListingCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new service listing (requires organization membership)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        # Verify user is a member/admin of the organization
+        membership = await db.work_organization_members.find_one({
+            "user_id": user_id,
+            "organization_id": listing_data.organization_id,
+            "status": "ACTIVE"
+        })
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="You must be a member of the organization to create listings")
+        
+        # Verify organization exists
+        organization = await db.work_organizations.find_one({"id": listing_data.organization_id})
+        if not organization:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        # Create listing
+        listing = ServiceListing(
+            **listing_data.dict(),
+            owner_user_id=user_id
+        )
+        
+        listing_dict = listing.dict()
+        listing_dict["created_at"] = listing_dict["created_at"].isoformat()
+        listing_dict["updated_at"] = listing_dict["updated_at"].isoformat()
+        
+        await db.service_listings.insert_one(listing_dict)
+        
+        return {"success": True, "listing": listing_dict}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/services/listings")
+async def get_service_listings(
+    category_id: Optional[str] = None,
+    subcategory_id: Optional[str] = None,
+    city: Optional[str] = None,
+    search: Optional[str] = None,
+    min_rating: Optional[float] = None,
+    price_min: Optional[float] = None,
+    price_max: Optional[float] = None,
+    skip: int = 0,
+    limit: int = 20,
+    sort_by: str = "rating"  # "rating", "price", "newest", "popular"
+):
+    """Search and filter service listings"""
+    try:
+        query = {"status": ServiceStatus.ACTIVE}
+        
+        if category_id:
+            query["category_id"] = category_id
+        if subcategory_id:
+            query["subcategory_id"] = subcategory_id
+        if city:
+            query["city"] = {"$regex": city, "$options": "i"}
+        if min_rating:
+            query["rating"] = {"$gte": min_rating}
+        if price_min is not None:
+            query["price_from"] = {"$gte": price_min}
+        if price_max is not None:
+            query["$or"] = [
+                {"price_to": {"$lte": price_max}},
+                {"price_from": {"$lte": price_max}}
+            ]
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"description": {"$regex": search, "$options": "i"}},
+                {"tags": {"$in": [search.lower()]}}
+            ]
+        
+        # Sorting
+        sort_options = {
+            "rating": [("rating", -1), ("review_count", -1)],
+            "price": [("price_from", 1)],
+            "newest": [("created_at", -1)],
+            "popular": [("view_count", -1), ("booking_count", -1)]
+        }
+        sort = sort_options.get(sort_by, sort_options["rating"])
+        
+        listings = await db.service_listings.find(query, {"_id": 0}).sort(sort).skip(skip).limit(limit).to_list(limit)
+        total = await db.service_listings.count_documents(query)
+        
+        # Enrich with organization info
+        for listing in listings:
+            org = await db.work_organizations.find_one({"id": listing["organization_id"]}, {"_id": 0, "name": 1, "logo": 1})
+            if org:
+                listing["organization_name"] = org.get("name")
+                listing["organization_logo"] = org.get("logo")
+        
+        return {
+            "listings": listings,
+            "total": total,
+            "skip": skip,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching listings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/services/listings/{listing_id}")
+async def get_service_listing(listing_id: str):
+    """Get a single service listing with full details"""
+    try:
+        listing = await db.service_listings.find_one({"id": listing_id}, {"_id": 0})
+        if not listing:
+            raise HTTPException(status_code=404, detail="Listing not found")
+        
+        # Increment view count
+        await db.service_listings.update_one(
+            {"id": listing_id},
+            {"$inc": {"view_count": 1}}
+        )
+        
+        # Get organization info
+        org = await db.work_organizations.find_one({"id": listing["organization_id"]}, {"_id": 0})
+        if org:
+            listing["organization"] = org
+        
+        # Get recent reviews
+        reviews = await db.service_reviews.find(
+            {"service_id": listing_id},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(5).to_list(5)
+        
+        # Enrich reviews with user info
+        for review in reviews:
+            user = await db.users.find_one({"id": review["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "profile_picture": 1})
+            if user:
+                review["user"] = user
+        
+        listing["recent_reviews"] = reviews
+        
+        return {"listing": listing}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching listing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/services/listings/{listing_id}")
+async def update_service_listing(
+    listing_id: str,
+    update_data: ServiceListingUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update a service listing"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        # Verify ownership
+        listing = await db.service_listings.find_one({"id": listing_id})
+        if not listing:
+            raise HTTPException(status_code=404, detail="Listing not found")
+        
+        if listing["owner_user_id"] != user_id:
+            # Check if admin of org
+            membership = await db.work_organization_members.find_one({
+                "user_id": user_id,
+                "organization_id": listing["organization_id"],
+                "is_admin": True
+            })
+            if not membership:
+                raise HTTPException(status_code=403, detail="Not authorized to update this listing")
+        
+        # Update
+        update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+        update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        await db.service_listings.update_one(
+            {"id": listing_id},
+            {"$set": update_dict}
+        )
+        
+        updated = await db.service_listings.find_one({"id": listing_id}, {"_id": 0})
+        return {"success": True, "listing": updated}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/services/my-listings")
+async def get_my_service_listings(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get all service listings owned by the current user or their organizations"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        # Get user's organizations
+        memberships = await db.work_organization_members.find({
+            "user_id": user_id,
+            "status": "ACTIVE"
+        }).to_list(100)
+        
+        org_ids = [m["organization_id"] for m in memberships]
+        
+        # Get listings from user's organizations
+        listings = await db.service_listings.find(
+            {"organization_id": {"$in": org_ids}},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+        
+        # Enrich with org info
+        for listing in listings:
+            org = await db.work_organizations.find_one({"id": listing["organization_id"]}, {"_id": 0, "name": 1})
+            if org:
+                listing["organization_name"] = org.get("name")
+        
+        return {"listings": listings}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ===== BOOKING ENDPOINTS =====
+
+@api_router.post("/services/bookings")
+async def create_service_booking(
+    booking_data: ServiceBookingCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a new service booking"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        # Get listing
+        listing = await db.service_listings.find_one({"id": booking_data.service_id})
+        if not listing:
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        if not listing.get("accepts_online_booking", True):
+            raise HTTPException(status_code=400, detail="This service does not accept online booking")
+        
+        # Check for conflicts (same time slot)
+        booking_end = booking_data.booking_date + timedelta(minutes=listing.get("booking_duration_minutes", 60))
+        
+        conflict = await db.service_bookings.find_one({
+            "service_id": booking_data.service_id,
+            "status": {"$in": [BookingStatus.PENDING, BookingStatus.CONFIRMED]},
+            "booking_date": {"$lt": booking_end.isoformat()},
+            "$expr": {
+                "$gt": [
+                    {"$add": ["$booking_date", {"$multiply": ["$duration_minutes", 60000]}]},
+                    booking_data.booking_date.isoformat()
+                ]
+            }
+        })
+        
+        if conflict:
+            raise HTTPException(status_code=400, detail="This time slot is not available")
+        
+        # Create booking
+        booking = ServiceBooking(
+            service_id=booking_data.service_id,
+            organization_id=listing["organization_id"],
+            client_user_id=user_id,
+            provider_user_id=listing["owner_user_id"],
+            booking_date=booking_data.booking_date,
+            duration_minutes=listing.get("booking_duration_minutes", 60),
+            client_name=booking_data.client_name,
+            client_phone=booking_data.client_phone,
+            client_email=booking_data.client_email,
+            client_notes=booking_data.client_notes
+        )
+        
+        booking_dict = booking.dict()
+        booking_dict["booking_date"] = booking_dict["booking_date"].isoformat()
+        booking_dict["created_at"] = booking_dict["created_at"].isoformat()
+        booking_dict["updated_at"] = booking_dict["updated_at"].isoformat()
+        
+        await db.service_bookings.insert_one(booking_dict)
+        
+        # Increment booking count
+        await db.service_listings.update_one(
+            {"id": booking_data.service_id},
+            {"$inc": {"booking_count": 1}}
+        )
+        
+        return {"success": True, "booking": booking_dict}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating booking: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/services/bookings/my")
+async def get_my_bookings(
+    status: Optional[str] = None,
+    as_provider: bool = False,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get bookings - either as client or as provider"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        query = {}
+        if as_provider:
+            query["provider_user_id"] = user_id
+        else:
+            query["client_user_id"] = user_id
+        
+        if status:
+            query["status"] = status
+        
+        bookings = await db.service_bookings.find(query, {"_id": 0}).sort("booking_date", -1).to_list(100)
+        
+        # Enrich with service info
+        for booking in bookings:
+            listing = await db.service_listings.find_one({"id": booking["service_id"]}, {"_id": 0, "name": 1, "organization_id": 1})
+            if listing:
+                booking["service_name"] = listing.get("name")
+                org = await db.work_organizations.find_one({"id": listing["organization_id"]}, {"_id": 0, "name": 1})
+                if org:
+                    booking["organization_name"] = org.get("name")
+        
+        return {"bookings": bookings}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.put("/services/bookings/{booking_id}/status")
+async def update_booking_status(
+    booking_id: str,
+    new_status: BookingStatus,
+    provider_notes: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update booking status (confirm, cancel, complete)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        booking = await db.service_bookings.find_one({"id": booking_id})
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # Check authorization
+        is_provider = booking["provider_user_id"] == user_id
+        is_client = booking["client_user_id"] == user_id
+        
+        if not is_provider and not is_client:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # Status transition rules
+        current_status = booking["status"]
+        
+        update_data = {
+            "status": new_status,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        if new_status == BookingStatus.CONFIRMED:
+            update_data["confirmed_at"] = datetime.now(timezone.utc).isoformat()
+        elif new_status == BookingStatus.CANCELLED:
+            update_data["cancelled_at"] = datetime.now(timezone.utc).isoformat()
+        elif new_status == BookingStatus.COMPLETED:
+            update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+        
+        if provider_notes:
+            update_data["provider_notes"] = provider_notes
+        
+        await db.service_bookings.update_one(
+            {"id": booking_id},
+            {"$set": update_data}
+        )
+        
+        return {"success": True, "status": new_status}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/services/bookings/available-slots/{service_id}")
+async def get_available_slots(
+    service_id: str,
+    date: str  # Format: YYYY-MM-DD
+):
+    """Get available booking slots for a service on a specific date"""
+    try:
+        listing = await db.service_listings.find_one({"id": service_id}, {"_id": 0})
+        if not listing:
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        # Parse date
+        target_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        day_of_week = target_date.strftime("%A").lower()
+        
+        # Get working hours for this day
+        working_hours = listing.get("working_hours", {})
+        day_hours = working_hours.get(day_of_week, {"open": "09:00", "close": "18:00"})
+        
+        if not day_hours or day_hours.get("closed"):
+            return {"slots": [], "message": "Closed on this day"}
+        
+        # Generate slots
+        duration = listing.get("booking_duration_minutes", 60)
+        open_time = datetime.strptime(day_hours["open"], "%H:%M")
+        close_time = datetime.strptime(day_hours["close"], "%H:%M")
+        
+        slots = []
+        current = open_time
+        while current + timedelta(minutes=duration) <= close_time:
+            slot_start = target_date.replace(hour=current.hour, minute=current.minute)
+            slots.append({
+                "start": slot_start.isoformat(),
+                "end": (slot_start + timedelta(minutes=duration)).isoformat(),
+                "available": True
+            })
+            current += timedelta(minutes=duration)
+        
+        # Check existing bookings
+        day_start = target_date.replace(hour=0, minute=0, second=0)
+        day_end = target_date.replace(hour=23, minute=59, second=59)
+        
+        bookings = await db.service_bookings.find({
+            "service_id": service_id,
+            "status": {"$in": [BookingStatus.PENDING, BookingStatus.CONFIRMED]},
+            "booking_date": {"$gte": day_start.isoformat(), "$lte": day_end.isoformat()}
+        }, {"_id": 0, "booking_date": 1, "duration_minutes": 1}).to_list(100)
+        
+        # Mark unavailable slots
+        for booking in bookings:
+            booking_start = datetime.fromisoformat(booking["booking_date"].replace("Z", "+00:00"))
+            booking_end = booking_start + timedelta(minutes=booking.get("duration_minutes", 60))
+            
+            for slot in slots:
+                slot_start = datetime.fromisoformat(slot["start"].replace("Z", "+00:00"))
+                slot_end = datetime.fromisoformat(slot["end"].replace("Z", "+00:00"))
+                
+                # Check overlap
+                if slot_start < booking_end and slot_end > booking_start:
+                    slot["available"] = False
+        
+        return {"slots": slots, "duration_minutes": duration}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting slots: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== REVIEW ENDPOINTS =====
+
+@api_router.post("/services/reviews")
+async def create_service_review(
+    review_data: ServiceReviewCreate,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a review for a service"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("user_id")
+        
+        # Get listing
+        listing = await db.service_listings.find_one({"id": review_data.service_id})
+        if not listing:
+            raise HTTPException(status_code=404, detail="Service not found")
+        
+        # Check if user already reviewed
+        existing = await db.service_reviews.find_one({
+            "service_id": review_data.service_id,
+            "user_id": user_id
+        })
+        if existing:
+            raise HTTPException(status_code=400, detail="You have already reviewed this service")
+        
+        # Create review
+        review = ServiceReview(
+            service_id=review_data.service_id,
+            organization_id=listing["organization_id"],
+            user_id=user_id,
+            rating=min(5, max(1, review_data.rating)),  # Clamp 1-5
+            title=review_data.title,
+            content=review_data.content,
+            booking_id=review_data.booking_id
+        )
+        
+        review_dict = review.dict()
+        review_dict["created_at"] = review_dict["created_at"].isoformat()
+        review_dict["updated_at"] = review_dict["updated_at"].isoformat()
+        
+        await db.service_reviews.insert_one(review_dict)
+        
+        # Update service rating
+        all_reviews = await db.service_reviews.find({"service_id": review_data.service_id}).to_list(1000)
+        avg_rating = sum(r["rating"] for r in all_reviews) / len(all_reviews)
+        
+        await db.service_listings.update_one(
+            {"id": review_data.service_id},
+            {"$set": {"rating": round(avg_rating, 1), "review_count": len(all_reviews)}}
+        )
+        
+        return {"success": True, "review": review_dict}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating review: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/services/reviews/{service_id}")
+async def get_service_reviews(
+    service_id: str,
+    skip: int = 0,
+    limit: int = 20
+):
+    """Get reviews for a service"""
+    try:
+        reviews = await db.service_reviews.find(
+            {"service_id": service_id},
+            {"_id": 0}
+        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        
+        # Enrich with user info
+        for review in reviews:
+            user = await db.users.find_one(
+                {"id": review["user_id"]},
+                {"_id": 0, "first_name": 1, "last_name": 1, "profile_picture": 1}
+            )
+            if user:
+                review["user"] = user
+        
+        total = await db.service_reviews.count_documents({"service_id": service_id})
+        
+        return {"reviews": reviews, "total": total}
+        
+    except Exception as e:
+        logger.error(f"Error getting reviews: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== END SERVICES MODULE =====
+
 @api_router.get("/health")
 async def health_check():
     return {
