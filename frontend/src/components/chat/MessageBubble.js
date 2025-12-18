@@ -14,6 +14,8 @@ const MessageBubble = ({
   message,
   isOwn,
   showSender = false,
+  isFirstInGroup = true,
+  isLastInGroup = true,
   onReply,
   onReact,
   onEdit,
