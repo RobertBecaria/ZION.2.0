@@ -1,449 +1,355 @@
 #!/usr/bin/env python3
 """
-WebSocket Chat Implementation Backend Testing
-Testing the new WebSocket chat implementation for real-time messaging.
+Backend Testing for ZION.CITY Application - Critical Bug Fix Verification
+Testing the Channel Posts Endpoint Fix and Core Functionality
 
-Test Scope:
-1. Authentication Test - Login with admin@test.com to get JWT token
-2. Direct Chat API Test - GET /api/direct-chats
-3. WebSocket Connection Test - ws://backend_url/ws/chat/{chat_id}?token={jwt_token}
-4. Message Sending Test - POST /api/direct-chats/{chat_id}/messages
-5. Typing Status API Test - POST/GET /api/chats/{chat_id}/typing?chat_type=direct
-6. Message Status Test - PUT /api/messages/{message_id}/status
+Test Focus:
+1. Channel Posts Endpoint Fix - /api/news/posts/channel/{channel_id}
+2. News Feed functionality
+3. Channel View functionality  
+4. People Discovery / Recommendations endpoint
 
 Test Credentials:
-- User 1: admin@test.com / testpassword123
-- User 2: testuser@test.com / testpassword123
+- Admin: admin@test.com / testpassword123
+- Test User: testuser@test.com / testpassword123
 """
 
 import requests
 import json
-import asyncio
-import websockets
-import time
-from datetime import datetime
 import sys
-import os
+from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://social-features-1.preview.emergentagent.com"
-API_BASE = f"{BACKEND_URL}/api"
+BACKEND_URL = "https://social-features-1.preview.emergentagent.com/api"
 
-# Test credentials
-USER1_EMAIL = "admin@test.com"
-USER1_PASSWORD = "testpassword123"
-USER2_EMAIL = "testuser@test.com"
-USER2_PASSWORD = "testpassword123"
-
-class WebSocketChatTester:
+class ZionCityTester:
     def __init__(self):
-        self.user1_token = None
-        self.user2_token = None
-        self.user1_id = None
-        self.user2_id = None
-        self.chat_id = None
-        self.test_results = []
+        self.session = requests.Session()
+        self.admin_token = None
+        self.test_user_token = None
+        self.admin_user_id = None
+        self.test_user_id = None
         
-    def log_test(self, test_name, success, details=""):
-        """Log test result"""
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status}: {test_name}")
-        if details:
-            print(f"   Details: {details}")
-        self.test_results.append({
-            "test": test_name,
-            "success": success,
-            "details": details
-        })
+    def log(self, message, level="INFO"):
+        """Log test messages with timestamp"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
         
-    def authenticate_user(self, email, password):
-        """Authenticate user and return token and user info"""
+    def login_user(self, email, password, user_type="admin"):
+        """Login and get JWT token"""
         try:
-            # Login request
-            login_data = {
+            self.log(f"🔐 Logging in {user_type}: {email}")
+            
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json={
                 "email": email,
                 "password": password
-            }
-            
-            response = requests.post(f"{API_BASE}/auth/login", json=login_data)
+            })
             
             if response.status_code == 200:
                 data = response.json()
                 token = data.get("access_token")
+                user_id = data.get("user", {}).get("id")
                 
-                # Get user info
-                headers = {"Authorization": f"Bearer {token}"}
-                me_response = requests.get(f"{API_BASE}/auth/me", headers=headers)
-                
-                if me_response.status_code == 200:
-                    user_info = me_response.json()
-                    return token, user_info.get("id"), user_info
+                if user_type == "admin":
+                    self.admin_token = token
+                    self.admin_user_id = user_id
                 else:
-                    return None, None, None
-            else:
-                return None, None, None
-                
-        except Exception as e:
-            print(f"Authentication error: {e}")
-            return None, None, None
-    
-    def test_authentication(self):
-        """Test 1: Authentication Test"""
-        print("\n=== Test 1: Authentication Test ===")
-        
-        # Test User 1 authentication
-        self.user1_token, self.user1_id, user1_info = self.authenticate_user(USER1_EMAIL, USER1_PASSWORD)
-        
-        if self.user1_token and self.user1_id:
-            self.log_test("User 1 Authentication", True, f"Token obtained for user {self.user1_id}")
-        else:
-            self.log_test("User 1 Authentication", False, "Failed to authenticate user 1")
-            return False
-            
-        # Test User 2 authentication
-        self.user2_token, self.user2_id, user2_info = self.authenticate_user(USER2_EMAIL, USER2_PASSWORD)
-        
-        if self.user2_token and self.user2_id:
-            self.log_test("User 2 Authentication", True, f"Token obtained for user {self.user2_id}")
-        else:
-            self.log_test("User 2 Authentication", False, "Failed to authenticate user 2")
-            return False
-            
-        # Test /api/auth/me endpoint
-        try:
-            headers = {"Authorization": f"Bearer {self.user1_token}"}
-            response = requests.get(f"{API_BASE}/auth/me", headers=headers)
-            
-            if response.status_code == 200:
-                user_data = response.json()
-                self.log_test("Auth Me Endpoint", True, f"Retrieved user data: {user_data.get('email')}")
-            else:
-                self.log_test("Auth Me Endpoint", False, f"Status: {response.status_code}")
-                
-        except Exception as e:
-            self.log_test("Auth Me Endpoint", False, f"Error: {e}")
-            
-        return True
-    
-    def test_direct_chat_api(self):
-        """Test 2: Direct Chat API Test"""
-        print("\n=== Test 2: Direct Chat API Test ===")
-        
-        if not self.user1_token or not self.user2_token:
-            self.log_test("Direct Chat API", False, "Authentication required first")
-            return False
-            
-        try:
-            headers1 = {"Authorization": f"Bearer {self.user1_token}"}
-            headers2 = {"Authorization": f"Bearer {self.user2_token}"}
-            
-            # Test GET /api/direct-chats for user 1
-            response = requests.get(f"{API_BASE}/direct-chats", headers=headers1)
-            
-            if response.status_code == 200:
-                chats_data = response.json()
-                direct_chats = chats_data.get("direct_chats", [])
-                self.log_test("List Direct Chats", True, f"Found {len(direct_chats)} existing chats")
-                
-                # Check if there's an existing chat between users
-                existing_chat = None
-                for chat_info in direct_chats:
-                    chat = chat_info.get("chat", {})
-                    if self.user2_id in chat.get("participant_ids", []):
-                        existing_chat = chat
-                        break
-                        
-                if existing_chat:
-                    self.chat_id = existing_chat["id"]
-                    self.log_test("Existing Chat Found", True, f"Chat ID: {self.chat_id}")
-                else:
-                    # Create new direct chat
-                    create_data = {"recipient_id": self.user2_id}
-                    create_response = requests.post(f"{API_BASE}/direct-chats", json=create_data, headers=headers1)
+                    self.test_user_token = token
+                    self.test_user_id = user_id
                     
-                    if create_response.status_code == 200:
-                        create_result = create_response.json()
-                        self.chat_id = create_result.get("chat_id")
-                        self.log_test("Create Direct Chat", True, f"New chat ID: {self.chat_id}")
-                    else:
-                        self.log_test("Create Direct Chat", False, f"Status: {create_response.status_code}")
-                        return False
-                        
+                self.log(f"✅ {user_type.title()} login successful - User ID: {user_id}")
+                return True
             else:
-                self.log_test("List Direct Chats", False, f"Status: {response.status_code}")
+                self.log(f"❌ {user_type.title()} login failed: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log_test("Direct Chat API", False, f"Error: {e}")
+            self.log(f"❌ {user_type.title()} login error: {str(e)}", "ERROR")
             return False
-            
-        return True
     
-    def test_message_sending(self):
-        """Test 4: Message Sending Test"""
-        print("\n=== Test 4: Message Sending Test ===")
+    def get_auth_headers(self, user_type="admin"):
+        """Get authorization headers"""
+        token = self.admin_token if user_type == "admin" else self.test_user_token
+        return {"Authorization": f"Bearer {token}"}
+    
+    def test_news_channels_list(self):
+        """Test 1: Get list of news channels"""
+        self.log("📺 Testing GET /api/news/channels")
         
-        if not self.chat_id:
-            self.log_test("Message Sending", False, "Chat ID required")
-            return False
-            
         try:
-            headers = {"Authorization": f"Bearer {self.user1_token}"}
-            
-            # Send a test message
-            message_data = {
-                "content": "Test message from agent - WebSocket chat testing",
-                "message_type": "TEXT"
-            }
-            
-            response = requests.post(f"{API_BASE}/direct-chats/{self.chat_id}/messages", 
-                                   json=message_data, headers=headers)
+            response = self.session.get(
+                f"{BACKEND_URL}/news/channels",
+                headers=self.get_auth_headers()
+            )
             
             if response.status_code == 200:
-                result = response.json()
-                message_id = result.get("message_id")
-                self.log_test("Send Message", True, f"Message ID: {message_id}")
+                channels = response.json()
+                self.log(f"✅ Channels list retrieved successfully - Found {len(channels)} channels")
                 
-                # Test retrieving messages
-                get_response = requests.get(f"{API_BASE}/direct-chats/{self.chat_id}/messages", 
-                                          headers=headers)
-                
-                if get_response.status_code == 200:
-                    messages_data = get_response.json()
-                    messages = messages_data.get("messages", [])
-                    self.log_test("Retrieve Messages", True, f"Found {len(messages)} messages")
+                if channels:
+                    # Store first channel for testing channel posts
+                    self.test_channel_id = channels[0].get("id")
+                    self.log(f"📝 Using channel ID for testing: {self.test_channel_id}")
                     
-                    # Find our test message
-                    test_message = None
-                    for msg in messages:
-                        if msg.get("id") == message_id:
-                            test_message = msg
-                            break
-                            
-                    if test_message:
-                        self.log_test("Message Verification", True, f"Content: {test_message.get('content')}")
-                        return message_id
+                    # Verify channel structure
+                    first_channel = channels[0]
+                    required_fields = ["id", "name", "description"]
+                    missing_fields = [field for field in required_fields if field not in first_channel]
+                    
+                    if missing_fields:
+                        self.log(f"⚠️ Missing fields in channel: {missing_fields}", "WARNING")
                     else:
-                        self.log_test("Message Verification", False, "Test message not found")
-                else:
-                    self.log_test("Retrieve Messages", False, f"Status: {get_response.status_code}")
-            else:
-                self.log_test("Send Message", False, f"Status: {response.status_code}")
-                
-        except Exception as e:
-            self.log_test("Message Sending", False, f"Error: {e}")
-            
-        return None
-    
-    def test_typing_status_api(self):
-        """Test 5: Typing Status API Test"""
-        print("\n=== Test 5: Typing Status API Test ===")
-        
-        if not self.chat_id:
-            self.log_test("Typing Status API", False, "Chat ID required")
-            return False
-            
-        try:
-            headers = {"Authorization": f"Bearer {self.user1_token}"}
-            
-            # Test setting typing status
-            typing_data = {"is_typing": True}
-            response = requests.post(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
-                                   json=typing_data, headers=headers)
-            
-            if response.status_code == 200:
-                self.log_test("Set Typing Status", True, "Typing status set to true")
-                
-                # Test getting typing status (should be empty as same user)
-                get_response = requests.get(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
-                                          headers=headers)
-                
-                if get_response.status_code == 200:
-                    typing_users = get_response.json().get("typing_users", [])
-                    self.log_test("Get Typing Status", True, f"Found {len(typing_users)} typing users (expected 0 for same user)")
-                else:
-                    self.log_test("Get Typing Status", False, f"Status: {get_response.status_code}")
-                    
-                # Set typing to false
-                typing_data = {"is_typing": False}
-                stop_response = requests.post(f"{API_BASE}/chats/{self.chat_id}/typing?chat_type=direct", 
-                                            json=typing_data, headers=headers)
-                
-                if stop_response.status_code == 200:
-                    self.log_test("Stop Typing Status", True, "Typing status set to false")
-                else:
-                    self.log_test("Stop Typing Status", False, f"Status: {stop_response.status_code}")
-                    
-            else:
-                self.log_test("Set Typing Status", False, f"Status: {response.status_code}")
-                
-        except Exception as e:
-            self.log_test("Typing Status API", False, f"Error: {e}")
-            
-        return True
-    
-    def test_message_status(self):
-        """Test 6: Message Status Test"""
-        print("\n=== Test 6: Message Status Test ===")
-        
-        # First send a message to get a message ID
-        message_id = self.test_message_sending()
-        
-        if not message_id:
-            self.log_test("Message Status Test", False, "No message ID available")
-            return False
-            
-        try:
-            headers = {"Authorization": f"Bearer {self.user2_token}"}  # Use user 2 to update status
-            
-            # Test updating message status to delivered
-            status_data = {"status": "delivered"}
-            response = requests.put(f"{API_BASE}/messages/{message_id}/status", 
-                                  json=status_data, headers=headers)
-            
-            if response.status_code == 200:
-                self.log_test("Update Status to Delivered", True, "Message marked as delivered")
-                
-                # Test updating message status to read
-                status_data = {"status": "read"}
-                read_response = requests.put(f"{API_BASE}/messages/{message_id}/status", 
-                                           json=status_data, headers=headers)
-                
-                if read_response.status_code == 200:
-                    self.log_test("Update Status to Read", True, "Message marked as read")
-                else:
-                    self.log_test("Update Status to Read", False, f"Status: {read_response.status_code}")
-                    
-            else:
-                self.log_test("Update Status to Delivered", False, f"Status: {response.status_code}")
-                
-        except Exception as e:
-            self.log_test("Message Status Test", False, f"Error: {e}")
-            
-        return True
-    
-    async def test_websocket_connection(self):
-        """Test 3: WebSocket Connection Test"""
-        print("\n=== Test 3: WebSocket Connection Test ===")
-        
-        if not self.user1_token or not self.chat_id:
-            self.log_test("WebSocket Connection", False, "Token and chat ID required")
-            return False
-            
-        try:
-            # Convert HTTPS URL to WSS for WebSocket
-            ws_url = BACKEND_URL.replace("https://", "wss://").replace("http://", "ws://")
-            websocket_url = f"{ws_url}/ws/chat/{self.chat_id}?token={self.user1_token}"
-            
-            print(f"Attempting WebSocket connection to: {websocket_url}")
-            
-            # Test WebSocket connection with timeout
-            try:
-                async with websockets.connect(websocket_url) as websocket:
-                    self.log_test("WebSocket Connection", True, "Successfully connected to WebSocket")
-                    
-                    # Send a ping message
-                    ping_message = {"type": "ping"}
-                    await websocket.send(json.dumps(ping_message))
-                    
-                    # Wait for response with timeout
-                    try:
-                        response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
-                        response_data = json.loads(response)
+                        self.log("✅ Channel structure validation passed")
                         
-                        if response_data.get("type") == "pong":
-                            self.log_test("WebSocket Ping/Pong", True, "Received pong response")
-                        else:
-                            self.log_test("WebSocket Ping/Pong", True, f"Received: {response_data}")
-                            
-                    except asyncio.TimeoutError:
-                        self.log_test("WebSocket Ping/Pong", False, "No response received within timeout")
-                    
-                    # Test typing event
-                    typing_message = {"type": "typing", "is_typing": True}
-                    await websocket.send(json.dumps(typing_message))
-                    self.log_test("WebSocket Typing Event", True, "Sent typing event")
-                    
-                    # Wait a bit and stop typing
-                    await asyncio.sleep(1)
-                    stop_typing_message = {"type": "typing", "is_typing": False}
-                    await websocket.send(json.dumps(stop_typing_message))
-                    self.log_test("WebSocket Stop Typing", True, "Sent stop typing event")
-                    
-            except websockets.InvalidStatusCode as e:
-                self.log_test("WebSocket Connection", False, f"Invalid status code: {e}")
-            except websockets.ConnectionClosedError as e:
-                self.log_test("WebSocket Connection", False, f"Connection closed: {e}")
-            except asyncio.TimeoutError:
-                self.log_test("WebSocket Connection", False, "Connection timeout")
-            except Exception as e:
-                self.log_test("WebSocket Connection", False, f"Connection error: {e}")
+                    return True, channels
+                else:
+                    self.log("⚠️ No channels found in system", "WARNING")
+                    return True, []
+            else:
+                self.log(f"❌ Channels list failed: {response.status_code} - {response.text}", "ERROR")
+                return False, None
                 
         except Exception as e:
-            self.log_test("WebSocket Connection", False, f"Error: {e}")
-            
-        return True
+            self.log(f"❌ Channels list error: {str(e)}", "ERROR")
+            return False, None
     
-    def run_all_tests(self):
-        """Run all tests in sequence"""
-        print("🚀 Starting WebSocket Chat Implementation Backend Testing")
-        print(f"Backend URL: {BACKEND_URL}")
-        print(f"Test Time: {datetime.now().isoformat()}")
+    def test_channel_posts_endpoint(self, channel_id):
+        """Test 2: CRITICAL - Test the fixed channel posts endpoint"""
+        self.log(f"🔧 Testing FIXED endpoint GET /api/news/posts/channel/{channel_id}")
         
-        # Run tests in order
-        if not self.test_authentication():
-            print("❌ Authentication failed - stopping tests")
-            return
+        try:
+            response = self.session.get(
+                f"{BACKEND_URL}/news/posts/channel/{channel_id}",
+                headers=self.get_auth_headers()
+            )
             
-        if not self.test_direct_chat_api():
-            print("❌ Direct Chat API failed - stopping tests")
-            return
-            
-        # Run WebSocket test (async)
-        asyncio.run(self.test_websocket_connection())
-        
-        # Continue with remaining tests
-        self.test_message_sending()
-        self.test_typing_status_api()
-        self.test_message_status()
-        
-        # Print summary
-        self.print_summary()
-    
-    def print_summary(self):
-        """Print test summary"""
-        print("\n" + "="*60)
-        print("📊 TEST SUMMARY")
-        print("="*60)
-        
-        total_tests = len(self.test_results)
-        passed_tests = sum(1 for result in self.test_results if result["success"])
-        failed_tests = total_tests - passed_tests
-        
-        print(f"Total Tests: {total_tests}")
-        print(f"✅ Passed: {passed_tests}")
-        print(f"❌ Failed: {failed_tests}")
-        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
-        
-        if failed_tests > 0:
-            print("\n❌ FAILED TESTS:")
-            for result in self.test_results:
-                if not result["success"]:
-                    print(f"  - {result['test']}: {result['details']}")
-        
-        print("\n✅ PASSED TESTS:")
-        for result in self.test_results:
-            if result["success"]:
-                print(f"  - {result['test']}")
+            if response.status_code == 200:
+                data = response.json()
+                self.log("✅ Channel posts endpoint working - ObjectId serialization fix successful!")
                 
-        # Overall assessment
-        if passed_tests == total_tests:
-            print("\n🎉 ALL TESTS PASSED - WebSocket Chat Implementation is PRODUCTION READY!")
-        elif passed_tests >= total_tests * 0.8:
-            print("\n✅ MOSTLY WORKING - WebSocket Chat Implementation is functional with minor issues")
+                # Verify response structure
+                if "channel" in data and "posts" in data:
+                    channel_obj = data["channel"]
+                    posts_array = data["posts"]
+                    
+                    self.log(f"✅ Response structure correct - Channel: {channel_obj.get('name', 'Unknown')}")
+                    self.log(f"✅ Posts array present - Found {len(posts_array)} posts")
+                    
+                    # Verify channel object doesn't contain ObjectId
+                    if "_id" in channel_obj:
+                        self.log("❌ Channel object still contains _id field (ObjectId not excluded)", "ERROR")
+                        return False
+                    else:
+                        self.log("✅ Channel object properly excludes _id field - Fix verified!")
+                        
+                    return True
+                else:
+                    self.log("❌ Invalid response structure - missing 'channel' or 'posts'", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Channel posts endpoint failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Channel posts endpoint error: {str(e)}", "ERROR")
+            return False
+    
+    def test_news_feed(self):
+        """Test 3: Verify news feed loads correctly"""
+        self.log("📰 Testing GET /api/news/posts (News Feed)")
+        
+        try:
+            response = self.session.get(
+                f"{BACKEND_URL}/news/posts",
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                posts = response.json()
+                self.log(f"✅ News feed loaded successfully - Found {len(posts)} posts")
+                
+                if posts:
+                    # Verify post structure
+                    first_post = posts[0]
+                    required_fields = ["id", "content", "author", "created_at"]
+                    missing_fields = [field for field in required_fields if field not in first_post]
+                    
+                    if missing_fields:
+                        self.log(f"⚠️ Missing fields in post: {missing_fields}", "WARNING")
+                    else:
+                        self.log("✅ Post structure validation passed")
+                        
+                return True
+            else:
+                self.log(f"❌ News feed failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ News feed error: {str(e)}", "ERROR")
+            return False
+    
+    def test_user_suggestions(self):
+        """Test 4: People Discovery / Recommendations endpoint"""
+        self.log("👥 Testing GET /api/users/suggestions (People Discovery)")
+        
+        try:
+            response = self.session.get(
+                f"{BACKEND_URL}/users/suggestions",
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                suggestions = response.json()
+                self.log(f"✅ User suggestions loaded successfully - Found {len(suggestions)} suggestions")
+                
+                if suggestions:
+                    # Verify suggestion structure
+                    first_suggestion = suggestions[0]
+                    required_fields = ["id", "first_name", "last_name"]
+                    missing_fields = [field for field in required_fields if field not in first_suggestion]
+                    
+                    if missing_fields:
+                        self.log(f"⚠️ Missing fields in suggestion: {missing_fields}", "WARNING")
+                    else:
+                        self.log("✅ User suggestion structure validation passed")
+                        
+                return True
+            else:
+                self.log(f"❌ User suggestions failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ User suggestions error: {str(e)}", "ERROR")
+            return False
+    
+    def test_additional_endpoints(self):
+        """Test additional endpoints for comprehensive verification"""
+        self.log("🔍 Testing additional endpoints for comprehensive verification")
+        
+        endpoints_to_test = [
+            ("GET", "/news/events", "News Events"),
+            ("GET", "/users/profile", "User Profile"),
+        ]
+        
+        results = {}
+        
+        for method, endpoint, name in endpoints_to_test:
+            try:
+                self.log(f"Testing {method} {endpoint} ({name})")
+                
+                if method == "GET":
+                    response = self.session.get(
+                        f"{BACKEND_URL}{endpoint}",
+                        headers=self.get_auth_headers()
+                    )
+                
+                if response.status_code == 200:
+                    self.log(f"✅ {name} endpoint working")
+                    results[name] = True
+                else:
+                    self.log(f"⚠️ {name} endpoint returned {response.status_code}", "WARNING")
+                    results[name] = False
+                    
+            except Exception as e:
+                self.log(f"❌ {name} endpoint error: {str(e)}", "ERROR")
+                results[name] = False
+        
+        return results
+    
+    def run_comprehensive_test(self):
+        """Run all tests in sequence"""
+        self.log("🚀 Starting ZION.CITY Backend Testing - Critical Bug Fix Verification")
+        self.log("=" * 80)
+        
+        # Test results tracking
+        test_results = {
+            "admin_login": False,
+            "test_user_login": False,
+            "channels_list": False,
+            "channel_posts_fix": False,
+            "news_feed": False,
+            "user_suggestions": False
+        }
+        
+        # 1. Login both users
+        test_results["admin_login"] = self.login_user("admin@test.com", "testpassword123", "admin")
+        test_results["test_user_login"] = self.login_user("testuser@test.com", "testpassword123", "test_user")
+        
+        if not test_results["admin_login"]:
+            self.log("❌ Cannot proceed without admin login", "ERROR")
+            return test_results
+        
+        # 2. Test channels list
+        channels_success, channels_data = self.test_news_channels_list()
+        test_results["channels_list"] = channels_success
+        
+        # 3. Test channel posts endpoint (CRITICAL FIX)
+        if channels_success and channels_data:
+            channel_id = channels_data[0].get("id") if channels_data else None
+            if channel_id:
+                test_results["channel_posts_fix"] = self.test_channel_posts_endpoint(channel_id)
+            else:
+                self.log("⚠️ No channel ID available for testing channel posts", "WARNING")
+        
+        # 4. Test news feed
+        test_results["news_feed"] = self.test_news_feed()
+        
+        # 5. Test user suggestions
+        test_results["user_suggestions"] = self.test_user_suggestions()
+        
+        # 6. Test additional endpoints
+        additional_results = self.test_additional_endpoints()
+        
+        # Print final results
+        self.log("=" * 80)
+        self.log("📊 FINAL TEST RESULTS")
+        self.log("=" * 80)
+        
+        passed_tests = 0
+        total_tests = len(test_results)
+        
+        for test_name, result in test_results.items():
+            status = "✅ PASS" if result else "❌ FAIL"
+            self.log(f"{test_name.replace('_', ' ').title()}: {status}")
+            if result:
+                passed_tests += 1
+        
+        # Additional endpoints summary
+        self.log("\nAdditional Endpoints:")
+        for endpoint_name, result in additional_results.items():
+            status = "✅ PASS" if result else "⚠️ WARNING"
+            self.log(f"{endpoint_name}: {status}")
+        
+        # Overall summary
+        success_rate = (passed_tests / total_tests) * 100
+        self.log("=" * 80)
+        self.log(f"📈 OVERALL SUCCESS RATE: {passed_tests}/{total_tests} ({success_rate:.1f}%)")
+        
+        # Critical fix verification
+        if test_results["channel_posts_fix"]:
+            self.log("🎉 CRITICAL: Channel Posts ObjectId Serialization Fix VERIFIED!")
         else:
-            print("\n⚠️  SIGNIFICANT ISSUES - WebSocket Chat Implementation needs attention")
+            self.log("🚨 CRITICAL: Channel Posts ObjectId Serialization Fix FAILED!", "ERROR")
+        
+        self.log("=" * 80)
+        
+        return test_results
+
+def main():
+    """Main test execution"""
+    tester = ZionCityTester()
+    results = tester.run_comprehensive_test()
+    
+    # Exit with appropriate code
+    critical_tests = ["admin_login", "channel_posts_fix", "news_feed"]
+    critical_passed = all(results.get(test, False) for test in critical_tests)
+    
+    if critical_passed:
+        print("\n🎉 All critical tests passed!")
+        sys.exit(0)
+    else:
+        print("\n❌ Some critical tests failed!")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    tester = WebSocketChatTester()
-    tester.run_all_tests()
+    main()
