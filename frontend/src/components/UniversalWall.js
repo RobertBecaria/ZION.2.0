@@ -23,23 +23,8 @@ function UniversalWall({
   journalSchoolFilter = 'all',  // Journal school filter
   journalAudienceFilter = 'all'  // Journal audience filter
 }) {
-  // If this is the organizations/work module, show WorkUniversalFeed
-  if (activeModule === 'organizations') {
-    return <WorkUniversalFeed currentUserId={user?.id} />;
-  }
-  
-  // If this is the journal module, show JournalUniversalFeed
-  if (activeModule === 'journal') {
-    return (
-      <JournalUniversalFeed 
-        currentUserId={user?.id} 
-        schoolRoles={schoolRoles} 
-        user={user}
-        schoolFilter={journalSchoolFilter}
-        audienceFilter={journalAudienceFilter}
-      />
-    );
-  }
+  // ALL HOOKS MUST BE DECLARED BEFORE ANY CONDITIONAL RETURNS
+  // This is required by React's Rules of Hooks
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,6 +53,25 @@ function UniversalWall({
     nextImage,
     prevImage
   } = useLightbox();
+
+  // CONDITIONAL RETURNS - Must come AFTER all hooks
+  // If this is the organizations/work module, show WorkUniversalFeed
+  if (activeModule === 'organizations') {
+    return <WorkUniversalFeed currentUserId={user?.id} />;
+  }
+  
+  // If this is the journal module, show JournalUniversalFeed
+  if (activeModule === 'journal') {
+    return (
+      <JournalUniversalFeed 
+        currentUserId={user?.id} 
+        schoolRoles={schoolRoles} 
+        user={user}
+        schoolFilter={journalSchoolFilter}
+        audienceFilter={journalAudienceFilter}
+      />
+    );
+  }
   
   // Get backend URL properly
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
