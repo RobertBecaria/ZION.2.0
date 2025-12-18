@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://social-features-1.preview.emergentagent.com/api"
+BASE_URL = "https://news-social-update.preview.emergentagent.com/api"
 ORGANIZATION_ID = "d80dbe76-45e7-45fa-b937-a2b5a20b8aaf"  # ZION.CITY organization
 
 # Test credentials
