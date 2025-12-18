@@ -34,7 +34,7 @@ function LoginForm({ onSwitchToRegister }) {
             <img src="/zion-logo.jpeg" alt="ZION.CITY Logo" className="auth-logo" />
             <h1 className="platform-logo">ZION.CITY</h1>
           </div>
-          <p style={{ fontWeight: 'bold' }}>WEB 4.0</p>
+          <p style={{ fontWeight: 'bold' }}>BRICS WEB 4.0</p>
         </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
