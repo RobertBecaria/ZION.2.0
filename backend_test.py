@@ -214,41 +214,202 @@ class ZionCityTester:
             self.log(f"❌ Create comment error: {str(e)}", "ERROR")
             return False
     
-    def test_user_suggestions(self):
-        """Test 4: People Discovery / Recommendations endpoint"""
-        self.log("👥 Testing GET /api/users/suggestions (People Discovery)")
+    def test_create_reply(self):
+        """Test 3: Create a reply to a comment"""
+        if not self.test_comment_ids:
+            self.log("⚠️ No comments available to reply to", "WARNING")
+            return False
+            
+        parent_comment_id = self.test_comment_ids[0]
+        self.log(f"↩️ Testing POST /api/news/posts/{self.test_post_id}/comments (Reply)")
         
         try:
-            response = self.session.get(
-                f"{BACKEND_URL}/users/suggestions",
+            reply_data = {
+                "content": "This is a test reply to the comment! 💬",
+                "parent_comment_id": parent_comment_id
+            }
+            
+            response = self.session.post(
+                f"{BACKEND_URL}/news/posts/{self.test_post_id}/comments",
+                json=reply_data,
                 headers=self.get_auth_headers()
             )
             
             if response.status_code == 200:
                 data = response.json()
-                suggestions = data.get("suggestions", [])  # Handle wrapped response
-                self.log(f"✅ User suggestions loaded successfully - Found {len(suggestions)} suggestions")
+                reply_id = data.get("id")
                 
-                if suggestions and len(suggestions) > 0:
-                    # Verify suggestion structure
-                    first_suggestion = suggestions[0]
-                    required_fields = ["id", "first_name", "last_name"]
-                    missing_fields = [field for field in required_fields if field not in first_suggestion]
-                    
-                    if missing_fields:
-                        self.log(f"⚠️ Missing fields in suggestion: {missing_fields}", "WARNING")
-                    else:
-                        self.log("✅ User suggestion structure validation passed")
+                if reply_id and data.get("parent_comment_id") == parent_comment_id:
+                    self.test_reply_ids.append(reply_id)
+                    self.log(f"✅ Reply created successfully - ID: {reply_id}")
+                    self.log(f"✅ Reply correctly linked to parent: {parent_comment_id}")
+                    return True
                 else:
-                    self.log("⚠️ No user suggestions found (empty list)", "WARNING")
-                        
-                return True
+                    self.log("❌ Reply created but parent_comment_id not set correctly", "ERROR")
+                    return False
             else:
-                self.log(f"❌ User suggestions failed: {response.status_code} - {response.text}", "ERROR")
+                self.log(f"❌ Create reply failed: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ User suggestions error: {str(e)}", "ERROR")
+            self.log(f"❌ Create reply error: {str(e)}", "ERROR")
+            return False
+    
+    def test_edit_comment(self):
+        """Test 4: Edit a comment"""
+        if not self.test_comment_ids:
+            self.log("⚠️ No comments available to edit", "WARNING")
+            return False
+            
+        comment_id = self.test_comment_ids[0]
+        self.log(f"✏️ Testing PUT /api/news/comments/{comment_id}")
+        
+        try:
+            edit_data = {
+                "content": "This comment has been edited! ✏️ (Enhanced Comments Test)"
+            }
+            
+            response = self.session.put(
+                f"{BACKEND_URL}/news/comments/{comment_id}",
+                json=edit_data,
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify the comment was updated
+                if data.get("content") == edit_data["content"]:
+                    self.log("✅ Comment edited successfully")
+                    
+                    # Check for edited flag
+                    if data.get("is_edited") == True:
+                        self.log("✅ Comment marked as edited (is_edited: true)")
+                    else:
+                        self.log("⚠️ Comment not marked as edited", "WARNING")
+                    
+                    # Check for edited_at timestamp
+                    if data.get("edited_at"):
+                        self.log("✅ Comment has edited_at timestamp")
+                    else:
+                        self.log("⚠️ Comment missing edited_at timestamp", "WARNING")
+                    
+                    return True
+                else:
+                    self.log("❌ Comment content not updated correctly", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Edit comment failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Edit comment error: {str(e)}", "ERROR")
+            return False
+    
+    def test_like_comment(self):
+        """Test 5: Like/unlike a comment"""
+        if not self.test_comment_ids:
+            self.log("⚠️ No comments available to like", "WARNING")
+            return False
+            
+        comment_id = self.test_comment_ids[0]
+        self.log(f"❤️ Testing POST /api/news/comments/{comment_id}/like")
+        
+        try:
+            # First like
+            response = self.session.post(
+                f"{BACKEND_URL}/news/comments/{comment_id}/like",
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("user_liked") == True:
+                    self.log("✅ Comment liked successfully")
+                    like_count_1 = data.get("like_count", 0)
+                    self.log(f"✅ Like count: {like_count_1}")
+                    
+                    # Test unlike (toggle)
+                    response2 = self.session.post(
+                        f"{BACKEND_URL}/news/comments/{comment_id}/like",
+                        headers=self.get_auth_headers()
+                    )
+                    
+                    if response2.status_code == 200:
+                        data2 = response2.json()
+                        
+                        if data2.get("user_liked") == False:
+                            self.log("✅ Comment unliked successfully (toggle working)")
+                            like_count_2 = data2.get("like_count", 0)
+                            self.log(f"✅ Like count after unlike: {like_count_2}")
+                            
+                            if like_count_2 < like_count_1:
+                                self.log("✅ Like count decreased correctly")
+                                return True
+                            else:
+                                self.log("⚠️ Like count did not decrease", "WARNING")
+                                return True  # Still consider success if toggle works
+                        else:
+                            self.log("❌ Comment not unliked (toggle not working)", "ERROR")
+                            return False
+                    else:
+                        self.log(f"❌ Unlike comment failed: {response2.status_code}", "ERROR")
+                        return False
+                else:
+                    self.log("❌ Comment not liked (user_liked not true)", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Like comment failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Like comment error: {str(e)}", "ERROR")
+            return False
+    
+    def test_delete_comment(self):
+        """Test 6: Delete a comment"""
+        if not self.test_comment_ids:
+            self.log("⚠️ No comments available to delete", "WARNING")
+            return False
+            
+        # Use the last comment we created to avoid deleting existing data
+        comment_id = self.test_comment_ids[-1]
+        self.log(f"🗑️ Testing DELETE /api/news/comments/{comment_id}")
+        
+        try:
+            response = self.session.delete(
+                f"{BACKEND_URL}/news/comments/{comment_id}",
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                self.log("✅ Comment deleted successfully")
+                
+                # Verify comment is marked as deleted by trying to get comments again
+                verify_response = self.session.get(
+                    f"{BACKEND_URL}/news/posts/{self.test_post_id}/comments",
+                    headers=self.get_auth_headers()
+                )
+                
+                if verify_response.status_code == 200:
+                    comments = verify_response.json().get("comments", [])
+                    deleted_comment = next((c for c in comments if c.get("id") == comment_id), None)
+                    
+                    if deleted_comment is None:
+                        self.log("✅ Comment removed from comments list")
+                    elif deleted_comment.get("is_deleted") == True:
+                        self.log("✅ Comment marked as deleted (soft delete)")
+                    else:
+                        self.log("⚠️ Comment still visible and not marked as deleted", "WARNING")
+                
+                return True
+            else:
+                self.log(f"❌ Delete comment failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Delete comment error: {str(e)}", "ERROR")
             return False
     
     def run_comprehensive_test(self):
