@@ -234,7 +234,7 @@ const InvitationManager = ({ currentUser }) => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          Приглашение в семью "{invitation.family_name}"
+                          Приглашение в семью &ldquo;{invitation.family_name}&rdquo;
                         </h3>
                         <div className="flex items-center space-x-2 text-sm text-gray-600">
                           <span>От: {invitation.invited_by_name}</span>

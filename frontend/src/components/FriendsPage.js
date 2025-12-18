@@ -457,7 +457,7 @@ const FriendsPage = ({
         <div className="request-card-info">
           <h4 className="request-name">{person?.first_name} {person?.last_name}</h4>
           {request.message && (
-            <p className="request-message">"{request.message}"</p>
+            <p className="request-message">&ldquo;{request.message}&rdquo;</p>
           )}
           <span className="request-date">
             {new Date(request.created_at).toLocaleDateString('ru-RU')}
