@@ -87,20 +87,57 @@ class ServicesModuleTester:
                 data = response.json()
                 organizations = data.get("organizations", [])
                 
-                if organizations:
-                    self.organization_id = organizations[0].get("id")
-                    org_name = organizations[0].get("name", "Unknown")
-                    self.log(f"✅ Found organization: {org_name} (ID: {self.organization_id})")
-                    return True
-                else:
-                    self.log("❌ No organizations found", "ERROR")
-                    return False
+                # Look for an organization where user is a member
+                for org in organizations:
+                    if org.get("user_is_member", False) or org.get("user_role"):
+                        self.organization_id = org.get("id")
+                        org_name = org.get("name", "Unknown")
+                        self.log(f"✅ Found organization where user is member: {org_name} (ID: {self.organization_id})")
+                        return True
+                
+                # If no membership found, try to create a new organization
+                self.log("🏗️ No membership found, creating new organization")
+                return self.create_test_organization()
             else:
                 self.log(f"❌ Failed to get organizations: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
             self.log(f"❌ Error getting organization: {str(e)}", "ERROR")
+            return False
+    
+    def create_test_organization(self):
+        """Create a test organization for services testing"""
+        try:
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            
+            org_data = {
+                "name": f"Services Test Org {timestamp}",
+                "organization_type": "COMPANY",
+                "description": "Test organization for services testing",
+                "creator_role": "ADMIN",
+                "creator_department": "Management"
+            }
+            
+            response = self.session.post(
+                f"{BACKEND_URL}/work/organizations",
+                json=org_data,
+                headers=self.get_auth_headers()
+            )
+            
+            if response.status_code == 200:
+                org_data = response.json()
+                self.organization_id = org_data.get("id")
+                org_name = org_data.get("name", "Unknown")
+                self.log(f"✅ Created test organization: {org_name} (ID: {self.organization_id})")
+                return True
+            else:
+                self.log(f"❌ Failed to create organization: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Error creating organization: {str(e)}", "ERROR")
             return False
     
     def test_get_service_categories(self):
