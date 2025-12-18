@@ -1110,6 +1110,7 @@ const PostCard = ({
                   onReply={handleReply}
                   onDelete={handleDeleteComment}
                   onLike={handleLikeComment}
+                  onEdit={handleEditComment}
                   formatDate={formatDate}
                 />
               ))}
