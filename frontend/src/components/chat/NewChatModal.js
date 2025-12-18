@@ -42,30 +42,6 @@ const NewChatModal = ({ onClose, onChatCreated, moduleColor }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  // Function declaration removed - moved above useEffect
-  const fetchContactsRemoved = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('zion_token');
-      const url = searchQuery 
-        ? `${process.env.REACT_APP_BACKEND_URL}/api/users/contacts?search=${encodeURIComponent(searchQuery)}`
-        : `${process.env.REACT_APP_BACKEND_URL}/api/users/contacts`;
-      
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setContacts(data.contacts || []);
-      }
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const startChat = async (recipientId) => {
     setCreating(true);
     try {
