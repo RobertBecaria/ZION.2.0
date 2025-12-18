@@ -844,6 +844,48 @@ const PostCard = ({
     }
   };
 
+  // Edit comment
+  const handleEditComment = async (commentId, newContent, isReply = false, parentId = null) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${backendUrl}/api/news/comments/${commentId}`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: newContent })
+      });
+      
+      if (response.ok) {
+        const updatedComment = await response.json();
+        
+        const updateComment = (comment) => {
+          if (comment.id === commentId) {
+            return { ...comment, content: newContent, is_edited: true };
+          }
+          return comment;
+        };
+        
+        if (isReply && parentId) {
+          setComments(prev => prev.map(c => {
+            if (c.id === parentId) {
+              return { ...c, replies: c.replies.map(updateComment) };
+            }
+            return c;
+          }));
+        } else {
+          setComments(prev => prev.map(updateComment));
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      return false;
+    }
+  };
+
   // Set reply mode
   const handleReply = (comment) => {
     setReplyingTo(comment);
