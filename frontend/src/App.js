@@ -62,9 +62,7 @@ import TeacherDirectory from './components/TeacherDirectory';
 import WorkAnnouncementsList from './components/WorkAnnouncementsList';
 import WorkDepartmentManager from './components/WorkDepartmentManager';
 import WorkDepartmentManagementPage from './components/WorkDepartmentManagementPage';
-import WorkNextEventWidget from './components/WorkNextEventWidget';
-import WorkUpcomingEventsList from './components/WorkUpcomingEventsList';
-import WorkCalendarWidget from './components/WorkCalendarWidget';
+// WorkNextEventWidget, WorkUpcomingEventsList, WorkCalendarWidget are now imported inside RightSidebar
 // NEWS MODULE COMPONENTS
 import FriendsPage from './components/FriendsPage';
 import ChannelsPage from './components/ChannelsPage';
