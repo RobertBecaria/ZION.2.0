@@ -213,7 +213,7 @@ const WorkJoinRequestsManagement = ({ organizationId, organizationName }) => {
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
                     <div className="flex items-start gap-2">
                       <MessageSquare className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-gray-700 italic">"{request.message}"</p>
+                      <p className="text-sm text-gray-700 italic">&ldquo;{request.message}&rdquo;</p>
                     </div>
                   </div>
                 )}

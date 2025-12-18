@@ -155,7 +155,7 @@ const WorkJoinRequests = ({ onBack, onViewProfile }) => {
                           {request.organization_type.replace('_', ' ')}
                         </p>
                         {request.message && (
-                          <p className="text-gray-700 mb-3 italic">"{request.message}"</p>
+                          <p className="text-gray-700 mb-3 italic">&ldquo;{request.message}&rdquo;</p>
                         )}
                         <p className="text-sm text-gray-500">
                           Отправлено: {formatDate(request.requested_at)}
