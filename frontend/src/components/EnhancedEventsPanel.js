@@ -13,7 +13,6 @@ function EnhancedEventsPanel({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [scheduledActions, setScheduledActions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Mock events data based on the screenshot
