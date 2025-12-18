@@ -18516,6 +18516,42 @@ async def delete_news_comment(
     
     return {"message": "Comment deleted"}
 
+
+class EditCommentRequest(BaseModel):
+    content: str
+
+
+@api_router.put("/news/comments/{comment_id}")
+async def edit_news_comment(
+    comment_id: str,
+    request: EditCommentRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Edit a news post comment"""
+    comment = await db.news_post_comments.find_one({"id": comment_id})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    if comment["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this comment")
+    
+    # Update the comment
+    await db.news_post_comments.update_one(
+        {"id": comment_id},
+        {
+            "$set": {
+                "content": request.content,
+                "is_edited": True,
+                "edited_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    # Return updated comment
+    updated_comment = await db.news_post_comments.find_one({"id": comment_id}, {"_id": 0})
+    return updated_comment
+
+
 @api_router.post("/news/comments/{comment_id}/like")
 async def like_news_comment(
     comment_id: str,
