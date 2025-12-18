@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://news-pulse-50.preview.emergentagent.com/api"
+BACKEND_URL = "https://social-features-1.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_MEMBER_EMAIL = "test@zion.city"

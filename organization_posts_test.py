@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class OrganizationPostsAPITester:
-    def __init__(self, base_url="https://news-pulse-50.preview.emergentagent.com"):
+    def __init__(self, base_url="https://social-features-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.tokens = {}  # Store tokens for different users
         self.user_ids = {}  # Store user IDs for different users

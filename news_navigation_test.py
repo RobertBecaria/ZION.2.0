@@ -13,7 +13,7 @@ import sys
 import os
 
 # Configuration
-BASE_URL = "https://news-pulse-50.preview.emergentagent.com/api"
+BASE_URL = "https://social-features-1.preview.emergentagent.com/api"
 TEST_EMAIL = "admin@test.com"
 TEST_PASSWORD = "testpassword123"
 
