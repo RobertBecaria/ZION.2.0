@@ -23735,6 +23735,8 @@ a,
   padding: 10px 16px;
   background: #f0f2f5;
   min-height: 60px; /* Prevent layout shift */
+  flex-shrink: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .input-action-btn {
