@@ -40,14 +40,7 @@ import SchoolEnrollment from './components/SchoolEnrollment';
 import SchoolFinder from './components/SchoolFinder';
 import MySchoolsList from './components/MySchoolsList';
 import SchoolTiles from './components/SchoolTiles';
-import JournalWorldZone from './components/JournalWorldZone';
-import FamilyWorldZone from './components/FamilyWorldZone';
-import MediaWorldZone from './components/MediaWorldZone';
-import ChatWorldZone from './components/ChatWorldZone';
-import InfoWorldZone from './components/InfoWorldZone';
-import FamilyProfileWorldZone from './components/FamilyProfileWorldZone';
-import WorkWorldZone from './components/WorkWorldZone';
-import NewsWorldZone from './components/NewsWorldZone';
+// WorldZone components are now imported inside RightSidebar
 import AcademicCalendar from './components/AcademicCalendar';
 import EventPlanner from './components/EventPlanner';
 import ClassSchedule from './components/ClassSchedule';
