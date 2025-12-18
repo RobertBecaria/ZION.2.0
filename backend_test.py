@@ -505,14 +505,14 @@ def main():
     results = tester.run_comprehensive_test()
     
     # Exit with appropriate code
-    critical_tests = ["admin_login", "news_feed", "user_suggestions"]
+    critical_tests = ["admin_login", "get_comments", "create_comment", "like_comment"]
     critical_passed = all(results.get(test, False) for test in critical_tests)
     
     if critical_passed:
-        print("\n🎉 All critical tests passed!")
+        print("\n🎉 All critical Enhanced Comments tests passed!")
         sys.exit(0)
     else:
-        print("\n❌ Some critical tests failed!")
+        print("\n❌ Some critical Enhanced Comments tests failed!")
         sys.exit(1)
 
 if __name__ == "__main__":
