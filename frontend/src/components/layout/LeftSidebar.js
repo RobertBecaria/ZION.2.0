@@ -238,6 +238,60 @@ const LeftSidebar = ({
             <div className="sidebar-divider"></div>
           </>
         )}
+
+        {/* ==================== SERVICES MODULE ==================== */}
+        {activeModule === 'services' && (
+          <>
+            <div className="sidebar-divider" style={getDividerStyle('#B91C1C')}></div>
+            
+            <button 
+              className={`profile-btn ${activeView === 'services-search' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-search', '#B91C1C')}
+              onClick={() => setActiveView('services-search')}
+            >
+              <span style={{ fontSize: '18px' }}>🔍</span>
+              <span>ПОИСК</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'services-my-profile' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-my-profile', '#B91C1C')}
+              onClick={() => setActiveView('services-my-profile')}
+            >
+              <Briefcase size={18} />
+              <span>МОЙ ПРОФИЛЬ</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'services-feed' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-feed', '#B91C1C')}
+              onClick={() => setActiveView('services-feed')}
+            >
+              <Newspaper size={18} />
+              <span>МОЯ ЛЕНТА</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'services-bookings' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-bookings', '#B91C1C')}
+              onClick={() => setActiveView('services-bookings')}
+            >
+              <span style={{ fontSize: '18px' }}>📋</span>
+              <span>МОИ ЗАЯВКИ</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'services-reviews' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'services-reviews', '#B91C1C')}
+              onClick={() => setActiveView('services-reviews')}
+            >
+              <span style={{ fontSize: '18px' }}>⭐</span>
+              <span>ОТЗЫВЫ</span>
+            </button>
+            
+            <div className="sidebar-divider"></div>
+          </>
+        )}
       </div>
 
       {/* Navigation Links */}
