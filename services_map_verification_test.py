@@ -205,25 +205,38 @@ class ServicesMapVerificationTest:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Verify it's a list of categories
-                if not isinstance(data, list):
+                # Verify response has 'categories' key
+                if "categories" not in data:
                     self.log_result("Services Categories API", False, 
-                                  "Response is not a list of categories")
+                                  "Response missing 'categories' key")
+                    return False
+                
+                categories = data["categories"]
+                if not isinstance(categories, dict):
+                    self.log_result("Services Categories API", False, 
+                                  "categories field is not a dictionary")
                     return False
                 
                 # Verify categories have required structure
-                if len(data) > 0:
-                    category = data[0]
-                    required_fields = ["id", "name"]
-                    missing_fields = [field for field in required_fields if field not in category]
+                category_count = 0
+                for category_id, category_data in categories.items():
+                    category_count += 1
+                    required_fields = ["name", "name_en", "icon", "subcategories"]
+                    missing_fields = [field for field in required_fields if field not in category_data]
                     
                     if missing_fields:
                         self.log_result("Services Categories API - Structure", False, 
-                                      f"Category missing required fields: {missing_fields}")
+                                      f"Category '{category_id}' missing required fields: {missing_fields}")
+                        return False
+                    
+                    # Verify subcategories structure
+                    if not isinstance(category_data["subcategories"], list):
+                        self.log_result("Services Categories API - Subcategories", False, 
+                                      f"Category '{category_id}' subcategories is not a list")
                         return False
                 
                 self.log_result("Services Categories API", True, 
-                              f"API working correctly. Found {len(data)} categories")
+                              f"API working correctly. Found {category_count} categories with proper structure")
                 return True
                 
             else:
