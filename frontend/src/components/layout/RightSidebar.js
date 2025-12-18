@@ -1,39 +1,88 @@
 /**
  * RightSidebar / WorldZone Component
  * Right sidebar with context-specific widgets and filters
+ * Refactored from App.js to improve code organization
  */
 import React from 'react';
-import { Search, Filter, Users, Briefcase, Building } from 'lucide-react';
-import { getModuleByKey, getSidebarTintStyle, FAMILY_FILTER_OPTIONS } from '../../config/moduleConfig';
+import { Eye } from 'lucide-react';
+import { getModuleByKey, getSidebarTintStyle } from '../../config/moduleConfig';
+
+// World Zone Components
 import JournalWorldZone from '../JournalWorldZone';
 import NewsWorldZone from '../NewsWorldZone';
+import FamilyWorldZone from '../FamilyWorldZone';
+import MediaWorldZone from '../MediaWorldZone';
+import FamilyProfileWorldZone from '../FamilyProfileWorldZone';
+import ChatWorldZone from '../ChatWorldZone';
+import WorkWorldZone from '../WorkWorldZone';
+import InfoWorldZone from '../InfoWorldZone';
+
+// Work/Organization Widgets
+import WorkNextEventWidget from '../WorkNextEventWidget';
+import WorkUpcomingEventsList from '../WorkUpcomingEventsList';
+import WorkCalendarWidget from '../WorkCalendarWidget';
+import WorkDepartmentNavigator from '../WorkDepartmentNavigator';
+import WorkAnnouncementsWidget from '../WorkAnnouncementsWidget';
 
 const RightSidebar = ({
+  // Core state
   activeModule,
   activeView,
   user,
-  // Family filters
-  activeFilters = [],
+  currentModule,
+  sidebarTintStyle,
+  
+  // Family module
+  activeFilters,
   setActiveFilters,
-  // Journal filters
+  userFamily,
+  setActiveView,
+  
+  // Journal module
   schoolRoles,
   journalSchoolFilter,
   setJournalSchoolFilter,
   journalAudienceFilter,
   setJournalAudienceFilter,
-  // News module handlers
-  onViewFriends,
-  onViewFollowers,
-  onViewFollowing
+  selectedSchool,
+  setSelectedSchool,
+  schoolRole,
+  
+  // Organizations module
+  selectedOrganizationId,
+  setSelectedOrganizationId,
+  activeDepartmentId,
+  setActiveDepartmentId,
+  setShowDepartmentManager,
+  departmentRefreshTrigger,
+  myOrganizations,
+  
+  // Media module
+  mediaStats,
+  selectedModuleFilter,
+  setSelectedModuleFilter,
+  
+  // Chat
+  chatGroups,
+  activeGroup,
+  handleGroupSelect,
+  handleCreateGroup,
+  activeDirectChat,
+  setActiveDirectChat,
+  fetchChatGroups
 }) => {
-  const currentModule = getModuleByKey(activeModule);
-  const sidebarTintStyle = getSidebarTintStyle(currentModule.color);
+  // Use provided currentModule or get it from activeModule
+  const moduleData = currentModule || getModuleByKey(activeModule);
+  const tintStyle = sidebarTintStyle || getSidebarTintStyle(moduleData.color);
 
   return (
-    <aside className="right-sidebar" style={sidebarTintStyle}>
-      <div className="sidebar-header">
-        <h3>Мировая Зона</h3>
-      </div>
+    <aside className="right-sidebar" style={tintStyle}>
+      {/* Hide default header for Chat module - it has its own header */}
+      {activeView !== 'chat' && (
+        <div className="sidebar-header">
+          <h3>Мировая Зона</h3>
+        </div>
+      )}
       
       {/* JOURNAL Module - Feed View Filters */}
       {activeModule === 'journal' && (activeView === 'wall' || activeView === 'feed') && (
@@ -44,6 +93,33 @@ const RightSidebar = ({
           onSchoolFilterChange={setJournalSchoolFilter}
           audienceFilter={journalAudienceFilter}
           onAudienceFilterChange={setJournalAudienceFilter}
+          onOpenEventPlanner={() => setActiveView('event-planner')}
+        />
+      )}
+      
+      {/* JOURNAL Module - School Selected Navigation */}
+      {activeModule === 'journal' && selectedSchool && (
+        <JournalWorldZone
+          selectedSchool={selectedSchool}
+          role={schoolRole}
+          onNavigate={(view) => {
+            if (view === 'school-list') {
+              setSelectedSchool(null);
+              setActiveView('journal-school-tiles');
+            } else {
+              setActiveView(`journal-${view}`);
+            }
+          }}
+        />
+      )}
+      
+      {/* WALL and FEED Views - Wall-specific widgets (Family module only) */}
+      {activeModule === 'family' && (activeView === 'wall' || activeView === 'feed') && (
+        <FamilyWorldZone
+          moduleColor={moduleData.color}
+          activeFilters={activeFilters}
+          setActiveFilters={setActiveFilters}
+          user={user}
         />
       )}
 
@@ -51,162 +127,125 @@ const RightSidebar = ({
       {activeModule === 'news' && (
         <NewsWorldZone
           user={user}
-          moduleColor={currentModule.color}
-          onViewFriends={onViewFriends}
-          onViewFollowers={onViewFollowers}
-          onViewFollowing={onViewFollowing}
+          moduleColor={moduleData.color}
+          onViewFriends={() => setActiveView('friends')}
+          onViewFollowers={() => setActiveView('followers')}
+          onViewFollowing={() => setActiveView('following')}
         />
       )}
-      
-      {/* FAMILY Module - Wall/Feed specific widgets */}
-      {activeModule === 'family' && (activeView === 'wall' || activeView === 'feed') && (
-        <>
-          {/* Search Widget */}
-          <div className="widget search-widget">
-            <div className="widget-header">
-              <Search size={16} />
-              <span>Поиск записей</span>
-            </div>
-            <input type="text" placeholder="Поиск по записям..." className="search-input" />
-          </div>
 
-          {/* Unified Post Filter Widget */}
-          <div className="widget unified-filter-widget">
-            <div className="widget-header">
-              <Filter size={16} />
-              <span>Фильтр постов</span>
-            </div>
-            <div className="filter-list">
-              {FAMILY_FILTER_OPTIONS.map((filter) => {
-                const isActive = filter.id === 'all' 
-                  ? activeFilters.length === 0 
-                  : activeFilters.includes(filter.id);
-                
-                return (
-                  <div
-                    key={filter.id}
-                    className={`filter-item ${isActive ? 'active' : ''}`}
-                    onClick={() => {
-                      if (filter.id === 'all') {
-                        setActiveFilters([]);
-                      } else {
-                        setActiveFilters(prev => 
-                          prev.includes(filter.id)
-                            ? prev.filter(f => f !== filter.id)
-                            : [...prev, filter.id]
-                        );
-                      }
-                    }}
-                    style={{
-                      backgroundColor: isActive ? `${currentModule.color}10` : 'transparent',
-                      borderLeft: isActive ? `3px solid ${currentModule.color}` : '3px solid transparent'
-                    }}
-                  >
-                    <span className="filter-icon">{filter.icon}</span>
-                    <span className="filter-label">{filter.label}</span>
-                    {isActive && filter.id !== 'all' && (
-                      <span className="filter-check" style={{ color: currentModule.color }}>✓</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick Filters Widget */}
-          <div className="widget filters-widget">
-            <div className="widget-header">
-              <Filter size={16} />
-              <span>Быстрые фильтры</span>
-            </div>
-            <div className="filter-row">
-              <button 
-                className="filter-btn active" 
-                style={{ backgroundColor: currentModule.color, borderColor: currentModule.color }}
-              >
-                Все
-              </button>
-              <button className="filter-btn">Новости</button>
-              <button className="filter-btn">События</button>
-            </div>
-          </div>
-
-          {/* Online Friends Widget */}
-          <div className="widget friends-widget">
-            <div className="widget-header">
-              <Users size={16} />
-              <span>Друзья онлайн</span>
-            </div>
-            <div className="friends-list">
-              <div className="friend-item">
-                <div className="friend-avatar"></div>
-                <div className="friend-name">Елена Иванова</div>
-                <div className="online-indicator"></div>
-              </div>
-              <div className="friend-item">
-                <div className="friend-avatar"></div>
-                <div className="friend-name">Дмитрий Смирнов</div>
-                <div className="online-indicator"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Popular Topics Widget */}
-          <div className="widget topics-widget">
-            <div className="widget-header">
-              <span>Популярное</span>
-            </div>
-            <div className="hashtags-list">
-              <span className="hashtag">#семья</span>
-              <span className="hashtag">#новости</span>
-              <span className="hashtag">#события</span>
-              <span className="hashtag">#город</span>
-              <span className="hashtag">#работа</span>
-            </div>
-          </div>
-
-          {/* User Affiliations Widget */}
-          {user?.affiliations && user.affiliations.length > 0 && (
-            <div className="widget affiliations-widget">
-              <div className="widget-header">
-                <Briefcase size={16} />
-                <span>Мои Роли</span>
-              </div>
-              <div className="affiliations-list">
-                {user.affiliations.slice(0, 5).map((affiliation) => (
-                  <div key={affiliation.id} className="affiliation-item">
-                    <div className="affiliation-icon" style={{ backgroundColor: currentModule.color }}>
-                      <Building size={14} color="white" />
-                    </div>
-                    <div className="affiliation-info">
-                      <span className="affiliation-name">{affiliation.affiliation.name}</span>
-                      <span className="affiliation-role">{affiliation.user_role_in_org}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Organizations/Work Module - Specific widgets */}
-      {activeModule === 'organizations' && activeView === 'my-work' && (
-        <>
-          {/* Work module content is handled by WorkDepartmentNavigator in main content */}
-        </>
-      )}
-
-      {/* Other modules - Default/placeholder content */}
-      {!['family', 'journal', 'organizations', 'news'].includes(activeModule) && (
-        <div className="widget info-widget">
+      {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
+      {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
+        <div className="widget public-view-widget">
           <div className="widget-header">
-            <span>Информация</span>
+            <Eye size={16} />
+            <span>Публичный просмотр</span>
           </div>
-          <p style={{ padding: '12px', fontSize: '14px', color: '#6B7280' }}>
-            Контент для модуля &ldquo;{currentModule.name}&rdquo; скоро появится
-          </p>
+          <button 
+            className="public-view-button"
+            onClick={() => setActiveView('family-public-view')}
+            style={{ 
+              backgroundColor: activeView === 'family-public-view' ? moduleData.color : 'white',
+              color: activeView === 'family-public-view' ? 'white' : moduleData.color,
+              borderColor: moduleData.color
+            }}
+          >
+            <Eye size={18} />
+            Как видят другие
+          </button>
+          <p className="widget-hint">Посмотрите, как ваша семья отображается для других пользователей</p>
         </div>
+      )}
+
+      {/* ORGANIZATIONS Module - Department & Announcements Widgets */}
+      {/* Only show when viewing a specific organization profile, not in general feed */}
+      {activeModule === 'organizations' && selectedOrganizationId && activeView === 'work-org-profile' && (
+        <>
+          {/* Next Event Countdown Widget */}
+          <WorkNextEventWidget
+            organizationId={selectedOrganizationId}
+          />
+
+          {/* Upcoming Events List Widget */}
+          <WorkUpcomingEventsList
+            organizationId={selectedOrganizationId}
+            maxEvents={5}
+          />
+
+          {/* Calendar Widget */}
+          <WorkCalendarWidget
+            organizationId={selectedOrganizationId}
+          />
+
+          {/* Department Navigator Widget */}
+          <WorkDepartmentNavigator
+            organizationId={selectedOrganizationId}
+            activeDepartmentId={activeDepartmentId}
+            onDepartmentSelect={setActiveDepartmentId}
+            onCreateDepartment={() => setShowDepartmentManager(true)}
+            moduleColor={moduleData.color}
+            refreshTrigger={departmentRefreshTrigger}
+          />
+
+          {/* Announcements Widget */}
+          <WorkAnnouncementsWidget
+            organizationId={selectedOrganizationId}
+            departmentId={activeDepartmentId}
+            onViewAll={() => {
+              setActiveView('work-announcements');
+            }}
+            moduleColor={moduleData.color}
+          />
+        </>
+      )}
+
+      {/* MEDIA Views - Media-specific controls */}
+      {(activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos') && (
+        <MediaWorldZone
+          activeView={activeView}
+          moduleColor={moduleData.color}
+          mediaStats={mediaStats}
+          selectedModuleFilter={selectedModuleFilter}
+          setSelectedModuleFilter={setSelectedModuleFilter}
+        />
+      )}
+
+      {/* FAMILY PROFILE Views - Family-specific controls */}
+      {(activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations') && (
+        <FamilyProfileWorldZone
+          moduleColor={moduleData.color}
+          setActiveView={setActiveView}
+        />
+      )}
+
+      {/* CHAT View - Chat-specific widgets */}
+      {activeView === 'chat' && (
+        <ChatWorldZone
+          moduleColor={moduleData.color}
+          chatGroups={chatGroups}
+          activeGroup={activeGroup}
+          handleGroupSelect={handleGroupSelect}
+          handleCreateGroup={handleCreateGroup}
+          user={user}
+          activeDirectChat={activeDirectChat}
+          setActiveDirectChat={setActiveDirectChat}
+          onRefreshGroups={fetchChatGroups}
+        />
+      )}
+
+      {/* ORGANIZATIONS Module - Work WorldZone */}
+      {activeModule === 'organizations' && (
+        <WorkWorldZone
+          organizations={myOrganizations}
+          selectedOrg={selectedOrganizationId}
+          onOrgChange={setSelectedOrganizationId}
+          moduleColor={moduleData?.color || '#C2410C'}
+        />
+      )}
+
+      {/* MY DOCUMENTS & MY INFO Views - Info widgets */}
+      {(activeView === 'my-documents' || activeView === 'my-info') && (
+        <InfoWorldZone activeView={activeView} />
       )}
     </aside>
   );
