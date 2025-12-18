@@ -170,39 +170,48 @@ class ZionCityTester:
             self.log(f"❌ Get comments error: {str(e)}", "ERROR")
             return False
     
-    def test_news_feed(self):
-        """Test 3: Verify news feed loads correctly"""
-        self.log("📰 Testing GET /api/news/posts/feed (News Feed)")
+    def test_create_comment(self):
+        """Test 2: Create a new comment"""
+        self.log(f"➕ Testing POST /api/news/posts/{self.test_post_id}/comments")
         
         try:
-            response = self.session.get(
-                f"{BACKEND_URL}/news/posts/feed",
+            comment_data = {
+                "content": "Test comment for Enhanced Comments feature testing! 🚀"
+            }
+            
+            response = self.session.post(
+                f"{BACKEND_URL}/news/posts/{self.test_post_id}/comments",
+                json=comment_data,
                 headers=self.get_auth_headers()
             )
             
             if response.status_code == 200:
                 data = response.json()
-                posts = data.get("posts", [])  # Handle wrapped response
-                self.log(f"✅ News feed loaded successfully - Found {len(posts)} posts")
+                comment_id = data.get("id")
                 
-                if posts and len(posts) > 0:
-                    # Verify post structure
-                    first_post = posts[0]
-                    required_fields = ["id", "content", "author", "created_at"]
-                    missing_fields = [field for field in required_fields if field not in first_post]
+                if comment_id:
+                    self.test_comment_ids.append(comment_id)
+                    self.log(f"✅ Comment created successfully - ID: {comment_id}")
+                    
+                    # Verify response structure
+                    required_fields = ["id", "content", "user_id", "created_at"]
+                    missing_fields = [field for field in required_fields if field not in data]
                     
                     if missing_fields:
-                        self.log(f"⚠️ Missing fields in post: {missing_fields}", "WARNING")
+                        self.log(f"⚠️ Missing fields in response: {missing_fields}", "WARNING")
                     else:
-                        self.log("✅ Post structure validation passed")
-                        
-                return True
+                        self.log("✅ Create comment response structure validated")
+                    
+                    return True
+                else:
+                    self.log("❌ Comment created but no ID returned", "ERROR")
+                    return False
             else:
-                self.log(f"❌ News feed failed: {response.status_code} - {response.text}", "ERROR")
+                self.log(f"❌ Create comment failed: {response.status_code} - {response.text}", "ERROR")
                 return False
                 
         except Exception as e:
-            self.log(f"❌ News feed error: {str(e)}", "ERROR")
+            self.log(f"❌ Create comment error: {str(e)}", "ERROR")
             return False
     
     def test_user_suggestions(self):
