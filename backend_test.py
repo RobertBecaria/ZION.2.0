@@ -35,6 +35,9 @@ class ZionCityTester:
         self.test_user_token = None
         self.admin_user_id = None
         self.test_user_id = None
+        self.test_post_id = None
+        self.test_comment_ids = []
+        self.test_reply_ids = []
         
     def log(self, message, level="INFO"):
         """Log test messages with timestamp"""
