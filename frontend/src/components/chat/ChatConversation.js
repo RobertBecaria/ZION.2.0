@@ -128,7 +128,7 @@ const ChatConversation = ({
   }, [pendingDelivery, wsSendDelivered]);
 
   const scrollToBottom = useCallback((force = false) => {
-    if (!messagesContainerRef.current || !messagesEndRef.current) return;
+    if (!messagesContainerRef.current) return;
     
     // Only auto-scroll if user is near the bottom OR if forced (new message sent/received)
     const container = messagesContainerRef.current;
@@ -139,7 +139,8 @@ const ChatConversation = ({
       return;
     }
     
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use container scroll instead of scrollIntoView to prevent header from scrolling out
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   }, []);
 
   // Fetch messages - used for initial load and fallback polling
