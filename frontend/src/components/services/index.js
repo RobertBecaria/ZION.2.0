@@ -9,3 +9,5 @@ export { default as ServiceBookingModal } from './ServiceBookingModal';
 export { default as ServicesMyProfile } from './ServicesMyProfile';
 export { default as ServiceListingForm } from './ServiceListingForm';
 export { default as ServicesBookings } from './ServicesBookings';
+export { default as ServiceBookingCalendar } from './ServiceBookingCalendar';
+export { default as ServicesReviews } from './ServicesReviews';
