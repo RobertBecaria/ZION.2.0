@@ -729,8 +729,28 @@ const ChatConversation = ({
               const isOwn = message.user_id === user?.id;
               const showSender = chatType === 'group' && !isOwn;
               const prevMessage = messages[index - 1];
+              const nextMessage = messages[index + 1];
+              
+              // Date separator logic
               const showDate = !prevMessage || 
                 new Date(message.created_at).toDateString() !== new Date(prevMessage.created_at).toDateString();
+              
+              // Message grouping logic - group consecutive messages from same sender within 2 minutes
+              const timeDiff = prevMessage 
+                ? (new Date(message.created_at) - new Date(prevMessage.created_at)) / 1000 / 60 
+                : Infinity;
+              const isFirstInGroup = !prevMessage || 
+                prevMessage.user_id !== message.user_id || 
+                timeDiff > 2 ||
+                showDate;
+              
+              const nextTimeDiff = nextMessage 
+                ? (new Date(nextMessage.created_at) - new Date(message.created_at)) / 1000 / 60 
+                : Infinity;
+              const isLastInGroup = !nextMessage || 
+                nextMessage.user_id !== message.user_id || 
+                nextTimeDiff > 2 ||
+                (nextMessage && new Date(nextMessage.created_at).toDateString() !== new Date(message.created_at).toDateString());
               
               return (
                 <React.Fragment key={message.id}>
@@ -746,7 +766,9 @@ const ChatConversation = ({
                   <MessageBubble
                     message={message}
                     isOwn={isOwn}
-                    showSender={showSender}
+                    showSender={showSender && isFirstInGroup}
+                    isFirstInGroup={isFirstInGroup}
+                    isLastInGroup={isLastInGroup}
                     onReply={handleReply}
                     onReact={handleReaction}
                     onEdit={openEditModal}
