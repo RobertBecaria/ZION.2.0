@@ -225,7 +225,7 @@ const MyClassesList = ({ selectedSchool, role, onBack, onSelectClass, moduleColo
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .my-classes-list {
           padding: 24px;
           max-width: 1200px;
