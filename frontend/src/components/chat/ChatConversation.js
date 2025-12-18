@@ -251,10 +251,12 @@ const ChatConversation = ({
     prevMessageCountRef.current = currentCount;
   }, [messages]);
   
-  // Reset initial scroll flag when chat changes
+  // Reset initial scroll flag and pagination when chat changes
   useEffect(() => {
     initialScrollDoneRef.current = false;
     prevMessageCountRef.current = 0;
+    setHasMoreMessages(true);
+    setMessages([]);
   }, [chatId]);
 
   // Fetch typing status (fallback for when WebSocket is not connected)
