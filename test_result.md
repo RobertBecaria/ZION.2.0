@@ -127,6 +127,33 @@ backend:
       - working: true
         agent: "testing"
         comment: "Available slots API 100% success. Endpoint responds correctly with 404 for invalid service IDs, indicating proper error handling and validation is implemented."
+      - working: true
+        agent: "testing"
+        comment: "PHASE 3 BOOKING CALENDAR TESTING: Available slots API 100% success with service ID c5aa409c-d881-4c2e-b388-515cfb7b5b94 and date 2025-12-20. Returns 9 slots from 09:00-18:00 with proper structure (start, end, available fields). Duration specified as 60 minutes."
+
+  - task: "My Bookings API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PHASE 3 BOOKING CALENDAR TESTING: My bookings API 100% success. GET /api/services/bookings/my returns user's bookings with proper structure (id, service_id, booking_date, client_name, status). Found 5 existing bookings. Minor: Service details not included in response but core functionality works."
+
+  - task: "Update Booking Status API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "PHASE 3 BOOKING CALENDAR TESTING: Update booking status API 100% success. PUT /api/services/bookings/{booking_id}/status?new_status=CONFIRMED successfully updates booking status. Minor: Updated booking not returned in response but status update confirmed."
 
 frontend:
   - task: "ServiceBookingCalendar Component - Phase 3"
