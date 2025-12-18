@@ -40,7 +40,7 @@ function UniversalChatLayout({
             <p>Выберите чат из списка справа, чтобы начать общение</p>
             <div className="welcome-hint">
               <ArrowRight size={20} color={moduleColor} />
-              <span>Ваши чаты находятся в панели "Сообщения" справа</span>
+              <span>Ваши чаты находятся в панели &ldquo;Сообщения&rdquo; справа</span>
             </div>
             <div className="welcome-actions">
               <button 
