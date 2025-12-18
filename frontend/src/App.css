@@ -25048,6 +25048,32 @@ a,
   background: #25d366;
   border: 2px solid white;
   border-radius: 50%;
+  animation: pulse-online 2s infinite;
+}
+
+@keyframes pulse-online {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(37, 211, 102, 0);
+  }
+}
+
+/* Chat Status Styles */
+.chat-status {
+  font-size: 12px;
+  color: #667781;
+}
+
+.chat-status.online {
+  color: #25d366;
+  font-weight: 500;
+}
+
+.chat-status.typing {
+  color: #25d366;
+  font-style: italic;
 }
 
 /* Typing indicator improvements */
