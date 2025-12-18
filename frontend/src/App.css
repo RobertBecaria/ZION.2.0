@@ -23390,7 +23390,7 @@ a,
   background: rgba(0, 0, 0, 0.05);
 }
 
-/* Messages Container */
+/* Messages Container - Scrollable area below fixed header */
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -23400,6 +23400,7 @@ a,
   flex-direction: column;
   scroll-behavior: auto;
   overflow-anchor: none; /* Prevent automatic scroll anchoring */
+  min-height: 0; /* Critical for flex child scrolling */
 }
 
 .loading-messages, .no-messages {
