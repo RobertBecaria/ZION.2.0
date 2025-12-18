@@ -413,51 +413,57 @@ class ZionCityTester:
             return False
     
     def run_comprehensive_test(self):
-        """Run all tests in sequence"""
-        self.log("🚀 Starting ZION.CITY Backend Testing - Critical Bug Fix Verification")
+        """Run all Enhanced Comments tests in sequence"""
+        self.log("🚀 Starting ZION.CITY Backend Testing - Enhanced Comments Feature")
         self.log("=" * 80)
         
         # Test results tracking
         test_results = {
             "admin_login": False,
-            "test_user_login": False,
-            "channels_list": False,
-            "channel_posts_fix": False,
-            "news_feed": False,
-            "user_suggestions": False
+            "find_test_post": False,
+            "get_comments": False,
+            "create_comment": False,
+            "create_reply": False,
+            "edit_comment": False,
+            "like_comment": False,
+            "delete_comment": False
         }
         
-        # 1. Login both users
+        # 1. Login admin user
         test_results["admin_login"] = self.login_user("admin@test.com", "testpassword123", "admin")
-        test_results["test_user_login"] = self.login_user("testuser@test.com", "testpassword123", "test_user")
         
         if not test_results["admin_login"]:
             self.log("❌ Cannot proceed without admin login", "ERROR")
             return test_results
         
-        # 2. Test channels list
-        channels_success, channels_data = self.test_news_channels_list()
-        test_results["channels_list"] = channels_success
+        # 2. Find a test post
+        test_results["find_test_post"] = self.find_test_post()
         
-        # 3. Test channel posts endpoint (CRITICAL FIX)
-        if channels_success and channels_data and len(channels_data) > 0:
-            channel_id = channels_data[0].get("id")
-            if channel_id:
-                test_results["channel_posts_fix"] = self.test_channel_posts_endpoint(channel_id)
-            else:
-                self.log("⚠️ No channel ID available for testing channel posts", "WARNING")
-        else:
-            self.log("⚠️ Cannot test channel posts - no channels available", "WARNING")
+        if not test_results["find_test_post"]:
+            self.log("❌ Cannot proceed without a test post", "ERROR")
+            return test_results
         
-        # 4. Test news feed
-        test_results["news_feed"] = self.test_news_feed()
+        # 3. Get existing comments
+        test_results["get_comments"] = self.test_get_comments()
         
-        # 5. Test user suggestions
-        test_results["user_suggestions"] = self.test_user_suggestions()
+        # 4. Create a new comment
+        test_results["create_comment"] = self.test_create_comment()
+        
+        # 5. Create a reply (nested comment)
+        test_results["create_reply"] = self.test_create_reply()
+        
+        # 6. Edit a comment
+        test_results["edit_comment"] = self.test_edit_comment()
+        
+        # 7. Like/unlike a comment
+        test_results["like_comment"] = self.test_like_comment()
+        
+        # 8. Delete a comment
+        test_results["delete_comment"] = self.test_delete_comment()
         
         # Print final results
         self.log("=" * 80)
-        self.log("📊 FINAL TEST RESULTS")
+        self.log("📊 FINAL TEST RESULTS - Enhanced Comments Feature")
         self.log("=" * 80)
         
         passed_tests = 0
@@ -474,11 +480,20 @@ class ZionCityTester:
         self.log("=" * 80)
         self.log(f"📈 OVERALL SUCCESS RATE: {passed_tests}/{total_tests} ({success_rate:.1f}%)")
         
-        # Critical fix verification
-        if test_results["channel_posts_fix"]:
-            self.log("🎉 CRITICAL: Channel Posts ObjectId Serialization Fix VERIFIED!")
+        # Feature-specific summary
+        core_features = ["create_comment", "get_comments", "edit_comment", "like_comment", "delete_comment"]
+        core_passed = sum(1 for feature in core_features if test_results.get(feature, False))
+        
+        if core_passed == len(core_features):
+            self.log("🎉 ALL ENHANCED COMMENTS FEATURES WORKING!")
         else:
-            self.log("🚨 CRITICAL: Channel Posts ObjectId Serialization Fix NOT TESTED!", "ERROR")
+            self.log(f"⚠️ {core_passed}/{len(core_features)} core comment features working")
+        
+        # Nested replies check
+        if test_results.get("create_reply"):
+            self.log("✅ NESTED REPLIES FEATURE WORKING!")
+        else:
+            self.log("❌ NESTED REPLIES FEATURE NOT WORKING!")
         
         self.log("=" * 80)
         
