@@ -23326,13 +23326,16 @@ a,
   color: #8696a0;
 }
 
-/* Conversation Header */
+/* Conversation Header - Fixed at top, always visible */
 .conversation-header {
   display: flex;
   align-items: center;
   padding: 10px 16px;
   background: #f0f2f5;
   gap: 12px;
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
 }
 
 .conversation-header .back-btn {
