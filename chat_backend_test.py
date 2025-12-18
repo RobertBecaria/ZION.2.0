@@ -293,7 +293,13 @@ class ChatBackendTester:
             
             if response.status_code == 200:
                 message_data = response.json()
-                self.test_messages.append(message_data.get('message', {}))
+                # Handle different response structures
+                if isinstance(message_data, dict) and 'message' in message_data:
+                    message_obj = message_data['message']
+                else:
+                    message_obj = message_data
+                
+                self.test_messages.append(message_obj)
                 self.log(f"✅ Reply message sent successfully")
             else:
                 self.log(f"❌ Reply message failed: {response.status_code}")
