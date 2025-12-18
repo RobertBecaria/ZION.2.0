@@ -615,7 +615,7 @@ const MyDocumentsPage = () => {
           <div className="empty-state">
             <FileText size={64} />
             <h3>Нет документов</h3>
-            <p>Добавьте свой первый документ, нажав кнопку "Добавить документ"</p>
+            <p>Добавьте свой первый документ, нажав кнопку &ldquo;Добавить документ&rdquo;</p>
           </div>
         ) : (
           documents.map(doc => (
