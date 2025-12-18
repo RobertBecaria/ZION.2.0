@@ -70,7 +70,7 @@ import NewsFeed from './components/NewsFeed';
 import ChannelView from './components/ChannelView';
 import NewsUserProfile from './components/NewsUserProfile';  // NEW: User profile in News context
 import { 
-  Search, Bell, ChevronRight, Plus, GraduationCap, Briefcase, Eye
+  Search, Bell, ChevronRight, Plus, GraduationCap, Briefcase
 } from 'lucide-react';
 // Auth components moved to ./components/auth
 
