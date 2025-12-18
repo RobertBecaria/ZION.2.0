@@ -148,7 +148,7 @@ const ChatConversation = ({
   }, []);
 
   // Fetch messages - used for initial load and fallback polling
-  const fetchMessages = useCallback(async () => {
+  const fetchMessages = useCallback(async (isInitial = true) => {
     if (!chatId) return;
     try {
       const token = localStorage.getItem('zion_token');
@@ -157,16 +157,18 @@ const ChatConversation = ({
         : `/api/chat-groups/${chatId}/messages`;
       
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
+        `${process.env.REACT_APP_BACKEND_URL}${endpoint}?limit=${MESSAGES_PER_PAGE}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
+        const fetchedMessages = data.messages || [];
+        setMessages(fetchedMessages);
+        setHasMoreMessages(fetchedMessages.length >= MESSAGES_PER_PAGE);
         
         // Mark unread messages as read via WebSocket
-        const unreadMessages = (data.messages || [])
+        const unreadMessages = fetchedMessages
           .filter(m => m.user_id !== user?.id && m.status !== 'read')
           .map(m => m.id);
         if (unreadMessages.length > 0 && wsConnected) {
@@ -176,7 +178,42 @@ const ChatConversation = ({
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
-  }, [chatId, chatType, user?.id, wsConnected, wsSendRead]);
+  }, [chatId, chatType, user?.id, wsConnected, wsSendRead, MESSAGES_PER_PAGE]);
+
+  // Load more messages (older) for infinite scroll
+  const loadMoreMessages = useCallback(async () => {
+    if (!chatId || loadingMore || !hasMoreMessages) return;
+    
+    setLoadingMore(true);
+    try {
+      const token = localStorage.getItem('zion_token');
+      const endpoint = chatType === 'direct' 
+        ? `/api/direct-chats/${chatId}/messages`
+        : `/api/chat-groups/${chatId}/messages`;
+      
+      // Skip the current number of messages to load older ones
+      const skip = messages.length;
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}${endpoint}?skip=${skip}&limit=${MESSAGES_PER_PAGE}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const olderMessages = data.messages || [];
+        
+        if (olderMessages.length > 0) {
+          // Prepend older messages to the beginning
+          setMessages(prev => [...olderMessages, ...prev]);
+        }
+        setHasMoreMessages(olderMessages.length >= MESSAGES_PER_PAGE);
+      }
+    } catch (error) {
+      console.error('Error loading more messages:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [chatId, chatType, messages.length, loadingMore, hasMoreMessages, MESSAGES_PER_PAGE]);
 
   // Initial fetch and fallback polling when WebSocket is not connected
   useEffect(() => {
