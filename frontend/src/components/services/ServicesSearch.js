@@ -1,59 +1,14 @@
 /**
  * ServicesSearch Component
- * Main search and discovery page for services with map integration
+ * Main search and discovery page for services with 2GIS map integration
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Search, Filter, MapPin, Grid, List, X, ChevronDown, Map as MapIcon, Navigation } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { load } from '@2gis/mapgl';
 import ServiceCard from './ServiceCard';
 import ServiceCategories from './ServiceCategories';
-import 'leaflet/dist/leaflet.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-
-// Fix Leaflet default marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Custom marker icon for services
-const createServiceIcon = (color = '#B91C1C') => {
-  return L.divIcon({
-    className: 'custom-service-marker',
-    html: `<div style="
-      background: ${color};
-      width: 32px;
-      height: 32px;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      border: 2px solid white;
-    ">
-      <span style="transform: rotate(45deg); color: white; font-size: 14px;">📍</span>
-    </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  });
-};
-
-// Map recenter component
-const MapController = ({ center, zoom }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.setView(center, zoom || 12);
-    }
-  }, [center, zoom, map]);
-  return null;
-};
 
 const ServicesSearch = ({ 
   user, 
@@ -74,9 +29,12 @@ const ServicesSearch = ({
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([55.7558, 37.6173]); // Moscow default
   const [selectedMapListing, setSelectedMapListing] = useState(null);
-
-  // Create service icon
-  const serviceIcon = useMemo(() => createServiceIcon(moduleColor), [moduleColor]);
+  
+  // 2GIS Map refs
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const mapglAPIRef = useRef(null);
+  const markersRef = useRef([]);
 
   // Get user location
   useEffect(() => {
@@ -89,7 +47,6 @@ const ServicesSearch = ({
         },
         (error) => {
           console.log('Geolocation error:', error);
-          // Default to Moscow if geolocation fails
         }
       );
     }
@@ -140,39 +97,7 @@ const ServicesSearch = ({
     fetchListings();
   }, [fetchListings]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchListings();
-  };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedCategory(null);
-    setSelectedSubcategory(null);
-    setCityFilter('');
-    setSortBy('rating');
-  };
-
-  const handleLocateMe = () => {
-    if (userLocation) {
-      setMapCenter(userLocation);
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-          setMapCenter([latitude, longitude]);
-        }
-      );
-    }
-  };
-
-  // Filter listings that have coordinates for map view
-  const listingsWithCoords = useMemo(() => {
-    return listings.filter(l => l.latitude && l.longitude);
-  }, [listings]);
-
-  // Generate mock coordinates for listings without them (for demo purposes)
+  // Generate coordinates for listings (demo purposes)
   const listingsForMap = useMemo(() => {
     return listings.map((listing, index) => {
       if (listing.latitude && listing.longitude) {
@@ -189,6 +114,146 @@ const ServicesSearch = ({
       };
     });
   }, [listings, mapCenter]);
+
+  // Initialize 2GIS Map
+  useEffect(() => {
+    if (viewMode !== 'map' || !mapContainerRef.current) return;
+
+    let map = null;
+
+    const initMap = async () => {
+      try {
+        // Load 2GIS MapGL API
+        const mapglAPI = await load();
+        mapglAPIRef.current = mapglAPI;
+
+        // Create map instance
+        map = new mapglAPI.Map(mapContainerRef.current, {
+          center: [mapCenter[1], mapCenter[0]], // 2GIS uses [lng, lat]
+          zoom: 13,
+          key: '4e76a044-3c62-4710-8ee6-a846c68fd68b', // Demo key for 2GIS
+        });
+
+        mapInstanceRef.current = map;
+
+        // Add markers for listings
+        addMarkers(mapglAPI, map);
+
+        // Add user location marker if available
+        if (userLocation) {
+          new mapglAPI.Marker(map, {
+            coordinates: [userLocation[1], userLocation[0]],
+            icon: 'https://docs.2gis.com/img/mapgl/marker.svg',
+          });
+        }
+
+      } catch (error) {
+        console.error('Error initializing 2GIS map:', error);
+      }
+    };
+
+    initMap();
+
+    // Cleanup
+    return () => {
+      if (markersRef.current) {
+        markersRef.current.forEach(marker => marker.destroy());
+        markersRef.current = [];
+      }
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.destroy();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [viewMode, mapCenter, userLocation]);
+
+  // Update markers when listings change
+  useEffect(() => {
+    if (viewMode !== 'map' || !mapInstanceRef.current || !mapglAPIRef.current) return;
+    
+    addMarkers(mapglAPIRef.current, mapInstanceRef.current);
+  }, [listingsForMap, viewMode]);
+
+  const addMarkers = (mapglAPI, map) => {
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.destroy());
+    markersRef.current = [];
+
+    // Add new markers
+    listingsForMap.forEach((listing, index) => {
+      if (!listing.latitude || !listing.longitude) return;
+
+      const marker = new mapglAPI.Marker(map, {
+        coordinates: [listing.longitude, listing.latitude],
+        label: {
+          text: listing.name.substring(0, 20),
+          offset: [0, -60],
+          relativeAnchor: [0.5, 0],
+        },
+      });
+
+      marker.on('click', () => {
+        setSelectedMapListing(listing);
+        
+        // Show popup
+        const popup = new mapglAPI.HtmlMarker(map, {
+          coordinates: [listing.longitude, listing.latitude],
+          html: `
+            <div class="gis-popup">
+              <h4>${listing.name}</h4>
+              <p class="popup-org">${listing.organization_name || ''}</p>
+              <p class="popup-rating">⭐ ${listing.rating?.toFixed(1) || '0.0'}</p>
+              ${listing.price_from ? `<p class="popup-price">от ${listing.price_from.toLocaleString()} ₽</p>` : ''}
+            </div>
+          `,
+        });
+
+        // Remove popup after 5 seconds
+        setTimeout(() => popup.destroy(), 5000);
+      });
+
+      markersRef.current.push(marker);
+    });
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchListings();
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+    setCityFilter('');
+    setSortBy('rating');
+  };
+
+  const handleLocateMe = () => {
+    if (userLocation && mapInstanceRef.current) {
+      mapInstanceRef.current.setCenter([userLocation[1], userLocation[0]]);
+      mapInstanceRef.current.setZoom(15);
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter([longitude, latitude]);
+            mapInstanceRef.current.setZoom(15);
+          }
+        }
+      );
+    }
+  };
+
+  const handleSidebarItemClick = (listing) => {
+    setSelectedMapListing(listing);
+    if (mapInstanceRef.current && listing.latitude && listing.longitude) {
+      mapInstanceRef.current.setCenter([listing.longitude, listing.latitude]);
+      mapInstanceRef.current.setZoom(16);
+    }
+  };
 
   return (
     <div className="services-search">
@@ -317,76 +382,10 @@ const ServicesSearch = ({
       ) : viewMode === 'map' ? (
         <div className="services-map-container">
           <div className="map-wrapper">
-            <MapContainer
-              center={mapCenter}
-              zoom={13}
-              scrollWheelZoom={true}
-              className="services-leaflet-map"
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapController center={mapCenter} zoom={13} />
-              
-              {/* User location marker */}
-              {userLocation && (
-                <Marker 
-                  position={userLocation}
-                  icon={L.divIcon({
-                    className: 'user-location-marker',
-                    html: `<div style="
-                      width: 16px;
-                      height: 16px;
-                      background: #3B82F6;
-                      border: 3px solid white;
-                      border-radius: 50%;
-                      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-                    "></div>`,
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 8],
-                  })}
-                >
-                  <Popup>
-                    <strong>Вы здесь</strong>
-                  </Popup>
-                </Marker>
-              )}
-              
-              {/* Service markers */}
-              {listingsForMap.map(listing => (
-                <Marker
-                  key={listing.id}
-                  position={[listing.latitude, listing.longitude]}
-                  icon={serviceIcon}
-                  eventHandlers={{
-                    click: () => setSelectedMapListing(listing)
-                  }}
-                >
-                  <Popup>
-                    <div className="map-popup-content">
-                      <h4>{listing.name}</h4>
-                      <p className="popup-category">{listing.category_id}</p>
-                      {listing.price_from && (
-                        <p className="popup-price">
-                          от {listing.price_from.toLocaleString()} ₽
-                        </p>
-                      )}
-                      <p className="popup-rating">
-                        ⭐ {listing.rating?.toFixed(1) || '0.0'} ({listing.review_count || 0} отзывов)
-                      </p>
-                      <button 
-                        className="popup-view-btn"
-                        onClick={() => onViewListing && onViewListing(listing)}
-                        style={{ backgroundColor: moduleColor }}
-                      >
-                        Подробнее
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+            <div 
+              ref={mapContainerRef} 
+              className="services-2gis-map"
+            />
             
             {/* Map controls */}
             <div className="map-controls">
@@ -408,10 +407,7 @@ const ServicesSearch = ({
                 <div 
                   key={listing.id}
                   className={`map-sidebar-item ${selectedMapListing?.id === listing.id ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedMapListing(listing);
-                    setMapCenter([listing.latitude, listing.longitude]);
-                  }}
+                  onClick={() => handleSidebarItemClick(listing)}
                 >
                   <div className="sidebar-item-content">
                     <h5>{listing.name}</h5>
