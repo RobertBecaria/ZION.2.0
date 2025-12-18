@@ -19139,14 +19139,14 @@ async def create_service_listing(
             "user_id": user_id,
             "organization_id": listing_data.organization_id,
             "status": "ACTIVE"
-        })
+        }, {"_id": 0})
         
         # Also check if user is in the organization's members array
         if not membership:
             org_check = await db.work_organizations.find_one({
                 "id": listing_data.organization_id,
                 "members.user_id": user_id
-            })
+            }, {"_id": 0, "id": 1})
             if org_check:
                 membership = True  # User is a member via org's members array
         
@@ -19154,7 +19154,7 @@ async def create_service_listing(
             raise HTTPException(status_code=403, detail="You must be a member of the organization to create listings")
         
         # Verify organization exists
-        organization = await db.work_organizations.find_one({"id": listing_data.organization_id})
+        organization = await db.work_organizations.find_one({"id": listing_data.organization_id}, {"_id": 0, "id": 1, "name": 1})
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
         
@@ -19169,6 +19169,9 @@ async def create_service_listing(
         listing_dict["updated_at"] = listing_dict["updated_at"].isoformat()
         
         await db.service_listings.insert_one(listing_dict)
+        
+        # Return without _id
+        del listing_dict["_id"] if "_id" in listing_dict else None
         
         return {"success": True, "listing": listing_dict}
         
