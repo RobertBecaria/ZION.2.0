@@ -117,6 +117,9 @@ function Dashboard() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [selectedNewsUserId, setSelectedNewsUserId] = useState(null);  // NEW: For viewing user profiles in News
   
+  // Services Module State
+  const [selectedServiceListing, setSelectedServiceListing] = useState(null);
+  
   // Track last active view per module to preserve navigation state
   const [moduleViewHistory, setModuleViewHistory] = useState({});
   
