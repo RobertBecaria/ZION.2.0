@@ -350,7 +350,7 @@ function Dashboard() {
     }
   }, [user]);
 
-  const fetchChatGroups = async () => {
+  const fetchChatGroups = useCallback(async () => {
     setLoadingGroups(true);
     try {
       const token = localStorage.getItem('zion_token');
@@ -366,8 +366,8 @@ function Dashboard() {
         
         // Auto-select first family group if available
         const familyGroup = data.chat_groups?.find(g => g.group.group_type === 'FAMILY');
-        if (familyGroup && !activeGroup) {
-          setActiveGroup(familyGroup);
+        if (familyGroup) {
+          setActiveGroup(prev => prev || familyGroup);
         }
       }
     } catch (error) {
@@ -375,7 +375,7 @@ function Dashboard() {
     } finally {
       setLoadingGroups(false);
     }
-  };
+  }, []);
 
   const handleGroupSelect = (groupData) => {
     setActiveGroup(groupData);
