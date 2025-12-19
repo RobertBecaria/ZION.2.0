@@ -180,6 +180,8 @@ const MarketplaceListingForm = ({
         category: formData.category,
         subcategory: formData.subcategory || null,
         price: parseFloat(formData.price),
+        altyn_price: formData.altyn_price ? parseFloat(formData.altyn_price) : null,
+        accept_altyn: formData.accept_altyn,
         negotiable: formData.negotiable,
         condition: formData.condition,
         city: formData.city || null,
