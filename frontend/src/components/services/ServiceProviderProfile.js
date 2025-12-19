@@ -245,6 +245,30 @@ const ServiceProviderProfile = ({
             {formatPrice()}
           </div>
           
+          {/* ALTYN Price Badge */}
+          {listing.accept_altyn && listing.altyn_price && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
+              borderRadius: '12px',
+              border: '1px solid #F59E0B',
+              marginTop: '12px'
+            }}>
+              <Coins size={20} style={{ color: '#B45309' }} />
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: '#92400E' }}>
+                  {listing.altyn_price?.toLocaleString('ru-RU')} AC
+                </div>
+                <div style={{ fontSize: '11px', color: '#B45309' }}>
+                  ≈ ${listing.altyn_price?.toLocaleString('en-US')} USD
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Quick Actions */}
           <div className="quick-actions">
             {listing.accepts_online_booking && (
@@ -255,6 +279,23 @@ const ServiceProviderProfile = ({
               >
                 <Calendar size={18} />
                 Записаться онлайн
+              </button>
+            )}
+            
+            {/* ALTYN Payment Button */}
+            {listing.accept_altyn && listing.altyn_price && (
+              <button 
+                className="book-btn"
+                style={{ 
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onClick={() => setShowPaymentModal(true)}
+              >
+                <Wallet size={18} />
+                Оплатить {listing.altyn_price} AC
               </button>
             )}
             
