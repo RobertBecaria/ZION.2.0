@@ -111,7 +111,7 @@ function UniversalWall({
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeGroup, activeModule, activeFilters, backendUrl, userFamilyId]);
+  }, [activeModule, fetchPosts]);
 
   // Conditional returns for other modules
   if (activeModule === 'organizations') {
