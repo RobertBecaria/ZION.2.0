@@ -2,7 +2,7 @@
  * AcademicCalendar Component
  * Calendar view for school events, holidays, and important dates
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, ChevronLeft, ChevronRight, Plus, X, Clock, MapPin,
   Users
