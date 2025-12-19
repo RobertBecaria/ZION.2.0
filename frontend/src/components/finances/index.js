@@ -9,3 +9,4 @@ export { default as TransactionHistory } from './TransactionHistory';
 export { default as TokenPortfolio } from './TokenPortfolio';
 export { default as ExchangeRates } from './ExchangeRates';
 export { default as AdminFinance } from './AdminFinance';
+export { default as CorporateWallets } from './CorporateWallets';
