@@ -412,14 +412,15 @@ class AltynPaymentTester:
         
         try:
             service_data = {
+                "organization_id": self.test_organization_id,
                 "name": "Test Service for ALTYN Payment",
                 "description": "This is a test service for ALTYN payment integration testing",
-                "category": "Consulting",
-                "price": 5000,  # RUB
+                "category_id": "consulting",
+                "subcategory_id": "business_consulting",
+                "price_from": 5000,  # RUB
                 "accept_altyn": True,
                 "altyn_price": 50,  # AC
-                "duration": "1 hour",
-                "location": "Online"
+                "city": "Online"
             }
             
             response = self.session.post(
