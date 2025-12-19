@@ -1074,8 +1074,185 @@ function Dashboard() {
                           </>
                         )}
 
-                        {(activeModule === 'marketplace' || 
-                          activeModule === 'finance' || activeModule === 'events') && (
+                        {/* MARKETPLACE MODULE (ВЕЩИ) */}
+                        {activeModule === 'marketplace' && (
+                          <>
+                            {/* Marketplace Search/Browse */}
+                            {(activeView === 'marketplace-search' || activeView === 'wall' || activeView === 'feed') && !selectedMarketplaceProduct && (
+                              <MarketplaceSearch
+                                user={user}
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                onViewProduct={(product) => {
+                                  setSelectedMarketplaceProduct(product);
+                                  setActiveView('marketplace-product-detail');
+                                }}
+                                onCreateListing={() => {
+                                  setEditMarketplaceProduct(null);
+                                  setActiveView('marketplace-create-listing');
+                                }}
+                              />
+                            )}
+
+                            {/* Product Detail */}
+                            {activeView === 'marketplace-product-detail' && selectedMarketplaceProduct && (
+                              <MarketplaceProductDetail
+                                productId={selectedMarketplaceProduct.id}
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                onBack={() => {
+                                  setSelectedMarketplaceProduct(null);
+                                  setActiveView('marketplace-search');
+                                }}
+                                onContactSeller={(product) => {
+                                  // TODO: Open chat with seller
+                                  console.log('Contact seller:', product.seller_id);
+                                }}
+                              />
+                            )}
+
+                            {/* Create/Edit Listing */}
+                            {activeView === 'marketplace-create-listing' && (
+                              <MarketplaceListingForm
+                                user={user}
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                editProduct={editMarketplaceProduct}
+                                onBack={() => {
+                                  setEditMarketplaceProduct(null);
+                                  setActiveView('marketplace-my-listings');
+                                }}
+                                onSuccess={() => {
+                                  setEditMarketplaceProduct(null);
+                                  setActiveView('marketplace-my-listings');
+                                }}
+                              />
+                            )}
+
+                            {/* My Listings */}
+                            {activeView === 'marketplace-my-listings' && (
+                              <MyListings
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                onCreateNew={() => {
+                                  setEditMarketplaceProduct(null);
+                                  setActiveView('marketplace-create-listing');
+                                }}
+                                onEdit={(product) => {
+                                  setEditMarketplaceProduct(product);
+                                  setActiveView('marketplace-create-listing');
+                                }}
+                                onViewProduct={(product) => {
+                                  setSelectedMarketplaceProduct(product);
+                                  setActiveView('marketplace-product-detail');
+                                }}
+                              />
+                            )}
+
+                            {/* Favorites */}
+                            {activeView === 'marketplace-favorites' && (
+                              <MarketplaceFavorites
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                onViewProduct={(product) => {
+                                  setSelectedMarketplaceProduct(product);
+                                  setActiveView('marketplace-product-detail');
+                                }}
+                              />
+                            )}
+
+                            {/* My Things - Main Dashboard or Category View */}
+                            {(activeView === 'my-things' || 
+                              activeView === 'my-things-smart' || 
+                              activeView === 'my-things-wardrobe' ||
+                              activeView === 'my-things-garage' ||
+                              activeView === 'my-things-home' ||
+                              activeView === 'my-things-electronics' ||
+                              activeView === 'my-things-collection') && !editInventoryItem && !listForSaleItem && (
+                              <MyThings
+                                user={user}
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                selectedCategory={
+                                  activeView === 'my-things-smart' ? 'smart_things' :
+                                  activeView === 'my-things-wardrobe' ? 'wardrobe' :
+                                  activeView === 'my-things-garage' ? 'garage' :
+                                  activeView === 'my-things-home' ? 'home' :
+                                  activeView === 'my-things-electronics' ? 'electronics' :
+                                  activeView === 'my-things-collection' ? 'collection' :
+                                  selectedInventoryCategory
+                                }
+                                onCategoryChange={(category) => {
+                                  setSelectedInventoryCategory(category);
+                                  if (category) {
+                                    const viewMap = {
+                                      smart_things: 'my-things-smart',
+                                      wardrobe: 'my-things-wardrobe',
+                                      garage: 'my-things-garage',
+                                      home: 'my-things-home',
+                                      electronics: 'my-things-electronics',
+                                      collection: 'my-things-collection'
+                                    };
+                                    setActiveView(viewMap[category] || 'my-things');
+                                  } else {
+                                    setActiveView('my-things');
+                                  }
+                                }}
+                                onAddItem={() => {
+                                  setEditInventoryItem(null);
+                                  setActiveView('my-things-add-item');
+                                }}
+                                onViewItem={(item) => {
+                                  setEditInventoryItem(item);
+                                  setActiveView('my-things-add-item');
+                                }}
+                                onEditItem={(item) => {
+                                  setEditInventoryItem(item);
+                                  setActiveView('my-things-add-item');
+                                }}
+                                onListForSale={(item) => {
+                                  setListForSaleItem(item);
+                                }}
+                              />
+                            )}
+
+                            {/* Add/Edit Inventory Item */}
+                            {activeView === 'my-things-add-item' && (
+                              <MyThingsItemForm
+                                token={localStorage.getItem('token')}
+                                moduleColor={currentModule.color}
+                                editItem={editInventoryItem}
+                                defaultCategory={selectedInventoryCategory}
+                                onBack={() => {
+                                  setEditInventoryItem(null);
+                                  const viewMap = {
+                                    smart_things: 'my-things-smart',
+                                    wardrobe: 'my-things-wardrobe',
+                                    garage: 'my-things-garage',
+                                    home: 'my-things-home',
+                                    electronics: 'my-things-electronics',
+                                    collection: 'my-things-collection'
+                                  };
+                                  setActiveView(viewMap[selectedInventoryCategory] || 'my-things');
+                                }}
+                                onSuccess={() => {
+                                  setEditInventoryItem(null);
+                                  const viewMap = {
+                                    smart_things: 'my-things-smart',
+                                    wardrobe: 'my-things-wardrobe',
+                                    garage: 'my-things-garage',
+                                    home: 'my-things-home',
+                                    electronics: 'my-things-electronics',
+                                    collection: 'my-things-collection'
+                                  };
+                                  setActiveView(viewMap[selectedInventoryCategory] || 'my-things');
+                                }}
+                              />
+                            )}
+                          </>
+                        )}
+
+                        {(activeModule === 'finance' || activeModule === 'events') && (
                           <>
                             {(activeView === 'wall' || activeView === 'feed') ? (
                               <UniversalWall
