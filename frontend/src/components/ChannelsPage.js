@@ -54,10 +54,11 @@ const ChannelsPage = ({
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadChannels();
   }, [selectedCategory]);
-     
+
 
   const loadChannels = async () => {
     setLoading(true);

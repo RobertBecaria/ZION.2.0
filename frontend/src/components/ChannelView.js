@@ -24,10 +24,11 @@ const ChannelView = ({
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadChannel();
   }, [channelId]);
-     
+
 
   const loadChannel = async () => {
     try {
@@ -353,10 +354,11 @@ const ModeratorModal = ({ channelId, accentColor, onClose }) => {
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadModerators();
   }, []);
-     
+
 
   const loadModerators = async () => {
     try {
