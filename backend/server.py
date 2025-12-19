@@ -19903,6 +19903,8 @@ class MarketplaceProduct(BaseModel):
     # Pricing
     price: float
     currency: str = "RUB"
+    altyn_price: Optional[float] = None  # Price in ALTYN COIN
+    accept_altyn: bool = False  # Whether to accept ALTYN COIN payment
     negotiable: bool = False
     
     # Condition
