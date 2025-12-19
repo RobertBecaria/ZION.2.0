@@ -25,6 +25,7 @@ const ServiceProviderProfile = ({
   listing: initialListing,
   onBack,
   onBookAppointment,
+  onViewReviews,
   moduleColor = '#B91C1C',
   user
 }) => {
