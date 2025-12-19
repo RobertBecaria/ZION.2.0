@@ -342,7 +342,7 @@ class AltynPaymentTester:
     
     def test_services_check_organization(self):
         """Test 5: Check if there are any organizations for service creation"""
-        self.log("🏢 Testing GET /api/work/organizations/my")
+        self.log("🏢 Testing GET /api/work/organizations")
         
         try:
             response = self.session.get(
