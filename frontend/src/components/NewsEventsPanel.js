@@ -371,17 +371,6 @@ const NewsEventsPanel = ({
                       </div>
                     )}
                     
-                    {/* NEW: Navigate button */}
-                    {source && (onNavigateToChannel || onNavigateToProfile) && (
-                      <button
-                        className="event-navigate-btn"
-                        onClick={(e) => handleNavigate(event, e)}
-                        style={{ color: moduleColor }}
-                      >
-                        {source.type === 'channel' ? 'Перейти в канал' : 'Перейти в профиль'}
-                        <ChevronRight size={14} />
-                      </button>
-                    )}
                   </div>
                   
                   <div className="event-actions">
