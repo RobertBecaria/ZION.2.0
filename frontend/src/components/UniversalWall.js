@@ -169,6 +169,95 @@ function UniversalWall({
     );
   }
 
+  // YouTube URL detection
+  const extractYouTubeId = (text) => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+    ];
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  // Generic URL detection
+  const extractUrl = (text) => {
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const matches = text.match(urlPattern);
+    if (matches) {
+      // Filter out YouTube URLs (handled separately)
+      const nonYouTubeUrls = matches.filter(url => 
+        !url.includes('youtube.com') && !url.includes('youtu.be')
+      );
+      return nonYouTubeUrls[0] || null;
+    }
+    return null;
+  };
+
+  // Handle text change with URL detection
+  const handlePostTextChange = (e) => {
+    const text = e.target.value;
+    setNewPost(text);
+    
+    // Detect YouTube
+    const youtubeId = extractYouTubeId(text);
+    if (youtubeId && youtubeId !== detectedYouTube) {
+      setDetectedYouTube(youtubeId);
+      setDetectedLink(null);
+      setLinkPreview(null);
+    } else if (!youtubeId && detectedYouTube) {
+      setDetectedYouTube(null);
+    }
+    
+    // Detect other links (only if no YouTube)
+    if (!youtubeId) {
+      const url = extractUrl(text);
+      if (url && url !== detectedLink) {
+        setDetectedLink(url);
+        fetchLinkPreview(url);
+      } else if (!url && detectedLink) {
+        setDetectedLink(null);
+        setLinkPreview(null);
+      }
+    }
+  };
+
+  // Fetch link preview (simple client-side approach)
+  const fetchLinkPreview = async (url) => {
+    setLoadingLinkPreview(true);
+    try {
+      // Try to extract domain and create basic preview
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname.replace('www.', '');
+      
+      // Create basic preview from URL
+      setLinkPreview({
+        url: url,
+        domain: domain,
+        title: domain,
+        description: url
+      });
+    } catch (error) {
+      console.log('Link preview error:', error);
+      setLinkPreview(null);
+    } finally {
+      setLoadingLinkPreview(false);
+    }
+  };
+
+  // Remove YouTube preview
+  const removeYouTubePreview = () => {
+    setDetectedYouTube(null);
+  };
+
+  // Remove link preview
+  const removeLinkPreview = () => {
+    setDetectedLink(null);
+    setLinkPreview(null);
+  };
+
   const fetchPosts = async () => {
     try {
       const token = localStorage.getItem('zion_token');
