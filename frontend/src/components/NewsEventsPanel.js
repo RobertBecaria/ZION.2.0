@@ -310,10 +310,14 @@ const NewsEventsPanel = ({
                   <div className="event-content">
                     <div className="event-title">{event.title}</div>
                     
-                    {/* NEW: Visual source indicator with avatar */}
+                    {/* Clickable source indicator with avatar */}
                     <div className="event-source-info">
                       {source?.type === 'channel' ? (
-                        <div className="event-source-row">
+                        <button 
+                          className="event-source-row clickable"
+                          onClick={(e) => handleNavigate(event, e)}
+                          title={`Перейти в канал "${source.data.name}"`}
+                        >
                           {source.data.avatar_url ? (
                             <img 
                               src={source.data.avatar_url} 
@@ -328,9 +332,14 @@ const NewsEventsPanel = ({
                           <span className="event-source-name channel-source">
                             {source.data.name}
                           </span>
-                        </div>
+                          <ExternalLink size={10} className="source-link-icon" />
+                        </button>
                       ) : source?.type === 'person' ? (
-                        <div className="event-source-row">
+                        <button 
+                          className="event-source-row clickable"
+                          onClick={(e) => handleNavigate(event, e)}
+                          title={`Перейти в профиль ${source.data.first_name}`}
+                        >
                           {source.data.profile_picture ? (
                             <img 
                               src={source.data.profile_picture} 
@@ -345,7 +354,8 @@ const NewsEventsPanel = ({
                           <span className="event-source-name person-source">
                             {source.data.first_name} {source.data.last_name}
                           </span>
-                        </div>
+                          <ExternalLink size={10} className="source-link-icon" />
+                        </button>
                       ) : null}
                     </div>
                     
