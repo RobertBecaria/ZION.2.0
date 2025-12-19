@@ -55,13 +55,7 @@ const AcademicCalendar = ({ organizationId, schoolRoles, user }) => {
   const isTeacher = schoolRoles?.is_teacher && 
     schoolRoles?.schools_as_teacher?.some(s => s.organization_id === organizationId);
 
-  useEffect(() => {
-    if (organizationId) {
-      fetchEvents();
-    }
-  }, [organizationId, currentDate]);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     if (!organizationId) return;
     
     try {
@@ -86,7 +80,13 @@ const AcademicCalendar = ({ organizationId, schoolRoles, user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId, currentDate, BACKEND_URL]);
+
+  useEffect(() => {
+    if (organizationId) {
+      fetchEvents();
+    }
+  }, [organizationId, fetchEvents]);
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
