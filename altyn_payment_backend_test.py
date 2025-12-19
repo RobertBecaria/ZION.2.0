@@ -186,6 +186,9 @@ class AltynPaymentTester:
                 data = response.json()
                 self.test_product_id = data.get("id")
                 
+                # Debug: Print the actual response
+                self.log(f"Product creation response: {data}")
+                
                 # Verify ALTYN payment fields
                 if (data.get("accept_altyn") == True and 
                     data.get("altyn_price") == 100 and
@@ -197,6 +200,8 @@ class AltynPaymentTester:
                     return True
                 else:
                     self.log("❌ Product created but ALTYN payment fields incorrect", "ERROR")
+                    self.log(f"Expected: accept_altyn=True, altyn_price=100, title='{product_data['title']}'")
+                    self.log(f"Actual: accept_altyn={data.get('accept_altyn')}, altyn_price={data.get('altyn_price')}, title='{data.get('title')}'")
                     return False
             else:
                 self.log(f"❌ Create product failed: {response.status_code} - {response.text}", "ERROR")
