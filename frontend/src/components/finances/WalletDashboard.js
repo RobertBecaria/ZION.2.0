@@ -330,7 +330,8 @@ const WalletDashboard = ({ user, moduleColor = '#A16207' }) => {
         />
       )}
 
-      <style jsx>{`
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <style jsx="true">{`
         .wallet-dashboard {
           padding: 20px;
           max-width: 1200px;
