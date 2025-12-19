@@ -19960,6 +19960,8 @@ class MarketplaceProductUpdate(BaseModel):
     category: Optional[str] = None
     subcategory: Optional[str] = None
     price: Optional[float] = None
+    altyn_price: Optional[float] = None  # Price in ALTYN COIN
+    accept_altyn: Optional[bool] = None  # Whether to accept ALTYN COIN payment
     negotiable: Optional[bool] = None
     condition: Optional[ProductCondition] = None
     city: Optional[str] = None
