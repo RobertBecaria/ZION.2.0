@@ -95,9 +95,9 @@ function UniversalCalendar({
     }
   }, [activeModule, currentDate, statusFilter, priorityFilter, assignmentFilter]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchScheduledActions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, activeModule]);
 
   useEffect(() => {
