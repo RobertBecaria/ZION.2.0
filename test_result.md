@@ -291,6 +291,7 @@ test_plan:
     - "Services Listings API"
     - "Create Service Listing API"
     - "Available Booking Slots API"
+    - "Service Reviews Complete API"
   stuck_tasks:
     - "Create Service Listing API"
   test_all: false
