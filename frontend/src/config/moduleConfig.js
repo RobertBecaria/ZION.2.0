@@ -9,7 +9,7 @@ export const MODULES = [
   { key: 'journal', name: 'Журнал', color: '#6D28D9', icon: 'Book' },
   { key: 'services', name: 'Сервисы', color: '#B91C1C', icon: 'Grid' },
   { key: 'organizations', name: 'Организации', color: '#C2410C', icon: 'Building2' },
-  { key: 'marketplace', name: 'Маркетплейс', color: '#BE185D', icon: 'ShoppingCart' },
+  { key: 'marketplace', name: 'Вещи', color: '#BE185D', icon: 'Package' },
   { key: 'finance', name: 'Финансы', color: '#A16207', icon: 'DollarSign' },
   { key: 'events', name: 'Мероприятия', color: '#7E22CE', icon: 'Calendar' }
 ];
