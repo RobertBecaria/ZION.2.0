@@ -20181,7 +20181,17 @@ async def create_marketplace_product(
         
         # Check if user has family setup (required for individual sellers)
         if not product_data.organization_id:
-            family = await db.families.find_one({"owner_user_id": user_id}, {"_id": 0})
+            # Check family_profiles collection with creator_id
+            family = await db.family_profiles.find_one({"creator_id": user_id}, {"_id": 0})
+            # Also check family_members collection if user is a member of any family
+            if not family:
+                family_membership = await db.family_members.find_one({
+                    "user_id": user_id, 
+                    "is_active": True,
+                    "invitation_accepted": True
+                }, {"_id": 0})
+                if family_membership:
+                    family = await db.family_profiles.find_one({"id": family_membership["family_id"]}, {"_id": 0})
             if not family:
                 raise HTTPException(
                     status_code=400, 
