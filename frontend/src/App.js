@@ -1289,23 +1289,96 @@ function Dashboard() {
 
                         {activeModule === 'events' && (
                           <>
-                            {(activeView === 'wall' || activeView === 'feed') ? (
-                              <UniversalWall
-                                activeGroup={activeGroup}
+                            {/* Good Will Module - Добрая Воля */}
+                            {activeView === 'goodwill-search' && (
+                              <GoodWillSearch
+                                token={localStorage.getItem('zion_token')}
                                 moduleColor={currentModule.color}
-                                moduleName={currentModule.name}
-                                activeModule={activeModule}
-                                user={user}
+                                onSelectEvent={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
                               />
-                            ) : (
-                              <UniversalChatLayout
-                                activeGroup={activeGroup}
-                                activeDirectChat={activeDirectChat}
-                                chatGroups={chatGroups}
-                                onGroupSelect={handleGroupSelect}
+                            )}
+                            
+                            {activeView === 'goodwill-event-detail' && selectedGoodWillEventId && (
+                              <GoodWillEventDetail
+                                eventId={selectedGoodWillEventId}
+                                token={localStorage.getItem('zion_token')}
                                 moduleColor={currentModule.color}
-                                onCreateGroup={handleCreateGroup}
-                                user={user}
+                                onBack={() => setActiveView('goodwill-search')}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-calendar' && (
+                              <GoodWillCalendar
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onSelectEvent={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-my-events' && (
+                              <GoodWillMyEvents
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onSelectEvent={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
+                                onCreateEvent={() => setActiveView('goodwill-create-event')}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-create-event' && (
+                              <GoodWillEventForm
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onBack={() => setActiveView('goodwill-my-events')}
+                                onEventCreated={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-invitations' && (
+                              <GoodWillInvitations
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onSelectEvent={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-favorites' && (
+                              <GoodWillSearch
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onSelectEvent={(event) => {
+                                  setSelectedGoodWillEventId(event.id);
+                                  setActiveView('goodwill-event-detail');
+                                }}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-organizer-profile' && (
+                              <GoodWillOrganizerProfile
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
+                                onProfileCreated={() => setActiveView('goodwill-my-events')}
+                              />
+                            )}
+                            
+                            {activeView === 'goodwill-groups' && (
+                              <GoodWillGroups
+                                token={localStorage.getItem('zion_token')}
+                                moduleColor={currentModule.color}
                               />
                             )}
                           </>
