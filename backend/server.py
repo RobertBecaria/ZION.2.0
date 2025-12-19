@@ -22791,12 +22791,20 @@ async def create_event(
             )
             ticket_types.append(ticket_type.dict())
         
+        # Extract YouTube video ID if URL provided
+        youtube_video_id = None
+        if request.youtube_url:
+            youtube_video_id = extract_youtube_id_from_url(request.youtube_url)
+        
         event = Event(
             organizer_profile_id=request.organizer_profile_id,
             group_id=request.group_id,
             title=request.title,
             description=request.description,
             category_id=request.category_id,
+            cover_image=request.cover_image,
+            youtube_url=request.youtube_url,
+            youtube_video_id=youtube_video_id,
             city=request.city,
             address=request.address,
             venue_name=request.venue_name,
@@ -22812,7 +22820,11 @@ async def create_event(
             registration_deadline=request.registration_deadline,
             is_free=request.is_free,
             ticket_types=ticket_types,
-            tags=request.tags
+            tags=request.tags,
+            is_recurring=request.is_recurring,
+            recurrence_pattern=request.recurrence_pattern,
+            recurrence_end_date=request.recurrence_end_date,
+            co_organizer_ids=request.co_organizer_ids
         )
         
         event_dict = event.dict()
