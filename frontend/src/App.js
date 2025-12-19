@@ -1412,8 +1412,8 @@ function Dashboard() {
                     )}
                   </div>
 
-                  {/* Right Events Panel (not for journal with school selected - that uses World Zone, also not for chat view, also not for news/services module except feed view) */}
-                  {!(activeModule === 'journal' && selectedSchool) && !(activeModule === 'news' && activeView !== 'wall' && activeView !== 'feed') && !(activeModule === 'services' && activeView !== 'services-feed') && !(activeView === 'chat' || activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations' || activeView === 'event-planner' || activeView === 'journal-calendar') && (
+                  {/* Right Events Panel (not for journal with school selected - that uses World Zone, also not for chat view, also not for news/services/marketplace module except feed view) */}
+                  {!(activeModule === 'journal' && selectedSchool) && !(activeModule === 'news' && activeView !== 'wall' && activeView !== 'feed') && !(activeModule === 'services' && activeView !== 'services-feed') && !(activeModule === 'marketplace' && activeView !== 'wall' && activeView !== 'feed') && !(activeView === 'chat' || activeView === 'my-profile' || activeView === 'media-photos' || activeView === 'media-documents' || activeView === 'media-videos' || activeView === 'family-profiles' || activeView === 'family-create' || activeView === 'family-view' || activeView === 'family-invitations' || activeView === 'my-info' || activeView === 'my-documents' || activeModule === 'organizations' || activeView === 'event-planner' || activeView === 'journal-calendar') && (
                     <div className="events-panel-area">
                       {/* News Events Panel for News module */}
                       {activeModule === 'news' ? (
