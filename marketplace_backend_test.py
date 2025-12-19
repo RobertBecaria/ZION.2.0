@@ -281,20 +281,27 @@ class MarketplaceTester:
             
             if response.status_code == 200 or response.status_code == 201:
                 data = response.json()
-                self.test_inventory_item_id = data.get("id")
                 
-                self.log(f"✅ Inventory item created successfully - ID: {self.test_inventory_item_id}")
-                
-                # Verify response structure
-                required_fields = ["id", "name", "category", "user_id"]
-                missing_fields = [field for field in required_fields if field not in data]
-                
-                if missing_fields:
-                    self.log(f"⚠️ Missing fields in response: {missing_fields}", "WARNING")
+                # Handle nested response structure
+                if data.get("success") and "item" in data:
+                    item = data["item"]
+                    self.test_inventory_item_id = item.get("id")
+                    
+                    self.log(f"✅ Inventory item created successfully - ID: {self.test_inventory_item_id}")
+                    
+                    # Verify item structure
+                    required_fields = ["id", "name", "category", "user_id"]
+                    missing_fields = [field for field in required_fields if field not in item]
+                    
+                    if missing_fields:
+                        self.log(f"⚠️ Missing fields in item: {missing_fields}", "WARNING")
+                    else:
+                        self.log("✅ Inventory item creation response structure validated")
+                    
+                    return True
                 else:
-                    self.log("✅ Inventory item creation response structure validated")
-                
-                return True
+                    self.log(f"❌ Unexpected response structure: {data}", "ERROR")
+                    return False
             else:
                 self.log(f"❌ Create inventory item failed: {response.status_code} - {response.text}", "ERROR")
                 return False
