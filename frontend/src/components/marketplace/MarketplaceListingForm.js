@@ -381,6 +381,40 @@ const MarketplaceListingForm = ({
               </label>
             </div>
           </div>
+          
+          {/* ALTYN COIN Payment */}
+          <div className="altyn-payment-section" style={{ marginTop: '16px', padding: '16px', background: '#FEF3C7', borderRadius: '12px', border: '1px solid #F59E0B' }}>
+            <div className="form-group checkbox-group" style={{ marginBottom: '12px' }}>
+              <label className="checkbox-label" style={{ fontWeight: '600', color: '#92400E' }}>
+                <input
+                  type="checkbox"
+                  name="accept_altyn"
+                  checked={formData.accept_altyn}
+                  onChange={handleChange}
+                />
+                <span>💰 Принимать оплату в ALTYN COIN</span>
+              </label>
+            </div>
+            
+            {formData.accept_altyn && (
+              <div className="form-group">
+                <label style={{ color: '#92400E' }}>Цена в ALTYN COIN (AC) *</label>
+                <input
+                  type="number"
+                  name="altyn_price"
+                  value={formData.altyn_price}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  style={{ borderColor: '#F59E0B' }}
+                />
+                <small style={{ color: '#B45309', display: 'block', marginTop: '4px' }}>
+                  1 ALTYN COIN = 1 USD. Комиссия 0.1% с транзакции.
+                </small>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Location */}
