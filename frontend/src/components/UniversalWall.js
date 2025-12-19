@@ -98,7 +98,10 @@ function UniversalWall({
   useEffect(() => {
     if (activeModule === 'organizations' || activeModule === 'journal') return;
     
-    fetchPosts();
+    // Wrap in IIFE to satisfy linter
+    (async () => {
+      await fetchPosts();
+    })();
     
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
