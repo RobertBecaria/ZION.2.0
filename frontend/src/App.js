@@ -943,6 +943,19 @@ function Dashboard() {
                               />
                             )}
                             
+                            {/* People Discovery Page */}
+                            {activeView === 'people-discovery' && (
+                              <PeopleDiscovery
+                                user={user}
+                                moduleColor={currentModule.color}
+                                onNavigateToProfile={(person) => {
+                                  setSelectedNewsUserId(person.id);
+                                  setActiveView('news-user-profile');
+                                }}
+                                onClose={() => setActiveView('feed')}
+                              />
+                            )}
+                            
                             {/* Chat View */}
                             {activeView === 'chat' && (
                               <UniversalChatLayout
