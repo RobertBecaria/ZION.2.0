@@ -2672,6 +2672,9 @@ class PostResponse(BaseModel):
     author: Dict[str, Any]  # User info
     media_files: List[Dict[str, Any]] = []  # MediaFile info
     youtube_urls: List[str] = []
+    youtube_video_id: Optional[str] = None  # Single YouTube video ID
+    link_url: Optional[str] = None  # Link preview URL
+    link_domain: Optional[str] = None  # Link preview domain
     likes_count: int
     comments_count: int
     is_published: bool
