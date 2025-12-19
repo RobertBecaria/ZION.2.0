@@ -311,10 +311,57 @@ const ServicesSearch = ({
       ) : viewMode === 'map' ? (
         <div className="services-map-container">
           <div className="map-wrapper">
-            <div 
-              ref={mapContainerRef} 
-              className="services-2gis-map"
-            />
+            <MapContainer 
+              center={mapCenter} 
+              zoom={13} 
+              scrollWheelZoom={true}
+              className="services-leaflet-map"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <MapController center={mapCenter} selectedListing={selectedMapListing} />
+              
+              {/* Service markers */}
+              {listingsForMap.map(listing => (
+                listing.latitude && listing.longitude && (
+                  <Marker 
+                    key={listing.id}
+                    position={[listing.latitude, listing.longitude]}
+                    icon={serviceIcon}
+                    eventHandlers={{
+                      click: () => setSelectedMapListing(listing)
+                    }}
+                  >
+                    <Popup className="service-popup">
+                      <div className="map-popup-content">
+                        <h4>{listing.name}</h4>
+                        <p className="popup-category">{listing.organization_name || ''}</p>
+                        <p className="popup-rating">⭐ {listing.rating?.toFixed(1) || '0.0'}</p>
+                        {listing.price_from && (
+                          <p className="popup-price">от {listing.price_from.toLocaleString()} ₽</p>
+                        )}
+                        <button 
+                          className="popup-view-btn"
+                          onClick={() => onViewListing && onViewListing(listing)}
+                          style={{ backgroundColor: moduleColor }}
+                        >
+                          Подробнее
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )
+              ))}
+              
+              {/* User location marker */}
+              {userLocation && (
+                <Marker position={userLocation} icon={userLocationIcon}>
+                  <Popup>Вы здесь</Popup>
+                </Marker>
+              )}
+            </MapContainer>
             
             {/* Map controls */}
             <div className="map-controls">
