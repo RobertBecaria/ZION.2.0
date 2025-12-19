@@ -67,7 +67,8 @@ class GoodWillTester:
             response = self.session.get(f"{BACKEND_URL}/goodwill/categories")
             
             if response.status_code == 200:
-                categories = response.json()
+                data = response.json()
+                categories = data.get('categories', [])
                 if isinstance(categories, list) and len(categories) > 0:
                     category_names = [cat.get('name', 'Unknown') for cat in categories]
                     self.log_result("Categories API", True, 
