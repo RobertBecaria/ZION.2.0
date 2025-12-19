@@ -395,6 +395,64 @@ const LeftSidebar = ({
             <div className="sidebar-divider"></div>
           </>
         )}
+
+        {/* ==================== FINANCE MODULE (ФИНАНСЫ) ==================== */}
+        {activeModule === 'finance' && (
+          <>
+            <div className="sidebar-divider" style={getDividerStyle('#A16207')}></div>
+            
+            <button 
+              className={`profile-btn ${(activeView === 'wallet' || activeView === 'wall' || activeView === 'feed') ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'wallet' || activeView === 'wall' || activeView === 'feed', '#A16207')}
+              onClick={() => setActiveView('wallet')}
+            >
+              <Wallet size={18} />
+              <span>МОЙ КОШЕЛЁК</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#A16207')}></div>
+            
+            {/* Quick Actions */}
+            <div className="nav-group-label" style={{ color: '#A16207', padding: '8px 12px', fontSize: '11px' }}>
+              БЫСТРЫЕ ДЕЙСТВИЯ
+            </div>
+            
+            <button 
+              className={`profile-btn secondary`}
+              style={{ color: '#059669' }}
+              onClick={() => setActiveView('wallet')}
+            >
+              <Coins size={18} />
+              <span>Отправить COIN</span>
+            </button>
+            
+            <button 
+              className={`profile-btn secondary`}
+              style={{ color: '#8B5CF6' }}
+              onClick={() => setActiveView('wallet')}
+            >
+              <TrendingUp size={18} />
+              <span>Передать TOKEN</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#A16207')}></div>
+            
+            {/* Finance Info */}
+            <div className="nav-group-label" style={{ color: '#A16207', padding: '8px 12px', fontSize: '11px' }}>
+              ИНФОРМАЦИЯ
+            </div>
+            
+            <button 
+              className={`profile-btn secondary`}
+              onClick={() => setActiveView('wallet')}
+            >
+              <DollarSign size={18} />
+              <span>Курсы валют</span>
+            </button>
+            
+            <div className="sidebar-divider"></div>
+          </>
+        )}
       </div>
 
       {/* Navigation Links */}
