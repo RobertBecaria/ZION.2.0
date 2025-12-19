@@ -7,11 +7,11 @@ const API = `${BACKEND_URL}/api`;
 
 // Separate Modal Component that doesn't re-render with countdown
 const EventDetailsModal = React.memo(({ event, onClose, timeLeft, onRSVPUpdate }) => {
-  if (!event) return null;
-
-  const [userRSVP, setUserRSVP] = React.useState(event.user_rsvp_status || null);
-  const [rsvpStats, setRsvpStats] = React.useState(event.rsvp_summary || { GOING: 0, MAYBE: 0, NOT_GOING: 0 });
+  const [userRSVP, setUserRSVP] = React.useState(event?.user_rsvp_status || null);
+  const [rsvpStats, setRsvpStats] = React.useState(event?.rsvp_summary || { GOING: 0, MAYBE: 0, NOT_GOING: 0 });
   const [updating, setUpdating] = React.useState(false);
+
+  if (!event) return null;
 
   const handleRSVP = async (status) => {
     if (updating) return;
