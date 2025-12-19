@@ -221,13 +221,71 @@ metadata:
   test_sequence: 1
   run_ui: true
 
+frontend:
+  - task: "Marketplace ALTYN Price Display"
+    implemented: true
+    working: true
+    file: "src/components/marketplace/MarketplaceProductCard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ALTYN price badges working perfectly. Found 4 products with golden ALTYN price badges showing '100 AC' and '1,500 AC' prices. The badges display correctly with coins icon and golden background styling as expected."
+
+  - task: "Product Detail ALTYN Payment Section"
+    implemented: true
+    working: true
+    file: "src/components/marketplace/MarketplaceProductDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Product detail page ALTYN section working perfectly. Shows golden ALTYN price section with '100 AC' price, USD equivalent, and prominent 'Оплатить ALTYN' (Pay with ALTYN) button. All styling and layout matches design requirements."
+
+  - task: "ALTYN Payment Modal Functionality"
+    implemented: true
+    working: true
+    file: "src/components/marketplace/MarketplaceProductDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ALTYN payment modal working excellently. Modal opens correctly showing: 'Оплата ALTYN COIN' header, product info, amount (100 AC), commission (0.1%), total calculation, wallet balance (0 AC), and proper pay/cancel buttons. Modal overlay and styling perfect."
+
+  - task: "Payment Process and User Experience"
+    implemented: true
+    working: true
+    file: "src/components/marketplace/MarketplaceProductDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Payment process UI working correctly. Pay button properly disabled when insufficient balance (0 AC vs 100 AC required). Shows 'Недостаточно средств' (Insufficient funds) state. Modal handles user interactions properly with cancel functionality."
+
+  - task: "Marketplace Navigation and Integration"
+    implemented: true
+    working: true
+    file: "src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ Marketplace navigation and integration working perfectly. Login with testuser@test.com successful, navigation to 'Вещи' (Marketplace) module works, product listings load correctly, and ALTYN payment flow integrates seamlessly with existing UI."
+
 test_plan:
   current_focus:
-    - "Marketplace Product Creation with ALTYN"
-    - "Marketplace ALTYN Payment Flow"
-    - "Services Listing Creation with ALTYN"
-    - "Services ALTYN Payment Flow"
-    - "Receipt Generation and Validation"
+    - "Services Module ALTYN Display"
+    - "Receipt Generation Testing with Sufficient Balance"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
