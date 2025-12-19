@@ -243,9 +243,42 @@ class AltynPaymentTester:
             self.log(f"❌ Get products error: {str(e)}", "ERROR")
             return False
     
+    def initialize_user_tokens(self):
+        """Initialize tokens for test user"""
+        self.log("🪙 Initializing tokens for test user")
+        
+        try:
+            init_data = {
+                "user_email": "testuser@test.com",
+                "altyn_tokens": 1000,  # Give 1000 tokens
+                "altyn_coins": 500     # Give 500 coins
+            }
+            
+            response = self.session.post(
+                f"{BACKEND_URL}/finance/admin/initialize-tokens",
+                json=init_data,
+                headers=self.get_auth_headers("admin")
+            )
+            
+            if response.status_code == 200:
+                self.log("✅ Test user tokens initialized successfully")
+                return True
+            else:
+                self.log(f"❌ Token initialization failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Token initialization error: {str(e)}", "ERROR")
+            return False
+
     def test_marketplace_payment(self):
         """Test 3: Pay for the product using ALTYN"""
         self.log("💳 Testing POST /api/finance/marketplace/pay (ALTYN payment)")
+        
+        # Initialize tokens for test user first
+        if not self.initialize_user_tokens():
+            self.log("❌ Cannot proceed without initializing user tokens", "ERROR")
+            return False
         
         # Record balances before payment
         self.user_balance_before = self.get_wallet_balance("user")
