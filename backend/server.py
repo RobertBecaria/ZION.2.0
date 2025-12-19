@@ -7554,7 +7554,10 @@ async def create_post(
         visibility=visibility_enum,
         family_id=family_id,
         media_files=valid_media_ids,
-        youtube_urls=youtube_urls
+        youtube_urls=youtube_urls,
+        youtube_video_id=youtube_video_id,
+        link_url=link_url,
+        link_domain=link_domain
     )
     
     await db.posts.insert_one(new_post.dict())
@@ -7580,11 +7583,14 @@ async def create_post(
         content=new_post.content,
         source_module=new_post.source_module,
         target_audience=new_post.target_audience,
-        visibility=new_post.visibility.value,  # NEW
-        family_id=new_post.family_id,  # NEW
+        visibility=new_post.visibility.value,
+        family_id=new_post.family_id,
         author=author_info,
         media_files=media_files,
         youtube_urls=new_post.youtube_urls,
+        youtube_video_id=new_post.youtube_video_id,
+        link_url=new_post.link_url,
+        link_domain=new_post.link_domain,
         likes_count=new_post.likes_count,
         comments_count=new_post.comments_count,
         is_published=new_post.is_published,
