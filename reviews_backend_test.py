@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://altynpay.preview.emergentagent.com/api"
+BACKEND_URL = "https://altyn-finance.preview.emergentagent.com/api"
 
 class ReviewsModuleTester:
     def __init__(self):

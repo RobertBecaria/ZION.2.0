@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BACKEND_URL = "https://altynpay.preview.emergentagent.com/api"
+BACKEND_URL = "https://altyn-finance.preview.emergentagent.com/api"
 TEST_CREDENTIALS = {
     "email": "admin@test.com",
     "password": "testpassword123"
