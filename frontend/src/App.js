@@ -342,15 +342,7 @@ function Dashboard() {
     }
   };
 
-  // Load chat groups and fetch media stats when dashboard loads
-  useEffect(() => {
-    if (user) {
-      fetchChatGroups();
-      fetchMediaStats();
-    }
-  }, [user, fetchChatGroups]);
-
-  const fetchChatGroups = useCallback(async () => {
+  const fetchChatGroups = async () => {
     setLoadingGroups(true);
     try {
       const token = localStorage.getItem('zion_token');
@@ -366,8 +358,8 @@ function Dashboard() {
         
         // Auto-select first family group if available
         const familyGroup = data.chat_groups?.find(g => g.group.group_type === 'FAMILY');
-        if (familyGroup) {
-          setActiveGroup(prev => prev || familyGroup);
+        if (familyGroup && !activeGroup) {
+          setActiveGroup(familyGroup);
         }
       }
     } catch (error) {
@@ -375,7 +367,16 @@ function Dashboard() {
     } finally {
       setLoadingGroups(false);
     }
-  }, []);
+  };
+
+  // Load chat groups and fetch media stats when dashboard loads
+  useEffect(() => {
+    if (user) {
+      fetchChatGroups();
+      fetchMediaStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleGroupSelect = (groupData) => {
     setActiveGroup(groupData);
