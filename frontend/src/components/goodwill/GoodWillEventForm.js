@@ -104,6 +104,46 @@ const GoodWillEventForm = ({
     });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingImage(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+      uploadData.append('source_module', 'community');
+      uploadData.append('privacy_level', 'PUBLIC');
+      
+      const res = await fetch(`${BACKEND_URL}/api/media/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: uploadData
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setFormData({ ...formData, cover_image: `${BACKEND_URL}${data.file_url}` });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const extractYouTubeId = (url) => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!organizerProfile) {
@@ -126,6 +166,8 @@ const GoodWillEventForm = ({
         description: formData.description,
         category_id: formData.category_id,
         group_id: formData.group_id || null,
+        cover_image: formData.cover_image || null,
+        youtube_url: formData.youtube_url || null,
         city: formData.city,
         address: formData.address || null,
         venue_name: formData.venue_name || null,
