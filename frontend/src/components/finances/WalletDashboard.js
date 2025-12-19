@@ -306,6 +306,10 @@ const WalletDashboard = ({ user, moduleColor = '#A16207' }) => {
           <ExchangeRates moduleColor={moduleColor} />
         )}
 
+        {activeTab === 'corporate' && (
+          <CorporateWallets user={user} moduleColor={moduleColor} />
+        )}
+
         {activeTab === 'admin' && isAdmin && (
           <AdminFinance 
             onRefresh={handleRefresh} 
