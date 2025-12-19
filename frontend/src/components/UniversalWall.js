@@ -43,6 +43,12 @@ function UniversalWall({
   // Post Privacy/Visibility State - matches backend PostVisibility enum
   const [postVisibility, setPostVisibility] = useState('FAMILY_ONLY'); // Default to FAMILY_ONLY
   
+  // YouTube & Link Preview State
+  const [detectedYouTube, setDetectedYouTube] = useState(null);
+  const [detectedLink, setDetectedLink] = useState(null);
+  const [linkPreview, setLinkPreview] = useState(null);
+  const [loadingLinkPreview, setLoadingLinkPreview] = useState(false);
+  
   // Use the shared lightbox hook
   const {
     lightboxImage,
