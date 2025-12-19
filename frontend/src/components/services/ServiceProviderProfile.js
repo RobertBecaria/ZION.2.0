@@ -249,13 +249,34 @@ const ServiceProviderProfile = ({
 
         {activeTab === 'reviews' && (
           <div className="reviews-tab">
+            {/* Action buttons */}
+            <div className="reviews-actions-bar">
+              <button 
+                className="write-review-btn"
+                onClick={() => onViewReviews && onViewReviews(listing)}
+                style={{ backgroundColor: moduleColor }}
+              >
+                <MessageCircle size={16} />
+                Написать отзыв
+              </button>
+              <button 
+                className="view-all-reviews-btn"
+                onClick={() => onViewReviews && onViewReviews(listing)}
+              >
+                Все отзывы
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
             {reviews.length === 0 ? (
               <div className="no-reviews">
+                <Star size={48} color="#D1D5DB" />
                 <p>Пока нет отзывов</p>
+                <span>Станьте первым, кто оставит отзыв!</span>
               </div>
             ) : (
               <div className="reviews-list">
-                {reviews.map(review => (
+                {reviews.slice(0, 3).map(review => (
                   <div key={review.id} className="review-card">
                     <div className="review-header">
                       <div className="reviewer-info">
@@ -297,6 +318,17 @@ const ServiceProviderProfile = ({
                     )}
                   </div>
                 ))}
+
+                {reviews.length > 3 && (
+                  <button 
+                    className="show-more-reviews-btn"
+                    onClick={() => onViewReviews && onViewReviews(listing)}
+                    style={{ color: moduleColor }}
+                  >
+                    Показать все {reviews.length} отзывов
+                    <ChevronRight size={16} />
+                  </button>
+                )}
               </div>
             )}
           </div>
