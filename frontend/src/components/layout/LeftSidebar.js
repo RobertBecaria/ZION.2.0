@@ -453,6 +453,90 @@ const LeftSidebar = ({
             <div className="sidebar-divider"></div>
           </>
         )}
+
+        {/* GOOD WILL MODULE (ДОБРАЯ ВОЛЯ) */}
+        {activeModule === 'events' && (
+          <>
+            <div className="sidebar-divider" style={getDividerStyle('#8B5CF6')}></div>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-search' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-search', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-search')}
+            >
+              <Heart size={18} />
+              <span>ПОИСК МЕРОПРИЯТИЙ</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-calendar' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-calendar', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-calendar')}
+            >
+              <Heart size={18} />
+              <span>Календарь</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#8B5CF6')}></div>
+            
+            <div className="nav-group-label" style={{ color: '#8B5CF6', padding: '8px 12px', fontSize: '11px' }}>
+              МОЯ АКТИВНОСТЬ
+            </div>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-my-events' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-my-events', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-my-events')}
+            >
+              <Heart size={18} />
+              <span>Мои мероприятия</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-invitations' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-invitations', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-invitations')}
+            >
+              <Heart size={18} />
+              <span>Приглашения</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-groups' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-groups', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-groups')}
+            >
+              <Users size={18} />
+              <span>Группы по интересам</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#8B5CF6')}></div>
+            
+            <div className="nav-group-label" style={{ color: '#8B5CF6', padding: '8px 12px', fontSize: '11px' }}>
+              ОРГАНИЗАТОР
+            </div>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-organizer-profile' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-organizer-profile', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-organizer-profile')}
+            >
+              <User size={18} />
+              <span>Профиль организатора</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'goodwill-create-event' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'goodwill-create-event', '#8B5CF6')}
+              onClick={() => setActiveView('goodwill-create-event')}
+            >
+              <Heart size={18} />
+              <span>Создать мероприятие</span>
+            </button>
+            
+            <div className="sidebar-divider"></div>
+          </>
+        )}
       </div>
 
       {/* Navigation Links */}
