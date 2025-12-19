@@ -27,13 +27,22 @@ const ServiceProviderProfile = ({
   onBookAppointment,
   onViewReviews,
   moduleColor = '#B91C1C',
-  user
+  user,
+  token
 }) => {
   const [listing, setListing] = useState(initialListing || null);
   const [loading, setLoading] = useState(!initialListing);
   const [activeTab, setActiveTab] = useState('about');
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  // ALTYN Payment states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+  const [paymentReceipt, setPaymentReceipt] = useState(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
