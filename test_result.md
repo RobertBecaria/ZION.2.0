@@ -323,7 +323,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Post Composer Feature"
+    - "People Discovery Feature in News Module"
     - "ServicesReviews Component - Phase 3"
     - "Services Categories API"
     - "Services Listings API"
