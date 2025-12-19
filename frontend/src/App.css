@@ -28543,6 +28543,411 @@ a,
   color: #1f2937;
 }
 
+/* ========== PEOPLE DISCOVERY COMPONENT ========== */
+.people-discovery {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.discovery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.discovery-header .header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.discovery-header .header-title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.discovery-header .header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.discovery-header .refresh-btn,
+.discovery-header .close-btn {
+  padding: 8px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.discovery-header .refresh-btn:hover,
+.discovery-header .close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.discovery-search {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.discovery-search .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.discovery-search .search-input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.discovery-search .search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.discovery-search .search-loader {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+/* Search Results */
+.search-results {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.search-results h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.search-results .results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Discovery Filters */
+.discovery-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.discovery-filters .filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.discovery-filters .filter-btn:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.discovery-filters .filter-btn.active {
+  border-color: transparent;
+}
+
+.discovery-filters .filter-count {
+  background: rgba(0,0,0,0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+/* Suggestions Grid */
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* Person Card */
+.person-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 16px;
+  transition: all 0.2s;
+}
+
+.person-card:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.person-card.compact {
+  flex-direction: row;
+  padding: 12px;
+  gap: 12px;
+}
+
+.person-card .dismiss-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.person-card:hover .dismiss-btn {
+  opacity: 1;
+}
+
+.person-card .dismiss-btn:hover {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+/* Person Avatar */
+.person-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.person-avatar.large {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 12px;
+}
+
+.person-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.person-avatar.large .avatar-placeholder {
+  font-size: 2rem;
+}
+
+/* Person Info */
+.person-card .person-info {
+  text-align: center;
+  margin-bottom: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.person-card.compact .person-info {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.person-name {
+  display: block;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.person-name:hover {
+  color: #3b82f6;
+}
+
+.person-username {
+  display: block;
+  font-size: 13px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+/* Suggestion Reasons */
+.suggestion-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reason-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.reason-tag svg {
+  color: #9ca3af;
+}
+
+/* Person Actions */
+.person-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.person-actions .btn-add-friend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.person-actions .btn-add-friend:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.person-actions .btn-add-friend:disabled {
+  cursor: not-allowed;
+}
+
+.person-actions .btn-follow {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.person-actions .btn-follow:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Compact card action button */
+.person-card.compact .btn-add {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Loading and Empty States */
+.discovery-content .loading-state,
+.discovery-content .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.discovery-content .loading-state p,
+.discovery-content .empty-state p {
+  margin: 16px 0 0;
+  color: #6b7280;
+}
+
+.discovery-content .empty-state button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.discovery-content .empty-state button:hover {
+  background: #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .people-discovery {
+    padding: 16px;
+  }
+  
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .discovery-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+  
+  .discovery-filters .filter-btn {
+    flex-shrink: 0;
+  }
+}
+
 /* Search People Widget */
 .search-people-widget .search-input {
   width: 100%;
