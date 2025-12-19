@@ -13,6 +13,7 @@ const FamilyProfilePage = ({ familyId, currentUser, onBack, onInviteMember }) =>
   const [isUserMember, setIsUserMember] = useState(false);
   const [userRole, setUserRole] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (familyId) {
       fetchFamilyProfile();

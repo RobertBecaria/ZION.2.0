@@ -31,10 +31,11 @@ function FamilySettingsPage({ user, family, onBack, onFamilyUpdated, moduleColor
   });
 
   // Load family members on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadFamilyMembers();
   }, [family?.id]);
-     
+
 
   // Load family members from database
   const loadFamilyMembers = async () => {
