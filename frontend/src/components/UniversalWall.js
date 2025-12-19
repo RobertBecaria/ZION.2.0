@@ -38,8 +38,8 @@ function UniversalWall({
   
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Fetch posts
-  const fetchPosts = async () => {
+  // Fetch posts (memoized to avoid re-creation)
+  const fetchPosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('zion_token');
       let url = `${backendUrl}/api/posts?module=${activeModule}`;
@@ -75,7 +75,7 @@ function UniversalWall({
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
-  };
+  }, [backendUrl, activeModule, activeFilters, userFamilyId]);
 
   // Fetch comments for a post
   const fetchComments = async (postId) => {
