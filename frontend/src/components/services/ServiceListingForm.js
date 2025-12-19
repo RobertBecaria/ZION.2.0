@@ -303,6 +303,44 @@ const ServiceListingForm = ({
               </>
             )}
           </div>
+          
+          {/* ALTYN COIN Payment */}
+          <div style={{ 
+            marginTop: '16px', 
+            padding: '16px', 
+            background: '#FEF3C7', 
+            borderRadius: '12px', 
+            border: '1px solid #F59E0B' 
+          }}>
+            <div className="form-group checkbox-group" style={{ marginBottom: '12px' }}>
+              <label style={{ fontWeight: '600', color: '#92400E', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.accept_altyn}
+                  onChange={e => handleChange('accept_altyn', e.target.checked)}
+                />
+                <span>💰 Принимать оплату в ALTYN COIN</span>
+              </label>
+            </div>
+            
+            {formData.accept_altyn && (
+              <div className="form-group">
+                <label style={{ color: '#92400E' }}>Цена в ALTYN COIN (AC) *</label>
+                <input
+                  type="number"
+                  value={formData.altyn_price}
+                  onChange={e => handleChange('altyn_price', e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="0.01"
+                  style={{ borderColor: '#F59E0B' }}
+                />
+                <small style={{ color: '#B45309', display: 'block', marginTop: '4px' }}>
+                  1 ALTYN COIN = 1 USD. Комиссия 0.1% с транзакции.
+                </small>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Location & Contact */}
