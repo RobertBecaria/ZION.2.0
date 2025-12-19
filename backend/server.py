@@ -19674,6 +19674,10 @@ async def create_service_review(
             {"$set": {"rating": round(avg_rating, 1), "review_count": len(all_reviews)}}
         )
         
+        # Remove MongoDB _id field before returning
+        if "_id" in review_dict:
+            del review_dict["_id"]
+        
         return {"success": True, "review": review_dict}
         
     except jwt.ExpiredSignatureError:
