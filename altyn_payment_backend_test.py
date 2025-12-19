@@ -184,24 +184,22 @@ class AltynPaymentTester:
             
             if response.status_code == 200:
                 data = response.json()
-                self.test_product_id = data.get("id")
-                
-                # Debug: Print the actual response
-                self.log(f"Product creation response: {data}")
+                product = data.get("product", {})
+                self.test_product_id = product.get("id")
                 
                 # Verify ALTYN payment fields
-                if (data.get("accept_altyn") == True and 
-                    data.get("altyn_price") == 100 and
-                    data.get("title") == product_data["title"]):
+                if (product.get("accept_altyn") == True and 
+                    product.get("altyn_price") == 100 and
+                    product.get("title") == product_data["title"]):
                     
                     self.log(f"✅ Product created with ALTYN payment - ID: {self.test_product_id}")
-                    self.log(f"✅ ALTYN price: {data.get('altyn_price')} AC")
-                    self.log(f"✅ Accept ALTYN: {data.get('accept_altyn')}")
+                    self.log(f"✅ ALTYN price: {product.get('altyn_price')} AC")
+                    self.log(f"✅ Accept ALTYN: {product.get('accept_altyn')}")
                     return True
                 else:
                     self.log("❌ Product created but ALTYN payment fields incorrect", "ERROR")
                     self.log(f"Expected: accept_altyn=True, altyn_price=100, title='{product_data['title']}'")
-                    self.log(f"Actual: accept_altyn={data.get('accept_altyn')}, altyn_price={data.get('altyn_price')}, title='{data.get('title')}'")
+                    self.log(f"Actual: accept_altyn={product.get('accept_altyn')}, altyn_price={product.get('altyn_price')}, title='{product.get('title')}'")
                     return False
             else:
                 self.log(f"❌ Create product failed: {response.status_code} - {response.text}", "ERROR")
