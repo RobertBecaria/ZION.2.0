@@ -205,7 +205,7 @@ const GoodWillInvitations = ({
                       color: '#64748b',
                       fontStyle: 'italic'
                     }}>
-                      "{invitation.message}"
+                      "                      &ldquo;{invitation.message}&rdquo;"
                     </div>
                   )}
                 </div>
