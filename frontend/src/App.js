@@ -348,7 +348,7 @@ function Dashboard() {
       fetchChatGroups();
       fetchMediaStats();
     }
-  }, [user]);
+  }, [user, fetchChatGroups]);
 
   const fetchChatGroups = useCallback(async () => {
     setLoadingGroups(true);
