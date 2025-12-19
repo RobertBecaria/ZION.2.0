@@ -43,7 +43,7 @@ export const MODULE_DEFAULT_VIEWS = {
   organizations: 'my-work',
   marketplace: 'marketplace-search',
   finance: 'wallet',
-  events: 'wall'
+  events: 'goodwill-search'
 };
 
 /**
