@@ -358,6 +358,17 @@ function UniversalWall({
       formData.append('source_module', activeModule);
       formData.append('visibility', postVisibility); // Send visibility to backend
       
+      // Add YouTube video ID if detected
+      if (detectedYouTube) {
+        formData.append('youtube_video_id', detectedYouTube);
+      }
+      
+      // Add link preview if detected
+      if (linkPreview && !detectedYouTube) {
+        formData.append('link_url', linkPreview.url);
+        formData.append('link_domain', linkPreview.domain);
+      }
+      
       // Add uploaded media file IDs
       uploadedMediaIds.forEach(id => {
         formData.append('media_file_ids', id);
