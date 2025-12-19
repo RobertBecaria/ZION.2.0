@@ -279,6 +279,7 @@ function WorkNextEventWidget({ organizationId, onEventClick }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (organizationId) {
       fetchNextEvent();
