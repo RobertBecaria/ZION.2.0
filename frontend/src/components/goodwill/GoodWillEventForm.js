@@ -374,6 +374,130 @@ const GoodWillEventForm = ({
           )}
         </div>
 
+        {/* Media */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          border: '1px solid #e2e8f0',
+          marginBottom: '20px'
+        }}>
+          <h4 style={{ margin: '0 0 16px 0', color: '#1e293b' }}>🖼️ Медиа</h4>
+
+          {/* Cover Image Upload */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+              <Image size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+              Обложка мероприятия
+            </label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+            {formData.cover_image ? (
+              <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
+                <img
+                  src={formData.cover_image}
+                  alt="Обложка"
+                  style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '12px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, cover_image: '' })}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(0,0,0,0.6)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                style={{
+                  width: '100%',
+                  padding: '40px 20px',
+                  background: '#f8fafc',
+                  border: '2px dashed #cbd5e1',
+                  borderRadius: '12px',
+                  cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#64748b'
+                }}
+              >
+                {uploadingImage ? (
+                  <>
+                    <div className="spinner" style={{ borderTopColor: moduleColor, width: '24px', height: '24px' }}></div>
+                    <span>Загрузка...</span>
+                  </>
+                ) : (
+                  <>
+                    <Image size={32} color={moduleColor} />
+                    <span>Нажмите для загрузки обложки</span>
+                    <span style={{ fontSize: '12px' }}>JPG, PNG до 5MB</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* YouTube URL */}
+          <div style={{ marginBottom: '0' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+              <Youtube size={16} style={{ marginRight: '6px', verticalAlign: 'middle', color: '#FF0000' }} />
+              YouTube видео (опционально)
+            </label>
+            <input
+              type="url"
+              value={formData.youtube_url}
+              onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
+              placeholder="https://youtube.com/watch?v=..."
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '10px',
+                fontSize: '15px'
+              }}
+            />
+            {formData.youtube_url && extractYouTubeId(formData.youtube_url) && (
+              <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden' }}>
+                <iframe
+                  width="100%"
+                  height="200"
+                  src={`https://www.youtube.com/embed/${extractYouTubeId(formData.youtube_url)}`}
+                  title="YouTube preview"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ borderRadius: '12px' }}
+                ></iframe>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Location */}
         <div style={{
           background: 'white',
