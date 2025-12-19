@@ -38,6 +38,7 @@ const MarketplaceProductDetail = ({
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
+  const [paymentReceipt, setPaymentReceipt] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
