@@ -7499,9 +7499,12 @@ async def create_post(
     visibility: str = Form(default="FAMILY_ONLY"),  # NEW: Role-based visibility
     family_id: str = Form(default=None),  # NEW: Family ID for the post
     media_file_ids: List[str] = Form(default=[]),
+    youtube_video_id: str = Form(default=None),  # Explicit YouTube video ID
+    link_url: str = Form(default=None),  # Link for preview
+    link_domain: str = Form(default=None),  # Link domain for preview
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new post with optional media attachments and role-based visibility"""
+    """Create a new post with optional media attachments, YouTube embeds, link previews, and role-based visibility"""
     
     # Handle empty list case for media_file_ids
     if isinstance(media_file_ids, str):
@@ -7515,6 +7518,10 @@ async def create_post(
     
     # Extract YouTube URLs from content
     youtube_urls = extract_youtube_urls(content)
+    
+    # Add explicit YouTube video ID if provided
+    if youtube_video_id and youtube_video_id not in [extract_youtube_id_from_url(u) for u in youtube_urls]:
+        youtube_urls.append(f"https://www.youtube.com/watch?v={youtube_video_id}")
     
     # Validate media file IDs belong to current user and update their source_module
     valid_media_ids = []
