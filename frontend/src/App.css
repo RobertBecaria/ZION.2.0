@@ -35674,6 +35674,88 @@ a,
   font-size: 0.9rem;
 }
 
+/* Reviews Actions Bar */
+.reviews-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.reviews-actions-bar .write-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.reviews-actions-bar .write-review-btn:hover {
+  opacity: 0.9;
+}
+
+.reviews-actions-bar .view-all-reviews-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.reviews-actions-bar .view-all-reviews-btn:hover {
+  color: #1f2937;
+}
+
+/* Show More Reviews Button */
+.show-more-reviews-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.show-more-reviews-btn:hover {
+  background: #f9fafb;
+}
+
+/* No Reviews Styling Enhancement */
+.reviews-tab .no-reviews {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.reviews-tab .no-reviews p {
+  margin: 1rem 0 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.reviews-tab .no-reviews span {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
 /* Review Actions */
 .review-actions {
   display: flex;
