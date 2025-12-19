@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # Configuration
-BACKEND_URL = "https://service-book-4.preview.emergentagent.com/api"
+BACKEND_URL = "https://taskbridge-16.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_MEMBER_EMAIL = "test@zion.city"

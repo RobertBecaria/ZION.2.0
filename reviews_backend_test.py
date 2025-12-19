@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://service-book-4.preview.emergentagent.com/api"
+BACKEND_URL = "https://taskbridge-16.preview.emergentagent.com/api"
 
 class ReviewsModuleTester:
     def __init__(self):

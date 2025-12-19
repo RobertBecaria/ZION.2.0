@@ -26,7 +26,7 @@ import sys
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://service-book-4.preview.emergentagent.com/api"
+BACKEND_URL = "https://taskbridge-16.preview.emergentagent.com/api"
 
 class ZionCityTester:
     def __init__(self):

@@ -13,7 +13,7 @@ import sys
 import os
 
 # Configuration
-BASE_URL = "https://service-book-4.preview.emergentagent.com/api"
+BASE_URL = "https://taskbridge-16.preview.emergentagent.com/api"
 TEST_EMAIL = "admin@test.com"
 TEST_PASSWORD = "testpassword123"
 

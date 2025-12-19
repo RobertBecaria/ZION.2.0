@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BACKEND_URL = "https://service-book-4.preview.emergentagent.com/api"
+BACKEND_URL = "https://taskbridge-16.preview.emergentagent.com/api"
 TEST_CREDENTIALS = {
     "email": "admin@test.com",
     "password": "testpassword123"

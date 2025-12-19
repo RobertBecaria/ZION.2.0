@@ -30,7 +30,7 @@ import os
 import base64
 
 # Get backend URL from environment
-BACKEND_URL = "https://service-book-4.preview.emergentagent.com"
+BACKEND_URL = "https://taskbridge-16.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials
