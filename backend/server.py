@@ -20765,6 +20765,991 @@ async def get_expiring_warranties(
 
 # ===== END MARKETPLACE MODULE =====
 
+# ===== FINANCES MODULE - ALTYN BANKING SYSTEM =====
+
+# === FINANCE MODELS ===
+
+class AssetType(str, Enum):
+    COIN = "COIN"  # ALTYN COIN - Stable currency (1 COIN = 1 USD)
+    TOKEN = "TOKEN"  # ALTYN TOKEN - Equity/shares with dividend rights
+
+class TransactionType(str, Enum):
+    TRANSFER = "TRANSFER"  # P2P transfer
+    PAYMENT = "PAYMENT"  # Marketplace payment
+    FEE = "FEE"  # Transaction fee
+    DIVIDEND = "DIVIDEND"  # Dividend payout
+    EMISSION = "EMISSION"  # New coin emission
+    WELCOME_BONUS = "WELCOME_BONUS"  # New user bonus
+
+class TransactionStatus(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+class Wallet(BaseModel):
+    """User's digital wallet containing ALTYN COINS and TOKENS"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    coin_balance: float = 0.0  # ALTYN COIN balance
+    token_balance: float = 0.0  # ALTYN TOKEN balance
+    is_corporate: bool = False  # Corporate account for companies
+    organization_id: Optional[str] = None  # If corporate wallet
+    is_treasury: bool = False  # Platform treasury account
+    total_dividends_received: float = 0.0  # Total dividends earned
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Transaction(BaseModel):
+    """Record of all financial transactions"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    from_wallet_id: str
+    to_wallet_id: str
+    from_user_id: str
+    to_user_id: str
+    amount: float
+    asset_type: AssetType
+    transaction_type: TransactionType
+    fee_amount: float = 0.0  # 0.1% fee for COIN transfers
+    status: TransactionStatus = TransactionStatus.COMPLETED
+    description: Optional[str] = None
+    marketplace_product_id: Optional[str] = None  # If payment for product
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Emission(BaseModel):
+    """Record of ALTYN COIN emissions"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    amount: float
+    created_by_user_id: str
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class DividendPayout(BaseModel):
+    """Record of dividend distributions to TOKEN holders"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    total_fees_distributed: float
+    token_holders_count: int
+    distribution_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None  # Admin who triggered it, or "SCHEDULED"
+    details: List[Dict[str, Any]] = []  # List of {user_id, amount, token_percentage}
+
+class ExchangeRates(BaseModel):
+    """Cached exchange rates"""
+    base: str = "USD"
+    rates: Dict[str, float] = {}
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# === FINANCE INPUT/OUTPUT MODELS ===
+
+class TransferRequest(BaseModel):
+    """Request to transfer COINS or TOKENS"""
+    to_user_email: str  # Recipient email
+    amount: float
+    asset_type: AssetType = AssetType.COIN
+    description: Optional[str] = None
+
+class PaymentRequest(BaseModel):
+    """Request to pay for marketplace product"""
+    product_id: str
+    amount: float
+
+class EmissionRequest(BaseModel):
+    """Admin request to create new COIN emission"""
+    amount: float
+    description: Optional[str] = None
+
+class WalletResponse(BaseModel):
+    """Response for wallet information"""
+    id: str
+    user_id: str
+    user_name: Optional[str] = None
+    coin_balance: float
+    token_balance: float
+    token_percentage: Optional[float] = None  # % of total tokens owned
+    is_corporate: bool
+    organization_name: Optional[str] = None
+    total_dividends_received: float
+    pending_dividends: float = 0.0
+    created_at: datetime
+
+class TransactionResponse(BaseModel):
+    """Response for transaction information"""
+    id: str
+    from_user_name: str
+    to_user_name: str
+    amount: float
+    asset_type: str
+    transaction_type: str
+    fee_amount: float
+    status: str
+    description: Optional[str]
+    created_at: datetime
+
+# === FINANCE CONSTANTS ===
+TOTAL_TOKENS = 35_000_000  # Total supply of ALTYN TOKENS
+TRANSACTION_FEE_RATE = 0.001  # 0.1% fee on COIN transactions
+WELCOME_BONUS_COINS = 100  # New users receive 100 ALTYN COINS
+TREASURY_USER_ID = "PLATFORM_TREASURY"  # Special treasury user ID
+
+# === FINANCE HELPER FUNCTIONS ===
+
+async def get_or_create_wallet(user_id: str, is_corporate: bool = False, organization_id: str = None) -> dict:
+    """Get existing wallet or create new one for user"""
+    wallet = await db.wallets.find_one({"user_id": user_id}, {"_id": 0})
+    
+    if not wallet:
+        new_wallet = Wallet(
+            user_id=user_id,
+            is_corporate=is_corporate,
+            organization_id=organization_id
+        )
+        wallet_dict = new_wallet.dict()
+        wallet_dict["created_at"] = wallet_dict["created_at"].isoformat()
+        wallet_dict["updated_at"] = wallet_dict["updated_at"].isoformat()
+        await db.wallets.insert_one(wallet_dict)
+        wallet = wallet_dict
+        del wallet["_id"] if "_id" in wallet else None
+    
+    return wallet
+
+async def get_or_create_treasury() -> dict:
+    """Get or create platform treasury wallet"""
+    treasury = await db.wallets.find_one({"is_treasury": True}, {"_id": 0})
+    
+    if not treasury:
+        treasury_wallet = Wallet(
+            user_id=TREASURY_USER_ID,
+            is_treasury=True,
+            coin_balance=0.0,
+            token_balance=0.0
+        )
+        treasury_dict = treasury_wallet.dict()
+        treasury_dict["created_at"] = treasury_dict["created_at"].isoformat()
+        treasury_dict["updated_at"] = treasury_dict["updated_at"].isoformat()
+        await db.wallets.insert_one(treasury_dict)
+        treasury = treasury_dict
+    
+    return treasury
+
+async def fetch_exchange_rates() -> dict:
+    """Fetch exchange rates from API (1 ALTYN COIN = 1 USD)"""
+    import httpx
+    
+    try:
+        # Try to get cached rates first (less than 1 hour old)
+        cached = await db.exchange_rates.find_one({"base": "USD"}, {"_id": 0})
+        if cached:
+            fetched_at = datetime.fromisoformat(cached["fetched_at"]) if isinstance(cached["fetched_at"], str) else cached["fetched_at"]
+            if datetime.now(timezone.utc) - fetched_at.replace(tzinfo=timezone.utc) < timedelta(hours=1):
+                return cached["rates"]
+        
+        # Fetch fresh rates from ExchangeRate.host API
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.exchangerate.host/latest",
+                params={"base": "USD", "symbols": "RUB,KZT"},
+                timeout=10.0
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                rates = data.get("rates", {})
+                
+                # Cache the rates
+                await db.exchange_rates.update_one(
+                    {"base": "USD"},
+                    {"$set": {
+                        "rates": rates,
+                        "fetched_at": datetime.now(timezone.utc).isoformat()
+                    }},
+                    upsert=True
+                )
+                
+                return rates
+    except Exception as e:
+        logger.error(f"Error fetching exchange rates: {e}")
+    
+    # Fallback rates if API fails
+    return {"RUB": 90.0, "KZT": 450.0}
+
+# === FINANCE API ENDPOINTS ===
+
+@api_router.get("/finance/wallet")
+async def get_my_wallet(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current user's wallet with balance and stats"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        wallet = await get_or_create_wallet(user_id)
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+        
+        # Calculate token percentage
+        total_tokens_in_circulation = await db.wallets.aggregate([
+            {"$group": {"_id": None, "total": {"$sum": "$token_balance"}}}
+        ]).to_list(1)
+        
+        total_tokens = total_tokens_in_circulation[0]["total"] if total_tokens_in_circulation else TOTAL_TOKENS
+        token_percentage = (wallet["token_balance"] / total_tokens * 100) if total_tokens > 0 else 0
+        
+        # Get pending dividends from treasury fees
+        treasury = await get_or_create_treasury()
+        pending_dividends = (treasury.get("coin_balance", 0) * token_percentage / 100) if token_percentage > 0 else 0
+        
+        return {
+            "success": True,
+            "wallet": {
+                **wallet,
+                "user_name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
+                "token_percentage": round(token_percentage, 6),
+                "pending_dividends": round(pending_dividends, 2)
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting wallet: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/transfer")
+async def transfer_assets(
+    request: TransferRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Transfer COINS or TOKENS to another user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        sender_id = payload.get("sub")
+        
+        # Validate amount
+        if request.amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be positive")
+        
+        # Find recipient by email
+        recipient = await db.users.find_one({"email": request.to_user_email}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1})
+        if not recipient:
+            raise HTTPException(status_code=404, detail="Recipient not found")
+        
+        if recipient["id"] == sender_id:
+            raise HTTPException(status_code=400, detail="Cannot transfer to yourself")
+        
+        # Get wallets
+        sender_wallet = await get_or_create_wallet(sender_id)
+        recipient_wallet = await get_or_create_wallet(recipient["id"])
+        treasury = await get_or_create_treasury()
+        
+        # Check balance
+        balance_field = "coin_balance" if request.asset_type == AssetType.COIN else "token_balance"
+        if sender_wallet[balance_field] < request.amount:
+            raise HTTPException(status_code=400, detail=f"Insufficient {request.asset_type.value} balance")
+        
+        # Calculate fee (only for COIN transfers)
+        fee_amount = request.amount * TRANSACTION_FEE_RATE if request.asset_type == AssetType.COIN else 0
+        net_amount = request.amount - fee_amount
+        
+        # Update balances
+        await db.wallets.update_one(
+            {"user_id": sender_id},
+            {"$inc": {balance_field: -request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        await db.wallets.update_one(
+            {"user_id": recipient["id"]},
+            {"$inc": {balance_field: net_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Add fee to treasury
+        if fee_amount > 0:
+            await db.wallets.update_one(
+                {"is_treasury": True},
+                {"$inc": {"coin_balance": fee_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+        
+        # Record transaction
+        sender_user = await db.users.find_one({"id": sender_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+        transaction = Transaction(
+            from_wallet_id=sender_wallet["id"],
+            to_wallet_id=recipient_wallet["id"],
+            from_user_id=sender_id,
+            to_user_id=recipient["id"],
+            amount=request.amount,
+            asset_type=request.asset_type,
+            transaction_type=TransactionType.TRANSFER,
+            fee_amount=fee_amount,
+            description=request.description
+        )
+        
+        tx_dict = transaction.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        await db.transactions.insert_one(tx_dict)
+        
+        return {
+            "success": True,
+            "transaction": {
+                "id": transaction.id,
+                "amount": request.amount,
+                "fee": fee_amount,
+                "net_amount": net_amount,
+                "recipient": f"{recipient['first_name']} {recipient['last_name']}",
+                "asset_type": request.asset_type.value
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error transferring assets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/transactions")
+async def get_transactions(
+    limit: int = 50,
+    offset: int = 0,
+    asset_type: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get user's transaction history"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        query = {"$or": [{"from_user_id": user_id}, {"to_user_id": user_id}]}
+        if asset_type:
+            query["asset_type"] = asset_type
+        
+        transactions = await db.transactions.find(query, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+        total = await db.transactions.count_documents(query)
+        
+        # Enrich with user names
+        enriched = []
+        for tx in transactions:
+            from_user = await db.users.find_one({"id": tx["from_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+            to_user = await db.users.find_one({"id": tx["to_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+            
+            tx["from_user_name"] = f"{from_user['first_name']} {from_user['last_name']}" if from_user else "System"
+            tx["to_user_name"] = f"{to_user['first_name']} {to_user['last_name']}" if to_user else "Treasury"
+            tx["is_incoming"] = tx["to_user_id"] == user_id
+            enriched.append(tx)
+        
+        return {
+            "success": True,
+            "transactions": enriched,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting transactions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/exchange-rates")
+async def get_exchange_rates():
+    """Get current exchange rates (1 ALTYN COIN = 1 USD)"""
+    try:
+        rates = await fetch_exchange_rates()
+        
+        return {
+            "success": True,
+            "base": "ALTYN",
+            "equivalent_to": "USD",
+            "rates": {
+                "USD": 1.0,
+                "RUB": rates.get("RUB", 90.0),
+                "KZT": rates.get("KZT", 450.0)
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting exchange rates: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/token-holders")
+async def get_token_holders(
+    limit: int = 20,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get list of TOKEN holders with their percentages"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Get all wallets with tokens
+        holders = await db.wallets.find(
+            {"token_balance": {"$gt": 0}},
+            {"_id": 0}
+        ).sort("token_balance", -1).limit(limit).to_list(limit)
+        
+        # Calculate total tokens
+        total = sum(h["token_balance"] for h in holders)
+        
+        # Enrich with user names and percentages
+        enriched = []
+        for holder in holders:
+            user = await db.users.find_one({"id": holder["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            enriched.append({
+                "user_id": holder["user_id"],
+                "user_name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
+                "token_balance": holder["token_balance"],
+                "percentage": round((holder["token_balance"] / total * 100) if total > 0 else 0, 4),
+                "total_dividends_received": holder.get("total_dividends_received", 0)
+            })
+        
+        return {
+            "success": True,
+            "holders": enriched,
+            "total_tokens": total,
+            "total_supply": TOTAL_TOKENS
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting token holders: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/treasury")
+async def get_treasury_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get platform treasury statistics"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        treasury = await get_or_create_treasury()
+        
+        # Get total coins in circulation
+        coin_stats = await db.wallets.aggregate([
+            {"$match": {"is_treasury": False}},
+            {"$group": {"_id": None, "total": {"$sum": "$coin_balance"}}}
+        ]).to_list(1)
+        
+        # Get emission history
+        emissions = await db.emissions.find({}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
+        
+        # Get dividend history
+        dividends = await db.dividend_payouts.find({}, {"_id": 0}).sort("distribution_date", -1).limit(10).to_list(10)
+        
+        return {
+            "success": True,
+            "treasury": {
+                "collected_fees": treasury.get("coin_balance", 0),
+                "total_coins_in_circulation": coin_stats[0]["total"] if coin_stats else 0,
+                "total_token_supply": TOTAL_TOKENS
+            },
+            "recent_emissions": emissions,
+            "recent_dividends": dividends
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting treasury stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/admin/emission")
+async def create_emission(
+    request: EmissionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Admin only: Create new ALTYN COIN emission"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is admin
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "role": 1})
+        if not user or user.get("role") != "ADMIN":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        if request.amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be positive")
+        
+        # Get admin's wallet
+        admin_wallet = await get_or_create_wallet(user_id)
+        
+        # Add coins to admin's wallet
+        await db.wallets.update_one(
+            {"user_id": user_id},
+            {"$inc": {"coin_balance": request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record emission
+        emission = Emission(
+            amount=request.amount,
+            created_by_user_id=user_id,
+            description=request.description or f"Emission of {request.amount:,.0f} ALTYN COINS"
+        )
+        
+        emission_dict = emission.dict()
+        emission_dict["created_at"] = emission_dict["created_at"].isoformat()
+        await db.emissions.insert_one(emission_dict)
+        
+        return {
+            "success": True,
+            "emission": {
+                "id": emission.id,
+                "amount": request.amount,
+                "description": emission.description
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating emission: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/admin/distribute-dividends")
+async def distribute_dividends(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin only: Distribute collected fees to TOKEN holders"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is admin
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "role": 1})
+        if not user or user.get("role") != "ADMIN":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        treasury = await get_or_create_treasury()
+        fees_to_distribute = treasury.get("coin_balance", 0)
+        
+        if fees_to_distribute <= 0:
+            raise HTTPException(status_code=400, detail="No fees to distribute")
+        
+        # Get all TOKEN holders
+        token_holders = await db.wallets.find(
+            {"token_balance": {"$gt": 0}, "is_treasury": False},
+            {"_id": 0}
+        ).to_list(10000)
+        
+        if not token_holders:
+            raise HTTPException(status_code=400, detail="No token holders found")
+        
+        # Calculate total tokens
+        total_tokens = sum(h["token_balance"] for h in token_holders)
+        
+        # Distribute proportionally
+        distribution_details = []
+        for holder in token_holders:
+            percentage = holder["token_balance"] / total_tokens
+            dividend_amount = fees_to_distribute * percentage
+            
+            # Update holder's wallet
+            await db.wallets.update_one(
+                {"user_id": holder["user_id"]},
+                {
+                    "$inc": {
+                        "coin_balance": dividend_amount,
+                        "total_dividends_received": dividend_amount
+                    },
+                    "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+                }
+            )
+            
+            # Record transaction
+            tx = Transaction(
+                from_wallet_id=treasury["id"],
+                to_wallet_id=holder["id"],
+                from_user_id=TREASURY_USER_ID,
+                to_user_id=holder["user_id"],
+                amount=dividend_amount,
+                asset_type=AssetType.COIN,
+                transaction_type=TransactionType.DIVIDEND,
+                description=f"Dividend payout ({percentage*100:.4f}% of fees)"
+            )
+            tx_dict = tx.dict()
+            tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+            await db.transactions.insert_one(tx_dict)
+            
+            distribution_details.append({
+                "user_id": holder["user_id"],
+                "amount": round(dividend_amount, 2),
+                "token_percentage": round(percentage * 100, 4)
+            })
+        
+        # Clear treasury
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$set": {"coin_balance": 0, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record payout
+        payout = DividendPayout(
+            total_fees_distributed=fees_to_distribute,
+            token_holders_count=len(token_holders),
+            created_by=user_id,
+            details=distribution_details
+        )
+        payout_dict = payout.dict()
+        payout_dict["distribution_date"] = payout_dict["distribution_date"].isoformat()
+        await db.dividend_payouts.insert_one(payout_dict)
+        
+        return {
+            "success": True,
+            "payout": {
+                "id": payout.id,
+                "total_distributed": fees_to_distribute,
+                "holders_count": len(token_holders),
+                "distribution_details": distribution_details
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error distributing dividends: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/admin/initialize-tokens")
+async def initialize_tokens(
+    user_email: str,
+    token_amount: float = TOTAL_TOKENS,
+    coin_amount: float = 1_000_000,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Admin only: Initialize TOKENS and COINS for a user (first time setup)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        admin_id = payload.get("sub")
+        
+        # Check if user is admin
+        admin = await db.users.find_one({"id": admin_id}, {"_id": 0, "role": 1})
+        if not admin or admin.get("role") != "ADMIN":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Find target user
+        target_user = await db.users.find_one({"email": user_email}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1})
+        if not target_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get or create wallet
+        wallet = await get_or_create_wallet(target_user["id"])
+        
+        # Update wallet with tokens and coins
+        await db.wallets.update_one(
+            {"user_id": target_user["id"]},
+            {
+                "$set": {
+                    "token_balance": token_amount,
+                    "coin_balance": coin_amount,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        # Record emission
+        emission = Emission(
+            amount=coin_amount,
+            created_by_user_id=admin_id,
+            description=f"Initial emission: {coin_amount:,.0f} COINS + {token_amount:,.0f} TOKENS to {target_user['first_name']} {target_user['last_name']}"
+        )
+        emission_dict = emission.dict()
+        emission_dict["created_at"] = emission_dict["created_at"].isoformat()
+        await db.emissions.insert_one(emission_dict)
+        
+        return {
+            "success": True,
+            "message": f"Initialized {token_amount:,.0f} TOKENS and {coin_amount:,.0f} COINS for {target_user['first_name']} {target_user['last_name']}"
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error initializing tokens: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/welcome-bonus/{user_id}")
+async def give_welcome_bonus(user_id: str):
+    """Internal: Give welcome bonus to new user (called during registration)"""
+    try:
+        # Check if user already has a wallet
+        existing_wallet = await db.wallets.find_one({"user_id": user_id}, {"_id": 0})
+        if existing_wallet:
+            return {"success": False, "message": "User already has wallet"}
+        
+        # Create wallet with welcome bonus
+        wallet = Wallet(
+            user_id=user_id,
+            coin_balance=WELCOME_BONUS_COINS
+        )
+        wallet_dict = wallet.dict()
+        wallet_dict["created_at"] = wallet_dict["created_at"].isoformat()
+        wallet_dict["updated_at"] = wallet_dict["updated_at"].isoformat()
+        await db.wallets.insert_one(wallet_dict)
+        
+        # Record transaction from treasury
+        treasury = await get_or_create_treasury()
+        tx = Transaction(
+            from_wallet_id=treasury["id"],
+            to_wallet_id=wallet.id,
+            from_user_id=TREASURY_USER_ID,
+            to_user_id=user_id,
+            amount=WELCOME_BONUS_COINS,
+            asset_type=AssetType.COIN,
+            transaction_type=TransactionType.WELCOME_BONUS,
+            description="Welcome bonus for new user"
+        )
+        tx_dict = tx.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        await db.transactions.insert_one(tx_dict)
+        
+        return {"success": True, "coins_given": WELCOME_BONUS_COINS}
+        
+    except Exception as e:
+        logger.error(f"Error giving welcome bonus: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/finance/marketplace/pay")
+async def pay_for_product(
+    request: PaymentRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Pay for a marketplace product with ALTYN COINS"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        buyer_id = payload.get("sub")
+        
+        # Get product
+        product = await db.marketplace_products.find_one({"id": request.product_id}, {"_id": 0})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        
+        if product["seller_id"] == buyer_id:
+            raise HTTPException(status_code=400, detail="Cannot buy your own product")
+        
+        # Get wallets
+        buyer_wallet = await get_or_create_wallet(buyer_id)
+        seller_wallet = await get_or_create_wallet(product["seller_id"])
+        treasury = await get_or_create_treasury()
+        
+        # Check balance
+        if buyer_wallet["coin_balance"] < request.amount:
+            raise HTTPException(status_code=400, detail="Insufficient ALTYN COIN balance")
+        
+        # Calculate fee
+        fee_amount = request.amount * TRANSACTION_FEE_RATE
+        net_amount = request.amount - fee_amount
+        
+        # Update balances
+        await db.wallets.update_one(
+            {"user_id": buyer_id},
+            {"$inc": {"coin_balance": -request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        await db.wallets.update_one(
+            {"user_id": product["seller_id"]},
+            {"$inc": {"coin_balance": net_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$inc": {"coin_balance": fee_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record transaction
+        tx = Transaction(
+            from_wallet_id=buyer_wallet["id"],
+            to_wallet_id=seller_wallet["id"],
+            from_user_id=buyer_id,
+            to_user_id=product["seller_id"],
+            amount=request.amount,
+            asset_type=AssetType.COIN,
+            transaction_type=TransactionType.PAYMENT,
+            fee_amount=fee_amount,
+            marketplace_product_id=request.product_id,
+            description=f"Payment for: {product.get('title', 'Product')}"
+        )
+        tx_dict = tx.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        await db.transactions.insert_one(tx_dict)
+        
+        # Update product status
+        await db.marketplace_products.update_one(
+            {"id": request.product_id},
+            {"$set": {"status": "SOLD", "buyer_id": buyer_id, "sold_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        return {
+            "success": True,
+            "payment": {
+                "transaction_id": tx.id,
+                "amount": request.amount,
+                "fee": fee_amount,
+                "seller_received": net_amount,
+                "product_title": product.get("title")
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing payment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/finance/corporate-wallet")
+async def create_corporate_wallet(
+    organization_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Create a corporate wallet for an organization"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is admin of the organization
+        org = await db.work_organizations.find_one({"id": organization_id}, {"_id": 0})
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        member = await db.work_members.find_one(
+            {"organization_id": organization_id, "user_id": user_id},
+            {"_id": 0}
+        )
+        
+        if not member or not member.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Only organization admins can create corporate wallets")
+        
+        # Check if corporate wallet already exists
+        existing = await db.wallets.find_one(
+            {"organization_id": organization_id, "is_corporate": True},
+            {"_id": 0}
+        )
+        
+        if existing:
+            return {"success": True, "wallet": existing, "message": "Corporate wallet already exists"}
+        
+        # Create corporate wallet
+        corporate_wallet = Wallet(
+            user_id=f"ORG_{organization_id}",
+            is_corporate=True,
+            organization_id=organization_id
+        )
+        
+        wallet_dict = corporate_wallet.dict()
+        wallet_dict["created_at"] = wallet_dict["created_at"].isoformat()
+        wallet_dict["updated_at"] = wallet_dict["updated_at"].isoformat()
+        await db.wallets.insert_one(wallet_dict)
+        
+        return {
+            "success": True,
+            "wallet": {
+                "id": corporate_wallet.id,
+                "organization_id": organization_id,
+                "organization_name": org.get("name"),
+                "coin_balance": 0,
+                "token_balance": 0
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating corporate wallet: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/portfolio")
+async def get_portfolio(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get user's complete financial portfolio"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        wallet = await get_or_create_wallet(user_id)
+        rates = await fetch_exchange_rates()
+        
+        # Calculate values
+        coin_usd = wallet["coin_balance"]
+        coin_rub = coin_usd * rates.get("RUB", 90.0)
+        coin_kzt = coin_usd * rates.get("KZT", 450.0)
+        
+        # Token stats
+        total_tokens_result = await db.wallets.aggregate([
+            {"$match": {"is_treasury": False}},
+            {"$group": {"_id": None, "total": {"$sum": "$token_balance"}}}
+        ]).to_list(1)
+        total_tokens = total_tokens_result[0]["total"] if total_tokens_result else TOTAL_TOKENS
+        token_percentage = (wallet["token_balance"] / total_tokens * 100) if total_tokens > 0 else 0
+        
+        # Recent transactions
+        recent_tx = await db.transactions.find(
+            {"$or": [{"from_user_id": user_id}, {"to_user_id": user_id}]},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(5).to_list(5)
+        
+        # Treasury for pending dividends
+        treasury = await get_or_create_treasury()
+        pending_dividends = treasury.get("coin_balance", 0) * (token_percentage / 100)
+        
+        return {
+            "success": True,
+            "portfolio": {
+                "coin_balance": {
+                    "amount": wallet["coin_balance"],
+                    "usd": coin_usd,
+                    "rub": round(coin_rub, 2),
+                    "kzt": round(coin_kzt, 2)
+                },
+                "token_balance": {
+                    "amount": wallet["token_balance"],
+                    "percentage": round(token_percentage, 6),
+                    "total_supply": TOTAL_TOKENS
+                },
+                "dividends": {
+                    "total_received": wallet.get("total_dividends_received", 0),
+                    "pending": round(pending_dividends, 2)
+                },
+                "recent_transactions": recent_tx
+            },
+            "exchange_rates": {
+                "base": "ALTYN (= USD)",
+                "RUB": rates.get("RUB", 90.0),
+                "KZT": rates.get("KZT", 450.0)
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== END FINANCES MODULE =====
+
 @api_router.get("/health")
 async def health_check():
     return {
