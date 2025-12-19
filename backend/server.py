@@ -22361,6 +22361,8 @@ class Event(BaseModel):
     category_id: str
     cover_image: Optional[str] = None
     images: List[str] = []
+    youtube_url: Optional[str] = None  # YouTube video URL
+    youtube_video_id: Optional[str] = None  # Extracted YouTube video ID
     
     # Location
     city: str
@@ -22375,6 +22377,12 @@ class Event(BaseModel):
     start_date: datetime
     end_date: Optional[datetime] = None
     timezone: str = "Europe/Moscow"
+    
+    # Recurring Events
+    is_recurring: bool = False
+    recurrence_pattern: Optional[str] = None  # weekly, monthly, custom
+    recurrence_end_date: Optional[datetime] = None
+    parent_event_id: Optional[str] = None  # For recurring event instances
     
     # Settings
     visibility: EventVisibility = EventVisibility.PUBLIC
@@ -22392,10 +22400,42 @@ class Event(BaseModel):
     maybe_count: int = 0
     waitlist_count: int = 0
     view_count: int = 0
+    reviews_count: int = 0
+    average_rating: float = 0.0
+    photos_count: int = 0
+    
+    # Co-organizers
+    co_organizer_ids: List[str] = []
+    
+    # QR Check-in
+    checkin_code: Optional[str] = None
     
     tags: List[str] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EventReview(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    user_id: str
+    rating: int  # 1-5
+    comment: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EventPhoto(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    user_id: str
+    photo_url: str
+    caption: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EventChatMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    user_id: str
+    message: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class EventAttendee(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
