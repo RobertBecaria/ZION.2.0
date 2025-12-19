@@ -22612,6 +22612,8 @@ async def create_interest_group(
             "joined_at": datetime.now(timezone.utc).isoformat()
         })
         
+        # Remove MongoDB _id before returning
+        group_dict.pop("_id", None)
         return {"success": True, "group": group_dict}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
