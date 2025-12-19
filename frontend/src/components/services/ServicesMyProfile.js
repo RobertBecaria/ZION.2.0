@@ -191,7 +191,7 @@ const ServicesMyProfile = ({
         <div className="no-organizations-warning">
           <AlertCircle size={48} style={{ color: '#f59e0b' }} />
           <h3>Необходима организация</h3>
-          <p>Для создания услуг вам нужно сначала создать или присоединиться к организации в разделе "Организации".</p>
+          <p>Для создания услуг вам нужно сначала создать или присоединиться к организации в разделе «Организации».</p>
           <button className="go-to-orgs-btn" style={{ borderColor: moduleColor, color: moduleColor }}>
             <Building2 size={18} />
             Перейти к организациям
