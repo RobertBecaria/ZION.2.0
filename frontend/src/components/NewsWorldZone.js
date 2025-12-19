@@ -13,7 +13,8 @@ const NewsWorldZone = ({
   moduleColor = '#1D4ED8',
   onViewFriends,
   onViewFollowers,
-  onViewFollowing 
+  onViewFollowing,
+  onViewPeopleDiscovery
 }) => {
   const [socialStats, setSocialStats] = useState({
     friends_count: 0,
