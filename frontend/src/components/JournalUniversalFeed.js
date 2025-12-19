@@ -36,10 +36,11 @@ const JournalUniversalFeed = ({
   ];
 
   // Re-fetch posts when external filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPosts();
   }, [schoolFilter, externalAudienceFilter]);
-     
+
 
   const fetchPosts = async () => {
     try {

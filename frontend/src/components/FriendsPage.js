@@ -36,11 +36,13 @@ const FriendsPage = ({
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadAllData();
     loadSuggestions();
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (searchQuery.length >= 2) {
       searchUsers();

@@ -72,6 +72,7 @@ const NewsEventsPanel = ({
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEvents();
   }, [channelId, BACKEND_URL]);
