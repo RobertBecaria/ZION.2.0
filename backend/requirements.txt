@@ -1,6 +1,10 @@
 aiofiles==24.1.0
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.2
+aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==4.10.0
+attrs==25.4.0
 bcrypt==4.0.1
 black==25.1.0
 boto3==1.40.21
@@ -15,7 +19,10 @@ ecdsa==0.19.1
 email-validator==2.3.0
 fastapi==0.110.1
 flake8==7.3.0
+frozenlist==1.8.0
 h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
 idna==3.10
 iniconfig==2.1.0
 isort==6.0.1
@@ -25,6 +32,7 @@ markdown-it-py==4.0.0
 mccabe==0.7.0
 mdurl==0.1.2
 motor==3.3.1
+multidict==6.7.0
 mypy==1.17.1
 mypy_extensions==1.1.0
 numpy==2.3.2
@@ -35,6 +43,7 @@ passlib==1.7.4
 pathspec==0.12.1
 platformdirs==4.4.0
 pluggy==1.6.0
+propcache==0.4.1
 pyasn1==0.6.1
 pycodestyle==2.14.0
 pycparser==2.22
@@ -68,4 +77,5 @@ tzdata==2025.2
 urllib3==2.5.0
 uvicorn==0.25.0
 watchfiles==1.1.0
-aiohttp==3.13.2
+websockets==15.0.1
+yarl==1.22.0
