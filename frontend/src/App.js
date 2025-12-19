@@ -1255,7 +1255,24 @@ function Dashboard() {
                           </>
                         )}
 
-                        {(activeModule === 'finance' || activeModule === 'events') && (
+                        {/* FINANCE MODULE - ALTYN Banking System */}
+                        {activeModule === 'finance' && (
+                          <>
+                            {(activeView === 'wallet' || activeView === 'wall' || activeView === 'feed') ? (
+                              <WalletDashboard
+                                user={user}
+                                moduleColor={currentModule.color}
+                              />
+                            ) : (
+                              <WalletDashboard
+                                user={user}
+                                moduleColor={currentModule.color}
+                              />
+                            )}
+                          </>
+                        )}
+
+                        {activeModule === 'events' && (
                           <>
                             {(activeView === 'wall' || activeView === 'feed') ? (
                               <UniversalWall
