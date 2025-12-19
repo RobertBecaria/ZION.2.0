@@ -141,6 +141,13 @@ function Dashboard() {
   // Services Module State
   const [selectedServiceListing, setSelectedServiceListing] = useState(null);
   
+  // Marketplace Module State (ВЕЩИ)
+  const [selectedMarketplaceProduct, setSelectedMarketplaceProduct] = useState(null);
+  const [editMarketplaceProduct, setEditMarketplaceProduct] = useState(null);
+  const [selectedInventoryCategory, setSelectedInventoryCategory] = useState(null);
+  const [editInventoryItem, setEditInventoryItem] = useState(null);
+  const [listForSaleItem, setListForSaleItem] = useState(null);
+  
   // Track last active view per module to preserve navigation state
   const [moduleViewHistory, setModuleViewHistory] = useState({});
   
