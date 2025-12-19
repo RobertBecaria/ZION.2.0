@@ -30,6 +30,7 @@ const ClassSchedule = ({ selectedSchool, role, onBack }) => {
     { number: 7, start: '14:00', end: '14:45' }
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (role === 'parent') {
       fetchChildren();
@@ -38,6 +39,7 @@ const ClassSchedule = ({ selectedSchool, role, onBack }) => {
     }
   }, [role, selectedSchool]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedChild) {
       fetchSchedule(selectedChild.grade, selectedChild.assigned_class);
