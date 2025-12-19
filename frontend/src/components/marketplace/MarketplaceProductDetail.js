@@ -463,27 +463,139 @@ const MarketplaceProductDetail = ({
             {/* Modal Body */}
             <div style={{ padding: '24px' }}>
               {paymentSuccess ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <CheckCircle size={64} style={{ color: '#10B981', marginBottom: '16px' }} />
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '20px', color: '#1e293b' }}>Оплата успешна!</h4>
-                  <p style={{ color: '#64748b', margin: '0 0 20px 0' }}>Товар "{product.title}" успешно оплачен</p>
-                  <button
-                    onClick={() => {
-                      setShowPaymentModal(false);
-                      setPaymentSuccess(false);
-                    }}
-                    style={{
-                      padding: '12px 24px',
-                      background: '#10B981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Отлично!
-                  </button>
+                <div style={{ padding: '0' }}>
+                  {/* Success Header */}
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <CheckCircle size={48} style={{ color: '#10B981', marginBottom: '12px' }} />
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#1e293b' }}>Оплата успешна!</h4>
+                    <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Транзакция завершена</p>
+                  </div>
+                  
+                  {/* Receipt */}
+                  <div style={{
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginBottom: '20px',
+                    border: '1px dashed #cbd5e1'
+                  }}>
+                    <div style={{ 
+                      textAlign: 'center', 
+                      borderBottom: '1px solid #e2e8f0', 
+                      paddingBottom: '12px', 
+                      marginBottom: '16px' 
+                    }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Квитанция об оплате
+                      </span>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                        № {paymentReceipt?.receipt_id?.slice(0, 8).toUpperCase() || '---'}
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>{product.title}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        {new Date(paymentReceipt?.date || Date.now()).toLocaleString('ru-RU', {
+                          day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    
+                    <div style={{ fontSize: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Покупатель:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.buyer_name || '---'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Продавец:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.seller_name || '---'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Сумма:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.item_price?.toLocaleString('ru-RU')} AC</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Комиссия ({paymentReceipt?.fee_rate}):</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.fee_amount?.toFixed(2)} AC</span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        paddingTop: '12px', 
+                        borderTop: '1px solid #e2e8f0',
+                        fontWeight: '700',
+                        fontSize: '16px'
+                      }}>
+                        <span style={{ color: '#1e293b' }}>Итого оплачено:</span>
+                        <span style={{ color: '#F59E0B' }}>{paymentReceipt?.total_paid?.toLocaleString('ru-RU')} AC</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      marginTop: '16px', 
+                      textAlign: 'center',
+                      padding: '8px',
+                      background: '#ECFDF5',
+                      borderRadius: '8px'
+                    }}>
+                      <span style={{ 
+                        color: '#10B981', 
+                        fontSize: '12px', 
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}>
+                        <CheckCircle size={14} />
+                        {paymentReceipt?.status === 'COMPLETED' ? 'Оплата завершена' : 'Обработка'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={() => window.location.href = '/?module=finance'}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#f1f5f9',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Wallet size={16} />
+                      Мой кошелёк
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPaymentModal(false);
+                        setPaymentSuccess(false);
+                        setPaymentReceipt(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#10B981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Отлично!
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
