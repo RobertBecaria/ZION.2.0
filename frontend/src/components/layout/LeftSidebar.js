@@ -293,6 +293,107 @@ const LeftSidebar = ({
             <div className="sidebar-divider"></div>
           </>
         )}
+
+        {/* ==================== MARKETPLACE MODULE (ВЕЩИ) ==================== */}
+        {activeModule === 'marketplace' && (
+          <>
+            <div className="sidebar-divider" style={getDividerStyle('#BE185D')}></div>
+            
+            {/* MARKETPLACE Section */}
+            <button 
+              className={`profile-btn ${activeView === 'marketplace-search' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'marketplace-search', '#BE185D')}
+              onClick={() => setActiveView('marketplace-search')}
+            >
+              <Store size={18} />
+              <span>МАРКЕТПЛЕЙС</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#BE185D')}></div>
+            
+            {/* MY THINGS Section */}
+            <div className="nav-group-label" style={{ color: '#BE185D', padding: '8px 12px', fontSize: '11px' }}>
+              МОИ ВЕЩИ
+            </div>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-smart' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-smart', '#3B82F6')}
+              onClick={() => setActiveView('my-things-smart')}
+            >
+              <Smartphone size={18} />
+              <span>Умные Вещи</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-wardrobe' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-wardrobe', '#EC4899')}
+              onClick={() => setActiveView('my-things-wardrobe')}
+            >
+              <Shirt size={18} />
+              <span>Мой Гардероб</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-garage' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-garage', '#F59E0B')}
+              onClick={() => setActiveView('my-things-garage')}
+            >
+              <Car size={18} />
+              <span>Мой Гараж</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-home' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-home', '#10B981')}
+              onClick={() => setActiveView('my-things-home')}
+            >
+              <HomeIcon size={18} />
+              <span>Мой Дом</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-electronics' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-electronics', '#8B5CF6')}
+              onClick={() => setActiveView('my-things-electronics')}
+            >
+              <Laptop size={18} />
+              <span>Моя Электроника</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'my-things-collection' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'my-things-collection', '#F97316')}
+              onClick={() => setActiveView('my-things-collection')}
+            >
+              <Palette size={18} />
+              <span>Моя Коллекция</span>
+            </button>
+            
+            <div className="sidebar-divider" style={getDividerStyle('#BE185D')}></div>
+            
+            {/* User's Listings & Favorites */}
+            <button 
+              className={`profile-btn ${activeView === 'marketplace-my-listings' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'marketplace-my-listings', '#BE185D')}
+              onClick={() => setActiveView('marketplace-my-listings')}
+            >
+              <Package size={18} />
+              <span>МОИ ОБЪЯВЛЕНИЯ</span>
+            </button>
+            
+            <button 
+              className={`profile-btn ${activeView === 'marketplace-favorites' ? 'primary' : 'secondary'}`}
+              style={getButtonStyle(activeView === 'marketplace-favorites', '#BE185D')}
+              onClick={() => setActiveView('marketplace-favorites')}
+            >
+              <Heart size={18} />
+              <span>ИЗБРАННОЕ</span>
+            </button>
+            
+            <div className="sidebar-divider"></div>
+          </>
+        )}
       </div>
 
       {/* Navigation Links */}
