@@ -377,7 +377,6 @@ function Dashboard() {
       fetchChatGroups();
       fetchMediaStats();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleGroupSelect = (groupData) => {
