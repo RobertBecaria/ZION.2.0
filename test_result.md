@@ -208,7 +208,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "FINANCES Module Complete Testing"
+    - "Login and Navigate to Finance Module"
+    - "Balance Cards Display"
+    - "Navigation Tabs Functionality"
+    - "Send Modal Functionality"
+    - "Admin Panel Access and Features"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
