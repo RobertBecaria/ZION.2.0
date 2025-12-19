@@ -29,7 +29,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://altyn-finance.preview.emergentagent.com/api"
+BACKEND_URL = "https://goodwill-events.preview.emergentagent.com/api"
 
 class ServicesBookingTester:
     def __init__(self):

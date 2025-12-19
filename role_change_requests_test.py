@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class RoleChangeRequestsAPITester:
-    def __init__(self, base_url="https://altyn-finance.preview.emergentagent.com"):
+    def __init__(self, base_url="https://goodwill-events.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None

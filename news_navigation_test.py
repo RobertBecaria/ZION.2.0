@@ -13,7 +13,7 @@ import sys
 import os
 
 # Configuration
-BASE_URL = "https://altyn-finance.preview.emergentagent.com/api"
+BASE_URL = "https://goodwill-events.preview.emergentagent.com/api"
 TEST_EMAIL = "admin@test.com"
 TEST_PASSWORD = "testpassword123"
 

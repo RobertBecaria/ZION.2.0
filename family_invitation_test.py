@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 import uuid
 
 class FamilyInvitationSystemTester:
-    def __init__(self, base_url="https://altyn-finance.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://goodwill-events.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
