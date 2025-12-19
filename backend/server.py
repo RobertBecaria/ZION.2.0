@@ -21865,6 +21865,329 @@ async def create_corporate_wallet(
         logger.error(f"Error creating corporate wallet: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/finance/corporate/wallets")
+async def get_user_corporate_wallets(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all corporate wallets for organizations user is admin of"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Find all organizations where user is admin
+        memberships = await db.work_members.find(
+            {"user_id": user_id, "is_admin": True, "is_active": True},
+            {"_id": 0}
+        ).to_list(100)
+        
+        corporate_wallets = []
+        for membership in memberships:
+            org_id = membership.get("organization_id")
+            org = await db.work_organizations.find_one({"id": org_id}, {"_id": 0})
+            if not org:
+                continue
+                
+            # Get or check corporate wallet
+            wallet = await db.wallets.find_one(
+                {"organization_id": org_id, "is_corporate": True},
+                {"_id": 0}
+            )
+            
+            corporate_wallets.append({
+                "organization_id": org_id,
+                "organization_name": org.get("name"),
+                "organization_logo": org.get("logo_url"),
+                "has_wallet": wallet is not None,
+                "wallet": {
+                    "id": wallet.get("id") if wallet else None,
+                    "coin_balance": wallet.get("coin_balance", 0) if wallet else 0,
+                    "created_at": wallet.get("created_at") if wallet else None
+                } if wallet else None
+            })
+        
+        return {"success": True, "corporate_wallets": corporate_wallets}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error getting corporate wallets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/corporate/wallet/{organization_id}")
+async def get_corporate_wallet(
+    organization_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get corporate wallet details for an organization"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is member of the organization
+        member = await db.work_members.find_one(
+            {"organization_id": organization_id, "user_id": user_id, "is_active": True},
+            {"_id": 0}
+        )
+        
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        
+        org = await db.work_organizations.find_one({"id": organization_id}, {"_id": 0})
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+        
+        wallet = await db.wallets.find_one(
+            {"organization_id": organization_id, "is_corporate": True},
+            {"_id": 0}
+        )
+        
+        if not wallet:
+            raise HTTPException(status_code=404, detail="Corporate wallet not found. Please create one first.")
+        
+        return {
+            "success": True,
+            "wallet": {
+                "id": wallet.get("id"),
+                "organization_id": organization_id,
+                "organization_name": org.get("name"),
+                "coin_balance": wallet.get("coin_balance", 0),
+                "total_dividends_received": wallet.get("total_dividends_received", 0),
+                "created_at": wallet.get("created_at"),
+                "is_admin": member.get("is_admin", False)
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting corporate wallet: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class CorporateTransferRequest(BaseModel):
+    """Request to transfer from corporate wallet"""
+    organization_id: str
+    to_user_email: Optional[str] = None
+    to_organization_id: Optional[str] = None
+    amount: float
+    description: Optional[str] = None
+
+@api_router.post("/finance/corporate/transfer")
+async def corporate_transfer(
+    request: CorporateTransferRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Transfer ALTYN COINs from corporate wallet"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is admin of the source organization
+        member = await db.work_members.find_one(
+            {"organization_id": request.organization_id, "user_id": user_id, "is_admin": True},
+            {"_id": 0}
+        )
+        
+        if not member:
+            raise HTTPException(status_code=403, detail="Only organization admins can make corporate transfers")
+        
+        # Get source corporate wallet
+        source_wallet = await db.wallets.find_one(
+            {"organization_id": request.organization_id, "is_corporate": True},
+            {"_id": 0}
+        )
+        
+        if not source_wallet:
+            raise HTTPException(status_code=404, detail="Corporate wallet not found")
+        
+        if source_wallet["coin_balance"] < request.amount:
+            raise HTTPException(status_code=400, detail="Insufficient corporate balance")
+        
+        # Determine recipient
+        if request.to_user_email:
+            # Transfer to personal wallet
+            recipient = await db.users.find_one({"email": request.to_user_email}, {"_id": 0})
+            if not recipient:
+                raise HTTPException(status_code=404, detail="Recipient user not found")
+            
+            recipient_wallet = await get_or_create_wallet(recipient["id"])
+            to_wallet_id = recipient_wallet["id"]
+            to_user_id = recipient["id"]
+            recipient_name = f"{recipient.get('first_name', '')} {recipient.get('last_name', '')}".strip()
+            
+        elif request.to_organization_id:
+            # Transfer to another corporate wallet
+            target_wallet = await db.wallets.find_one(
+                {"organization_id": request.to_organization_id, "is_corporate": True},
+                {"_id": 0}
+            )
+            if not target_wallet:
+                raise HTTPException(status_code=404, detail="Recipient corporate wallet not found")
+            
+            target_org = await db.work_organizations.find_one({"id": request.to_organization_id}, {"_id": 0})
+            to_wallet_id = target_wallet["id"]
+            to_user_id = f"ORG_{request.to_organization_id}"
+            recipient_name = target_org.get("name", "Unknown Organization")
+        else:
+            raise HTTPException(status_code=400, detail="Must specify either to_user_email or to_organization_id")
+        
+        # Calculate fee (0.1%)
+        fee_amount = request.amount * TRANSACTION_FEE_RATE
+        net_amount = request.amount - fee_amount
+        
+        # Get source organization name
+        source_org = await db.work_organizations.find_one({"id": request.organization_id}, {"_id": 0})
+        source_name = source_org.get("name", "Unknown Organization")
+        
+        # Update balances
+        await db.wallets.update_one(
+            {"id": source_wallet["id"]},
+            {"$inc": {"coin_balance": -request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        await db.wallets.update_one(
+            {"id": to_wallet_id},
+            {"$inc": {"coin_balance": net_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Fee to treasury
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$inc": {"coin_balance": fee_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record transaction
+        tx = Transaction(
+            from_wallet_id=source_wallet["id"],
+            to_wallet_id=to_wallet_id,
+            from_user_id=f"ORG_{request.organization_id}",
+            to_user_id=to_user_id,
+            amount=request.amount,
+            asset_type=AssetType.COIN,
+            transaction_type=TransactionType.TRANSFER,
+            fee_amount=fee_amount,
+            description=request.description or f"Corporate transfer from {source_name}"
+        )
+        tx_dict = tx.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        tx_dict["is_corporate_transfer"] = True
+        tx_dict["source_organization_id"] = request.organization_id
+        tx_dict["source_organization_name"] = source_name
+        if request.to_organization_id:
+            tx_dict["target_organization_id"] = request.to_organization_id
+        await db.transactions.insert_one(tx_dict)
+        
+        return {
+            "success": True,
+            "transaction": {
+                "id": tx.id,
+                "amount": request.amount,
+                "fee": fee_amount,
+                "recipient_received": net_amount,
+                "from": source_name,
+                "to": recipient_name
+            }
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in corporate transfer: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/finance/corporate/transactions/{organization_id}")
+async def get_corporate_transactions(
+    organization_id: str,
+    skip: int = 0,
+    limit: int = 50,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get transaction history for corporate wallet"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check if user is member of the organization
+        member = await db.work_members.find_one(
+            {"organization_id": organization_id, "user_id": user_id, "is_active": True},
+            {"_id": 0}
+        )
+        
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        
+        # Get corporate wallet
+        wallet = await db.wallets.find_one(
+            {"organization_id": organization_id, "is_corporate": True},
+            {"_id": 0}
+        )
+        
+        if not wallet:
+            raise HTTPException(status_code=404, detail="Corporate wallet not found")
+        
+        # Get transactions where this corporate wallet is sender or receiver
+        transactions = await db.transactions.find({
+            "$or": [
+                {"from_wallet_id": wallet["id"]},
+                {"to_wallet_id": wallet["id"]}
+            ]
+        }, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        
+        # Enrich transaction data
+        enriched_transactions = []
+        for tx in transactions:
+            is_outgoing = tx.get("from_wallet_id") == wallet["id"]
+            
+            # Get counterparty info
+            if is_outgoing:
+                counterparty_id = tx.get("to_user_id", "")
+            else:
+                counterparty_id = tx.get("from_user_id", "")
+            
+            if counterparty_id.startswith("ORG_"):
+                org_id = counterparty_id.replace("ORG_", "")
+                org = await db.work_organizations.find_one({"id": org_id}, {"_id": 0, "name": 1})
+                counterparty_name = org.get("name", "Unknown Organization") if org else "Unknown Organization"
+                counterparty_type = "organization"
+            elif counterparty_id == TREASURY_USER_ID:
+                counterparty_name = "Казначейство платформы"
+                counterparty_type = "treasury"
+            else:
+                user = await db.users.find_one({"id": counterparty_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+                counterparty_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() if user else "Unknown User"
+                counterparty_type = "user"
+            
+            enriched_transactions.append({
+                "id": tx.get("id"),
+                "type": "outgoing" if is_outgoing else "incoming",
+                "amount": tx.get("amount"),
+                "fee_amount": tx.get("fee_amount", 0),
+                "counterparty_name": counterparty_name,
+                "counterparty_type": counterparty_type,
+                "description": tx.get("description"),
+                "created_at": tx.get("created_at"),
+                "transaction_type": tx.get("transaction_type")
+            })
+        
+        return {"success": True, "transactions": enriched_transactions}
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting corporate transactions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/finance/portfolio")
 async def get_portfolio(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get user's complete financial portfolio"""
