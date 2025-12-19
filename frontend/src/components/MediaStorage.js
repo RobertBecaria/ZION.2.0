@@ -75,7 +75,7 @@ const MediaStorage = ({
   };
 
   // Fetch media files
-  const fetchMedia = useCallback(async () => {
+  const fetchMedia = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
@@ -115,7 +115,7 @@ const MediaStorage = ({
     } finally {
       setLoading(false);
     }
-  }, [mediaType, backendUrl, onModuleCountsUpdate]);
+  };
 
   // Handle file upload
   const handleFileUpload = async (files) => {
