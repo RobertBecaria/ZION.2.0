@@ -12,6 +12,7 @@ import TransactionHistory from './TransactionHistory';
 import TokenPortfolio from './TokenPortfolio';
 import ExchangeRates from './ExchangeRates';
 import AdminFinance from './AdminFinance';
+import CorporateWallets from './CorporateWallets';
 
 const WalletDashboard = ({ user, moduleColor = '#A16207' }) => {
   const [wallet, setWallet] = useState(null);
