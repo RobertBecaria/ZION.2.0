@@ -3,7 +3,7 @@
  * Events panel specifically for the NEWS module
  * Shows events from subscribed channels, friends, and personal events
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Calendar, Clock, X, Check, Bell, BellOff,
   Film, Video, Mic, Globe, Megaphone, MessageCircle,
