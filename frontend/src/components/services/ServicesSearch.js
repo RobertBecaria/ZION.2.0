@@ -1,14 +1,57 @@
 /**
  * ServicesSearch Component
- * Main search and discovery page for services with 2GIS map integration
+ * Main search and discovery page for services with OpenStreetMap integration
  */
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Filter, MapPin, Grid, List, X, ChevronDown, Map as MapIcon, Navigation } from 'lucide-react';
-import { load } from '@2gis/mapgl';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-defaulticon-compatibility';
+import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css';
 import ServiceCard from './ServiceCard';
 import ServiceCategories from './ServiceCategories';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Custom marker icon for services
+const serviceIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// User location marker icon
+const userLocationIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Component to handle map center changes
+const MapController = ({ center, selectedListing }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (selectedListing && selectedListing.latitude && selectedListing.longitude) {
+      map.flyTo([selectedListing.latitude, selectedListing.longitude], 16, { duration: 0.5 });
+    }
+  }, [map, selectedListing]);
+
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [map, center]);
+
+  return null;
+};
 
 const ServicesSearch = ({ 
   user, 
@@ -29,12 +72,6 @@ const ServicesSearch = ({
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([55.7558, 37.6173]); // Moscow default
   const [selectedMapListing, setSelectedMapListing] = useState(null);
-  
-  // 2GIS Map refs
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const mapglAPIRef = useRef(null);
-  const markersRef = useRef([]);
 
   // Get user location
   useEffect(() => {
