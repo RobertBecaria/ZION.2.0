@@ -20907,7 +20907,8 @@ async def get_or_create_wallet(user_id: str, is_corporate: bool = False, organiz
         wallet_dict["updated_at"] = wallet_dict["updated_at"].isoformat()
         await db.wallets.insert_one(wallet_dict)
         wallet = wallet_dict
-        del wallet["_id"] if "_id" in wallet else None
+        if "_id" in wallet:
+            del wallet["_id"]
     
     return wallet
 
