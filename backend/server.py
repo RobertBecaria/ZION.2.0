@@ -21758,6 +21758,10 @@ async def pay_for_service(
                 {"$set": {"payment_status": "PAID", "payment_transaction_id": tx.id, "paid_at": datetime.now(timezone.utc).isoformat()}}
             )
         
+        # Get buyer and seller names for receipt
+        buyer_user = await db.users.find_one({"id": buyer_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+        seller_user = await db.users.find_one({"id": seller_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+        
         return {
             "success": True,
             "payment": {
@@ -21765,7 +21769,24 @@ async def pay_for_service(
                 "amount": request.amount,
                 "fee": fee_amount,
                 "seller_received": net_amount,
-                "service_name": service.get("name")
+                "service_name": service.get("name"),
+                "service_id": request.service_id,
+                "booking_id": request.booking_id
+            },
+            "receipt": {
+                "receipt_id": tx.id,
+                "date": datetime.now(timezone.utc).isoformat(),
+                "type": "SERVICE_PAYMENT",
+                "buyer_name": f"{buyer_user.get('first_name', '')} {buyer_user.get('last_name', '')}".strip() if buyer_user else "Unknown",
+                "seller_name": f"{seller_user.get('first_name', '')} {seller_user.get('last_name', '')}".strip() if seller_user else "Unknown",
+                "item_title": service.get("name"),
+                "item_price": request.amount,
+                "fee_amount": fee_amount,
+                "fee_rate": "0.1%",
+                "total_paid": request.amount,
+                "seller_received": net_amount,
+                "currency": "ALTYN COIN (AC)",
+                "status": "COMPLETED"
             }
         }
         
