@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, MapPin, Clock, Coins, Plus, X, Globe } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Calendar, MapPin, Clock, Coins, Plus, X, Globe, Image, Youtube, Users, RefreshCw } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -14,14 +14,20 @@ const GoodWillEventForm = ({
   const [myGroups, setMyGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category_id: '',
     group_id: '',
+    cover_image: '',
+    youtube_url: '',
     city: '',
     address: '',
     venue_name: '',
+    latitude: null,
+    longitude: null,
     is_online: false,
     online_link: '',
     start_date: '',
@@ -32,7 +38,10 @@ const GoodWillEventForm = ({
     capacity: 0,
     enable_waitlist: true,
     is_free: true,
-    ticket_types: []
+    ticket_types: [],
+    is_recurring: false,
+    recurrence_pattern: '',
+    co_organizer_ids: []
   });
 
   useEffect(() => {
