@@ -58,7 +58,9 @@ const ServiceListingForm = ({
     booking_duration_minutes: listing?.booking_duration_minutes || 60,
     working_hours: listing?.working_hours || {},
     tags: listing?.tags || [],
-    images: listing?.images || []
+    images: listing?.images || [],
+    accept_altyn: listing?.accept_altyn || false,
+    altyn_price: listing?.altyn_price || ''
   });
 
   // Fetch categories
