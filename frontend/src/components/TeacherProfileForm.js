@@ -25,6 +25,7 @@ function TeacherProfileForm({ organizationId, onClose, onSave, moduleColor = '#e
   const [subjectSearch, setSubjectSearch] = useState('');
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchSchoolConstants();
     fetchCurrentMember();
