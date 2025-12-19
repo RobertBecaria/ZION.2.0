@@ -60,6 +60,25 @@ const MarketplaceProductDetail = ({
     }
   }, [productId]);
 
+  // Fetch wallet balance for ALTYN payment
+  useEffect(() => {
+    const fetchWallet = async () => {
+      if (!token) return;
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/finance/wallet`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setWalletBalance(data.wallet?.coin_balance || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching wallet:', error);
+      }
+    };
+    fetchWallet();
+  }, [token]);
+
   const handleToggleFavorite = async () => {
     if (!token) return;
     try {
@@ -73,6 +92,47 @@ const MarketplaceProductDetail = ({
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const handleAltynPayment = async () => {
+    if (!token || !product?.altyn_price) return;
+    
+    setPaymentLoading(true);
+    setPaymentError(null);
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/finance/marketplace/pay`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          amount: product.altyn_price
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setPaymentSuccess(true);
+        // Refresh wallet balance
+        const walletRes = await fetch(`${BACKEND_URL}/api/finance/wallet`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (walletRes.ok) {
+          const walletData = await walletRes.json();
+          setWalletBalance(walletData.wallet?.coin_balance || 0);
+        }
+      } else {
+        setPaymentError(data.detail || 'Ошибка оплаты');
+      }
+    } catch (error) {
+      setPaymentError('Ошибка подключения к серверу');
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
