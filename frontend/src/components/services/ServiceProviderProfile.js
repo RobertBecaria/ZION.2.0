@@ -512,6 +512,332 @@ const ServiceProviderProfile = ({
           </div>
         )}
       </div>
+      
+      {/* ALTYN Payment Modal */}
+      {showPaymentModal && listing?.accept_altyn && (
+        <div className="payment-modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div className="payment-modal" style={{
+            background: 'white',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '0',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Coins size={24} style={{ color: '#F59E0B' }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Оплата услуги</h3>
+              </div>
+              <button onClick={() => {
+                setShowPaymentModal(false);
+                setPaymentSuccess(false);
+                setPaymentError(null);
+                setPaymentReceipt(null);
+              }} style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px'
+              }}>
+                <X size={20} style={{ color: '#64748b' }} />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              {paymentSuccess ? (
+                <div style={{ padding: '0' }}>
+                  {/* Success Header */}
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <CheckCircle size={48} style={{ color: '#10B981', marginBottom: '12px' }} />
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#1e293b' }}>Оплата успешна!</h4>
+                    <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Транзакция завершена</p>
+                  </div>
+                  
+                  {/* Receipt */}
+                  <div style={{
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginBottom: '20px',
+                    border: '1px dashed #cbd5e1'
+                  }}>
+                    <div style={{ 
+                      textAlign: 'center', 
+                      borderBottom: '1px solid #e2e8f0', 
+                      paddingBottom: '12px', 
+                      marginBottom: '16px' 
+                    }}>
+                      <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Квитанция об оплате
+                      </span>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                        № {paymentReceipt?.receipt_id?.slice(0, 8).toUpperCase() || '---'}
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>{listing.name}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>
+                        {new Date(paymentReceipt?.date || Date.now()).toLocaleString('ru-RU', {
+                          day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    
+                    <div style={{ fontSize: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Покупатель:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.buyer_name || '---'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Исполнитель:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.seller_name || '---'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Сумма:</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.item_price?.toLocaleString('ru-RU')} AC</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#64748b' }}>Комиссия ({paymentReceipt?.fee_rate}):</span>
+                        <span style={{ color: '#1e293b' }}>{paymentReceipt?.fee_amount?.toFixed(2)} AC</span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        paddingTop: '12px', 
+                        borderTop: '1px solid #e2e8f0',
+                        fontWeight: '700',
+                        fontSize: '16px'
+                      }}>
+                        <span style={{ color: '#1e293b' }}>Итого оплачено:</span>
+                        <span style={{ color: '#F59E0B' }}>{paymentReceipt?.total_paid?.toLocaleString('ru-RU')} AC</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ 
+                      marginTop: '16px', 
+                      textAlign: 'center',
+                      padding: '8px',
+                      background: '#ECFDF5',
+                      borderRadius: '8px'
+                    }}>
+                      <span style={{ 
+                        color: '#10B981', 
+                        fontSize: '12px', 
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}>
+                        <CheckCircle size={14} />
+                        {paymentReceipt?.status === 'COMPLETED' ? 'Оплата завершена' : 'Обработка'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={() => window.location.href = '/?module=finance'}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#f1f5f9',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Wallet size={16} />
+                      Мой кошелёк
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPaymentModal(false);
+                        setPaymentSuccess(false);
+                        setPaymentReceipt(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#10B981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Отлично!
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {paymentError && (
+                    <div style={{
+                      padding: '12px 16px',
+                      background: '#FEF2F2',
+                      border: '1px solid #FECACA',
+                      borderRadius: '10px',
+                      color: '#DC2626',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <AlertCircle size={18} />
+                      {paymentError}
+                    </div>
+                  )}
+                  
+                  {/* Service Info */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '16px',
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    marginBottom: '20px'
+                  }}>
+                    {listing.images?.[0] ? (
+                      <img src={listing.images[0]} alt="" style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ 
+                        width: '60px', 
+                        height: '60px', 
+                        borderRadius: '10px', 
+                        background: `${moduleColor}20`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '24px',
+                        color: moduleColor
+                      }}>
+                        {listing.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '4px' }}>{listing.name}</div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>{listing.organization?.name}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Details */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>
+                      <span style={{ color: '#64748b' }}>Сумма</span>
+                      <span style={{ fontWeight: '600' }}>{listing.altyn_price?.toLocaleString('ru-RU')} AC</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #e2e8f0' }}>
+                      <span style={{ color: '#64748b' }}>Комиссия (0.1%)</span>
+                      <span style={{ fontWeight: '600' }}>{(listing.altyn_price * 0.001).toFixed(2)} AC</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontWeight: '700', fontSize: '18px' }}>
+                      <span style={{ color: '#1e293b' }}>Итого</span>
+                      <span style={{ color: '#F59E0B' }}>{listing.altyn_price?.toLocaleString('ru-RU')} AC</span>
+                    </div>
+                  </div>
+                  
+                  {/* Wallet Balance */}
+                  <div style={{
+                    padding: '16px',
+                    background: walletBalance >= listing.altyn_price ? '#F0FDF4' : '#FEF2F2',
+                    borderRadius: '12px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Wallet size={20} style={{ color: walletBalance >= listing.altyn_price ? '#10B981' : '#DC2626' }} />
+                      <span style={{ color: '#64748b' }}>Ваш баланс:</span>
+                    </div>
+                    <span style={{ fontWeight: '700', color: walletBalance >= listing.altyn_price ? '#10B981' : '#DC2626' }}>
+                      {walletBalance.toLocaleString('ru-RU')} AC
+                    </span>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={() => setShowPaymentModal(false)}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        background: '#f1f5f9',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        color: '#64748b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      onClick={handleAltynPayment}
+                      disabled={paymentLoading || walletBalance < listing.altyn_price}
+                      style={{
+                        flex: 1,
+                        padding: '14px',
+                        background: walletBalance >= listing.altyn_price ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' : '#9CA3AF',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: '600',
+                        color: 'white',
+                        cursor: walletBalance >= listing.altyn_price && !paymentLoading ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {paymentLoading ? 'Оплата...' : (
+                        walletBalance < listing.altyn_price ? 'Недостаточно средств' : (
+                          <>
+                            <Coins size={18} />
+                            Оплатить
+                          </>
+                        )
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
