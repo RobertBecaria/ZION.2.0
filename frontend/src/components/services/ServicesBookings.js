@@ -30,6 +30,7 @@ const ServicesBookings = ({
   const [expandedBooking, setExpandedBooking] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchBookings();
   }, [viewMode, statusFilter]);

@@ -35,12 +35,14 @@ const ServiceProviderProfile = ({
   const [reviews, setReviews] = useState([]);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!initialListing && listingId) {
       fetchListing();
     }
   }, [listingId, initialListing]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (listing?.id) {
       fetchReviews();
