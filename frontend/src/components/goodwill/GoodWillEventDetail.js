@@ -940,7 +940,7 @@ const GoodWillEventDetail = ({
                   <MessageCircle size={48} color="#e2e8f0" style={{ marginBottom: '12px' }} />
                   <p>Войдите, чтобы участвовать в чате</p>
                 </div>
-              ) : !(event.my_rsvp === 'GOING' || event.my_attendance || canManageEvent) ? (
+              ) : !(event.my_rsvp === 'GOING' || event.my_attendance?.status === 'GOING' || canManageEvent) ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   <MessageCircle size={48} color="#e2e8f0" style={{ marginBottom: '12px' }} />
                   <p>Чат доступен только для участников мероприятия</p>
