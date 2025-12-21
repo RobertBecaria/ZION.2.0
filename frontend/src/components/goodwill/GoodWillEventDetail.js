@@ -737,7 +737,7 @@ const GoodWillEventDetail = ({
               </h2>
 
               {/* Add Review Form */}
-              {token && (event.my_rsvp === 'GOING' || event.my_attendance) && (
+              {token && (event.my_rsvp === 'GOING' || event.my_attendance?.status === 'GOING') && (
                 <form onSubmit={handleSubmitReview} style={{
                   background: '#f8fafc',
                   borderRadius: '16px',
