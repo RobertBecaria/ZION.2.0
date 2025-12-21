@@ -676,6 +676,7 @@ const PostCard = ({
   const [playingVideo, setPlayingVideo] = useState(null);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
+  const [showReactions, setShowReactions] = useState(false);
   
   // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
