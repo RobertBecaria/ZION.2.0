@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
-const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_19d0102c-736b-4d98-ac03-8c99eb900d4d/artifacts/go6pslyt_photo_2025-12-21%2015.36.56.jpeg';
+const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_19d0102c-736b-4d98-ac03-8c99eb900d4d/artifacts/osobt3r7_photo_2025-12-21%2020.50.38.jpeg';
 
 function LoginForm({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
