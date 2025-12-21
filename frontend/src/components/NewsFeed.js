@@ -285,6 +285,44 @@ const NewsFeed = ({
     }
   };
 
+  const handleReaction = async (postId, emoji) => {
+    try {
+      const token = localStorage.getItem('zion_token');
+      
+      await fetch(`${BACKEND_URL}/api/news/posts/${postId}/reaction`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ emoji })
+      });
+
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            user_reaction: emoji,
+            reactions_count: (post.reactions_count || 0) + 1
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      // Fallback: just update UI optimistically
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            user_reaction: emoji
+          };
+        }
+        return post;
+      }));
+    }
+  };
+
   const handleDelete = async (postId) => {
     if (!window.confirm('Удалить этот пост?')) return;
     
