@@ -22944,7 +22944,8 @@ async def get_user_organizer_ids(user_id: str) -> List[str]:
 @api_router.get("/goodwill/events/{event_id}")
 async def get_event(
     event_id: str,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(lambda: None)
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)
 ):
     """Get event details"""
     event = await db.goodwill_events.find_one({"id": event_id}, {"_id": 0})
