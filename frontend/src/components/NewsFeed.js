@@ -1065,30 +1065,89 @@ const PostCard = ({
         </div>
       )}
 
-      {/* Post Actions */}
-      <div className="post-actions">
-        <button 
-          className={`action-btn like-btn ${post.is_liked ? 'liked' : ''}`}
-          onClick={() => onLike(post.id, post.is_liked)}
-          style={post.is_liked ? { color: '#ef4444' } : {}}
-        >
-          <Heart size={18} fill={post.is_liked ? '#ef4444' : 'none'} />
-          <span>{post.likes_count || 0}</span>
-        </button>
-        
-        <button 
-          className={`action-btn comment-btn ${showComments ? 'active' : ''}`}
-          onClick={toggleComments}
-          style={showComments ? { color: moduleColor } : {}}
-        >
-          <MessageCircle size={18} />
-          <span>{post.comments_count || 0}</span>
-        </button>
-        
-        <button className="action-btn share-btn">
-          <Share2 size={18} />
-          <span>{post.shares_count || 0}</span>
-        </button>
+      {/* Post Actions - Enhanced with Emoji Reactions */}
+      <div className="enhanced-post-actions-news">
+        {/* Reaction Summary */}
+        {(post.likes_count > 0 || post.reactions_count > 0) && (
+          <div className="reaction-summary-bar-news">
+            <div className="reaction-summary-left-news">
+              {post.likes_count > 0 && (
+                <span className="like-indicator-news" style={{ background: '#ef4444' }}>
+                  <Heart size={10} color="white" fill="white" />
+                </span>
+              )}
+              {post.top_reactions && post.top_reactions.map((r, i) => (
+                <span key={i} className="reaction-emoji-news">{r.emoji}</span>
+              ))}
+              <span className="reaction-count-news">
+                {(post.likes_count || 0) + (post.reactions_count || 0)} реакций
+              </span>
+            </div>
+            {post.comments_count > 0 && (
+              <span className="comments-count-link-news" onClick={toggleComments}>
+                {post.comments_count} комментариев
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="action-buttons-row-news">
+          <div 
+            className="action-button-container-news"
+            onMouseEnter={() => setShowReactions(true)}
+            onMouseLeave={() => setTimeout(() => setShowReactions(false), 300)}
+          >
+            <button 
+              className={`action-button-news ${post.is_liked || post.user_reaction ? 'active' : ''}`}
+              onClick={() => onLike(post.id, post.is_liked)}
+              style={{ 
+                color: (post.is_liked || post.user_reaction) ? '#ef4444' : undefined,
+                background: (post.is_liked || post.user_reaction) ? '#fef2f2' : undefined
+              }}
+            >
+              {post.user_reaction ? (
+                <span className="user-reaction-emoji-news">{post.user_reaction}</span>
+              ) : (
+                <Heart size={20} fill={post.is_liked ? '#ef4444' : 'none'} />
+              )}
+              <span>{post.user_reaction ? 'Реакция' : (post.is_liked ? 'Нравится' : 'Нравится')}</span>
+            </button>
+
+            {/* Quick Reaction Picker */}
+            {showReactions && (
+              <div className="quick-reaction-picker-news">
+                {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji, index) => (
+                  <button
+                    key={emoji}
+                    className="quick-reaction-btn-news"
+                    onClick={() => {
+                      onReaction && onReaction(post.id, emoji);
+                      setShowReactions(false);
+                    }}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <button 
+            className={`action-button-news ${showComments ? 'active' : ''}`}
+            onClick={toggleComments}
+            style={showComments ? { color: moduleColor, background: `${moduleColor}10` } : {}}
+          >
+            <MessageCircle size={20} />
+            <span>Комментарий</span>
+          </button>
+          
+          <button className="action-button-news">
+            <Share2 size={20} />
+            <span>Поделиться</span>
+          </button>
+        </div>
       </div>
 
       {/* Comments Section */}
