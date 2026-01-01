@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
-const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_19d0102c-736b-4d98-ac03-8c99eb900d4d/artifacts/gq30lc1f_photo_2025-12-21%2020.50.51.jpeg';
+const BACKGROUND_IMAGE = 'https://customer-assets.emergentagent.com/job_19d0102c-736b-4d98-ac03-8c99eb900d4d/artifacts/vql02g0g_China2%20%281%29.jpg';
 
 const inputStyle = {
   background: 'rgba(30, 41, 59, 0.8)',
