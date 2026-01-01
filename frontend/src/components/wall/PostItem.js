@@ -1,5 +1,5 @@
-import React from 'react';
-import { User, MoreHorizontal, Globe, Users, Lock } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, MoreHorizontal, Globe, Users, Lock, UserCheck, Edit2, Trash2 } from 'lucide-react';
 import { formatTime } from './utils/postUtils';
 import PostMedia from './PostMedia';
 import PostActions from './PostActions';
@@ -21,31 +21,51 @@ function PostItem({
   onCommentLike,
   onCommentEdit,
   onCommentDelete,
-  onImageClick
+  onImageClick,
+  // New props for edit/delete functionality
+  onPostEdit,
+  onPostDelete,
+  // Custom formatDate function (optional - uses formatTime by default)
+  formatDate,
+  // Custom visibility options for different feeds
+  visibilityOptions
 }) {
+  const [showMenu, setShowMenu] = useState(false);
+  
+  // Check if current user is the author
+  const isAuthor = post.user_id === user?.id || post.author?.id === user?.id;
+  
+  // Default visibility options
+  const defaultVisibilityOptions = {
+    'PUBLIC': { icon: Globe, label: 'Публичный' },
+    'HOUSEHOLD_ONLY': { icon: Users, label: 'Домохозяйство' },
+    'PRIVATE': { icon: Lock, label: 'Приватный' },
+    'FAMILY_ONLY': { icon: Users, label: 'Только семья' },
+    'FRIENDS_AND_FOLLOWERS': { icon: UserCheck, label: 'Друзья и подписчики' },
+    'FRIENDS_ONLY': { icon: Users, label: 'Только друзья' }
+  };
+  
+  const allVisibilityOptions = { ...defaultVisibilityOptions, ...visibilityOptions };
+  
   // Get visibility icon
   const getVisibilityIcon = () => {
-    switch (post.visibility) {
-      case 'PUBLIC':
-        return <Globe size={12} color="#65676b" />;
-      case 'HOUSEHOLD_ONLY':
-        return <Users size={12} color="#65676b" />;
-      case 'PRIVATE':
-        return <Lock size={12} color="#65676b" />;
-      default:
-        return <Globe size={12} color="#65676b" />;
-    }
+    const visibility = allVisibilityOptions[post.visibility] || allVisibilityOptions['PUBLIC'];
+    const IconComponent = visibility.icon;
+    return <IconComponent size={12} color="#65676b" title={visibility.label} />;
   };
+  
+  // Format date using custom or default function
+  const displayDate = formatDate ? formatDate(post.created_at) : formatTime(post.created_at);
 
   return (
     <div className="enhanced-post-item">
       {/* Post Header */}
       <div className="post-header">
         <div className="post-author-section">
-          {post.author.profile_picture ? (
+          {post.author?.profile_picture ? (
             <img 
               src={post.author.profile_picture} 
-              alt={`${post.author.first_name} ${post.author.last_name}`}
+              alt={`${post.author?.first_name} ${post.author?.last_name}`}
               className="author-avatar-img"
             />
           ) : (
@@ -54,17 +74,63 @@ function PostItem({
             </div>
           )}
           <div className="author-details">
-            <h5 className="author-name">{post.author.first_name} {post.author.last_name}</h5>
+            <div className="author-name-row">
+              <h5 className="author-name">{post.author?.first_name} {post.author?.last_name}</h5>
+              {post.channel && (
+                <span className="channel-badge">→ {post.channel.name}</span>
+              )}
+            </div>
             <div className="post-meta">
-              <span className="post-time">{formatTime(post.created_at)}</span>
+              <span className="post-time">{displayDate}</span>
               <span className="meta-dot">·</span>
               {getVisibilityIcon()}
             </div>
           </div>
         </div>
-        <button className="post-menu-btn">
-          <MoreHorizontal size={20} color="#65676b" />
-        </button>
+        
+        {/* Post Menu - Only show for author if edit/delete handlers provided */}
+        {isAuthor && (onPostEdit || onPostDelete) ? (
+          <div className="post-menu-wrapper">
+            <button 
+              className="post-menu-btn"
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              <MoreHorizontal size={20} color="#65676b" />
+            </button>
+            {showMenu && (
+              <div className="post-menu-dropdown">
+                {onPostEdit && (
+                  <button 
+                    className="menu-item"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onPostEdit(post);
+                    }}
+                  >
+                    <Edit2 size={16} />
+                    Редактировать
+                  </button>
+                )}
+                {onPostDelete && (
+                  <button 
+                    className="menu-item delete"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onPostDelete(post.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    Удалить
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button className="post-menu-btn">
+            <MoreHorizontal size={20} color="#65676b" />
+          </button>
+        )}
       </div>
 
       {/* Post Content */}
