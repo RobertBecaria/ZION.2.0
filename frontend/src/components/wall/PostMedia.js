@@ -1,56 +1,91 @@
 import React from 'react';
-import { FileText, Share2, Download, ZoomIn } from 'lucide-react';
+import { FileText, Share2, Download, ZoomIn, Play } from 'lucide-react';
 import { extractYouTubeId } from './utils/postUtils';
 
 function PostMedia({ post, backendUrl, onImageClick }) {
+  // Helper to get media URL - handles both object format and string ID format
+  const getMediaUrl = (media) => {
+    // If media is just a string (ID), use the /api/media/{id} endpoint
+    if (typeof media === 'string') {
+      return `${backendUrl}/api/media/${media}`;
+    }
+    // If media is an object with file_url, use that
+    if (media.file_url) {
+      return `${backendUrl}${media.file_url}`;
+    }
+    // If media has an id, use that
+    if (media.id) {
+      return `${backendUrl}/api/media/${media.id}`;
+    }
+    return '';
+  };
+  
+  // Check if media is an image
+  const isImage = (media) => {
+    if (typeof media === 'string') return true; // Assume IDs are images by default
+    return media.file_type === 'image';
+  };
+
   return (
     <>
-      {/* Display Media Files */}
+      {/* Display Media Files - supports both object array and ID array formats */}
       {post.media_files && post.media_files.length > 0 && (
-        <div className="post-media">
-          {post.media_files.map((media, index) => (
-            <div key={index} className="media-item">
-              {media.file_type === 'image' ? (
-                <div 
-                  className="image-container"
-                  onClick={() => {
-                    const postImages = post.media_files
-                      .filter(m => m.file_type === 'image')
-                      .map(m => `${backendUrl}${m.file_url}`);
-                    const imageIndex = postImages.indexOf(`${backendUrl}${media.file_url}`);
-                    onImageClick(`${backendUrl}${media.file_url}`, postImages, imageIndex);
-                  }}
-                >
-                  <img 
-                    src={`${backendUrl}${media.file_url}`}
-                    alt={media.original_filename}
-                    className="media-image clickable-image"
-                  />
-                  <div className="image-overlay">
-                    <ZoomIn size={20} color="white" />
-                  </div>
-                </div>
-              ) : (
-                <div className="media-document">
-                  <FileText size={24} />
-                  <div className="doc-info">
-                    <span className="doc-name">{media.original_filename}</span>
-                    <span className="doc-size">
-                      {(media.file_size / (1024 * 1024)).toFixed(1)}MB
-                    </span>
-                  </div>
-                  <a 
-                    href={`${backendUrl}${media.file_url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="doc-download-btn"
+        <div className={`post-media-gallery gallery-${Math.min(post.media_files.length, 4)}`}>
+          {post.media_files.slice(0, 4).map((media, index) => {
+            const mediaUrl = getMediaUrl(media);
+            const mediaId = typeof media === 'string' ? media : (media.id || index);
+            
+            return (
+              <div key={mediaId} className="media-item">
+                {isImage(media) ? (
+                  <div 
+                    className="image-container"
+                    onClick={() => {
+                      if (onImageClick) {
+                        const postImages = post.media_files.map(m => getMediaUrl(m));
+                        onImageClick(mediaUrl, postImages, index);
+                      }
+                    }}
                   >
-                    <Download size={16} />
-                  </a>
-                </div>
-              )}
-            </div>
-          ))}
+                    <img 
+                      src={mediaUrl}
+                      alt={media.original_filename || 'Изображение'}
+                      className="media-image clickable-image"
+                      loading="lazy"
+                    />
+                    <div className="image-overlay">
+                      <ZoomIn size={20} color="white" />
+                    </div>
+                    {index === 3 && post.media_files.length > 4 && (
+                      <div className="more-overlay">
+                        +{post.media_files.length - 4}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="media-document">
+                    <FileText size={24} />
+                    <div className="doc-info">
+                      <span className="doc-name">{media.original_filename || 'Документ'}</span>
+                      {media.file_size && (
+                        <span className="doc-size">
+                          {(media.file_size / (1024 * 1024)).toFixed(1)}MB
+                        </span>
+                      )}
+                    </div>
+                    <a 
+                      href={mediaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="doc-download-btn"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
