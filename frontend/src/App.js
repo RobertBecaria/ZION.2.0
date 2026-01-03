@@ -1640,6 +1640,9 @@ function Dashboard() {
           moduleColor={currentModule.color}
         />
       )}
+
+      {/* ERIC AI Chat Widget - Floating on all pages */}
+      <ERICChatWidget user={user} />
     </div>
   );
 }
