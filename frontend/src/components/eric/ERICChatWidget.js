@@ -439,6 +439,12 @@ const ERICChatWidget = ({ user }) => {
                               />
                             )}
                             <p>{msg.content}</p>
+                            {/* Render search result cards if present */}
+                            {msg.suggested_actions?.map((action, idx) => (
+                              action.type === 'search_results' && action.cards?.length > 0 && (
+                                <ERICSearchCards key={idx} cards={action.cards} />
+                              )
+                            ))}
                             <span className="eric-msg-time">{formatTime(msg.created_at)}</span>
                           </div>
                         </div>
