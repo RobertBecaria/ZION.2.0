@@ -344,21 +344,30 @@
   padding: 8px 16px;
   background: #f8f9fa;
   border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .eric-image-preview img {
-  max-width: 120px;
-  max-height: 80px;
+  max-width: 80px;
+  max-height: 60px;
   border-radius: 8px;
   object-fit: cover;
 }
 
+.eric-image-source {
+  font-size: 12px;
+  color: #65676b;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .eric-image-remove {
-  position: absolute;
-  top: 4px;
-  left: 130px;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: none;
   background: #dc2626;
   color: white;
@@ -368,6 +377,7 @@
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
 .eric-image-remove:hover {
