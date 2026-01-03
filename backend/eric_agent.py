@@ -777,6 +777,9 @@ class ERICAgent:
                             }
                         })
             
+            # Apply limit to total results
+            search_results = search_results[:limit]
+            
             results["results"] = search_results
             results["total_count"] = len(search_results)
             
