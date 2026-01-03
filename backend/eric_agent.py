@@ -696,10 +696,11 @@ class ERICAgent:
                     "$or": [
                         {"name": {"$regex": query, "$options": "i"}},
                         {"description": {"$regex": query, "$options": "i"}},
-                        {"category": {"$regex": query, "$options": "i"}},
-                        {"subcategory": {"$regex": query, "$options": "i"}}
+                        {"category_id": {"$regex": query, "$options": "i"}},
+                        {"subcategory_id": {"$regex": query, "$options": "i"}},
+                        {"city": {"$regex": query, "$options": "i"}}
                     ],
-                    "is_active": True
+                    "status": "ACTIVE"
                 }).limit(limit).to_list(limit)
                 
                 for svc in services:
@@ -709,13 +710,15 @@ class ERICAgent:
                         "name": svc.get("name"),
                         "description": svc.get("description"),
                         "metadata": {
-                            "category": svc.get("category"),
-                            "subcategory": svc.get("subcategory"),
-                            "price": svc.get("price"),
+                            "category": svc.get("category_id"),
+                            "subcategory": svc.get("subcategory_id"),
+                            "price_from": svc.get("price_from"),
+                            "price_to": svc.get("price_to"),
                             "price_type": svc.get("price_type"),
-                            "rating": svc.get("average_rating"),
+                            "rating": svc.get("rating"),
                             "review_count": svc.get("review_count", 0),
-                            "location": svc.get("location")
+                            "city": svc.get("city"),
+                            "currency": svc.get("currency", "RUB")
                         }
                     })
             
