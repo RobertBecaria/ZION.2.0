@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_MEMBER_EMAIL = "test@zion.city"

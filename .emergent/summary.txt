@@ -1,117 +1,78 @@
-<analysis>**original_problem_statement:** The user first requested to refactor  for better maintainability by using the existing reusable  components.
+<analysis>**original_problem_statement:** The user initially requested to refactor  for better maintainability. After that, the user introduced a major feature: a personal AI assistant named **ERIC**.
 
-After the refactoring was complete, the user introduced a major new feature request: to create and integrate a personal AI assistant named **ERIC (Enhanced Reasoning Intelligence Core)** into the Zion.City platform.
-
-PRODUCT REQUIREMENTS:
-1.  **Refactor  (Completed):**
-    *   Replace the monolithic structure of  with the modular components from  (e.g., , ).
-    *   Ensure all existing News Feed functionality (channel support, post visibility) is preserved.
-    *   Significantly reduce the line count and improve the maintainability of .
-
-2.  **ERIC AI Assistant - Phase 1 (Completed):**
-    *   **Core Engine:** Integrate the DeepSeek V3.2 large language model using the user-provided API key. The agent should be a personal assistant and financial adviser, using only data from within the Zion.City platform.
-    *   **User Interaction & UI:**
-        *   Create a floating chat widget, accessible via a friendly avatar button (user-provided sun baby image) in the bottom-right corner of the screen.
-        *   Create a full-page ERIC Profile accessible from a new ERIC AI button in the Вещи (Things) module's left sidebar.
-        *   ERIC's avatar should be used for the widget button and within the chat interface.
-    *   **Post Integration:**
-        *   Implement an  mention feature. When a user tags  in a post on the Family or News feed, the AI should automatically analyze the post's content and reply with a relevant comment.
-    *   **Backend:**
-        *   Create a new backend module () to handle all AI logic.
-        *   Create API endpoints for chat, conversation history, and processing post mentions.
-        *   Store the DeepSeek API key securely in the environment variables.
-        *   Create a virtual eric-ai user to author the AI-generated comments.
+This evolved into a multi-phase project:
+1.  **Refactor  (Completed):** Use modular  components.
+2.  **ERIC AI Assistant - Phase 1 (Completed):** Implement a floating chat widget, a profile page, DeepSeek integration for chat, and an  mention feature for auto-commenting on posts.
+3.  **ERIC AI Assistant - Phase 2 (Completed):** Integrate the Emergent Universal LLM Key to add image and document analysis capabilities using Claude Sonnet. This included adding file upload to the chat widget.
+4.  **ERIC AI Assistant - Phase 3 (Completed):** Implement a media picker to allow users to select existing photos and documents from their platform Journal to send to ERIC.
+5.  **ERIC AI Assistant - Post Visibility (Completed):** Add an Ask ERIC AI visibility option to the post composer as an alternative to  mentions.
+6.  **ERIC AI Assistant - Business & Search (In Progress):** The current and most ambitious phase is to build an ERIC-powered search and a **Multi-Agent Privacy-Preserving Architecture**. This system will allow personal ERICs to query Business ERICs (and other personal ERICs) for information (e.g., find the best car repair) while respecting data privacy. As a first step, the agent has built the UI and backend for businesses to configure their Business ERIC's data-sharing permissions.
 
 **User's preferred language**: The user communicates in English. All new UI text MUST be in **Russian**. The next agent must respond in English but ensure any new or modified UI elements use Russian text.
 
 **what currently exists?**
-The agent successfully refactored , reducing its line count by approximately 44% and making it much more maintainable by using shared  components. Both the News and Family feeds were tested to ensure they work correctly with the new shared components.
-
-More significantly, the agent completed the Phase 1 implementation of the **ERIC AI assistant**. The backend is integrated with the DeepSeek API via a new  module. The frontend features a working floating chat widget, a dedicated profile page for ERIC within the Things module, and a fully functional  mention feature that allows the AI to automatically comment on posts in both the Family and News feeds. The initial issue with the DeepSeek API key having an insufficient balance has been resolved by the user. A minor bug with the floating widget's click event was also fixed and verified.
+The agent has successfully implemented multiple phases of the ERIC AI assistant.
+-   The core chat functionality, including  mentions and the Ask ERIC AI post visibility, is complete.
+-   The agent fixed a UI blinking issue on the chat widget and corrected ERIC's system prompt to prevent it from hallucinating non-existent settings pages.
+-   The Emergent Universal LLM Key has been integrated, enabling image and document analysis via Claude Sonnet. The backend APIs are functional, and the chat widget UI supports file uploads.
+-   A  modal has been created, allowing users to select and send files to ERIC from their existing platform media library (Journal).
+-   Most recently, the agent built the foundational UI and backend for the Business ERIC concept. A new ERIC AI tab now exists in the Organization Settings page, allowing a business owner to configure their AI's data access permissions. The backend APIs to get and save these settings are implemented and tested.
 
 **Last working item**:
--   **Last item agent was working:** The agent fixed an issue where the floating ERIC chat widget was not reliably opening on click. The fix involved modifying the  handler in .
--   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** Y (Verified via manual screenshot testing and executing a JavaScript click, which succeeded where a standard automated click had failed).
--   **Which testing method agent to use?** Frontend testing agent. The agent should be instructed to specifically test the opening and closing of the floating chat widget multiple times to ensure the fix is robust.
+-   **Last item agent was working:** Implementing the backend APIs and creating a dedicated frontend component () for managing Business ERIC settings within an organization's profile. This involved creating Pydantic models, FastAPI endpoints, and a React component that fetches and saves the settings.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** Y (Backend APIs tested via . Frontend component verified via screenshot to be loading data from the API).
+-   **Which testing method agent to use?** backend testing agent. The next step involves building the search logic itself. The test should focus on the new  endpoint, verifying it can query different data sources (organizations, users, products) and return aggregated results as defined in .
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Floating Widget Click Flakiness (P0)**
-    -   **Description:** The testing agent reported that the floating chat widget did not open on click. The main agent applied a fix and verified it with a direct JavaScript click, but the initial failure suggests a potential timing or rendering issue that could make the widget feel unresponsive.
-    -   **Next debug checklist:**
-        -   In , review the  event on the widget button.
-        -   Check for CSS z-index issues or element overlap that might be intermittently intercepting the click.
-        -   Consider adding more robust state logging to the browser console to track  state changes on click.
-    -   **Why fix this issue and what will be achieved with the fix?** To ensure the primary entry point to the ERIC chat is reliable and provides a good user experience.
-    -   **Status:** TESTING PENDING
-    -   **Is recurring issue?** Y (It was found by the testing agent and then fixed, but the root cause might still be present).
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-
--   **Issue 2: Linter False Positives (P3)**
-    -   **Description:** Non-critical linter errors for  prop in  and . These are known workarounds for  and do not affect functionality.
-    -   **Attempted fixes:** None. The agent correctly identified them as false positives and deprioritized them.
-    -   **Next debug checklist:** Can be ignored, or an ESLint ignore comment  can be added above the lines.
+-   **Issue 1: Linter False Positives (P3)**
+    -   **Description:** Non-critical linter errors for  prop in  and , and some  warnings. These are known workarounds or non-blocking issues.
+    -   **Next debug checklist:** Can be ignored, or an ESLint ignore comment can be added.
     -   **Why fix this issue and what will be achieved with the fix?** To achieve a clean linter output.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend (quick visual check).
 
 **In progress Task List**:
--   None.
+-   **Task 1: ERIC-Powered Search & Multi-Agent Network (P0)**
+    -   **Where to resume:** The backend foundation for Business ERIC settings is complete. The next step is to implement the core search logic in the  method within . This method should be updated to query the database for services, people, and marketplace items based on the user's query. After the backend logic is solid, integrate this search functionality into the main ERIC chat flow, allowing users to trigger it.
+    -   **What will be achieved with this?** This will deliver the first part of the user's vision for an intelligent, platform-aware search, laying the groundwork for inter-agent communication.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Backend first, then both for E2E verification.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   (P0) Await user verification of the entire ERIC AI assistant feature, especially the floating widget's functionality.
--   **Future Tasks (from user request & specification doc):**
-    -   (P1) **ERIC Post Visibility Option:** As discussed, add ERIC AI as a visibility option in the post composer, alongside Family and Public, as an alternative to  mentions.
-    -   (P2) **Image & Document Processing:** Integrate Sonnet 4.5 for analyzing images and documents, as per the user's initial request.
-    -   (P2) **Advanced Financial Advice:** Expand ERIC's capabilities to create detailed budget plans and integrate with Altyn Coin savings, as suggested in ERIC's own auto-comment.
-    -   (P3) **Enhanced Search:** Implement ERIC-powered search for services, people, and things within the Zion.City platform.
+    -   (P0) Await user verification of the recently completed features: Image/Document Analysis, Media Picker from Journal, Ask ERIC AI post visibility, and the Business ERIC settings UI.
+    -   (P1) **Implement Inter-Agent Communication:** Build the mechanism for personal ERICs to send queries to Business ERICs (and other personal ERICs) and receive privacy-preserving answers. This is Phase 2 of the multi-agent architecture.
+-   **Future Tasks:**
+    -   (P2) **Enhanced Business Analytics:** Expand the Business ERIC to provide aggregated insights (e.g., repeat customer percentage) based on the permissions set by the business owner.
+    -   (P3) **Drag-and-Drop File Upload:** Enhance the chat widget to support dragging and dropping files for analysis.
 
 **Completed work in this session**
--   **Refactor:  Component (DONE):**
-    -   Refactored  to use reusable  components (, , etc.).
-    -   Modified  and  to be more flexible and handle data formats from both the Family and News feeds.
-    -   Reduced  line count by ~44%, improving maintainability.
--   **Feature: ERIC AI Assistant - Phase 1 (DONE):**
-    -   **Backend:**
-        -   Created  to encapsulate DeepSeek API logic.
-        -   Added the user's  to .
-        -   Implemented API endpoints (, ).
-        -   Modified  and  in  to detect  mentions and trigger an asynchronous AI-generated comment.
-        -   Modified comment-fetching endpoints to correctly display comments from the virtual  user.
-    -   **Frontend:**
-        -   Created the floating chat widget ().
-        -   Created the full-page profile ().
-        -   Added routing and navigation buttons in  and  to integrate ERIC into the UI.
-    -   **Bug Fixes:**
-        -   Guided the user to resolve the Insufficient Balance API error.
-        -   Fixed and verified the floating chat widget's click handler.
-
-**Earlier issues found/mentioned but not fixed**
--   See  (Linter warnings).
-
-**Known issue recurrence from previous fork**
--   None.
+-   **Bug Fix: ERIC Widget Blinking (DONE):** Fixed a CSS issue causing the chat widget to blink on open/close by using smoother opacity/transform transitions.
+-   **Bug Fix: ERIC Hallucination (DONE):** Updated ERIC's system prompt in  to prevent it from inventing settings menus.
+-   **Feature: Image & Document Analysis (DONE):**
+    -   Integrated the Emergent Universal LLM Key ().
+    -   Installed  library.
+    -   Added backend methods and API endpoints in  and  to handle image/document analysis via Claude Sonnet.
+    -   Updated  to include a file upload button and display image previews.
+-   **Feature: Media Picker from Platform (DONE):**
+    -   Created a new  modal component to browse the user's Journal media.
+    -   Integrated this modal into , allowing users to attach existing platform files to their chat messages.
+-   **Feature: Ask ERIC AI Post Visibility (DONE):**
+    -   Added a new visibility option to .
+    -   Updated backend post-creation endpoints in  to trigger AI analysis for posts with this visibility setting.
+-   **Feature: Business ERIC Settings Foundation (UI & API DONE):**
+    -   Added an ERIC AI tab to the  component.
+    -   Created a dedicated  component to manage state and API calls.
+    -   Implemented backend models ( in ) and API endpoints () to fetch and save these settings.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Component Refactoring (DRY):** Abstracting UI logic into reusable React components to reduce code duplication and improve maintainability.
--   **Third-Party LLM Integration:** Integrating the DeepSeek language model using its OpenAI-compatible API and SDK.
--   **Asynchronous AI Tasks:** Triggering a background task on the backend to call the LLM API upon a post mention, preventing the initial POST request from timing out.
--   **Virtual AI Agent:** Simulating an AI user () within the application's data model to allow it to perform actions like commenting on posts.
--   **Dynamic UI Injection:** Adding a global, floating chat widget to the application layout that is available across different modules.
-
-**key DB schema**
--   **eric_conversations:** A new collection was implicitly created by  to store chat history. 
--   **posts, news_posts:** No schema change. The  field is scanned for .
--   **post_comments, news_post_comments:** No schema change, but now accepts records with .
-
-**changes in tech stack**
--   **Backend:** Added usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
+-   **Third-Party LLM Integration:** Using usage: openai [-h] [-v] [-b API_BASE] [-k API_KEY] [-p PROXY [PROXY ...]]
               [-o ORGANIZATION] [-t {openai,azure}]
               [--api-version API_VERSION] [--azure-endpoint AZURE_ENDPOINT]
               [--azure-ad-token AZURE_AD_TOKEN] [-V]
@@ -148,7 +109,17 @@ options:
                         https://www.microsoft.com/en-
                         us/security/business/identity-access/microsoft-entra-
                         id
-  -V, --version         show program's version number and exit library () for its compatibility with the DeepSeek API endpoint.
+  -V, --version         show program's version number and exit and  SDKs to connect to DeepSeek and Claude Sonnet APIs.
+-   **System Prompt Engineering:** Modifying the AI's core instructions to guide its behavior and prevent hallucinations.
+-   **Multi-Modal AI:** Handling both text and image/document inputs for analysis.
+-   **Component-Based Architecture:** Creating reusable UI components like  and  to encapsulate complex functionality.
+-   **Privacy-Preserving AI Architecture (Vision):** The ongoing goal is to build a multi-agent system where different AIs can communicate and share aggregated, non-sensitive data, respecting user and business privacy.
+
+**key DB schema**
+-   **business_eric_settings:** (New, Implicit) A new collection to store settings for each organization's ERIC. 
+
+**changes in tech stack**
+-   **Backend:** Added  library for multi-LLM access with the Universal Key.
 
 **All files of reference**
 *   
@@ -158,53 +129,50 @@ options:
 *   
 *   
 *   
-*   
-
-**Areas that need refactoring**:
--   The linter warnings for the  prop, while low priority, could be suppressed with ignore comments for a cleaner build process.
 
 **key api endpoints**
-*   : Sends a message to ERIC and gets a streaming response.
-*   : Fetches the user's conversation history with ERIC.
-*   : **MODIFIED** to detect  mentions and trigger an AI comment.
-*   : **MODIFIED** to detect  mentions and trigger an AI comment.
-*   : **MODIFIED** to correctly fetch and format comments authored by the virtual  user.
-*   : **MODIFIED** for the same reason.
+*   : (New) Sends an image for analysis.
+*   : (New) Sends a document for analysis.
+*   : (New) Endpoint for the ERIC-powered search (backend logic pending).
+*   : (New) Fetches the Business ERIC settings for an organization.
+*   : (New) Updates the Business ERIC settings for an organization.
+*    & : **MODIFIED** to trigger AI analysis on .
 
 **Critical Info for New Agent**
--   The user's DeepSeek API key is  and is stored in . The user has confirmed they've added funds, and it is working.
--   The  mention feature is asynchronous. The AI comment is created in a background task on the server, so it may take a few seconds to appear on the frontend after a post is published.
--   The primary task is to get user feedback on the newly implemented ERIC feature. Pay close attention to any user reports about the floating widget's responsiveness, as it was flaky during automated testing.
+-   The user's primary focus is the **Multi-Agent Privacy-Preserving Architecture**. The immediate next step is building the search functionality, which is the foundation for this vision.
+-   The admin access check for organization settings in  was tricky. It now checks if the user's ID matches the organization's , as the  collection was not a reliable source. Be aware of this logic when working with organization permissions.
+-   The project has multiple moving parts. Before starting a new feature, it would be wise to ask the user to verify the recently completed ones to ensure they meet expectations.
 
 **documents and test reports created in this job**
--   : User-provided specification for the ERIC agent. Public URL: 
--   : Updated to reflect tests for the NewsFeed refactoring and ERIC features.
+-    (has been created but may not be fully up-to-date)
+-    (Screenshot provided by user)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks what API key balance means. (Completed)
-2.  **Agent:** Explains that the DeepSeek API key needs funds to work. (Completed)
-3.  **User:** Confirms they have added money to the balance and asks the agent to proceed with other features. (Completed)
-4.  **Agent:** Verifies the DeepSeek API is now working and states the plan to implement  mentions. (Completed)
-5.  **Agent:** Successfully implements and tests the  mention feature, showing a screenshot of ERIC's automatic comment. (Completed)
-6.  **Agent:** Updates test results and runs the testing agent. (Completed)
-7.  **Agent:** Discovers the testing agent found a bug with the floating widget and plans to fix it. (Completed)
-8.  **Agent:** Applies a fix to the widget and tests it again, confirming it works with a JS-based click. (Completed)
-9.  **Agent:** Provides a final summary of the completed ERIC integration. (Completed)
-10. **User:** Yes the background is great. I think we need to work on that: Refactor NewsFeed.js for better maintainability (This was the *first* message in this session after approving the previous work, kicking off the refactoring task).
+1.  **User:** Requests ability to upload images/docs from the platform Journal to ERIC. (Completed)
+2.  **User:** ok lets proceed. - Approving the media picker implementation. (Completed)
+3.  **User:** Proposes a multi-agent privacy-preserving architecture for ERIC search and suggests building the search feature. (In Progress)
+4.  **Agent:** Validates the user's idea, proposes a phased plan, and asks for confirmation. (Completed)
+5.  **User:** Confirms the multi-agent plan, adds details about Business ERICs, and provides a screenshot of organization settings. (In Progress)
+6.  **Agent:** Implements the UI for Business ERIC settings in the organization profile. (Completed)
+7.  **User:** Ok lets proceed - Approving the UI implementation. (Completed)
+8.  **Agent:** Implements the backend APIs for Business ERIC settings and the search placeholder. (Completed)
+9.  **User:** No pending messages. The agent just finished a step and summarized its work. The next logical step is to continue with the approved plan.
+10. **(Self-correction):** Agent should probably ask for user verification before diving deep into the next phase.
 
 **Project Health Check:**
 *   **Broken:** None
-*   **Mocked:** None
+*   **Mocked:** The  function in  is a placeholder.
 
 **3rd Party Integrations**
-*   **DeepSeek (NEW):** AI/LLM for the ERIC assistant. Uses a User-provided API Key.
+*   **DeepSeek:** AI/LLM for basic ERIC chat. Uses a User-provided API Key.
+*   **Claude Sonnet (via Emergent Universal Key):** Used for advanced image and document analysis. Uses Emergent LLM Key.
 *   **Exchange Rate API:** Live currency conversion.
-*   **OpenStreetMap:** (via Leaflet and react-leaflet) Used for maps.
+*   **OpenStreetMap:** (via Leaflet) Used for maps.
 *   **FullCalendar:** Used for calendars.
-*   **qrcode:** Used for generating QR code images on the backend.
+*   **qrcode:** Used for generating QR codes on the backend.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. The frontend testing agent was used after the ERIC feature was built. It successfully identified a bug in the floating chat widget's click handler, which the main agent then fixed.
+-   **Testing agent used after significant changes:** NO (in the last cycle of features).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None persistent.
 -   **Known regressions:** None.
@@ -214,4 +182,5 @@ options:
 -   **User 2 (Regular):**  / 
 
 **What agent forgot to execute**
--   The agent discussed implementing post visibility for ERIC AI as an alternative to  mentions but prioritized the  mention feature as requested. This remains a valid future task.</analysis>
+-   The agent created  but failed to update it later in the session. The PRD file may be out of sync with the latest completed work and future plans. This should be updated consistently.
+-   The low-priority linter warnings persist across sessions. While not critical, they should eventually be cleaned up.</analysis>

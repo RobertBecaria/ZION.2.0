@@ -11,7 +11,7 @@ import sys
 import os
 
 # Configuration
-BASE_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 TEST_EMAIL = "admin@test.com"
 TEST_PASSWORD = "testpassword123"
 

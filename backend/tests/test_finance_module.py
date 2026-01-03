@@ -32,7 +32,7 @@ from datetime import datetime
 import time
 
 # Get backend URL from environment
-BACKEND_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 
 class FinanceModuleTester:
     def __init__(self):

@@ -8,7 +8,7 @@ import uuid
 import time
 
 class CleanAdminChangeRequestsTester:
-    def __init__(self, base_url="https://zion-ai-helper.preview.emergentagent.com"):
+    def __init__(self, base_url="https://personal-ai-chat-24.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None

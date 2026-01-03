@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, date
 
 # Configuration
-BASE_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 TEST_EMAIL = "admin@test.com"
 TEST_PASSWORD = "testpassword123"
 ORG_ID = "7b2aba34-723f-4f5a-bd93-c451d94452cd"

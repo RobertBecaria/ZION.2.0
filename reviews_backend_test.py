@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 
 class ReviewsModuleTester:
     def __init__(self):

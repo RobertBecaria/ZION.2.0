@@ -7,7 +7,7 @@ import requests
 import json
 
 # Configuration
-BASE_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "admin123"
 

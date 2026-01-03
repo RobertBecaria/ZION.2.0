@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 
 class FamilyProfileSystemTester:
-    def __init__(self, base_url="https://zion-ai-helper.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://personal-ai-chat-24.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

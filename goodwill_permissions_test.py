@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # API Configuration
-BASE_URL = "https://zion-ai-helper.preview.emergentagent.com/api"
+BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
 
 # Test Credentials
 ADMIN_CREDENTIALS = {
