@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Building2, Globe, Mail, MapPin, Image, AlertCircle, Check, Upload, Trash2, LogOut, Crown, UserCog, Clock } from 'lucide-react';
+import { X, Save, Building2, Globe, Mail, MapPin, Image, AlertCircle, Check, Upload, Trash2, LogOut, Crown, UserCog, Clock, Sparkles } from 'lucide-react';
 import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
 import WorkTransferOwnershipModal from './WorkTransferOwnershipModal';
 import WorkMemberSettings from './WorkMemberSettings';
