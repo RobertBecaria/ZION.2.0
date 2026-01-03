@@ -23907,6 +23907,159 @@ async def remove_co_organizer(
         raise HTTPException(status_code=401, detail="Token expired")
 
 
+# ===== ERIC AI AGENT ENDPOINTS =====
+from eric_agent import ERICAgent, ChatRequest, ChatResponse, AgentSettings, AgentConversation
+
+# Initialize ERIC agent
+eric_agent = ERICAgent(db)
+
+@api_router.post("/agent/chat")
+async def agent_chat(
+    request: ChatRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Send message to ERIC and receive AI response"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        response = await eric_agent.chat(user_id, request)
+        return response.dict()
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/agent/conversations")
+async def get_agent_conversations(
+    limit: int = 20,
+    offset: int = 0,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get user's conversation history with ERIC"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        conversations = await eric_agent.get_conversations(user_id, limit, offset)
+        return {"conversations": conversations}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.get("/agent/conversations/{conversation_id}")
+async def get_agent_conversation(
+    conversation_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get specific conversation with messages"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        conversation = await eric_agent.get_conversation(user_id, conversation_id)
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        return conversation
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.delete("/agent/conversations/{conversation_id}")
+async def delete_agent_conversation(
+    conversation_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Delete a conversation"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        success = await eric_agent.delete_conversation(user_id, conversation_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        return {"success": True, "message": "Conversation deleted"}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.get("/agent/settings")
+async def get_agent_settings(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get user's ERIC privacy settings"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        settings = await eric_agent.get_settings(user_id)
+        return settings.dict()
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.put("/agent/settings")
+async def update_agent_settings(
+    updates: dict,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Update user's ERIC privacy settings"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Only allow updating specific fields
+        allowed_fields = [
+            "allow_financial_analysis",
+            "allow_health_data_access", 
+            "allow_location_tracking",
+            "allow_family_coordination",
+            "allow_service_recommendations",
+            "allow_marketplace_suggestions",
+            "conversation_retention_days"
+        ]
+        filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+        
+        settings = await eric_agent.update_settings(user_id, filtered_updates)
+        return settings.dict()
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.post("/agent/post-mention")
+async def process_post_mention(
+    post_id: str,
+    post_content: str,
+    author_name: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Process @ERIC mention in a post and generate comment"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        response = await eric_agent.process_post_mention(user_id, post_id, post_content, author_name)
+        return {"comment": response}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+
+@api_router.get("/agent/profile")
+async def get_eric_profile():
+    """Get ERIC's profile information for display"""
+    return {
+        "id": "eric-ai",
+        "name": "ERIC",
+        "full_name": "Enhanced Reasoning Intelligence Core",
+        "avatar": "/eric-avatar.jpg",
+        "description": "Ваш персональный ИИ-помощник и финансовый советник",
+        "capabilities": [
+            {"icon": "👨‍👩‍👧‍👦", "name": "Семейное управление", "description": "Планирование событий, координация семьи"},
+            {"icon": "💰", "name": "Финансовый советник", "description": "Анализ расходов, бюджетирование"},
+            {"icon": "🛒", "name": "Подбор услуг", "description": "Поиск и сравнение услуг"},
+            {"icon": "🤝", "name": "Связь с сообществом", "description": "События, маркетплейс, соседи"}
+        ],
+        "status": "online"
+    }
+
+# ===== END ERIC AI AGENT ENDPOINTS =====
+
 # Include the router in the main app
 app.include_router(api_router)
 
