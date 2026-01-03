@@ -1099,10 +1099,18 @@ class ERICAgent:
                 upsert=True
             )
             
+            # Build suggested actions from search results
+            suggested_actions = []
+            if action_cards:
+                suggested_actions = [{
+                    "type": "search_results",
+                    "cards": action_cards
+                }]
+            
             return ChatResponse(
                 conversation_id=conversation.id,
                 message=assistant_message,
-                suggested_actions=[]
+                suggested_actions=suggested_actions
             )
             
         except Exception as e:
