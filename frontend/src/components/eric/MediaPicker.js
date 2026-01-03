@@ -177,7 +177,7 @@ const MediaPicker = ({
             <div className="media-picker-empty">
               <FolderOpen size={48} />
               <p>Файлы не найдены</p>
-              <span>Загрузите файлы в разделе "Мои Фото" или "Мои Документы"</span>
+              <span>Загрузите файлы в разделе Мои Фото или Мои Документы</span>
             </div>
           ) : (
             <div className="media-picker-grid">
