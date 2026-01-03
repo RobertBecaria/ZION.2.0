@@ -415,7 +415,7 @@ class ERICAgent:
             # Create message with image
             user_message = UserMessage(
                 text=analysis_question,
-                image_contents=[image_content]
+                file_contents=[image_content]
             )
             
             # Send and get response
