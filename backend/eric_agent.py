@@ -953,8 +953,6 @@ class ERICAgent:
             if ru_term in search_query:
                 expanded_terms.extend(en_terms)
         
-        print(f"[ERIC Search] message: {message}, search_query: {search_query}, expanded_terms: {expanded_terms}")
-        
         search_context = ""
         found_results = False
         if should_search:
@@ -971,7 +969,6 @@ class ERICAgent:
                     if len(all_results) >= 5:
                         break
             
-            print(f"[ERIC Search] Results count: {len(all_results)}")
             if all_results:
                 found_results = True
                 results_formatted = []
