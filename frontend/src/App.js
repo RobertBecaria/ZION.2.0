@@ -1181,6 +1181,11 @@ function Dashboard() {
                               />
                             )}
 
+                            {/* ERIC AI Assistant */}
+                            {activeView === 'eric-ai' && (
+                              <ERICProfile user={user} />
+                            )}
+
                             {/* My Things - Main Dashboard or Category View */}
                             {(activeView === 'my-things' || 
                               activeView === 'my-things-smart' || 
