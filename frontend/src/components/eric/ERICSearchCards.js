@@ -29,6 +29,8 @@ const ERICSearchCards = ({ cards }) => {
         return <ShoppingBag size={16} />;
       case 'person':
         return <MessageCircle size={16} />;
+      case 'recommendation':
+        return <Star size={16} />;
       default:
         return null;
     }
@@ -44,6 +46,8 @@ const ERICSearchCards = ({ cards }) => {
         return 'Товар';
       case 'person':
         return 'Человек';
+      case 'recommendation':
+        return 'Рекомендация';
       default:
         return type;
     }
@@ -59,6 +63,8 @@ const ERICSearchCards = ({ cards }) => {
         return '#F59E0B'; // Amber
       case 'person':
         return '#EC4899'; // Pink
+      case 'recommendation':
+        return '#8B5CF6'; // Purple
       default:
         return '#6B7280';
     }
