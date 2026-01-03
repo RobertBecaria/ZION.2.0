@@ -919,17 +919,57 @@ class ERICAgent:
         ERIC will automatically search when user asks about finding services, products, people.
         """
         # Keywords that trigger search
-        search_keywords = ["найди", "найти", "поиск", "ищу", "где", "какой", "какая", "лучший", "лучшая", "рекомендуй", "посоветуй"]
+        search_keywords = ["найди", "найти", "поиск", "ищу", "где", "какой", "какая", "лучший", "лучшая", "рекомендуй", "посоветуй", "покажи"]
         should_search = any(kw in message.lower() for kw in search_keywords)
-        print(f"[ERIC Search] message: {message}, should_search: {should_search}")
+        
+        # Extract actual search query by removing trigger words
+        search_query = message.lower()
+        for kw in search_keywords:
+            search_query = search_query.replace(kw, "")
+        search_query = search_query.strip()
+        
+        # Map Russian keywords to English category/search terms
+        category_mappings = {
+            "красота": ["beauty", "салон", "маникюр", "педикюр", "стрижка", "парикмахер"],
+            "красоты": ["beauty", "салон", "маникюр", "педикюр", "стрижка", "парикмахер"],
+            "ремонт": ["repair", "сервис", "мастер", "техника"],
+            "машина": ["auto", "car", "автосервис", "шиномонтаж"],
+            "машины": ["auto", "car", "автосервис", "шиномонтаж"],
+            "еда": ["food", "ресторан", "кафе", "доставка"],
+            "здоровье": ["health", "медицина", "врач", "клиника"],
+            "образование": ["education", "школа", "курсы", "репетитор"],
+            "услуги": ["service", "услуга", "сервис"],
+            "товары": ["product", "товар", "магазин"],
+            "люди": ["person", "человек"],
+            "организации": ["organization", "компания", "фирма"]
+        }
+        
+        # Expand search query with mapped terms
+        expanded_terms = [search_query]
+        for ru_term, en_terms in category_mappings.items():
+            if ru_term in search_query:
+                expanded_terms.extend(en_terms)
+        
+        print(f"[ERIC Search] message: {message}, search_query: {search_query}, expanded_terms: {expanded_terms}")
         
         search_context = ""
         found_results = False
         if should_search:
-            # Extract search query from message
-            search_result = await self.search_platform(user_id, message, "all", limit=5)
-            print(f"[ERIC Search] Results count: {len(search_result.get('results', []))}")
-            if search_result.get("results"):
+            # Try searching with each expanded term until we find results
+            all_results = []
+            for term in expanded_terms:
+                if term:
+                    search_result = await self.search_platform(user_id, term, "all", limit=5)
+                    if search_result.get("results"):
+                        for r in search_result['results']:
+                            # Avoid duplicates
+                            if not any(existing['id'] == r['id'] for existing in all_results):
+                                all_results.append(r)
+                    if len(all_results) >= 5:
+                        break
+            
+            print(f"[ERIC Search] Results count: {len(all_results)}")
+            if all_results:
                 found_results = True
                 results_formatted = []
                 for r in search_result['results'][:5]:
