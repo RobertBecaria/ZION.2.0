@@ -109,6 +109,7 @@ const ERICChatWidget = ({ user }) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
+      setSelectedPlatformFile(null); // Clear platform file if selecting local
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -117,16 +118,40 @@ const ERICChatWidget = ({ user }) => {
     }
   };
 
+  const handlePlatformMediaSelect = async (file) => {
+    // Fetch the actual image from platform and convert to base64
+    try {
+      const token = localStorage.getItem('zion_token');
+      const response = await fetch(`${BACKEND_URL}/api/media/${file.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result);
+          setSelectedPlatformFile(file);
+          setSelectedImage(null); // Clear local file if selecting platform
+        };
+        reader.readAsDataURL(blob);
+      }
+    } catch (error) {
+      console.error('Error loading platform media:', error);
+    }
+  };
+
   const clearSelectedImage = () => {
     setSelectedImage(null);
     setImagePreview(null);
+    setSelectedPlatformFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
   const sendMessage = async () => {
-    if ((!message.trim() && !selectedImage) || loading) return;
+    if ((!message.trim() && !selectedImage && !selectedPlatformFile) || loading) return;
     
     const messageContent = selectedImage 
       ? `📷 ${message.trim() || 'Проанализируй это изображение'}` 
