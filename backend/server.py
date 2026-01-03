@@ -24329,6 +24329,34 @@ async def chat_with_search(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class QueryBusinessesRequest(BaseModel):
+    query: str
+    category: Optional[str] = None
+    limit: int = 5
+
+@api_router.post("/agent/query-businesses")
+async def query_businesses(
+    request: QueryBusinessesRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Query multiple business ERICs for recommendations (Inter-Agent Communication)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        result = await eric_agent.query_multiple_businesses(
+            user_id=user_id,
+            query=request.query,
+            category=request.category,
+            limit=request.limit
+        )
+        
+        return result
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ===== BUSINESS ERIC SETTINGS ENDPOINTS =====
 
 class BusinessERICSettingsModel(BaseModel):
