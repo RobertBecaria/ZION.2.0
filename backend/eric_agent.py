@@ -693,7 +693,6 @@ class ERICAgent:
                         }
                     })
             
-            # Search Services/Marketplace
             # Search Services (service_listings collection)
             if search_type in ["all", "services"]:
                 services = await self.db.service_listings.find({
