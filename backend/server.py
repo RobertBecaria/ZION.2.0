@@ -7584,6 +7584,16 @@ async def create_post(
     
     await db.posts.insert_one(new_post.dict())
     
+    # Check for @ERIC mention and trigger AI response
+    if '@eric' in content.lower() or '@ERIC' in content:
+        # Trigger ERIC AI response as a background task
+        asyncio.create_task(process_eric_mention_for_post(
+            post_id=new_post.id,
+            post_content=content,
+            author_name=f"{current_user.first_name} {current_user.last_name}",
+            user_id=current_user.id
+        ))
+    
     # Prepare response with author info and media files
     author_info = {
         "id": current_user.id,
