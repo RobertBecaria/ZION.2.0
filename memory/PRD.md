@@ -12,7 +12,9 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 - @ERIC mention feature for auto-commenting on posts
 - Context-aware responses using platform data
 - Russian language UI
-- **NEW: Platform-wide search across organizations, services, products, people**
+- **Platform-wide search across organizations, services, products, people**
+- **Interactive search result action cards with navigation**
+- **Inter-Agent Communication: Personal ERICs can query Business ERICs**
 
 ### Family & Social Features
 - Family wall with posts, comments, reactions
@@ -27,42 +29,53 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 
 ## What's Been Implemented
 
-### 2026-01-03: ERIC Platform Search (P0 - COMPLETE)
-- ✅ **Search API** (`/api/agent/search`) - searches across:
-  - Organizations (work_organizations collection)
-  - Services (service_listings collection)
-  - Products (marketplace_products collection)
-  - People (users collection with privacy filtering)
-- ✅ **Chat with Search** (`/api/agent/chat-with-search`) - auto-triggers search on keywords
-- ✅ **Keyword Expansion** - Russian terms mapped to English categories:
-  - красота → beauty, салон, маникюр, парикмахер
-  - ремонт → repair, сервис, мастер
-  - машина → auto, car, автосервис
-- ✅ **Frontend Integration** - Chat widget now uses search-enabled chat endpoint
-- ✅ **Bug Fixes**:
-  - Fixed search_type='services' incorrectly including organizations
-  - Fixed limit parameter to apply to total results, not per-collection
+### 2026-01-03: Search Action Cards & Inter-Agent Communication (COMPLETE ✅)
+
+**Search Action Cards:**
+- ✅ Interactive cards in ERIC chat with type badges:
+  - 🟢 УСЛУГА (Service) - Green, "Забронировать" button → /services/{id}
+  - 🟣 ОРГАНИЗАЦИЯ (Organization) - Indigo, "Подробнее" button → /organizations/{id}
+  - 🟡 ТОВАР (Product) - Amber, "Посмотреть" button → /marketplace/{id}
+  - 💜 РЕКОМЕНДАЦИЯ (Recommendation) - Purple, from inter-agent queries
+  - 🩷 ЧЕЛОВЕК (Person) - Pink, "Написать" button → /messages?user={id}
+- ✅ Metadata display: price, city, rating, promotions indicator
+- ✅ Navigation via window.location for Router context compatibility
+
+**Inter-Agent Communication (P1):**
+- ✅ `query_multiple_businesses` method in eric_agent.py
+- ✅ `/api/agent/query-businesses` endpoint
+- ✅ Automatic business ERIC queries on recommendation keywords (лучший, рекомендуй, посоветуй)
+- ✅ Privacy-respecting responses based on business settings
+- ✅ Relevance scoring for result ranking
+
+### 2026-01-03: ERIC Platform Search (P0 - COMPLETE ✅)
+- ✅ Search API (`/api/agent/search`)
+- ✅ Chat with Search (`/api/agent/chat-with-search`)
+- ✅ Keyword Expansion (Russian → English categories)
+- ✅ Word stem matching (услуг, красот, школ, etc.)
 
 ### Previous Sessions
-- **ERIC Widget & Prompt Fixes** - Fixed blinking, hallucinations
-- **Image & Document Analysis** - Claude Sonnet 4.5 via Emergent LLM Key
-- **Media Picker** - Browse files from platform Journal
-- **Business ERIC Settings** - Per-organization AI configuration
-- **"Ask ERIC AI" Post Visibility** - Alternative to @mentions
-- **NewsFeed Refactoring** - Reduced code by ~44%
+- ERIC Widget & Prompt Fixes
+- Image & Document Analysis (Claude Sonnet 4.5)
+- Media Picker from Platform Journal
+- Business ERIC Settings UI/API
+- "Ask ERIC AI" Post Visibility
+- NewsFeed Refactoring
 
 ## Architecture
 
 ### Backend (FastAPI + MongoDB)
 - `/app/backend/server.py` - Main server with 24k+ lines
-- `/app/backend/eric_agent.py` - ERIC AI logic (~1000 lines)
+- `/app/backend/eric_agent.py` - ERIC AI logic (~1200 lines)
 - DeepSeek API for text chat
 - Claude Sonnet 4.5 (via Emergent) for vision/documents
 
 ### Frontend (React)
 - `/app/frontend/src/components/eric/` - ERIC components
-- `/app/frontend/src/components/wall/` - Shared post components
-- Shadcn UI components in `/app/frontend/src/components/ui/`
+  - `ERICChatWidget.js` - Main chat interface
+  - `ERICSearchCards.js` - Search result action cards
+  - `MediaPicker.js` - Platform file picker
+- Shadcn UI components
 
 ### Database Collections
 - `agent_conversations` - ERIC chat history
@@ -71,37 +84,32 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 - `service_listings` - Services marketplace
 - `marketplace_products` - Products marketplace
 - `work_organizations` - Companies/schools/etc.
-- `users` - User profiles
 
 ## API Endpoints (ERIC)
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/agent/chat` | POST | Basic chat (no search) |
-| `/api/agent/chat-with-search` | POST | Chat with auto-search |
+| `/api/agent/chat-with-search` | POST | Chat with auto-search + inter-agent |
 | `/api/agent/search` | POST | Direct search API |
+| `/api/agent/query-businesses` | POST | Query multiple business ERICs |
 | `/api/agent/chat-with-image` | POST | Chat with image analysis |
 | `/api/agent/analyze-image` | POST | Image analysis only |
-| `/api/agent/analyze-document` | POST | Document analysis |
-| `/api/agent/conversations` | GET | List conversations |
-| `/api/agent/conversations/{id}` | GET/DELETE | Manage conversation |
 | `/api/work/organizations/{org_id}/eric-settings` | GET/PUT | Business ERIC settings |
 
 ## Prioritized Backlog
 
-### P0 (Critical) - COMPLETE
+### P0 & P1 (Critical & High) - COMPLETE ✅
 - ✅ ERIC Platform Search
+- ✅ Search Action Cards with Navigation
+- ✅ Inter-Agent Communication
 
-### P1 (High Priority) - Next Up
-- Inter-Agent Communication (Personal ERIC → Business ERIC)
-- Enhanced Business Analytics
-
-### P2 (Medium Priority)
-- Advanced Financial Advice features
-- AI Assistant Settings Page (control data access)
+### P2 (Medium Priority) - Next Up
+- Enhanced Business Analytics (aggregated insights)
+- AI Assistant Settings Page
 - Drag-and-drop image upload for ERIC chat
 
 ### P3 (Low Priority)
-- Linter warning cleanup (jsx prop false positives)
+- Linter warning cleanup
 
 ## 3rd Party Integrations
 - **DeepSeek** - AI/LLM for text chat (User API key)
@@ -110,10 +118,12 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 - **OpenStreetMap/Leaflet** - Maps
 - **FullCalendar** - Calendar UI
 
+## Test Reports
+- `/app/test_reports/iteration_2.json` - ERIC Search tests (26 passed)
+- `/app/test_reports/iteration_3.json` - Action Cards & Inter-Agent (13 passed)
+- `/app/tests/test_eric_search.py` - Search test file
+- `/app/tests/test_eric_inter_agent.py` - Inter-Agent test file
+
 ## Test Credentials
 - Admin: `admin@test.com` / `testpassword123`
 - User: `testuser@test.com` / `testpassword123`
-
-## Test Reports
-- `/app/test_reports/iteration_2.json` - ERIC Search tests (26 passed)
-- `/app/tests/test_eric_search.py` - Test file
