@@ -458,6 +458,9 @@ const ERICChatWidget = ({ user }) => {
                   {imagePreview && (
                     <div className="eric-image-preview">
                       <img src={imagePreview} alt="Preview" />
+                      <span className="eric-image-source">
+                        {selectedPlatformFile ? `📁 ${selectedPlatformFile.original_filename}` : '📷 С устройства'}
+                      </span>
                       <button 
                         className="eric-image-remove"
                         onClick={clearSelectedImage}
@@ -481,23 +484,31 @@ const ERICChatWidget = ({ user }) => {
                       className="eric-attach-btn"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={loading}
-                      title="Прикрепить изображение"
+                      title="Загрузить с устройства"
                     >
                       <Image size={20} />
+                    </button>
+                    <button 
+                      className="eric-attach-btn eric-platform-btn"
+                      onClick={() => setShowMediaPicker(true)}
+                      disabled={loading}
+                      title="Выбрать из Журнала"
+                    >
+                      <FolderOpen size={20} />
                     </button>
                     <textarea
                       ref={inputRef}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder={selectedImage ? "Добавьте вопрос об изображении..." : "Напишите сообщение..."}
+                      placeholder={imagePreview ? "Добавьте вопрос об изображении..." : "Напишите сообщение..."}
                       rows={1}
                       disabled={loading}
                     />
                     <button 
                       className="eric-send-btn"
                       onClick={sendMessage}
-                      disabled={(!message.trim() && !selectedImage) || loading}
+                      disabled={(!message.trim() && !selectedImage && !selectedPlatformFile) || loading}
                     >
                       {loading ? <Loader2 size={20} className="spin" /> : <Send size={20} />}
                     </button>
@@ -507,6 +518,15 @@ const ERICChatWidget = ({ user }) => {
             </>
           )}
         </div>
+
+      {/* Media Picker Modal */}
+      <MediaPicker
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={handlePlatformMediaSelect}
+        mediaType="all"
+        title="Выберите из Журнала"
+      />
     </>
   );
 };
