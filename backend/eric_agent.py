@@ -570,7 +570,7 @@ class ERICAgent:
             image_content = ImageContent(image_base64=image_base64)
             user_msg = UserMessage(
                 text=message,
-                image_contents=[image_content]
+                file_contents=[image_content]
             )
             
             # Get response
