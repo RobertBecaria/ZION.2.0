@@ -371,3 +371,243 @@ class ERICAgent:
             
         except Exception as e:
             return f"Извините, не смог обработать запрос: {str(e)}"
+
+    async def analyze_image(self, user_id: str, image_base64: str, mime_type: str, question: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Analyze an image using Claude Sonnet 4.5 via Emergent LLM Key
+        
+        Args:
+            user_id: The user's ID
+            image_base64: Base64 encoded image data
+            mime_type: MIME type of the image (image/jpeg, image/png, image/webp)
+            question: Optional specific question about the image
+        
+        Returns:
+            Dict with analysis results
+        """
+        if not EMERGENT_LLM_KEY:
+            return {
+                "success": False,
+                "error": "Анализ изображений недоступен. Ключ API не настроен."
+            }
+        
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+            
+            # Create a new chat instance for this analysis
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"image-analysis-{user_id}-{uuid4()}",
+                system_message="""Ты ERIC - ИИ-помощник платформы ZION.CITY. 
+Ты анализируешь изображения и предоставляешь полезную информацию на русском языке.
+Будь дружелюбным и полезным. Отвечай структурированно."""
+            )
+            
+            # Configure to use Claude Sonnet for vision
+            chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
+            
+            # Create image content
+            image_content = ImageContent(image_base64=image_base64)
+            
+            # Build the question
+            analysis_question = question if question else "Опиши подробно, что изображено на этой картинке. Укажи ключевые объекты, детали и контекст."
+            
+            # Create message with image
+            user_message = UserMessage(
+                text=analysis_question,
+                image_contents=[image_content]
+            )
+            
+            # Send and get response
+            response = await chat.send_message(user_message)
+            
+            return {
+                "success": True,
+                "analysis": response,
+                "question": analysis_question
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Ошибка при анализе изображения: {str(e)}"
+            }
+
+    async def analyze_document(self, user_id: str, document_text: str, document_name: str, question: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Analyze a document using Claude Sonnet 4.5 via Emergent LLM Key
+        
+        Args:
+            user_id: The user's ID
+            document_text: The extracted text content of the document
+            document_name: Name of the document
+            question: Optional specific question about the document
+        
+        Returns:
+            Dict with analysis results
+        """
+        if not EMERGENT_LLM_KEY:
+            return {
+                "success": False,
+                "error": "Анализ документов недоступен. Ключ API не настроен."
+            }
+        
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            
+            # Create a new chat instance for this analysis
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"doc-analysis-{user_id}-{uuid4()}",
+                system_message="""Ты ERIC - ИИ-помощник платформы ZION.CITY. 
+Ты анализируешь документы и предоставляешь полезную информацию на русском языке.
+Будь дружелюбным и полезным. Отвечай структурированно.
+При анализе документов:
+- Выдели ключевые моменты
+- Если это финансовый документ - обрати внимание на суммы и даты
+- Если это договор - укажи важные условия
+- Предложи действия если уместно"""
+            )
+            
+            # Configure to use Claude Sonnet for document analysis
+            chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
+            
+            # Build the prompt
+            if question:
+                prompt = f"""Документ: {document_name}
+
+Содержимое документа:
+---
+{document_text[:15000]}
+---
+
+Вопрос пользователя: {question}"""
+            else:
+                prompt = f"""Документ: {document_name}
+
+Содержимое документа:
+---
+{document_text[:15000]}
+---
+
+Проанализируй этот документ и предоставь:
+1. Краткое содержание (2-3 предложения)
+2. Ключевые моменты
+3. Важные даты и суммы (если есть)
+4. Рекомендации или действия (если уместно)"""
+            
+            # Create message
+            user_message = UserMessage(text=prompt)
+            
+            # Send and get response
+            response = await chat.send_message(user_message)
+            
+            return {
+                "success": True,
+                "analysis": response,
+                "document_name": document_name,
+                "question": question
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Ошибка при анализе документа: {str(e)}"
+            }
+
+    async def chat_with_image(self, user_id: str, message: str, image_base64: str, mime_type: str, conversation_id: Optional[str] = None) -> ChatResponse:
+        """
+        Chat with ERIC while providing an image for context
+        Uses Claude Sonnet 4.5 for vision capabilities
+        """
+        if not EMERGENT_LLM_KEY:
+            error_message = AgentMessage(
+                role="assistant",
+                content="Извините, анализ изображений временно недоступен. Пожалуйста, попробуйте позже."
+            )
+            return ChatResponse(
+                conversation_id=conversation_id or str(uuid4()),
+                message=error_message,
+                suggested_actions=[]
+            )
+        
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+            
+            # Get user settings
+            settings_doc = await self.db.agent_settings.find_one(
+                {"user_id": user_id},
+                {"_id": 0}
+            )
+            settings = AgentSettings(**settings_doc) if settings_doc else AgentSettings(user_id=user_id)
+            
+            # Get or create conversation
+            conversation = await self.get_or_create_conversation(user_id, conversation_id)
+            
+            # Build user context
+            user_context = await self.get_user_context(user_id, settings)
+            
+            # Add user message to conversation (without image for storage)
+            user_message_record = AgentMessage(role="user", content=f"[Изображение] {message}")
+            conversation.messages.append(user_message_record)
+            
+            # Create chat instance with Claude
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"chat-image-{user_id}-{conversation.id}",
+                system_message=f"""{ERIC_SYSTEM_PROMPT}
+
+## Текущий контекст пользователя:
+{user_context}
+
+## Важно:
+Пользователь прикрепил изображение к сообщению. Проанализируй его и ответь на вопрос пользователя."""
+            )
+            
+            chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
+            
+            # Create image content and message
+            image_content = ImageContent(image_base64=image_base64)
+            user_msg = UserMessage(
+                text=message,
+                image_contents=[image_content]
+            )
+            
+            # Get response
+            response_text = await chat.send_message(user_msg)
+            
+            # Create assistant message
+            assistant_message = AgentMessage(
+                role="assistant",
+                content=response_text
+            )
+            conversation.messages.append(assistant_message)
+            
+            # Update conversation title if first exchange
+            if len(conversation.messages) == 2:
+                conversation.title = f"📷 {message[:40]}..." if len(message) > 40 else f"📷 {message}"
+            
+            # Save conversation
+            conversation.updated_at = datetime.now(timezone.utc).isoformat()
+            await self.db.agent_conversations.update_one(
+                {"id": conversation.id},
+                {"$set": conversation.dict()},
+                upsert=True
+            )
+            
+            return ChatResponse(
+                conversation_id=conversation.id,
+                message=assistant_message,
+                suggested_actions=[]
+            )
+            
+        except Exception as e:
+            error_message = AgentMessage(
+                role="assistant",
+                content=f"Извините, произошла ошибка при анализе изображения: {str(e)}"
+            )
+            return ChatResponse(
+                conversation_id=conversation_id or str(uuid4()),
+                message=error_message,
+                suggested_actions=[]
+            )
