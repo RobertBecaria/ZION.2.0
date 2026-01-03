@@ -1036,9 +1036,6 @@ class ERICAgent:
 ВАЖНО: Ты ДОЛЖЕН использовать эти результаты в своём ответе. Представь их кратко и дружелюбно. Пользователь увидит интерактивные карточки с кнопками действий.
 """
         
-        # Store action cards for response
-        search_action_cards = action_cards if found_results else []
-        
         # Get user settings
         settings_doc = await self.db.agent_settings.find_one(
             {"user_id": user_id},
