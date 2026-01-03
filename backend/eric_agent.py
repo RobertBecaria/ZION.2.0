@@ -972,7 +972,7 @@ class ERICAgent:
             if all_results:
                 found_results = True
                 results_formatted = []
-                for r in search_result['results'][:5]:
+                for r in all_results[:5]:
                     result_str = f"- **{r['type'].upper()}**: {r['name']}"
                     if r.get('description'):
                         result_str += f" - {r['description'][:100]}"
@@ -987,7 +987,7 @@ class ERICAgent:
                     results_formatted.append(result_str)
                 
                 search_context = f"""
-## РЕЗУЛЬТАТЫ ПОИСКА ПО ПЛАТФОРМЕ ZION.CITY (НАЙДЕНО {len(search_result['results'])} результатов):
+## РЕЗУЛЬТАТЫ ПОИСКА ПО ПЛАТФОРМЕ ZION.CITY (НАЙДЕНО {len(all_results)} результатов):
 {chr(10).join(results_formatted)}
 
 ВАЖНО: Ты ДОЛЖЕН использовать эти результаты в своём ответе. Не говори, что не можешь найти информацию - она выше!
