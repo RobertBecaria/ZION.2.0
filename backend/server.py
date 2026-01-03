@@ -23970,6 +23970,7 @@ async def process_eric_mention_for_post(post_id: str, post_content: str, author_
             "liked_by": [],
             "parent_comment_id": None,
             "is_edited": False,
+            "is_deleted": False,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             # ERIC's virtual author info
@@ -23994,6 +23995,46 @@ async def process_eric_mention_for_post(post_id: str, post_content: str, author_
         
     except Exception as e:
         logging.error(f"Error processing ERIC mention for post {post_id}: {str(e)}")
+
+# Helper function to process @ERIC mentions in news posts
+async def process_eric_mention_for_news_post(post_id: str, post_content: str, author_name: str, user_id: str):
+    """Background task to process @ERIC mentions in news posts and add AI comment"""
+    try:
+        # Get ERIC's response
+        eric_response = await eric_agent.process_post_mention(
+            user_id=user_id,
+            post_id=post_id,
+            post_content=post_content,
+            author_name=author_name
+        )
+        
+        # Create ERIC's comment on the news post
+        eric_comment = {
+            "id": str(uuid.uuid4()),
+            "post_id": post_id,
+            "user_id": "eric-ai",
+            "content": eric_response,
+            "likes_count": 0,
+            "parent_comment_id": None,
+            "is_edited": False,
+            "is_deleted": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Insert the comment into news_post_comments
+        await db.news_post_comments.insert_one(eric_comment)
+        
+        # Update news post's comment count
+        await db.news_posts.update_one(
+            {"id": post_id},
+            {"$inc": {"comments_count": 1}}
+        )
+        
+        logging.info(f"ERIC commented on news post {post_id}")
+        
+    except Exception as e:
+        logging.error(f"Error processing ERIC mention for news post {post_id}: {str(e)}")
 
 @api_router.post("/agent/chat")
 async def agent_chat(
