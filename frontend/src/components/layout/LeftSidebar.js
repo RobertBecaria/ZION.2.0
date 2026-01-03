@@ -7,7 +7,7 @@ import {
   User, Newspaper, Heart, Briefcase, GraduationCap, 
   Users, MessageCircle, Image, Video, FileText, Settings, Tv,
   ShoppingCart, Package, Store, Smartphone, Shirt, Car, Home as HomeIcon, Laptop, Palette,
-  Wallet, Send, TrendingUp, DollarSign, Coins
+  Wallet, Send, TrendingUp, DollarSign, Coins, Bot
 } from 'lucide-react';
 import { getModuleByKey, getSidebarTintStyle } from '../../config/moduleConfig';
 
