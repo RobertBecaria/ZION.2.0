@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { User, Image, Paperclip, X, Share2, FileText } from 'lucide-react';
+import { User, Image, Paperclip, X, Share2, FileText, Sparkles } from 'lucide-react';
 import { extractYouTubeIdFromText, extractUrl, getFileGradient, moduleMapping } from './utils/postUtils';
 import { triggerConfetti, toast } from '../../utils/animations';
 
