@@ -177,11 +177,20 @@ const ERICChatWidget = ({ user }) => {
       {!isOpen && (
         <button 
           className="eric-widget-button"
-          onClick={() => setIsOpen(true)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(true);
+          }}
           title="Поговорить с ERIC"
+          type="button"
         >
-          <img src="/eric-avatar.jpg" alt="ERIC" className="eric-button-avatar" />
-          <span className="eric-button-badge">AI</span>
+          <img 
+            src="/eric-avatar.jpg" 
+            alt="ERIC" 
+            className="eric-button-avatar" 
+            style={{ pointerEvents: 'none' }}
+          />
+          <span className="eric-button-badge" style={{ pointerEvents: 'none' }}>AI</span>
         </button>
       )}
 
