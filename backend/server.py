@@ -7584,8 +7584,9 @@ async def create_post(
     
     await db.posts.insert_one(new_post.dict())
     
-    # Check for @ERIC mention and trigger AI response
-    if '@eric' in content.lower() or '@ERIC' in content:
+    # Check for @ERIC mention or ERIC_AI visibility and trigger AI response
+    should_trigger_eric = '@eric' in content.lower() or '@ERIC' in content or visibility == 'ERIC_AI'
+    if should_trigger_eric:
         # Trigger ERIC AI response as a background task
         asyncio.create_task(process_eric_mention_for_post(
             post_id=new_post.id,
