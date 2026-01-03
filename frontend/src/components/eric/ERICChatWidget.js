@@ -1,11 +1,12 @@
 /**
  * ERIC Chat Widget
  * Floating chat interface for ERIC AI Assistant
+ * Supports text chat and image analysis
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   MessageCircle, X, Send, Loader2, Minimize2, Maximize2,
-  Trash2, Settings, ChevronLeft, Sparkles
+  Trash2, Settings, ChevronLeft, Sparkles, Image, Paperclip
 } from 'lucide-react';
 import './ERICChatWidget.css';
 
@@ -18,8 +19,11 @@ const ERICChatWidget = ({ user }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
