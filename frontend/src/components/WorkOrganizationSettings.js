@@ -702,6 +702,173 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
               </div>
             </div>
           )}
+
+          {/* ERIC AI Section */}
+          {activeSection === 'eric_ai' && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-orange-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-orange-900">ERIC AI для бизнеса</h3>
+                    <p className="text-sm text-orange-700">
+                      Настройте ИИ-помощника для вашей организации
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Business ERIC Status */}
+              <div className="p-4 border border-gray-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <Check className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">ERIC Business Активен</div>
+                      <div className="text-sm text-gray-600">ИИ-помощник готов к работе</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                    Активен
+                  </span>
+                </div>
+              </div>
+
+              {/* Data Access Settings */}
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Доступ к данным</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Выберите, какие данные ERIC Business может использовать для ответов на запросы пользователей.
+                </p>
+                
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={true}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Публичные данные компании</div>
+                      <div className="text-sm text-gray-600">Информация о компании, услуги, контакты</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={true}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Акции и купоны</div>
+                      <div className="text-sm text-gray-600">Текущие скидки и специальные предложения</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={false}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Аналитика повторных клиентов</div>
+                      <div className="text-sm text-gray-600">Агрегированная статистика лояльности (без личных данных)</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={false}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Рейтинги и отзывы</div>
+                      <div className="text-sm text-gray-600">Средний рейтинг и тренды отзывов</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Query Permissions */}
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-3">Разрешения на запросы</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Настройте, как другие ERIC-агенты могут взаимодействовать с вашим бизнес-помощником.
+                </p>
+                
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={true}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Разрешить запросы от пользователей ERIC</div>
+                      <div className="text-sm text-gray-600">Персональные ERIC-помощники могут запрашивать публичную информацию</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      defaultChecked={false}
+                      className="w-5 h-5 text-orange-500 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Делиться агрегированной аналитикой</div>
+                      <div className="text-sm text-gray-600">Позволить ERIC сообщать % повторных клиентов при запросах</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* ERIC Chat Preview */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Чат с ERIC Business</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Задайте вопрос вашему бизнес-помощнику для проверки настроек.
+                </p>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Спросить ERIC о бизнесе..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <button className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:shadow-md transition-all">
+                    <Sparkles className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Как это работает?</h4>
+                <ul className="text-sm text-blue-700 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Когда пользователь спрашивает ERIC о вашем бизнесе, его ERIC отправляет запрос вашему ERIC Business</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>ERIC Business отвечает только разрешённой публичной информацией</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-1">•</span>
+                    <span>Приватные данные (финансы, личные контакты клиентов) никогда не передаются</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
             </>
           )}
         </div>
