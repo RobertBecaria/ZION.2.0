@@ -329,6 +329,51 @@
   }
 }
 
+/* Image in messages */
+.eric-msg-image {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  object-fit: cover;
+}
+
+/* Image Preview */
+.eric-image-preview {
+  position: relative;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+}
+
+.eric-image-preview img {
+  max-width: 120px;
+  max-height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.eric-image-remove {
+  position: absolute;
+  top: 4px;
+  left: 130px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.eric-image-remove:hover {
+  background: #b91c1c;
+}
+
 /* Input Area */
 .eric-input-wrapper {
   display: flex;
@@ -337,6 +382,31 @@
   padding: 12px 16px;
   border-top: 1px solid #e5e7eb;
   background: white;
+}
+
+.eric-attach-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f0f2f5;
+  border-radius: 50%;
+  color: #65676b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.eric-attach-btn:hover:not(:disabled) {
+  background: #e4e6e9;
+  color: #FF9500;
+}
+
+.eric-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .eric-input-wrapper textarea {
