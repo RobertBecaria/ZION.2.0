@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import './ERICChatWidget.css';
 import MediaPicker from './MediaPicker';
+import ERICSearchCards from './ERICSearchCards';
 
 const ERICChatWidget = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
