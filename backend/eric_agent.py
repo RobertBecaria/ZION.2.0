@@ -669,15 +669,17 @@ class ERICAgent:
                     "$or": [
                         {"name": {"$regex": query, "$options": "i"}},
                         {"description": {"$regex": query, "$options": "i"}},
-                        {"industry": {"$regex": query, "$options": "i"}}
-                    ],
-                    "is_active": True,
-                    "is_private": False
+                        {"industry": {"$regex": query, "$options": "i"}},
+                        {"address_city": {"$regex": query, "$options": "i"}}
+                    ]
                 }).limit(limit).to_list(limit)
                 
                 for org in orgs:
+                    # Skip private organizations
+                    if org.get("is_private", False):
+                        continue
                     search_results.append({
-                        "id": org.get("id"),
+                        "id": org.get("id") or org.get("organization_id"),
                         "type": "organization",
                         "name": org.get("name"),
                         "description": org.get("description"),
@@ -685,7 +687,9 @@ class ERICAgent:
                         "metadata": {
                             "member_count": org.get("member_count", 0),
                             "founded_year": org.get("founded_year"),
-                            "logo_url": org.get("logo_url")
+                            "logo_url": org.get("logo_url"),
+                            "city": org.get("address_city"),
+                            "organization_type": org.get("organization_type")
                         }
                     })
             
