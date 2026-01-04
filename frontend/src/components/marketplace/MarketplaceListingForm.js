@@ -143,6 +143,8 @@ const MarketplaceListingForm = ({
             ...prev,
             images: [...prev.images, data.url]
           }));
+          // Store the File object for ERIC analysis
+          setUploadedFiles(prev => [...prev, file]);
         }
       } catch (error) {
         console.error('Error uploading image:', error);
