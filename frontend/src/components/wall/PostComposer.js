@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { User, Image, Paperclip, X, Share2, FileText, Sparkles, Bot, Check, Copy } from 'lucide-react';
+import { User, Image, Paperclip, X, Share2, FileText, Sparkles, Bot, Check, Copy, ChevronDown } from 'lucide-react';
 import { extractYouTubeIdFromText, extractUrl, getFileGradient, moduleMapping } from './utils/postUtils';
 import { triggerConfetti, toast } from '../../utils/animations';
 import ERICAnalyzeButton from '../eric/ERICAnalyzeButton';
@@ -24,9 +24,9 @@ function PostComposer({
   const [ericAnalysis, setEricAnalysis] = useState(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [analysisCopied, setAnalysisCopied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Fetch link preview (simple client-side approach)
   const fetchLinkPreview = async (url) => {
     setLoadingLinkPreview(true);
     try {
@@ -34,19 +34,16 @@ function PostComposer({
       const domain = urlObj.hostname.replace('www.', '');
       setLinkPreview({ url, domain, title: domain, description: url });
     } catch (error) {
-      console.log('Link preview error:', error);
       setLinkPreview(null);
     } finally {
       setLoadingLinkPreview(false);
     }
   };
 
-  // Handle text change with URL detection
   const handlePostTextChange = (e) => {
     const text = e.target.value;
     setNewPost(text);
     
-    // Detect YouTube
     const youtubeId = extractYouTubeIdFromText(text);
     if (youtubeId && youtubeId !== detectedYouTube) {
       setDetectedYouTube(youtubeId);
@@ -56,7 +53,6 @@ function PostComposer({
       setDetectedYouTube(null);
     }
     
-    // Detect other links (only if no YouTube)
     if (!youtubeId) {
       const url = extractUrl(text);
       if (url && url !== detectedLink) {
@@ -103,13 +99,8 @@ function PostComposer({
       setUploadedMediaIds(prev => [...prev, ...uploadedIds]);
       setUploadingFiles([]);
       
-      triggerConfetti(document.body, {
-        particleCount: files.length * 20,
-        colors: ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4']
-      });
-      toast.success(`Загружено ${files.length} файлов в пост!`, 'Успех!', { duration: 3000 });
+      toast.success(`Загружено ${files.length} файлов`, 'Успех!', { duration: 2000 });
     } catch (error) {
-      console.error('Error uploading files:', error);
       toast.error(`Ошибка загрузки: ${error.message}`, 'Ошибка');
       setUploadingFiles([]);
       setSelectedFiles(prev => prev.slice(0, -files.length));
@@ -119,14 +110,12 @@ function PostComposer({
   const removeSelectedFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setUploadedMediaIds(prev => prev.filter((_, i) => i !== index));
-    // Clear analysis if file is removed
     if (ericAnalysis) setEricAnalysis(null);
   };
 
   const handleAnalysisComplete = (result) => {
     setEricAnalysis(result);
     setShowAnalysisModal(true);
-    toast.success('ERIC проанализировал ваш файл!', 'Готово!', { duration: 3000 });
   };
 
   const handleAnalysisError = (error) => {
@@ -150,16 +139,7 @@ function PostComposer({
   };
 
   const closeModal = () => {
-    const modal = document.querySelector('.post-composer-modal');
-    if (modal) {
-      modal.style.opacity = '0';
-      modal.style.transform = 'scale(0.9)';
-      setTimeout(() => {
-        modal.style.display = 'none';
-        modal.style.opacity = '1';
-        modal.style.transform = 'scale(1)';
-      }, 200);
-    }
+    setIsModalOpen(false);
   };
 
   const handlePostSubmit = async (e) => {
@@ -192,7 +172,6 @@ function PostComposer({
       });
 
       if (response.ok) {
-        // Reset form state
         setNewPost('');
         setSelectedFiles([]);
         setUploadedMediaIds([]);
@@ -207,171 +186,287 @@ function PostComposer({
           particleCount: 40,
           colors: ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6']
         });
-        toast.success('Ваш пост успешно опубликован!', 'Успех!', { duration: 3500 });
+        toast.success('Пост опубликован!', 'Успех!', { duration: 2500 });
       } else {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
         throw new Error(`Failed to create post: ${errorData.detail || response.statusText}`);
       }
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert(`Failed to create post: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`, 'Ошибка');
     } finally {
       setLoading(false);
     }
   };
 
   const showPostForm = () => {
-    const modal = document.querySelector('.post-composer-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-      setTimeout(() => {
-        const textarea = document.querySelector('.post-textarea');
-        if (textarea) textarea.focus();
-      }, 100);
-    }
+    setIsModalOpen(true);
   };
 
   const getFileIcon = (file) => {
-    if (file.type.startsWith('image/')) return <Image size={32} />;
-    if (file.type.startsWith('video/')) return <Image size={32} />;
-    if (file.type.includes('pdf')) return <FileText size={32} color="#DC2626" />;
+    if (file.type.startsWith('image/')) return <Image size={20} />;
+    if (file.type.startsWith('video/')) return <Image size={20} />;
+    if (file.type.includes('pdf')) return <FileText size={20} color="#DC2626" />;
     if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
-      return <FileText size={32} color="#1D4ED8" />;
+      return <FileText size={20} color="#1D4ED8" />;
     }
-    if (file.type.includes('powerpoint') || file.name.endsWith('.ppt') || file.name.endsWith('.pptx')) {
-      return <FileText size={32} color="#DC2626" />;
-    }
-    if (file.type.includes('excel') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
-      return <FileText size={32} color="#059669" />;
-    }
-    return <FileText size={32} />;
+    return <FileText size={20} />;
   };
+
+  const visibilityOptions = [
+    { value: 'FAMILY_ONLY', label: 'Только моя семья', icon: '🔒' },
+    { value: 'HOUSEHOLD_ONLY', label: 'Домохозяйство', icon: '🏠' },
+    { value: 'PUBLIC', label: 'Публично', icon: '🌍' },
+    { value: 'ONLY_ME', label: 'Только я', icon: '👤' },
+  ];
+
+  const currentVisibility = visibilityOptions.find(v => v.value === postVisibility) || visibilityOptions[0];
 
   return (
     <>
-      {/* Post Creation Trigger */}
+      {/* Trigger Button */}
       <div className="wall-header">
         <div className="post-composer">
-          <div className="post-input-placeholder" onClick={showPostForm}>
+          <div 
+            className="post-input-placeholder" 
+            onClick={showPostForm}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 16px',
+              background: '#f8f9fa',
+              borderRadius: 24,
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+          >
             {user?.profile_picture ? (
               <img 
                 src={user.profile_picture} 
                 alt="Avatar" 
-                className="composer-avatar"
-                style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
               />
             ) : (
-              <div className="composer-avatar" style={{ backgroundColor: moduleColor }}>
+              <div style={{ 
+                width: 40, height: 40, borderRadius: '50%', 
+                backgroundColor: moduleColor,
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
                 <User size={20} color="white" />
               </div>
             )}
-            <div className="composer-placeholder">
-              Что у Вас нового?
-            </div>
+            <span style={{ color: '#65676B', fontSize: 15 }}>Что у Вас нового?</span>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Post Creation Modal */}
-      <div 
-        className="modal-overlay post-composer-modal" 
-        style={{ display: 'none' }}
-        onClick={(e) => {
-          if (e.target.classList.contains('post-composer-modal')) closeModal();
-        }}
-      >
-        <div className="post-form">
-          <form onSubmit={handlePostSubmit}>
-            <div className="form-header">
-              <h4>Создать запись</h4>
-              <button type="button" className="close-btn" onClick={closeModal}>
-                <X size={20} />
+      {/* Modal */}
+      {isModalOpen && (
+        <div 
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16
+          }}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            width: '100%',
+            maxWidth: 500,
+            maxHeight: 'calc(100vh - 32px)',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            animation: 'modalIn 0.2s ease-out'
+          }}>
+            {/* Header - Fixed */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #e5e7eb',
+              flexShrink: 0
+            }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Создать запись</h3>
+              <button
+                type="button"
+                onClick={closeModal}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: '#f3f4f6', border: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={20} color="#6b7280" />
               </button>
             </div>
-            
-            <div className="form-body">
-              {/* Author Section */}
-              <div className="form-author-section">
-                <div className="form-author-avatar" style={{ backgroundColor: moduleColor }}>
-                  <User size={20} color="white" />
+
+            {/* Scrollable Content */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px 20px',
+              minHeight: 0
+            }}>
+              {/* Author */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  backgroundColor: moduleColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <User size={22} color="white" />
                 </div>
-                <div className="form-author-info">
-                  <h5>{user?.first_name} {user?.last_name}</h5>
-                  <p>Публикуется в модуле &ldquo;{moduleName}&rdquo;</p>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 15 }}>{user?.first_name} {user?.last_name}</p>
+                  <div style={{ 
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    fontSize: 13, color: '#6b7280'
+                  }}>
+                    <span>{currentVisibility.icon}</span>
+                    <span>{currentVisibility.label}</span>
+                    <ChevronDown size={14} />
+                  </div>
                 </div>
               </div>
 
-              {/* Enhanced Textarea */}
+              {/* Textarea */}
               <textarea
                 value={newPost}
                 onChange={handlePostTextChange}
-                placeholder="Что у Вас нового? Вставьте ссылку на YouTube или любой сайт для превью"
-                className="post-textarea"
-                rows="3"
+                placeholder="Что у Вас нового?"
                 autoFocus
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  fontSize: 16,
+                  lineHeight: 1.5,
+                  fontFamily: 'inherit'
+                }}
               />
-              
+
               {/* YouTube Preview */}
               {detectedYouTube && (
-                <div className="youtube-preview">
-                  <div className="preview-header">
-                    <span className="preview-label">🎬 YouTube видео</span>
-                    <button type="button" className="remove-preview-btn" onClick={() => setDetectedYouTube(null)}>
-                      <X size={16} />
+                <div style={{
+                  marginTop: 12,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', background: '#f9fafb'
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>🎬 YouTube</span>
+                    <button 
+                      type="button"
+                      onClick={() => setDetectedYouTube(null)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                    >
+                      <X size={16} color="#9ca3af" />
                     </button>
                   </div>
-                  <div className="youtube-embed-container">
+                  <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${detectedYouTube}`}
-                      title="YouTube video"
+                      title="YouTube"
                       frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
-                      className="youtube-iframe"
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                     />
                   </div>
                 </div>
               )}
-              
+
               {/* Link Preview */}
               {linkPreview && !detectedYouTube && (
-                <div className="link-preview">
-                  <div className="preview-header">
-                    <span className="preview-label">🔗 Ссылка</span>
-                    <button type="button" className="remove-preview-btn" onClick={() => { setDetectedLink(null); setLinkPreview(null); }}>
-                      <X size={16} />
-                    </button>
+                <div style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  border: '1px solid #e5e7eb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}>🔗 {linkPreview.domain}</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{linkPreview.url}</div>
                   </div>
-                  <a href={linkPreview.url} target="_blank" rel="noopener noreferrer" className="link-preview-card">
-                    <div className="link-preview-content">
-                      <div className="link-domain">{linkPreview.domain}</div>
-                      <div className="link-url">{linkPreview.url}</div>
-                    </div>
-                    <div className="link-preview-icon"><Share2 size={20} /></div>
-                  </a>
+                  <button 
+                    type="button"
+                    onClick={() => { setDetectedLink(null); setLinkPreview(null); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                  >
+                    <X size={16} color="#9ca3af" />
+                  </button>
                 </div>
               )}
-              
-              {loadingLinkPreview && <div className="link-preview-loading">Загрузка превью...</div>}
-              
+
               {/* File Previews */}
               {selectedFiles.length > 0 && (
-                <div className="file-previews">
+                <div style={{
+                  marginTop: 12,
+                  display: 'grid',
+                  gridTemplateColumns: selectedFiles.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                  gap: 8
+                }}>
                   {selectedFiles.map((file, index) => (
-                    <div key={index} className="file-preview">
+                    <div key={index} style={{
+                      position: 'relative',
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      background: '#f3f4f6',
+                      aspectRatio: file.type.startsWith('image/') ? 'auto' : '16/9'
+                    }}>
                       {file.type.startsWith('image/') ? (
-                        <img src={URL.createObjectURL(file)} alt="Preview" className="preview-image" />
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt="Preview" 
+                          style={{ width: '100%', height: 'auto', display: 'block', maxHeight: 200, objectFit: 'cover' }}
+                        />
                       ) : (
-                        <div className="preview-document" style={{ background: getFileGradient(file) }}>
+                        <div style={{
+                          height: '100%', minHeight: 80,
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          padding: 16, background: getFileGradient(file)
+                        }}>
                           {getFileIcon(file)}
-                          <div className="document-name">{file.name}</div>
-                          <div className="document-size">{(file.size / (1024 * 1024)).toFixed(1)}MB</div>
+                          <span style={{ 
+                            fontSize: 12, marginTop: 8, textAlign: 'center',
+                            maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', color: 'white'
+                          }}>
+                            {file.name}
+                          </span>
                         </div>
                       )}
-                      <button type="button" className="remove-file-btn" onClick={() => removeSelectedFile(index)}>
-                        <X size={16} />
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedFile(index)}
+                        style={{
+                          position: 'absolute', top: 8, right: 8,
+                          width: 28, height: 28, borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.6)', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <X size={16} color="white" />
                       </button>
-                      {/* ERIC Analyze Button for each file */}
+                      {/* ERIC Button */}
                       <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
                         <ERICAnalyzeButton
                           file={file}
@@ -386,169 +481,196 @@ function PostComposer({
                   ))}
                 </div>
               )}
-              
+
               {/* Upload Progress */}
               {uploadingFiles.length > 0 && (
-                <div className="upload-progress">
-                  <p>Загружаем файлы...</p>
-                  {uploadingFiles.map((filename, index) => (
-                    <div key={index} className="uploading-file">
-                      <div className="upload-spinner"></div>
-                      {filename}
-                    </div>
-                  ))}
+                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, color: moduleColor }}>
+                  <div style={{
+                    width: 16, height: 16,
+                    border: `2px solid ${moduleColor}`,
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  <span style={{ fontSize: 14 }}>Загрузка...</span>
                 </div>
               )}
             </div>
-            
-            <div className="form-actions">
-              <div className="media-actions">
-                <span className="media-actions-label">Добавить:</span>
-                <button 
-                  type="button" 
-                  className={`media-btn ${selectedFiles.some(f => f.type.startsWith('image/')) ? 'has-files' : ''}`}
-                  onClick={() => {
-                    fileInputRef.current.accept = "image/jpeg,image/png,image/gif,video/mp4,video/webm,video/ogg";
-                    fileInputRef.current?.click();
-                  }}
-                  title="Добавить фото/видео"
-                >
-                  <Image size={24} />
-                  {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length > 0 && (
-                    <span className="file-count-badge">
-                      {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length}
-                    </span>
-                  )}
-                </button>
-                
-                <button 
-                  type="button" 
-                  className={`media-btn ${selectedFiles.some(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')) ? 'has-files' : ''}`}
-                  onClick={() => {
-                    fileInputRef.current.accept = "application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt";
-                    fileInputRef.current?.click();
-                  }}
-                  title="Добавить документы"
-                >
-                  <Paperclip size={24} />
-                  {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length > 0 && (
-                    <span className="file-count-badge">
-                      {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length}
-                    </span>
-                  )}
-                </button>
-                
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/gif,video/mp4,video/webm,video/ogg,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
-                />
-              </div>
-            </div>
-            
-            <div className="form-footer">
-              {/* Visibility Dropdown */}
-              <div className="visibility-selector">
-                <label htmlFor="post-visibility" className="visibility-label">
-                  Кому показать?
-                </label>
-                <select 
-                  id="post-visibility"
+
+            {/* Footer - Fixed */}
+            <div style={{
+              padding: '12px 20px 16px',
+              borderTop: '1px solid #e5e7eb',
+              flexShrink: 0
+            }}>
+              {/* Action Buttons Row */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fileInputRef.current.accept = "image/*,video/*";
+                      fileInputRef.current?.click();
+                    }}
+                    style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: 'transparent', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', position: 'relative'
+                    }}
+                    title="Фото/видео"
+                  >
+                    <Image size={22} color="#10B981" />
+                    {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length > 0 && (
+                      <span style={{
+                        position: 'absolute', top: 2, right: 2,
+                        width: 16, height: 16, borderRadius: '50%',
+                        background: '#10B981', color: 'white',
+                        fontSize: 10, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fileInputRef.current.accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt";
+                      fileInputRef.current?.click();
+                    }}
+                    style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: 'transparent', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', position: 'relative'
+                    }}
+                    title="Документы"
+                  >
+                    <Paperclip size={22} color="#F59E0B" />
+                    {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length > 0 && (
+                      <span style={{
+                        position: 'absolute', top: 2, right: 2,
+                        width: 16, height: 16, borderRadius: '50%',
+                        background: '#F59E0B', color: 'white',
+                        fontSize: 10, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                {/* Visibility Selector */}
+                <select
                   value={postVisibility}
                   onChange={(e) => setPostVisibility(e.target.value)}
-                  className="visibility-dropdown"
-                  style={{ borderColor: moduleColor, accentColor: moduleColor }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #e5e7eb',
+                    fontSize: 13,
+                    background: 'white',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <option value="FAMILY_ONLY">🔒 Только моя семья</option>
-                  <option value="HOUSEHOLD_ONLY">🏠 Только домохозяйство</option>
-                  <option value="PUBLIC">🌍 Публично</option>
-                  <option value="ONLY_ME">👤 Только я</option>
-                  <option value="GENDER_MALE">♂️ Только мужчины</option>
-                  <option value="GENDER_FEMALE">♀️ Только женщины</option>
-                  <option value="GENDER_IT">🤖 Только IT/AI</option>
-                  <option value="ERIC_AI">✨ Спросить ERIC AI</option>
+                  {visibilityOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
+                  ))}
                 </select>
-                {postVisibility === 'ERIC_AI' && (
-                  <div className="eric-visibility-hint">
-                    <Sparkles size={14} />
-                    <span>ERIC проанализирует ваш пост и ответит персональным комментарием</span>
-                  </div>
-                )}
               </div>
-              
-              <button 
-                type="submit" 
-                className="submit-btn"
+
+              {/* Publish Button */}
+              <button
+                type="button"
+                onClick={handlePostSubmit}
                 disabled={loading || (!newPost.trim() && selectedFiles.length === 0)}
-                style={{ backgroundColor: loading ? undefined : moduleColor }}
+                style={{
+                  width: '100%',
+                  padding: '12px 24px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: loading || (!newPost.trim() && selectedFiles.length === 0) 
+                    ? '#e5e7eb' 
+                    : moduleColor,
+                  color: loading || (!newPost.trim() && selectedFiles.length === 0) ? '#9ca3af' : 'white',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading || (!newPost.trim() && selectedFiles.length === 0) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s'
+                }}
               >
-                {loading ? 'Публикуем...' : 'Опубликовать'}
+                {loading ? 'Публикация...' : 'Опубликовать'}
               </button>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ERIC Analysis Result Modal */}
+      {/* ERIC Analysis Modal */}
       {showAnalysisModal && ericAnalysis && (
         <div 
-          className="modal-overlay eric-analysis-modal"
-          onClick={(e) => {
-            if (e.target.classList.contains('eric-analysis-modal')) setShowAnalysisModal(false);
-          }}
+          onClick={(e) => e.target === e.currentTarget && setShowAnalysisModal(false)}
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             background: 'rgba(0,0,0,0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10001
+            zIndex: 10001,
+            padding: 16
           }}
         >
           <div style={{
             background: 'white',
             borderRadius: 16,
             padding: 24,
-            maxWidth: 500,
-            width: '90%',
+            maxWidth: 480,
+            width: '100%',
             maxHeight: '80vh',
             overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
+                width: 44, height: 44, borderRadius: '50%',
                 background: 'linear-gradient(135deg, #FFD93D 0%, #FF9500 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <Bot size={20} color="white" />
+                <Bot size={22} color="white" />
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Анализ ERIC</h3>
-                <p style={{ margin: 0, fontSize: 12, color: '#666' }}>Ваш AI-ассистент</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Ваш AI-ассистент</p>
               </div>
               <button
                 onClick={() => setShowAnalysisModal(false)}
                 style={{
                   marginLeft: 'auto',
-                  background: 'none',
+                  background: '#f3f4f6',
                   border: 'none',
-                  cursor: 'pointer',
-                  padding: 8
+                  width: 32, height: 32, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer'
                 }}
               >
-                <X size={20} color="#666" />
+                <X size={18} color="#6b7280" />
               </button>
             </div>
 
@@ -559,7 +681,7 @@ function PostComposer({
               marginBottom: 16,
               fontSize: 14,
               lineHeight: 1.6,
-              color: '#333',
+              color: '#374151',
               whiteSpace: 'pre-wrap'
             }}>
               {ericAnalysis.analysis}
@@ -570,18 +692,15 @@ function PostComposer({
                 onClick={copyAnalysis}
                 style={{
                   flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '12px 16px',
                   borderRadius: 10,
-                  border: '1px solid #e0e0e0',
+                  border: '1px solid #e5e7eb',
                   background: 'white',
                   cursor: 'pointer',
                   fontSize: 14,
                   fontWeight: 500,
-                  color: analysisCopied ? '#10B981' : '#333'
+                  color: analysisCopied ? '#10B981' : '#374151'
                 }}
               >
                 {analysisCopied ? <Check size={18} /> : <Copy size={18} />}
@@ -591,10 +710,7 @@ function PostComposer({
                 onClick={addAnalysisToPost}
                 style={{
                   flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   padding: '12px 16px',
                   borderRadius: 10,
                   border: 'none',
@@ -606,12 +722,23 @@ function PostComposer({
                 }}
               >
                 <Sparkles size={18} />
-                Добавить в пост
+                В пост
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
