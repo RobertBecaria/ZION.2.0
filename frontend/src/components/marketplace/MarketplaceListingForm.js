@@ -276,11 +276,27 @@ const MarketplaceListingForm = ({
           <h3>Фотографии</h3>
           <div className="images-grid">
             {formData.images.map((img, idx) => (
-              <div key={idx} className="image-item">
+              <div key={idx} className="image-item" style={{ position: 'relative' }}>
                 <img src={img} alt="" />
                 <button type="button" className="remove-image" onClick={() => removeImage(idx)}>
                   <X size={16} />
                 </button>
+                {/* ERIC Analyze Button for product images */}
+                {uploadedFiles[idx] && (
+                  <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                    <ERICAnalyzeButton
+                      file={uploadedFiles[idx]}
+                      context="marketplace"
+                      contextData={{ 
+                        productTitle: formData.title,
+                        category: formData.category 
+                      }}
+                      onAnalysisComplete={handleAnalysisComplete}
+                      onError={handleAnalysisError}
+                      variant="icon-only"
+                    />
+                  </div>
+                )}
               </div>
             ))}
             
@@ -304,7 +320,7 @@ const MarketplaceListingForm = ({
               </label>
             )}
           </div>
-          <p className="hint">До 10 фотографий. Первая будет главной.</p>
+          <p className="hint">До 10 фотографий. Первая будет главной. Нажмите ✨ для анализа товара с ERIC.</p>
         </div>
 
         {/* Basic Info */}
