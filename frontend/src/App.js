@@ -108,6 +108,7 @@ import {
 } from './components/goodwill';
 // ERIC AI ASSISTANT
 import { ERICChatWidget, ERICProfile } from './components/eric';
+import NotificationDropdown from './components/NotificationDropdown';
 import { 
   Search, Bell, ChevronRight, Plus, GraduationCap, Briefcase
 } from 'lucide-react';
