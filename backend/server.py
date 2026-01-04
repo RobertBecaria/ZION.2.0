@@ -24474,6 +24474,203 @@ async def query_business_eric(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ===== BUSINESS ANALYTICS ENDPOINTS =====
+
+@api_router.get("/work/organizations/{organization_id}/analytics")
+async def get_business_analytics(
+    organization_id: str,
+    period: str = "30d",  # 7d, 30d, 90d, all
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Get aggregated analytics for a business/organization - admin only"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Check admin access
+        membership = await db.work_memberships.find_one({
+            "organization_id": organization_id,
+            "user_id": user_id,
+            "is_admin": True
+        })
+        org = await db.work_organizations.find_one({"id": organization_id})
+        is_creator = org and (org.get("creator_id") == user_id or org.get("owner_user_id") == user_id or org.get("created_by") == user_id)
+        
+        if not membership and not is_creator:
+            raise HTTPException(status_code=403, detail="Only admins can view analytics")
+        
+        # Calculate date range
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        if period == "7d":
+            start_date = now - timedelta(days=7)
+        elif period == "30d":
+            start_date = now - timedelta(days=30)
+        elif period == "90d":
+            start_date = now - timedelta(days=90)
+        else:
+            start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+        
+        start_date_str = start_date.isoformat()
+        
+        # Get service listings for this org
+        services = await db.service_listings.find({
+            "organization_id": organization_id
+        }, {"_id": 0}).to_list(100)
+        service_ids = [s.get("id") for s in services]
+        
+        # Analytics data aggregation
+        analytics = {
+            "period": period,
+            "organization_id": organization_id,
+            "organization_name": org.get("name") if org else "Unknown",
+            "summary": {
+                "total_services": len(services),
+                "total_bookings": 0,
+                "total_reviews": 0,
+                "average_rating": 0,
+                "total_messages": 0,
+                "unique_customers": 0
+            },
+            "bookings": {
+                "total": 0,
+                "completed": 0,
+                "cancelled": 0,
+                "pending": 0,
+                "by_service": []
+            },
+            "reviews": {
+                "total": 0,
+                "average_rating": 0,
+                "rating_distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+                "recent": []
+            },
+            "services": {
+                "most_popular": [],
+                "by_status": {"active": 0, "inactive": 0}
+            },
+            "customers": {
+                "unique": 0,
+                "repeat": 0,
+                "repeat_rate": 0
+            },
+            "trends": {
+                "bookings_by_day": [],
+                "revenue_estimate": 0
+            }
+        }
+        
+        if service_ids:
+            # Get bookings for these services
+            bookings = await db.service_bookings.find({
+                "service_id": {"$in": service_ids},
+                "created_at": {"$gte": start_date_str}
+            }, {"_id": 0}).to_list(1000)
+            
+            analytics["bookings"]["total"] = len(bookings)
+            analytics["summary"]["total_bookings"] = len(bookings)
+            
+            # Count by status
+            for b in bookings:
+                status = b.get("status", "pending").lower()
+                if status in ["completed", "confirmed"]:
+                    analytics["bookings"]["completed"] += 1
+                elif status == "cancelled":
+                    analytics["bookings"]["cancelled"] += 1
+                else:
+                    analytics["bookings"]["pending"] += 1
+            
+            # Unique customers
+            customer_ids = set(b.get("client_id") for b in bookings if b.get("client_id"))
+            analytics["customers"]["unique"] = len(customer_ids)
+            analytics["summary"]["unique_customers"] = len(customer_ids)
+            
+            # Repeat customers (more than 1 booking)
+            customer_booking_counts = {}
+            for b in bookings:
+                cid = b.get("client_id")
+                if cid:
+                    customer_booking_counts[cid] = customer_booking_counts.get(cid, 0) + 1
+            repeat_customers = sum(1 for count in customer_booking_counts.values() if count > 1)
+            analytics["customers"]["repeat"] = repeat_customers
+            if customer_ids:
+                analytics["customers"]["repeat_rate"] = round(repeat_customers / len(customer_ids) * 100, 1)
+            
+            # Bookings by service
+            service_booking_counts = {}
+            for b in bookings:
+                sid = b.get("service_id")
+                service_booking_counts[sid] = service_booking_counts.get(sid, 0) + 1
+            
+            for s in services:
+                sid = s.get("id")
+                analytics["bookings"]["by_service"].append({
+                    "service_id": sid,
+                    "service_name": s.get("name"),
+                    "booking_count": service_booking_counts.get(sid, 0)
+                })
+            
+            # Sort by popularity
+            analytics["bookings"]["by_service"].sort(key=lambda x: x["booking_count"], reverse=True)
+            analytics["services"]["most_popular"] = analytics["bookings"]["by_service"][:5]
+            
+            # Get reviews
+            reviews = await db.service_reviews.find({
+                "service_id": {"$in": service_ids},
+                "created_at": {"$gte": start_date_str}
+            }, {"_id": 0}).sort("created_at", -1).to_list(100)
+            
+            analytics["reviews"]["total"] = len(reviews)
+            analytics["summary"]["total_reviews"] = len(reviews)
+            
+            if reviews:
+                total_rating = 0
+                for r in reviews:
+                    rating = r.get("rating", 0)
+                    total_rating += rating
+                    if 1 <= rating <= 5:
+                        analytics["reviews"]["rating_distribution"][rating] += 1
+                
+                analytics["reviews"]["average_rating"] = round(total_rating / len(reviews), 1)
+                analytics["summary"]["average_rating"] = analytics["reviews"]["average_rating"]
+                
+                # Recent reviews (last 5)
+                for r in reviews[:5]:
+                    analytics["reviews"]["recent"].append({
+                        "rating": r.get("rating"),
+                        "comment": r.get("comment", "")[:100],
+                        "created_at": r.get("created_at")
+                    })
+            
+            # Service status counts
+            for s in services:
+                if s.get("status") == "ACTIVE":
+                    analytics["services"]["by_status"]["active"] += 1
+                else:
+                    analytics["services"]["by_status"]["inactive"] += 1
+            
+            # Bookings by day (for chart)
+            from collections import defaultdict
+            daily_bookings = defaultdict(int)
+            for b in bookings:
+                date_str = b.get("created_at", "")[:10]  # Get YYYY-MM-DD
+                if date_str:
+                    daily_bookings[date_str] += 1
+            
+            analytics["trends"]["bookings_by_day"] = [
+                {"date": date, "count": count}
+                for date, count in sorted(daily_bookings.items())
+            ][-30:]  # Last 30 days
+        
+        return analytics
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ===== END ERIC AI AGENT ENDPOINTS =====
 
 # Include the router in the main app
