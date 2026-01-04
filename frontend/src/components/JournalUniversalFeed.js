@@ -426,135 +426,273 @@ const JournalUniversalFeed = ({
       {/* Enhanced Post Creation Modal */}
       {showPostModal && (
         <div 
-          className="modal-overlay post-composer-modal" 
-          style={{ display: 'flex' }}
-          onClick={(e) => {
-            if (e.target.classList.contains('modal-overlay')) {
-              setShowPostModal(false);
-            }
+          onClick={(e) => e.target === e.currentTarget && setShowPostModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16
           }}
         >
-          <div className="post-form">
-            <form onSubmit={(e) => { e.preventDefault(); handleCreatePost(); }}>
-              <div className="form-header">
-                <h4>Создать запись</h4>
-                <button 
-                  type="button" 
-                  className="close-btn"
-                  onClick={() => setShowPostModal(false)}
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            width: '100%',
+            maxWidth: 500,
+            maxHeight: 'calc(100vh - 32px)',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            animation: 'modalIn 0.2s ease-out'
+          }}>
+            {/* Header - Fixed */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #e5e7eb',
+              flexShrink: 0
+            }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Создать запись</h3>
+              <button
+                type="button"
+                onClick={() => setShowPostModal(false)}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: '#f3f4f6', border: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={20} color="#6b7280" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px 20px',
+              minHeight: 0
+            }}>
+              {/* Author */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  backgroundColor: moduleColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <User size={22} color="white" />
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 15 }}>{user?.first_name} {user?.last_name}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Модуль «Журнал»</p>
+                </div>
+              </div>
+
+              {/* School Selection */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>
+                  Школа:
+                </label>
+                <select 
+                  value={selectedOrg}
+                  onChange={(e) => setSelectedOrg(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: `2px solid ${moduleColor}`,
+                    fontSize: 14,
+                    background: 'white',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <X size={20} />
-                </button>
+                  <option value="all">Выберите школу</option>
+                  {getAllSchools().map(school => (
+                    <option key={school.organization_id} value={school.organization_id}>
+                      {school.organization_name} ({school.role === 'teacher' ? 'Учитель' : 'Родитель'})
+                    </option>
+                  ))}
+                </select>
               </div>
-              
-              <div className="form-body">
-                {/* Author Section */}
-                <div className="form-author-section">
-                  <div className="form-author-avatar" style={{ backgroundColor: moduleColor }}>
-                    <User size={20} color="white" />
-                  </div>
-                  <div className="form-author-info">
-                    <h5>{user?.first_name} {user?.last_name}</h5>
-                    <p>Публикуется в модуле «Журнал»</p>
-                  </div>
-                </div>
 
-                {/* School Selection */}
-                <div className="journal-select-group">
-                  <label>Школа:</label>
-                  <select 
-                    value={selectedOrg}
-                    onChange={(e) => setSelectedOrg(e.target.value)}
-                    className="journal-select"
-                    style={{ borderColor: moduleColor }}
-                  >
-                    <option value="all">Выберите школу</option>
-                    {getAllSchools().map(school => (
-                      <option key={school.organization_id} value={school.organization_id}>
-                        {school.organization_name} ({school.role === 'teacher' ? 'Учитель' : 'Родитель'})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Textarea */}
+              <textarea
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                placeholder="Что у Вас нового?"
+                autoFocus
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  fontSize: 16,
+                  lineHeight: 1.5,
+                  fontFamily: 'inherit'
+                }}
+              />
 
-                {/* Textarea */}
-                <textarea
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  placeholder="Что у Вас нового?"
-                  className="post-textarea"
-                  rows="3"
-                  autoFocus
-                />
-                
-                {/* File Previews */}
-                {selectedFiles.length > 0 && (
-                  <div className="file-previews">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="file-preview">
-                        {file.type.startsWith('image/') ? (
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            alt="Preview" 
-                            className="preview-image"
-                          />
-                        ) : (
-                          <div className="preview-document">
-                            <FileText size={32} />
-                            <div className="document-name">{file.name}</div>
-                          </div>
-                        )}
-                        <button 
-                          type="button"
-                          className="remove-file-btn"
-                          onClick={() => removeSelectedFile(index)}
-                        >
-                          <X size={16} />
-                        </button>
+              {/* File Previews */}
+              {selectedFiles.length > 0 && (
+                <div style={{
+                  marginTop: 12,
+                  display: 'grid',
+                  gridTemplateColumns: selectedFiles.length === 1 ? '1fr' : 'repeat(2, 1fr)',
+                  gap: 8
+                }}>
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} style={{
+                      position: 'relative',
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      background: '#f3f4f6',
+                      aspectRatio: file.type.startsWith('image/') ? 'auto' : '16/9'
+                    }}>
+                      {file.type.startsWith('image/') ? (
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt="Preview" 
+                          style={{ width: '100%', height: 'auto', display: 'block', maxHeight: 200, objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{
+                          height: '100%', minHeight: 80,
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          padding: 16, 
+                          background: 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)'
+                        }}>
+                          <FileText size={24} color="white" />
+                          <span style={{ 
+                            fontSize: 12, marginTop: 8, textAlign: 'center',
+                            maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', color: 'white'
+                          }}>
+                            {file.name}
+                          </span>
+                        </div>
+                      )}
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedFile(index)}
+                        style={{
+                          position: 'absolute', top: 8, right: 8,
+                          width: 28, height: 28, borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.6)', border: 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <X size={16} color="white" />
+                      </button>
+                      {/* ERIC Button */}
+                      <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                        <ERICAnalyzeButton
+                          file={file}
+                          context="education"
+                          contextData={{ module: 'journal' }}
+                          onAnalysisComplete={handleAnalysisComplete}
+                          onError={handleAnalysisError}
+                          variant="icon-only"
+                        />
                       </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Upload Progress */}
-                {uploadingFiles.length > 0 && (
-                  <div className="upload-progress">
-                    <p>Загружаем файлы...</p>
-                    {uploadingFiles.map((filename, index) => (
-                      <div key={index} className="uploading-file">
-                        <div className="upload-spinner"></div>
-                        {filename}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <div className="form-actions">
-                <div className="media-actions">
-                  <span className="media-actions-label">Добавить:</span>
-                  <button 
-                    type="button" 
-                    className="media-btn"
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {uploadingFiles.length > 0 && (
+                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, color: moduleColor }}>
+                  <div style={{
+                    width: 16, height: 16,
+                    border: `2px solid ${moduleColor}`,
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  <span style={{ fontSize: 14 }}>Загрузка...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer - Fixed */}
+            <div style={{
+              padding: '12px 20px 16px',
+              borderTop: '1px solid #e5e7eb',
+              flexShrink: 0
+            }}>
+              {/* Action Buttons Row */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button
+                    type="button"
                     onClick={() => {
-                      fileInputRef.current.accept = "image/jpeg,image/png,image/gif,video/mp4,video/webm";
+                      fileInputRef.current.accept = "image/*,video/*";
                       fileInputRef.current?.click();
                     }}
-                    title="Добавить фото/видео"
+                    style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: 'transparent', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', position: 'relative'
+                    }}
+                    title="Фото/видео"
                   >
-                    <Image size={24} />
+                    <Image size={22} color="#10B981" />
+                    {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length > 0 && (
+                      <span style={{
+                        position: 'absolute', top: 2, right: 2,
+                        width: 16, height: 16, borderRadius: '50%',
+                        background: '#10B981', color: 'white',
+                        fontSize: 10, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {selectedFiles.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length}
+                      </span>
+                    )}
                   </button>
                   
-                  <button 
-                    type="button" 
-                    className="media-btn"
+                  <button
+                    type="button"
                     onClick={() => {
-                      fileInputRef.current.accept = "application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt";
+                      fileInputRef.current.accept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt";
                       fileInputRef.current?.click();
                     }}
-                    title="Добавить документы"
+                    style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: 'transparent', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', position: 'relative'
+                    }}
+                    title="Документы"
                   >
-                    <Paperclip size={24} />
+                    <Paperclip size={22} color="#F59E0B" />
+                    {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length > 0 && (
+                      <span style={{
+                        position: 'absolute', top: 2, right: 2,
+                        width: 16, height: 16, borderRadius: '50%',
+                        background: '#F59E0B', color: 'white',
+                        fontSize: 10, fontWeight: 600,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        {selectedFiles.filter(f => !f.type.startsWith('image/') && !f.type.startsWith('video/')).length}
+                      </span>
+                    )}
                   </button>
                   
                   <input
@@ -565,42 +703,170 @@ const JournalUniversalFeed = ({
                     style={{ display: 'none' }}
                   />
                 </div>
-              </div>
-              
-              <div className="form-footer">
-                {/* Audience Selector - Journal Style */}
-                <div className="visibility-selector">
-                  <label htmlFor="post-audience" className="visibility-label">
-                    Кому показать?
-                  </label>
-                  <select 
-                    id="post-audience"
-                    value={selectedAudience}
-                    onChange={(e) => setSelectedAudience(e.target.value)}
-                    className="visibility-dropdown"
-                    style={{ borderColor: moduleColor }}
-                  >
-                    {AUDIENCE_OPTIONS.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <button 
-                  type="submit" 
-                  className="submit-btn"
-                  disabled={loading || !newPost.trim() || selectedOrg === 'all'}
-                  style={{ backgroundColor: loading ? undefined : moduleColor }}
+
+                {/* Audience Selector */}
+                <select
+                  value={selectedAudience}
+                  onChange={(e) => setSelectedAudience(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #e5e7eb',
+                    fontSize: 13,
+                    background: 'white',
+                    cursor: 'pointer'
+                  }}
                 >
-                  {loading ? 'Публикуем...' : 'Опубликовать'}
-                </button>
+                  {AUDIENCE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
+                  ))}
+                </select>
               </div>
-            </form>
+
+              {/* Publish Button */}
+              <button
+                type="button"
+                onClick={handleCreatePost}
+                disabled={loading || !newPost.trim() || selectedOrg === 'all'}
+                style={{
+                  width: '100%',
+                  padding: '12px 24px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: loading || !newPost.trim() || selectedOrg === 'all'
+                    ? '#e5e7eb' 
+                    : moduleColor,
+                  color: loading || !newPost.trim() || selectedOrg === 'all' ? '#9ca3af' : 'white',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading || !newPost.trim() || selectedOrg === 'all' ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {loading ? 'Публикация...' : 'Опубликовать'}
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* ERIC Analysis Modal */}
+      {showAnalysisModal && ericAnalysis && (
+        <div 
+          onClick={(e) => e.target === e.currentTarget && setShowAnalysisModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10001,
+            padding: 16
+          }}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            padding: 24,
+            maxWidth: 480,
+            width: '100%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Bot size={22} color="white" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Анализ ERIC</h3>
+                <p style={{ margin: 0, fontSize: 13, color: '#6b7280' }}>Образовательный контент</p>
+              </div>
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                style={{
+                  marginLeft: 'auto',
+                  background: '#f3f4f6',
+                  border: 'none',
+                  width: 32, height: 32, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={18} color="#6b7280" />
+              </button>
+            </div>
+
+            <div style={{
+              background: '#f8f9fa',
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: '#374151',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {ericAnalysis.analysis}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={copyAnalysis}
+                style={{
+                  flex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  border: '1px solid #e5e7eb',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: analysisCopied ? '#10B981' : '#374151'
+                }}
+              >
+                {analysisCopied ? <Check size={18} /> : <Copy size={18} />}
+                {analysisCopied ? 'Скопировано' : 'Копировать'}
+              </button>
+              <button
+                onClick={addAnalysisToPost}
+                style={{
+                  flex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '12px 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'white'
+                }}
+              >
+                <Sparkles size={18} />
+                В пост
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* Posts Feed */}
       <div className="posts-feed">
