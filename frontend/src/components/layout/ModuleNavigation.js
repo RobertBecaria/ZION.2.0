@@ -2,9 +2,10 @@
  * ModuleNavigation Component
  * Top navigation bar with module selection buttons
  */
-import React from 'react';
-import { User, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Calendar, Bell, BellRing } from 'lucide-react';
 import { MODULES, MODULE_DEFAULT_VIEWS } from '../../config/moduleConfig';
+import NotificationDropdown from '../NotificationDropdown';
 
 const ModuleNavigation = ({ 
   activeModule, 
@@ -19,6 +20,7 @@ const ModuleNavigation = ({
   setShowOnboarding
 }) => {
   const currentModule = MODULES.find(m => m.key === activeModule) || MODULES[0];
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleModuleClick = (moduleKey) => {
     setActiveModule(moduleKey);
@@ -75,6 +77,13 @@ const ModuleNavigation = ({
               <Calendar size={16} />
             </div>
           </div>
+          
+          {/* Notification Bell */}
+          <NotificationDropdown 
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(!showNotifications)}
+          />
+          
           <div className="user-menu">
             <button className="user-button">
               <User size={20} />
