@@ -159,6 +159,22 @@ class ERICAgent:
         self.db = db
         self.model = "deepseek-chat"  # DeepSeek V3.2
     
+    async def create_notification(self, user_id: str, notification_type: str, title: str, message: str, related_data: dict = None):
+        """Create a notification for the user"""
+        notification = {
+            "id": str(uuid4()),
+            "user_id": user_id,
+            "sender_id": "eric_ai",  # Special sender ID for ERIC
+            "type": notification_type,
+            "title": title,
+            "message": message,
+            "related_data": related_data or {},
+            "is_read": False,
+            "created_at": datetime.now(timezone.utc)
+        }
+        await self.db.notifications.insert_one(notification)
+        return notification
+    
     async def get_or_create_conversation(self, user_id: str, conversation_id: Optional[str] = None) -> AgentConversation:
         """Get existing conversation or create new one"""
         if conversation_id:
