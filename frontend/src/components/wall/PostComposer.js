@@ -217,6 +217,10 @@ function PostComposer({
     { value: 'HOUSEHOLD_ONLY', label: 'Домохозяйство', icon: '🏠' },
     { value: 'PUBLIC', label: 'Публично', icon: '🌍' },
     { value: 'ONLY_ME', label: 'Только я', icon: '👤' },
+    { value: 'GENDER_MALE', label: 'Только мужчины', icon: '♂️' },
+    { value: 'GENDER_FEMALE', label: 'Только женщины', icon: '♀️' },
+    { value: 'GENDER_IT', label: 'IT/AI', icon: '🤖' },
+    { value: 'ERIC_AI', label: 'Спросить ERIC AI', icon: '✨' },
   ];
 
   const currentVisibility = visibilityOptions.find(v => v.value === postVisibility) || visibilityOptions[0];
