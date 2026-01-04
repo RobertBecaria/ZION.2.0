@@ -30,7 +30,7 @@ import os
 import base64
 
 # Get backend URL from environment
-BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com"
+BACKEND_URL = "https://context-aware-ai-4.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 # Test credentials

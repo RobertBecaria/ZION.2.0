@@ -5,7 +5,7 @@ import json
 import time
 
 def test_rejection_status():
-    base_url = "https://personal-ai-chat-24.preview.emergentagent.com"
+    base_url = "https://context-aware-ai-4.preview.emergentagent.com"
     
     # Login as admin
     login_data = {"email": "admintest@example.com", "password": "admin123"}

@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # API Configuration
-BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
+BASE_URL = "https://context-aware-ai-4.preview.emergentagent.com/api"
 
 # Test Credentials
 ADMIN_CREDENTIALS = {

@@ -5,7 +5,7 @@ import json
 
 def test_my_info_endpoints():
     """Simple test of MY INFO module endpoints"""
-    base_url = "https://personal-ai-chat-24.preview.emergentagent.com/api"
+    base_url = "https://context-aware-ai-4.preview.emergentagent.com/api"
     
     # Login
     login_response = requests.post(f"{base_url}/auth/login", json={

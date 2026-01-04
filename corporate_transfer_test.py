@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
+BACKEND_URL = "https://context-aware-ai-4.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"

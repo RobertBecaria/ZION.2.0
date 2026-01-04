@@ -26,7 +26,7 @@ import sys
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
+BACKEND_URL = "https://context-aware-ai-4.preview.emergentagent.com/api"
 
 class ZionCityTester:
     def __init__(self):

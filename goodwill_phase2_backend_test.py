@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://personal-ai-chat-24.preview.emergentagent.com/api"
+BASE_URL = "https://context-aware-ai-4.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "testpassword123"
 
