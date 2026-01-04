@@ -599,6 +599,25 @@ function PostComposer({
                 </select>
               </div>
 
+              {/* ERIC AI Hint */}
+              {postVisibility === 'ERIC_AI' && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 12px',
+                  marginBottom: 12,
+                  background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
+                  borderRadius: 10,
+                  border: '1px solid #F59E0B'
+                }}>
+                  <Sparkles size={18} color="#D97706" />
+                  <span style={{ fontSize: 13, color: '#92400E' }}>
+                    ERIC проанализирует ваш пост и ответит персональным комментарием
+                  </span>
+                </div>
+              )}
+
               {/* Publish Button */}
               <button
                 type="button"
