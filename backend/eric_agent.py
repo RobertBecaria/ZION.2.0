@@ -60,6 +60,8 @@ class AgentSettings(BaseModel):
     allow_family_coordination: bool = True
     allow_service_recommendations: bool = True
     allow_marketplace_suggestions: bool = True
+    allow_work_context: bool = True  # Allow analysis of documents from Work section
+    allow_calendar_context: bool = True  # Allow analysis of calendar events
     allow_eric_queries_from_others: bool = True  # Allow other users' ERICs to query
     conversation_retention_days: int = 30
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
