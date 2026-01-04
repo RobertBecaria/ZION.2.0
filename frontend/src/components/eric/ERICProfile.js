@@ -468,25 +468,88 @@ const ERICProfile = ({ user }) => {
               <p>ERIC использует только данные внутри платформы ZION.CITY и никогда не передаёт их третьим лицам.</p>
             </div>
             
-            <div className="settings-list">
-              {settingsItems.map(item => (
-                <div key={item.key} className="setting-item">
-                  <div className="setting-icon">
-                    <item.icon size={20} />
+            {/* Data Access Settings */}
+            <div className="settings-section">
+              <h4 className="settings-section-title">Доступ к данным</h4>
+              <div className="settings-list">
+                {dataSettings.map(item => (
+                  <div key={item.key} className="setting-item">
+                    <div className="setting-icon">
+                      <item.icon size={20} />
+                    </div>
+                    <div className="setting-info">
+                      <h4>{item.label}</h4>
+                      <p>{item.description}</p>
+                    </div>
+                    <button 
+                      className={`setting-toggle ${settings?.[item.key] ? 'on' : 'off'}`}
+                      onClick={() => toggleSetting(item.key)}
+                      disabled={savingSettings}
+                    >
+                      {settings?.[item.key] ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                    </button>
                   </div>
-                  <div className="setting-info">
-                    <h4>{item.label}</h4>
-                    <p>{item.description}</p>
+                ))}
+              </div>
+            </div>
+            
+            {/* Context Settings */}
+            <div className="settings-section">
+              <h4 className="settings-section-title">Контекстный анализ</h4>
+              <p className="settings-section-desc">ERIC может анализировать файлы с учётом раздела, из которого они загружены</p>
+              <div className="settings-list">
+                {contextSettings.map(item => (
+                  <div key={item.key} className="setting-item">
+                    <div className="setting-icon">
+                      <item.icon size={20} />
+                    </div>
+                    <div className="setting-info">
+                      <h4>{item.label}</h4>
+                      <p>{item.description}</p>
+                    </div>
+                    <button 
+                      className={`setting-toggle ${settings?.[item.key] ? 'on' : 'off'}`}
+                      onClick={() => toggleSetting(item.key)}
+                      disabled={savingSettings}
+                    >
+                      {settings?.[item.key] ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                    </button>
                   </div>
-                  <button 
-                    className={`setting-toggle ${settings?.[item.key] ? 'on' : 'off'}`}
-                    onClick={() => toggleSetting(item.key)}
-                    disabled={savingSettings}
-                  >
-                    {settings?.[item.key] ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
-                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Conversation History Management */}
+            <div className="settings-section">
+              <h4 className="settings-section-title">История разговоров</h4>
+              <div className="history-stats">
+                <div className="history-stat">
+                  <span className="stat-number">{conversations.length}</span>
+                  <span className="stat-label">разговоров</span>
                 </div>
-              ))}
+                <div className="history-stat">
+                  <span className="stat-number">{messages.length}</span>
+                  <span className="stat-label">сообщений</span>
+                </div>
+              </div>
+              {conversations.length > 0 && (
+                <button 
+                  className="clear-history-btn"
+                  onClick={async () => {
+                    if (window.confirm('Вы уверены, что хотите удалить всю историю разговоров?')) {
+                      for (const conv of conversations) {
+                        await deleteConversation(conv.id);
+                      }
+                      setConversations([]);
+                      setMessages([]);
+                      setCurrentConversation(null);
+                    }
+                  }}
+                >
+                  <Trash2 size={18} />
+                  Очистить историю
+                </button>
+              )}
             </div>
           </div>
         )}
