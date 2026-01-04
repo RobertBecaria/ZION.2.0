@@ -119,6 +119,34 @@ function PostComposer({
   const removeSelectedFile = (index) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setUploadedMediaIds(prev => prev.filter((_, i) => i !== index));
+    // Clear analysis if file is removed
+    if (ericAnalysis) setEricAnalysis(null);
+  };
+
+  const handleAnalysisComplete = (result) => {
+    setEricAnalysis(result);
+    setShowAnalysisModal(true);
+    toast.success('ERIC проанализировал ваш файл!', 'Готово!', { duration: 3000 });
+  };
+
+  const handleAnalysisError = (error) => {
+    toast.error(error, 'Ошибка анализа');
+  };
+
+  const copyAnalysis = () => {
+    if (ericAnalysis?.analysis) {
+      navigator.clipboard.writeText(ericAnalysis.analysis);
+      setAnalysisCopied(true);
+      setTimeout(() => setAnalysisCopied(false), 2000);
+    }
+  };
+
+  const addAnalysisToPost = () => {
+    if (ericAnalysis?.analysis) {
+      setNewPost(prev => prev ? `${prev}\n\n📊 Анализ ERIC:\n${ericAnalysis.analysis}` : `📊 Анализ ERIC:\n${ericAnalysis.analysis}`);
+      setShowAnalysisModal(false);
+      toast.success('Анализ добавлен в пост', 'Готово!');
+    }
   };
 
   const closeModal = () => {
