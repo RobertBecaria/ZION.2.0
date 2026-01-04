@@ -132,6 +132,7 @@ const WorkPostFeed = ({ organizationId, organizationName, currentUserId, isAdmin
       {canPost && (
         <WorkPostComposer
           organizationId={organizationId}
+          organizationName={organizationName}
           onPostCreated={handlePostCreated}
         />
       )}
