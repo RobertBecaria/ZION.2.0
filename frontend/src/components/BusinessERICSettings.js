@@ -1,11 +1,14 @@
 /**
  * Business ERIC Settings Component
  * Settings panel for configuring ERIC AI for organizations
+ * Includes Analytics Dashboard tab
  */
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Check, AlertCircle, Loader2, Save } from 'lucide-react';
+import { Sparkles, Check, AlertCircle, Loader2, Save, BarChart3, Settings } from 'lucide-react';
+import BusinessAnalyticsDashboard from './BusinessAnalyticsDashboard';
 
 const BusinessERICSettings = ({ organizationId, onSave }) => {
+  const [activeTab, setActiveTab] = useState('analytics');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
