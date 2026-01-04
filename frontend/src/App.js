@@ -1634,13 +1634,8 @@ function Dashboard() {
         />
       )}
 
-      {/* ERIC AI Chat Widget - Conditional display */}
-      {showERICWidget && (
-        <ERICChatWidget 
-          user={user} 
-          onClose={() => setShowERICWidget(false)}
-        />
-      )}
+      {/* ERIC AI Chat Widget - Floating on all pages */}
+      <ERICChatWidget user={user} />
     </div>
   );
 }
