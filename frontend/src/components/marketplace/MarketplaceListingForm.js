@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, X, Plus, Camera, Bot, Check, Copy, Sparkles } from 'lucide-react';
-import ERICAnalyzeButton from '../eric/ERICAnalyzeButton';
+import ERICAnalyzeButton from './eric/ERICAnalyzeButton';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
