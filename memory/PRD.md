@@ -128,6 +128,7 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 | `/api/agent/search` | POST | Direct search API |
 | `/api/agent/query-businesses` | POST | Query multiple business ERICs |
 | `/api/agent/settings` | GET/PUT | User privacy settings |
+| `/api/agent/analyze-file-upload` | POST | Context-aware file analysis (FormData) |
 
 ### Business Analytics (NEW)
 | Endpoint | Method | Description |
