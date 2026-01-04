@@ -8168,6 +8168,33 @@ async def mark_all_notifications_read(
     
     return {"message": "All notifications marked as read"}
 
+@api_router.get("/notifications/unread-count")
+async def get_unread_notification_count(
+    current_user: User = Depends(get_current_user)
+):
+    """Get count of unread notifications"""
+    count = await db.notifications.count_documents({
+        "user_id": current_user.id,
+        "is_read": False
+    })
+    return {"unread_count": count}
+
+@api_router.delete("/notifications/{notification_id}")
+async def delete_notification(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a notification"""
+    result = await db.notifications.delete_one({
+        "id": notification_id,
+        "user_id": current_user.id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification deleted"}
+
 # === NEW FAMILY SYSTEM API ENDPOINTS ===
 
 @api_router.put("/users/profile/complete")
