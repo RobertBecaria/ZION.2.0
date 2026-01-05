@@ -381,6 +381,21 @@ const NotificationDropdown = ({ isOpen, onClose, onOpenEricChat }) => {
                   }}>
                     {notification.message}
                   </p>
+                  {/* Show "Click to open ERIC" hint for ERIC notifications */}
+                  {(notification.type === 'eric_recommendation' || notification.type === 'eric_analysis') && (
+                    <p style={{ 
+                      margin: '6px 0 0', 
+                      fontSize: 11, 
+                      color: '#F59E0B',
+                      fontWeight: 500,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      <ExternalLink size={10} />
+                      Нажмите, чтобы открыть в ERIC
+                    </p>
+                  )}
                   <p style={{ 
                     margin: '6px 0 0', 
                     fontSize: 11, 
