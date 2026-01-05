@@ -682,7 +682,9 @@ class ERICAgent:
 
     async def analyze_document(self, user_id: str, document_text: str, document_name: str, question: Optional[str] = None) -> Dict[str, Any]:
         """
-        Analyze a document using Claude Sonnet 4.5 via Emergent LLM Key
+        Analyze a document using DeepSeek (cost-optimized).
+        DeepSeek handles all text-based documents: PDF, DOCX, TXT, CSV, XLSX, JSON, XML, etc.
+        Claude is reserved for image analysis only.
         
         Args:
             user_id: The user's ID
@@ -693,31 +695,23 @@ class ERICAgent:
         Returns:
             Dict with analysis results
         """
-        if not EMERGENT_LLM_KEY:
+        if not deepseek_client:
             return {
                 "success": False,
-                "error": "Анализ документов недоступен. Ключ API не настроен."
+                "error": "Анализ документов недоступен. DeepSeek API не настроен."
             }
         
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-            
-            # Create a new chat instance for this analysis
-            chat = LlmChat(
-                api_key=EMERGENT_LLM_KEY,
-                session_id=f"doc-analysis-{user_id}-{uuid4()}",
-                system_message="""Ты ERIC - ИИ-помощник платформы ZION.CITY. 
+            # System prompt for document analysis
+            system_prompt = """Ты ERIC - ИИ-помощник платформы ZION.CITY. 
 Ты анализируешь документы и предоставляешь полезную информацию на русском языке.
 Будь дружелюбным и полезным. Отвечай структурированно.
 При анализе документов:
 - Выдели ключевые моменты
 - Если это финансовый документ - обрати внимание на суммы и даты
 - Если это договор - укажи важные условия
+- Если это таблица/CSV/Excel - проанализируй данные и тренды
 - Предложи действия если уместно"""
-            )
-            
-            # Configure to use Claude Sonnet for document analysis
-            chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
             
             # Build the prompt
             if question:
@@ -725,7 +719,7 @@ class ERICAgent:
 
 Содержимое документа:
 ---
-{document_text[:15000]}
+{document_text[:30000]}
 ---
 
 Вопрос пользователя: {question}"""
@@ -734,7 +728,7 @@ class ERICAgent:
 
 Содержимое документа:
 ---
-{document_text[:15000]}
+{document_text[:30000]}
 ---
 
 Проанализируй этот документ и предоставь:
@@ -743,17 +737,25 @@ class ERICAgent:
 3. Важные даты и суммы (если есть)
 4. Рекомендации или действия (если уместно)"""
             
-            # Create message
-            user_message = UserMessage(text=prompt)
+            # Call DeepSeek API
+            response = await deepseek_client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.5  # Lower temperature for more factual document analysis
+            )
             
-            # Send and get response
-            response = await chat.send_message(user_message)
+            analysis_content = response.choices[0].message.content
             
             return {
                 "success": True,
-                "analysis": response,
+                "analysis": analysis_content,
                 "document_name": document_name,
-                "question": question
+                "question": question,
+                "model_used": "deepseek"  # Track which model was used
             }
             
         except Exception as e:
@@ -761,6 +763,57 @@ class ERICAgent:
                 "success": False,
                 "error": f"Ошибка при анализе документа: {str(e)}"
             }
+    
+    async def analyze_file_smart(self, user_id: str, file_content: bytes, filename: str, mime_type: str = None, question: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Smart file analysis that routes to the appropriate LLM based on file type.
+        - Images -> Claude Sonnet (vision required)
+        - Documents/Text -> DeepSeek (cheaper)
+        
+        Args:
+            user_id: The user's ID
+            file_content: Raw bytes of the file
+            filename: Original filename
+            mime_type: MIME type of the file
+            question: Optional question about the file
+        
+        Returns:
+            Dict with analysis results and routing info
+        """
+        # Detect file type and routing
+        file_category, use_deepseek = detect_file_type(filename, mime_type)
+        
+        if not use_deepseek:
+            # Route to Claude for images
+            image_base64 = base64.b64encode(file_content).decode('utf-8')
+            result = await self.analyze_image(
+                user_id=user_id,
+                image_base64=image_base64,
+                mime_type=mime_type or 'image/png',
+                question=question
+            )
+            result["routing"] = {
+                "file_category": file_category,
+                "model_used": "claude-sonnet",
+                "reason": "Image analysis requires vision capabilities"
+            }
+            return result
+        
+        # Route to DeepSeek for documents
+        extracted_text, file_type_desc = extract_text_from_file(file_content, filename, mime_type)
+        
+        result = await self.analyze_document(
+            user_id=user_id,
+            document_text=extracted_text,
+            document_name=f"{filename} ({file_type_desc})",
+            question=question
+        )
+        result["routing"] = {
+            "file_category": file_category,
+            "model_used": "deepseek",
+            "reason": "Text-based document analysis - cost optimized"
+        }
+        return result
 
     async def chat_with_image(self, user_id: str, message: str, image_base64: str, mime_type: str, conversation_id: Optional[str] = None) -> ChatResponse:
         """
