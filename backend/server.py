@@ -17182,8 +17182,9 @@ async def get_user_suggestions(
     suggestion_ids = [s["id"] for s in suggestions_raw]
     
     # ========== BATCH QUERY 3: Get ALL related data at once ==========
-    all_friendships, all_work_memberships, all_school_memberships, all_children, follows_me_list = await asyncio.gather(
-        # All friendships for suggested users
+    # Build queries conditionally to avoid empty $in issues
+    queries = [
+        # All friendships for suggested users (always needed)
         db.user_friendships.find({
             "$or": [
                 {"user1_id": {"$in": suggestion_ids}},
@@ -17191,31 +17192,59 @@ async def get_user_suggestions(
             ]
         }, {"_id": 0, "user1_id": 1, "user2_id": 1}).to_list(5000),
         
-        # Work memberships for suggested users in our orgs
-        db.work_members.find({
-            "user_id": {"$in": suggestion_ids},
-            "organization_id": {"$in": user_org_ids} if user_org_ids else {"$in": []},
-            "status": "active"
-        }, {"_id": 0, "user_id": 1, "organization_id": 1}).to_list(500) if user_org_ids else [],
-        
-        # School memberships for suggested users in our schools
-        db.school_memberships.find({
-            "user_id": {"$in": suggestion_ids},
-            "organization_id": {"$in": all_school_ids} if all_school_ids else {"$in": []}
-        }, {"_id": 0, "user_id": 1}).to_list(500) if all_school_ids else [],
-        
-        # Children of suggested users in our schools
-        db.family_students.find({
-            "parent_ids": {"$in": suggestion_ids},
-            "organization_id": {"$in": all_school_ids} if all_school_ids else {"$in": []}
-        }, {"_id": 0, "parent_ids": 1}).to_list(500) if all_school_ids else [],
-        
-        # Users who follow current user
+        # Users who follow current user (always needed)
         db.user_follows.find({
             "follower_id": {"$in": suggestion_ids},
             "target_id": current_user.id
         }, {"_id": 0, "follower_id": 1}).to_list(500)
-    )
+    ]
+    
+    # Conditionally add work/school queries only if user has relevant memberships
+    has_work_orgs = bool(user_org_ids)
+    has_schools = bool(all_school_ids)
+    
+    results = await asyncio.gather(*queries)
+    all_friendships = results[0]
+    follows_me_list = results[1]
+    
+    # Run work/school queries only if needed
+    all_work_memberships = []
+    all_school_memberships = []
+    all_children = []
+    
+    if has_work_orgs or has_schools:
+        extra_queries = []
+        if has_work_orgs:
+            extra_queries.append(
+                db.work_members.find({
+                    "user_id": {"$in": suggestion_ids},
+                    "organization_id": {"$in": user_org_ids},
+                    "status": "active"
+                }, {"_id": 0, "user_id": 1, "organization_id": 1}).to_list(500)
+            )
+        if has_schools:
+            extra_queries.append(
+                db.school_memberships.find({
+                    "user_id": {"$in": suggestion_ids},
+                    "organization_id": {"$in": all_school_ids}
+                }, {"_id": 0, "user_id": 1}).to_list(500)
+            )
+            extra_queries.append(
+                db.family_students.find({
+                    "parent_ids": {"$in": suggestion_ids},
+                    "organization_id": {"$in": all_school_ids}
+                }, {"_id": 0, "parent_ids": 1}).to_list(500)
+            )
+        
+        extra_results = await asyncio.gather(*extra_queries)
+        idx = 0
+        if has_work_orgs:
+            all_work_memberships = extra_results[idx]
+            idx += 1
+        if has_schools:
+            all_school_memberships = extra_results[idx]
+            idx += 1
+            all_children = extra_results[idx] if idx < len(extra_results) else []
     
     # Build lookup maps for O(1) access
     # Map: user_id -> set of their friend_ids
