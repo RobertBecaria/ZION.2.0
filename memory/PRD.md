@@ -82,6 +82,14 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
   - "Копировать" (Copy) button
   - "Добавить в пост" (Add to post) button
 
+### 2026-01-05: Notification Click Opens ERIC Chat (COMPLETE ✅)
+- ✅ **Click ERIC notification → Opens ERIC chat with query auto-sent**
+- ✅ Custom event system: `eric-open-with-query` event
+- ✅ ERICChatWidget listens for events and auto-sends queries
+- ✅ NotificationDropdown dispatches events on click
+- ✅ Visual hint: "Нажмите, чтобы открыть в ERIC" on ERIC notifications
+- ✅ Works for both `eric_recommendation` and `eric_analysis` notification types
+
 ### 2026-01-05: Smart File Routing - Cost Optimization (COMPLETE ✅)
 - ✅ **LLM Cost Optimization:** Documents now analyzed via DeepSeek (cheaper) instead of Claude
 - ✅ **Smart File Type Detection:** Automatically routes files to appropriate LLM
