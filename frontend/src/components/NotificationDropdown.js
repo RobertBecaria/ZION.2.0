@@ -133,9 +133,18 @@ const NotificationDropdown = ({ isOpen, onClose, onOpenEricChat }) => {
     
     // Handle different notification types
     if (notification.type === 'eric_recommendation' || notification.type === 'eric_analysis') {
-      // Show a toast suggesting to open ERIC chat
-      // The ERIC widget is always available as a floating button
-      alert('Откройте ERIC (кнопка ✨ внизу справа) чтобы увидеть рекомендации');
+      // Extract the original query from notification data
+      const query = notification.related_data?.query || notification.message;
+      
+      // Dispatch custom event to open ERIC chat with the query
+      window.dispatchEvent(new CustomEvent('eric-open-with-query', {
+        detail: {
+          query: query,
+          notificationId: notification.id,
+          type: notification.type
+        }
+      }));
+      
       onClose();
     } else if (notification.related_post_id) {
       // Navigate to post (would need router)
