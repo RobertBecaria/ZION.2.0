@@ -1,18 +1,214 @@
 """
 ERIC - Enhanced Reasoning Intelligence Core
 AI Agent for ZION.CITY Platform
-Powered by DeepSeek V3.2 (text) + Claude Sonnet 4.5 (vision/documents)
+Powered by DeepSeek V3.2 (text + documents) + Claude Sonnet 4.5 (vision/images only)
+
+Cost Optimization:
+- DeepSeek: Used for text chat AND document analysis (TXT, DOCX, PDF, CSV, XLSX, JSON, XML, MD)
+- Claude Sonnet: Used ONLY for image analysis (PNG, JPG, JPEG, WEBP, GIF)
 """
 
 import os
 import base64
+import io
 from datetime import datetime, timezone
 from uuid import uuid4
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ===== FILE TYPE DETECTION AND TEXT EXTRACTION =====
+
+# File types that DeepSeek can handle (text-based)
+DEEPSEEK_SUPPORTED_EXTENSIONS = {
+    '.txt', '.md', '.rtf', '.csv', '.json', '.xml', '.html', '.htm',
+    '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt'
+}
+
+# File types that require Claude (images)
+CLAUDE_REQUIRED_EXTENSIONS = {
+    '.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.tiff', '.ico', '.svg'
+}
+
+# MIME types mapping
+IMAGE_MIME_TYPES = {
+    'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif',
+    'image/bmp', 'image/tiff', 'image/x-icon', 'image/svg+xml'
+}
+
+def detect_file_type(filename: str, mime_type: str = None) -> Tuple[str, bool]:
+    """
+    Detect if a file should be processed by DeepSeek or Claude.
+    
+    Returns:
+        Tuple of (file_category, use_deepseek)
+        - file_category: 'image', 'document', 'text', 'spreadsheet', 'unknown'
+        - use_deepseek: True if DeepSeek should handle, False if Claude needed
+    """
+    ext = os.path.splitext(filename.lower())[1] if filename else ''
+    
+    # Check MIME type first for images
+    if mime_type and mime_type in IMAGE_MIME_TYPES:
+        return ('image', False)  # Claude for images
+    
+    # Check extension
+    if ext in CLAUDE_REQUIRED_EXTENSIONS:
+        return ('image', False)  # Claude for images
+    
+    if ext in {'.txt', '.md', '.rtf', '.html', '.htm'}:
+        return ('text', True)  # DeepSeek for text
+    
+    if ext in {'.pdf'}:
+        return ('document', True)  # DeepSeek for PDF text
+    
+    if ext in {'.docx', '.doc'}:
+        return ('document', True)  # DeepSeek for Word docs
+    
+    if ext in {'.xlsx', '.xls', '.csv'}:
+        return ('spreadsheet', True)  # DeepSeek for spreadsheets
+    
+    if ext in {'.json', '.xml'}:
+        return ('structured', True)  # DeepSeek for structured data
+    
+    if ext in {'.pptx', '.ppt'}:
+        return ('presentation', True)  # DeepSeek for presentations
+    
+    # Default: try DeepSeek for unknown text-like content
+    return ('unknown', True)
+
+
+def extract_text_from_pdf(file_content: bytes) -> str:
+    """Extract text from PDF file using PyPDF2"""
+    try:
+        from PyPDF2 import PdfReader
+        
+        pdf_file = io.BytesIO(file_content)
+        reader = PdfReader(pdf_file)
+        
+        text_parts = []
+        for page_num, page in enumerate(reader.pages, 1):
+            page_text = page.extract_text()
+            if page_text:
+                text_parts.append(f"--- Страница {page_num} ---\n{page_text}")
+        
+        if text_parts:
+            return "\n\n".join(text_parts)
+        else:
+            return "[PDF не содержит извлекаемого текста - возможно, это отсканированный документ]"
+    except Exception as e:
+        return f"[Ошибка извлечения текста из PDF: {str(e)}]"
+
+
+def extract_text_from_docx(file_content: bytes) -> str:
+    """Extract text from DOCX file using python-docx"""
+    try:
+        from docx import Document
+        
+        docx_file = io.BytesIO(file_content)
+        doc = Document(docx_file)
+        
+        text_parts = []
+        for para in doc.paragraphs:
+            if para.text.strip():
+                text_parts.append(para.text)
+        
+        # Also extract text from tables
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+                if row_text:
+                    text_parts.append(row_text)
+        
+        if text_parts:
+            return "\n".join(text_parts)
+        else:
+            return "[Документ DOCX пуст или не содержит текста]"
+    except Exception as e:
+        return f"[Ошибка извлечения текста из DOCX: {str(e)}]"
+
+
+def extract_text_from_xlsx(file_content: bytes) -> str:
+    """Extract text from XLSX file using openpyxl"""
+    try:
+        from openpyxl import load_workbook
+        
+        xlsx_file = io.BytesIO(file_content)
+        workbook = load_workbook(xlsx_file, data_only=True)
+        
+        text_parts = []
+        for sheet_name in workbook.sheetnames:
+            sheet = workbook[sheet_name]
+            text_parts.append(f"=== Лист: {sheet_name} ===")
+            
+            for row in sheet.iter_rows(values_only=True):
+                row_values = [str(cell) if cell is not None else "" for cell in row]
+                if any(v.strip() for v in row_values):
+                    text_parts.append(" | ".join(row_values))
+        
+        if text_parts:
+            return "\n".join(text_parts)
+        else:
+            return "[Файл XLSX пуст]"
+    except Exception as e:
+        return f"[Ошибка извлечения данных из XLSX: {str(e)}]"
+
+
+def extract_text_from_csv(file_content: bytes) -> str:
+    """Extract text from CSV file"""
+    try:
+        # Try different encodings
+        for encoding in ['utf-8', 'cp1251', 'latin-1']:
+            try:
+                text = file_content.decode(encoding)
+                return text
+            except UnicodeDecodeError:
+                continue
+        return "[Не удалось декодировать CSV файл]"
+    except Exception as e:
+        return f"[Ошибка чтения CSV: {str(e)}]"
+
+
+def extract_text_from_file(file_content: bytes, filename: str, mime_type: str = None) -> Tuple[str, str]:
+    """
+    Extract text content from a file based on its type.
+    
+    Returns:
+        Tuple of (extracted_text, file_type_description)
+    """
+    ext = os.path.splitext(filename.lower())[1] if filename else ''
+    
+    # PDF
+    if ext == '.pdf' or mime_type == 'application/pdf':
+        return extract_text_from_pdf(file_content), "PDF документ"
+    
+    # Word documents
+    if ext in {'.docx'} or mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        return extract_text_from_docx(file_content), "Word документ (DOCX)"
+    
+    # Excel spreadsheets
+    if ext in {'.xlsx'} or mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        return extract_text_from_xlsx(file_content), "Excel таблица (XLSX)"
+    
+    # CSV
+    if ext == '.csv' or mime_type == 'text/csv':
+        return extract_text_from_csv(file_content), "CSV файл"
+    
+    # Plain text files (TXT, MD, JSON, XML, HTML, etc.)
+    if ext in {'.txt', '.md', '.json', '.xml', '.html', '.htm', '.rtf'}:
+        for encoding in ['utf-8', 'cp1251', 'latin-1']:
+            try:
+                return file_content.decode(encoding), f"Текстовый файл ({ext.upper()})"
+            except UnicodeDecodeError:
+                continue
+        return "[Не удалось декодировать текстовый файл]", "Текстовый файл"
+    
+    # Try generic text decoding for unknown types
+    try:
+        return file_content.decode('utf-8'), "Файл"
+    except UnicodeDecodeError:
+        return f"[Бинарный файл: {filename}, размер: {len(file_content)} байт]", "Бинарный файл"
 
 from openai import AsyncOpenAI
 
