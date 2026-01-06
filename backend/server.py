@@ -4865,17 +4865,45 @@ async def remove_family_member(
     member_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Remove a member from the family"""
+    """Remove a member from the family - FIXED with proper authorization"""
     try:
-        # Check if user is member/admin
-        membership = await db.family_members.find_one({
+        # Check if current user is a member and get their role
+        current_membership = await db.family_members.find_one({
             "family_id": family_id,
             "user_id": current_user.id,
             "is_active": True
         })
         
-        if not membership:
+        if not current_membership:
             raise HTTPException(status_code=403, detail="Not a family member")
+        
+        # Get the member being removed
+        target_member = await db.family_members.find_one({
+            "id": member_id,
+            "family_id": family_id,
+            "is_active": True
+        })
+        
+        if not target_member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Authorization check: Only CREATOR/ADMIN can remove others, or user can remove themselves
+        current_role = current_membership.get("family_role", "MEMBER")
+        is_admin = current_role in ["CREATOR", "ADMIN"]
+        is_removing_self = target_member.get("user_id") == current_user.id
+        
+        if not is_admin and not is_removing_self:
+            raise HTTPException(
+                status_code=403, 
+                detail="Only family admins can remove other members"
+            )
+        
+        # Prevent removing the creator
+        if target_member.get("family_role") == "CREATOR" and not is_removing_self:
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot remove the family creator"
+            )
         
         # Remove member
         result = await db.family_members.update_one(
@@ -4893,6 +4921,8 @@ async def remove_family_member(
         else:
             raise HTTPException(status_code=404, detail="Member not found")
             
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Remove member error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
