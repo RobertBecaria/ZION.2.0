@@ -48,7 +48,7 @@ import uuid
 from datetime import datetime
 
 # Get backend URL from environment
-BACKEND_URL = "https://assist-eric.preview.emergentagent.com/api"
+BACKEND_URL = "https://zion-eric-ai.preview.emergentagent.com/api"
 
 class AltynPaymentTester:
     def __init__(self):

@@ -321,8 +321,8 @@ Test the ERIC AI Assistant integration across ZION.CITY platform modules to veri
 4. Privacy Settings functionality
 
 ## Test Environment
-- **Frontend URL**: https://assist-eric.preview.emergentagent.com
-- **Backend URL**: https://assist-eric.preview.emergentagent.com/api
+- **Frontend URL**: https://zion-eric-ai.preview.emergentagent.com
+- **Backend URL**: https://zion-eric-ai.preview.emergentagent.com/api
 - **Test Credentials**: admin@test.com / testpassword123
 
 ## ERIC Components to Test

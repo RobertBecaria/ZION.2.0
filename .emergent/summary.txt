@@ -1,21 +1,27 @@
 <analysis>**original_problem_statement:** The user's primary goal is to build out a personal AI assistant named **ERIC**.
 
-In this session, the user first requested to fix the UI of the  component, which had layout issues causing the Publish button to be hidden on scroll. After the UI was redesigned and approved, the user asked to implement a push notification system for the existing inter-agent communication feature, so that users get real-time alerts when Business ERICs respond to their queries. The user also asked to restore the full list of visibility options in the post composer dropdown, including the Ask ERIC AI feature.
+In this session, the user focused on several key areas:
+1.  **Cost Optimization:** The user requested to switch from the more expensive Claude AI to the cheaper DeepSeek API for all text-based document analysis, reserving Claude only for image analysis.
+2.  **UX Improvement:** Implement a feature where clicking on an ERIC-related push notification opens the ERIC chat window directly with the context of that notification.
+3.  **AI Trustworthiness:** Ensure ERIC does not hallucinate answers when searching for services in the ZION.CITY database. If no results are found, ERIC should provide a specific, professional message encouraging users to invite businesses to the platform.
+4.  **Critical Performance Bugs:** The user reported that with a growing user base (50+ subscribers), the News (Wall feed) and Мои связи (My Connections) pages were loading extremely slowly or timing out. This required immediate performance analysis and optimization.
 
 **User's preferred language**: The user communicates in English. All new UI text MUST be in **Russian**. The next agent must respond in English but ensure any new or modified UI elements use Russian text.
 
 **what currently exists?**
-The application features a comprehensive AI assistant, ERIC, with chat, search, and file analysis capabilities. It includes a Business Analytics dashboard and a detailed AI Assistant settings page. The Contextual Upload feature (Phase C) is now fully implemented, allowing users to analyze uploaded files with ERIC directly within the upload flow of various components (, , , ).
+The application is a feature-rich AI assistant platform. In this session, critical performance bottlenecks in the main social feed () and the connections/suggestions page () have been resolved by eliminating N+1 query problems and adding database indexes.
 
-The  and  components have been completely redesigned with a modern, scalable, and fixed-layout UI that resolves previous scrolling and visibility issues.
+A new smart file routing system is in place on the backend, which detects file types upon upload. Text-based documents (, , ) are now analyzed by the cheaper DeepSeek API, while image files continue to use the vision-capable Claude API.
 
-A complete, real-time push notification system has been implemented. This includes a notification bell with an unread count badge in the main header, a dropdown to view recent notifications, and the backend logic to generate notifications when a Business ERIC responds to a user's recommendation query.
+The user experience has been improved: clicking on an ERIC recommendation notification now dispatches a custom browser event () that the main  listens for, causing it to open automatically with the relevant search query pre-filled.
+
+Finally, ERIC's search function has been made more robust; it now returns a custom, professional no results message in Russian when a database search yields no matches, preventing AI hallucination.
 
 **Last working item**:
--   **Last item agent was working:** Implementing the **Inter-Agent Push Notifications** feature. This involved creating a new notification type, updating the backend to generate notifications when business agents respond, creating a new frontend notification dropdown component, and integrating it into the main application header.
+-   **Last item agent was working:** Optimizing the Мои связи (My Connections) page, which was suffering from a severe N+1 query problem in the  endpoint, causing hundreds of database calls per request. The agent rewrote the endpoint and related functions to use batched queries and aggregation pipelines.
 -   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** Y (Agent confirmed backend notification creation via  and verified the complete frontend UI flow—badge count, dropdown population, and notification content—via multiple screenshots.)
--   **Which testing method agent to use?** Frontend testing agent. The test should focus on user interaction: 1. Ask ERIC in chat for a recommendation (e.g., find me a good restaurant). 2. Verify the notification bell in the top-right header shows a 1 badge. 3. Click the bell and verify the dropdown shows a notification with the correct message about the recommendation.
+-   **Agent Testing Done:** Y (Agent confirmed all 7 API endpoints for the connections page now respond in under 100ms via  testing.)
+-   **Which testing method agent to use?** Frontend testing agent. The test should load the Мои связи page and verify that all sections (Friends, Followers, Following, Suggestions) load quickly and display data correctly.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
@@ -29,89 +35,98 @@ A complete, real-time push notification system has been implemented. This includ
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   (P0) Await user verification of the new **Inter-Agent Push Notification** feature. The user has approved proceeding based on the agent's demonstration, but has not tested it themselves.
+    -   (P0) Await user verification of the **Мои связи (My Connections) performance fix**.
+    -   (P0) Await user verification of the **News/Wall Feed performance fix**.
+    -   (P1) Await user verification of the **Inter-Agent Push Notification click-to-chat** feature.
 -   **Future Tasks:**
     -   (P1) **Enhanced Business Analytics:** Further enhancements to the analytics dashboard based on user feedback.
 
 **Completed work in this session**
--   **Feature: Phase C - Contextual Upload Integration (DONE):**
-    -   Integrated  into , , , and .
-    -   Added file upload capabilities to  and  to support this.
-    -   Fixed a critical backend bug by creating a new  endpoint to handle  uploads, as the previous endpoint only accepted base64 JSON.
--   **Bugfix & Refactor: Post Composer UI Overhaul (DONE):**
-    -   Completely redesigned  with a modern flexbox layout, featuring a fixed header and footer to ensure the Publish button is always visible.
-    -   The same new, clean design was applied to the composer in  for UI consistency.
--   **Feature: Restore Post Visibility Options (DONE):**
-    -   Restored the full dropdown list of 8 visibility options (Family, Public, Ask ERIC AI, etc.) to both  and .
-    -   Added a contextual hint that appears when Ask ERIC AI is selected.
--   **Bugfix: AI Image Analysis (DONE):**
-    -   Diagnosed and fixed an issue where AI analysis failed because test images were invalid. Confirmed with  and a proper test image that the backend successfully analyzes images and returns a detailed description.
--   **Feature: Inter-Agent Push Notifications (DONE):**
-    -   Created a new  notification type in .
-    -   Updated  to create a notification in the database when a business query returns recommendations.
-    -   Created a new  endpoint.
-    -   Built a new  frontend component with polling to fetch notifications.
-    -   Successfully integrated the notification bell and dropdown into the main application header () after discovering and fixing a CSS issue where the target header section was set to .
+-   **Performance: Connections Page Optimization (DONE):**
+    -   Fixed a critical N+1 query problem in the  endpoint that was causing 300+ DB queries per request.
+    -   Optimized all 6 related endpoints (, , etc.) using batched queries and aggregation pipelines.
+    -   Added database indexes to , , , and  collections.
+-   **Performance: Posts Feed Optimization (DONE):**
+    -   Fixed a severe N+1 query problem in the  endpoint that was causing 100+ DB queries per request.
+    -   Replaced individual queries in a loop with batched queries for authors, media, likes, and reactions.
+    -   Added database indexes to the , , and  collections.
+-   **Feature: ERIC Honest Responses (DONE):**
+    -   Modified  to check if a business search returns zero results.
+    -   If no results are found, ERIC now returns a custom, professional message in Russian instead of hallucinating an answer.
+-   **Feature: Notification Click-to-Chat (DONE):**
+    -   Implemented a custom browser event system ().
+    -    now dispatches this event on click.
+    -    now listens for this event to open itself and pre-fill the search query from the notification.
+-   **Feature: Smart File Routing for Cost Optimization (DONE):**
+    -   Implemented logic in  to detect file types.
+    -   Text-based files (, , ) are now routed to the cheaper DeepSeek API for analysis.
+    -   Image files continue to be routed to Claude Sonnet for vision analysis.
+    -   Added , ,  dependencies for text extraction.
+
+**Earlier issues found/mentioned but not fixed**
+-   None.
+
+**Known issue recurrence from previous fork**
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **UI/UX Refactoring:** Redesigned key components (, ) using a modern flexbox layout with fixed headers/footers to solve usability problems like hidden action buttons.
--   **Real-time Notifications:** Implemented a notification system with backend event triggers (on agent response), database storage ( model), API endpoints for fetching (), and a frontend polling mechanism () to display real-time updates to the user.
--   **Component Re-integration:** Diagnosed and fixed a component placement issue by moving the  from a hidden header ( with ) to the correct, always-visible main navigation component ().
--   **Robust File Uploads:** Refactored the backend to support  for file uploads, which is a more standard and robust approach than base64 encoding in JSON for handling files.
+-   **N+1 Query Optimization:** The core of this session was identifying and fixing severe N+1 query problems. This was solved by replacing loops of individual database calls with **batched queries** (e.g., ) and using MongoDB **aggregation pipelines** to join and process data efficiently on the database side.
+-   **Database Indexing:** To support the new, optimized queries, multiple indexes were programmatically added to collections like , , and . This is crucial for making the batched queries performant at scale.
+-   **Frontend Cross-Component Communication:** A clean, decoupled communication pattern was established between two unrelated React components ( and ) using the browser's native  system. This avoids complex prop drilling or global state management for a simple interaction.
+-   **API Cost Optimization:** Implemented a routing layer that directs tasks to different LLM providers based on capabilities and cost, using DeepSeek for text and Claude for vision.
+
+**key DB schema**
+-   **New Indexes Added:**
+    -   : on , , .
+    -   : on , .
+    -   : on , .
+    -   : on , , .
+    -   : on , .
+    -   : on , .
+    -   : on .
+
+**changes in tech stack**
+-   **Added Backend Libraries:** , ,  for extracting text from various document formats.
 
 **All files of reference**
 -   
 -   
--    (New design)
--    (Updated design)
--    (New component)
--    (Integration point for notifications)
+-   
+-   
+-   
 -   
 
-**key DB schema**
--   **notifications:** (collection used) A new  enum  was added to classify notifications generated by inter-agent communication.
-
-**changes in tech stack**
--   None.
-
 **key api endpoints**
--   : (New) Accepts  for file analysis with ERIC.
--   : (New) Provides the count of unread notifications for the bell badge.
--   : (Existing) Used to fetch notifications for the dropdown.
--   : (Existing) Used by the Read all button.
--   : (Modified) The underlying  function was updated to trigger notification creation.
+-   : (HEAVILY OPTIMIZED) Main feed endpoint. Now uses batched queries instead of N+1 logic.
+-   : (HEAVILY OPTIMIZED) User suggestions endpoint. Now uses batched queries and aggregations instead of a massive N+1 loop.
+-   , , , , : (OPTIMIZED) All related connections endpoints were refactored for performance.
+-   : (MODIFIED) Logic was updated to use the new smart file routing system (DeepSeek vs. Claude).
 
 **Critical Info for New Agent**
--   The main application header UI is managed by . The  in  is hidden with  and should not be used for visible UI elements.
--   The screenshot tool has an aggressive session timeout (~30s). When testing flows that involve waiting for long API calls (like AI analysis), it's better to test the backend with  and perform multi-step UI actions in a single, fast-executing screenshot script to avoid session expiration.
+-   The performance optimization pattern (batching queries + aggregation) is now the standard for any endpoint that fetches a list of items with related data. Replicating the old N+1 pattern will reintroduce critical bugs.
+-   To programmatically open the ERIC chat widget from anywhere in the app, dispatch a  named  on the , with the query string and conversation ID in the  object.
+-   Document analysis is now split between two services. If there are issues with document analysis, check the file routing logic in  first to see which service (DeepSeek or Claude) is being called.
 
 **documents and test reports created in this job**
 -    (Updated)
 -   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Can you please analyze post composer UI it seems like it is off. The publish button is not visible you have to scroll. - **Request to fix UI.** (Completed)
-2.  **(Agent execution):** Agent redesigned  and showed the user.
-3.  **User:** Much nicer. Very good. But we used to have more filters in drop down menu like ask ERIC AI. Can you please add those can you find them? Also we have the same POST composer in JOURNAL - **New requirements.** (Completed)
-4.  **(Agent execution):** Agent added filters and redesigned the Journal composer.
-5.  **User:** When i hit the EricAnalyzebotton what should i get? i believe it should give the description? - **Seeking clarification on feature.** (Completed)
-6.  **(Agent execution):** Agent confirmed functionality and fixed a backend bug preventing the full description from being returned.
-7.  **User:** Yes lets proceed with push notficiations feature ! Eric Button is working great. Thanks - **Approved next task.** (Completed)
-8.  **(Agent execution):** Agent implemented the push notification feature.
-9.  **(Agent conclusion):** Agent showed the final implementation of the push notification feature via screenshots and confirmed it is working.
-10. **There are no pending user messages.**
+1.  **User:** OK a question! i have already deployed the recent build... my NEWS section WALL feed loads forever. - **Reported critical performance bug #1.** (Completed)
+2.  **(Agent execution):** Agent analyzed, identified N+1, optimized , added indexes, and tested.
+3.  **User:** Also when I click on Мои связи it is slow as well. Can we please analyze the entire section... - **Reported critical performance bug #2.** (Completed)
+4.  **(Agent execution):** Agent analyzed, found a massive N+1 in , optimized all 7 connection endpoints, and tested. The fix is pending user verification.
 
 **Project Health Check:**
 -   **Broken:** None.
 -   **Mocked:** None.
 
 **3rd Party Integrations**
--   **DeepSeek:** AI/LLM for basic ERIC chat. Uses a User-provided API Key.
--   **Claude Sonnet (via Emergent Universal Key):** Used for advanced image and document analysis. Uses Emergent LLM Key.
+-   **DeepSeek:** Used for core ERIC chat **and** text-based document analysis (, , ). Uses a User-provided API Key.
+-   **Claude Sonnet (via Emergent Universal Key):** Used for advanced image analysis. Uses Emergent LLM Key.
 -   **Recharts:** Used for rendering bar charts in the analytics dashboard.
 -   **Exchange Rate API:** Live currency conversion.
 -   **OpenStreetMap:** (via Leaflet) Used for maps.
@@ -119,10 +134,9 @@ A complete, real-time push notification system has been implemented. This includ
 -   **qrcode:** Used for generating QR codes on the backend.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. The agent used the testing agent to verify the contextual upload integration after fixing a backend bug.
+-   **Testing agent used after significant changes:** YES. The agent used the testing agent to verify the notification click-to-chat feature.
 -   **Troubleshoot agent used after agent stuck in loop:** NO.
 -   **Test files created:**
-    -   
     -   
 -   **Known regressions:** None.
 
@@ -130,4 +144,4 @@ A complete, real-time push notification system has been implemented. This includ
 Use the standard login credentials from the environment.
 
 **What agent forgot to execute**
--   Nothing. The agent successfully completed all user requests, including fixing a pre-existing UI bug and implementing a major new feature, while also improving code quality and consistency across components.</analysis>
+-   Nothing. The agent successfully addressed all user requests, including two critical, high-priority performance bugs that were impacting production users.</analysis>

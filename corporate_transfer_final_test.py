@@ -5,7 +5,7 @@ import json
 import sys
 
 # Configuration
-BACKEND_URL = "https://assist-eric.preview.emergentagent.com/api"
+BACKEND_URL = "https://zion-eric-ai.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"
