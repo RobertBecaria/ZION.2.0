@@ -1074,16 +1074,16 @@ class FamilyProfileResponse(BaseModel):
 class FamilyMemberResponse(BaseModel):
     id: str
     user_id: str
-    family_role: FamilyRole
-    relationship_to_family: Optional[str]
-    is_primary_resident: bool
-    invitation_accepted: bool
-    joined_at: datetime
+    family_role: FamilyRole = FamilyRole.ADULT_MEMBER
+    relationship_to_family: Optional[str] = None
+    is_primary_resident: bool = True
+    invitation_accepted: bool = True
+    joined_at: Optional[datetime] = None
     
     # User details
-    user_first_name: str
-    user_last_name: str
-    user_avatar_url: Optional[str]
+    user_first_name: str = ""
+    user_last_name: str = ""
+    user_avatar_url: Optional[str] = None
 
 class FamilyPostResponse(BaseModel):
     id: str
