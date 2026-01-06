@@ -8396,22 +8396,34 @@ async def create_family_unit(
 async def get_my_family_units(
     current_user: User = Depends(get_current_user)
 ):
-    """Get all family units user belongs to"""
-    family_unit_ids = await get_user_family_units(current_user.id)
+    """Get all family units user belongs to - OPTIMIZED with batch queries"""
+    # Get user's memberships
+    memberships = await db.family_unit_members.find({
+        "user_id": current_user.id,
+        "is_active": True
+    }).to_list(100)
     
+    if not memberships:
+        return {"family_units": []}
+    
+    # OPTIMIZED: Batch fetch all family units at once
+    family_unit_ids = [m["family_unit_id"] for m in memberships]
+    family_units_docs = await db.family_units.find(
+        {"id": {"$in": family_unit_ids}},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Create lookup maps for O(1) access
+    family_unit_map = {fu["id"]: fu for fu in family_units_docs}
+    membership_map = {m["family_unit_id"]: m for m in memberships}
+    
+    # Build response using lookups
     family_units = []
     for family_unit_id in family_unit_ids:
-        family_unit = await db.family_units.find_one({"id": family_unit_id})
+        family_unit = family_unit_map.get(family_unit_id)
+        membership = membership_map.get(family_unit_id)
+        
         if family_unit:
-            family_unit.pop("_id", None)
-            
-            # Get user's role
-            membership = await db.family_unit_members.find_one({
-                "family_unit_id": family_unit_id,
-                "user_id": current_user.id,
-                "is_active": True
-            })
-            
             family_units.append(FamilyUnitResponse(
                 id=family_unit["id"],
                 family_name=family_unit["family_name"],
