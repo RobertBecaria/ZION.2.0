@@ -1303,8 +1303,13 @@ class ERICAgent:
         Enhanced chat that can perform platform searches when needed.
         ERIC will automatically search when user asks about finding services, products, people.
         """
-        # Keywords that trigger search
-        search_keywords = ["найди", "найти", "поиск", "ищу", "где", "какой", "какая", "лучший", "лучшая", "рекомендуй", "посоветуй", "покажи"]
+        # Keywords that trigger search (Russian + English)
+        search_keywords = [
+            # Russian
+            "найди", "найти", "поиск", "ищу", "где", "какой", "какая", "лучший", "лучшая", "рекомендуй", "посоветуй", "покажи",
+            # English
+            "find", "search", "look for", "looking for", "show me", "where", "recommend", "best"
+        ]
         should_search = any(kw in message.lower() for kw in search_keywords)
         
         # Extract actual search query by removing trigger words
@@ -1313,24 +1318,51 @@ class ERICAgent:
             search_query = search_query.replace(kw, "")
         search_query = search_query.strip()
         
-        # Map Russian keywords to English category/search terms
+        # Map keywords to related search terms (bidirectional Russian/English)
         # Include word stems and common forms
         category_mappings = {
+            # Beauty
             "красот": ["beauty", "салон", "маникюр", "педикюр", "стрижка", "парикмахер"],
+            "beauty": ["красота", "салон", "маникюр", "педикюр", "стрижка"],
+            # Repair
             "ремонт": ["repair", "сервис", "мастер", "техника"],
+            "repair": ["ремонт", "сервис", "мастер"],
+            # Auto
             "машин": ["auto", "car", "автосервис", "шиномонтаж"],
             "автосервис": ["auto", "car", "ремонт", "шиномонтаж"],
+            "car": ["машина", "авто", "автосервис"],
+            # Food
             "еда": ["food", "ресторан", "кафе", "доставка"],
             "еду": ["food", "ресторан", "кафе", "доставка"],
+            "food": ["еда", "ресторан", "кафе", "доставка"],
+            # Health
             "здоров": ["health", "медицина", "врач", "клиника"],
+            "health": ["здоровье", "медицина", "врач", "клиника"],
+            # Education / School - CRITICAL: bidirectional mapping
             "образован": ["education", "школа", "курсы", "репетитор"],
             "школ": ["education", "школа", "курсы", "обучение"],
+            "school": ["школа", "школ", "образование", "education", "обучение", "гимназия", "лицей"],
+            "education": ["школа", "образование", "курсы", "обучение", "репетитор"],
+            # Services
             "услуг": ["service", "услуга", "сервис", "тест"],
+            "service": ["услуга", "сервис"],
+            # Products
             "товар": ["product", "товар", "магазин"],
+            "product": ["товар", "продукт", "магазин"],
+            # People
             "люд": ["person", "человек"],
+            "people": ["люди", "человек"],
+            # Organizations
             "организац": ["organization", "компания", "фирма"],
-            "тест": ["тест", "test", "услуга"]
+            "company": ["компания", "организация", "фирма"],
+            # Test
+            "тест": ["тест", "test", "услуга"],
+            "test": ["тест", "тестовый"]
         }
+        
+        # Keywords that indicate searching for educational institutions
+        education_keywords = ["school", "школ", "образован", "education", "гимназия", "лицей", "колледж", "университет", "вуз"]
+        is_education_search = any(kw in message.lower() for kw in education_keywords)
         
         # Check if user is asking for recommendations (triggers inter-agent queries)
         recommendation_keywords = ["лучший", "лучшая", "лучшее", "рекомендуй", "посоветуй", "какой лучше", "где лучше"]
