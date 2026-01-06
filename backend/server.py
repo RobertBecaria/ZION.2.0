@@ -4560,16 +4560,20 @@ async def get_user_family_profiles(current_user: User = Depends(get_current_user
         family = family_map.get(family_id)
         membership = membership_map.get(family_id)
         
+        logger.info(f"[family-profiles] Processing family_id={family_id}, found_family={family is not None}, found_membership={membership is not None}")
+        
         if family and membership:
             try:
                 family_response = FamilyProfileResponse(**family)
                 family_response.is_user_member = True
                 family_response.user_role = FamilyRole(membership["family_role"])
                 families.append(family_response)
+                logger.info(f"[family-profiles] Successfully added family: {family.get('family_name')}")
             except Exception as e:
-                print(f"Error creating family response: {str(e)}")
+                logger.error(f"[family-profiles] Error creating family response: {str(e)}")
                 continue
     
+    logger.info(f"[family-profiles] Returning {len(families)} families")
     return {"family_profiles": families}
 
 @api_router.get("/family-profiles/{family_id}", response_model=FamilyProfileResponse)
