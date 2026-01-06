@@ -159,6 +159,17 @@ Build and enhance the ZION.CITY social platform - a family-focused social networ
 - ✅ `/api/agent/query-businesses` endpoint
 - ✅ Automatic business ERIC queries on recommendation keywords
 
+### 2026-01-06: ERIC Search Enhancement - Bilingual Support (COMPLETE ✅)
+- ✅ **Fixed "find school" not returning results** - Added English→Russian term expansion
+- ✅ **Bidirectional keyword mappings** - Both English and Russian terms now work:
+  - "school" → школа, образование, гимназия, лицей
+  - "company" → компания, организация, фирма
+  - "beauty" → красота, салон, маникюр
+  - And many more...
+- ✅ **English search trigger words added:** find, search, look for, show me, where, recommend, best
+- ✅ **Special education search** - Queries by `organization_type: EDUCATIONAL` when school-related terms detected
+- ✅ **Verified working:** "find school" now returns "Тестовая Школа №1"
+
 ### 2026-01-03: ERIC Platform Search
 - ✅ Search across organizations, services, products, people
 - ✅ Keyword expansion (Russian → English categories)
