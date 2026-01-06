@@ -4733,7 +4733,7 @@ async def get_family_members_list(
     family_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of family members with user info"""
+    """Get list of family members with user info - OPTIMIZED with batch query"""
     try:
         # Check if user is member/admin
         membership = await db.family_members.find_one({
@@ -4751,17 +4751,30 @@ async def get_family_members_list(
             "is_active": True
         }).to_list(100)
         
-        # Enrich with user data
+        # OPTIMIZED: Batch fetch all users at once instead of N+1 queries
+        user_ids = [member["user_id"] for member in members]
+        users = await db.users.find(
+            {"id": {"$in": user_ids}},
+            {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "email": 1, "avatar_url": 1}
+        ).to_list(100)
+        
+        # Create lookup map for O(1) access
+        user_map = {u["id"]: u for u in users}
+        
+        # Build response using lookup
         member_list = []
         for member in members:
-            user = await db.users.find_one({"id": member["user_id"]})
+            user = user_map.get(member["user_id"])
             if user:
                 member_list.append({
                     "id": member["id"],
                     "user_id": member["user_id"],
-                    "name": user.get("name", ""),
-                    "surname": user.get("surname", ""),
+                    "name": user.get("first_name", ""),
+                    "surname": user.get("last_name", ""),
+                    "first_name": user.get("first_name", ""),
+                    "last_name": user.get("last_name", ""),
                     "email": user.get("email", ""),
+                    "avatar_url": user.get("avatar_url"),
                     "relationship": member.get("relationship", "member"),
                     "family_role": member.get("family_role", "MEMBER"),
                     "is_creator": member.get("is_creator", False),
