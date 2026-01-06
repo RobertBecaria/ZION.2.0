@@ -5570,12 +5570,27 @@ async def get_family_members(
         "invitation_accepted": True
     }).to_list(100)
     
+    if not family_memberships:
+        return {"family_members": []}
+    
+    # OPTIMIZED: Batch fetch all users at once instead of N+1 queries
+    user_ids = [m["user_id"] for m in family_memberships]
+    users = await db.users.find(
+        {"id": {"$in": user_ids}},
+        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1, "avatar_url": 1}
+    ).to_list(100)
+    
+    # Create lookup map for O(1) access
+    user_map = {u["id"]: u for u in users}
+    
+    # Build response using lookup
     members = []
     for member in family_memberships:
-        user = await db.users.find_one({"id": member["user_id"]})
+        user = user_map.get(member["user_id"])
         if user:
+            member_data = {k: v for k, v in member.items() if k != '_id'}
             member_response = FamilyMemberResponse(
-                **member,
+                **member_data,
                 user_first_name=user["first_name"],
                 user_last_name=user["last_name"],
                 user_avatar_url=user.get("avatar_url")
