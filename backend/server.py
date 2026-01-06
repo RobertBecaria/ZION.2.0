@@ -4467,14 +4467,31 @@ async def create_family_with_members(
         
         await db.family_profiles.insert_one(new_family)
         
-        # Add family members
+        # ALWAYS add creator as a family member first
+        creator_member = {
+            "id": str(uuid.uuid4()),
+            "family_id": new_family["id"],
+            "user_id": current_user.id,
+            "family_role": "CREATOR",
+            "is_creator": True,
+            "is_active": True,
+            "invitation_accepted": True,
+            "joined_at": datetime.now(timezone.utc)
+        }
+        await db.family_members.insert_one(creator_member)
+        
+        # Add additional family members (if provided)
         for member in members:
+            # Skip if this member is the creator (already added above)
+            if member.get("user_id") == current_user.id:
+                continue
+                
             family_member = {
                 "id": str(uuid.uuid4()),
                 "family_id": new_family["id"],
-                "user_id": member.get("user_id", current_user.id),  # Use current_user.id if no user_id
+                "user_id": member.get("user_id"),
                 "family_role": member.get("role", "PARENT"),
-                "is_creator": member.get("is_creator", False),
+                "is_creator": False,
                 "is_active": True,
                 "invitation_accepted": True,
                 "joined_at": datetime.now(timezone.utc)
@@ -4487,6 +4504,12 @@ async def create_family_with_members(
                 family_member["date_of_birth"] = member.get("date_of_birth")
             
             await db.family_members.insert_one(family_member)
+        
+        # Update member count to include creator
+        await db.family_profiles.update_one(
+            {"id": new_family["id"]},
+            {"$set": {"member_count": len(members) + 1}}
+        )
         
         # Remove _id if present to avoid serialization issues
         if "_id" in new_family:
