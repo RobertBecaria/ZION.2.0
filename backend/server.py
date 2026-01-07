@@ -25197,21 +25197,38 @@ app.include_router(api_router)
 # Mount uploads directory for serving static files
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+# ============================================================
+# MIDDLEWARE CONFIGURATION
+# ============================================================
+
+# CORS middleware with production-optimized settings
+cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
+    allow_origins=cors_origins if cors_origins != ['*'] else ["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
+    max_age=86400,  # Cache preflight requests for 24 hours
 )
 
-# Configure logging
+# GZip compression middleware for responses > 500 bytes
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING if IS_PRODUCTION else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Reduce noisy loggers in production
+if IS_PRODUCTION:
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# Note: shutdown is now handled via lifespan manager
