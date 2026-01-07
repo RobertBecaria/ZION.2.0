@@ -7850,7 +7850,7 @@ async def get_posts(
         
         result.append(PostResponse(**post))
     
-    return result
+    return {"posts": result, "has_more": has_more, "total": total_count}
 
 @api_router.post("/posts", response_model=PostResponse)
 async def create_post(
