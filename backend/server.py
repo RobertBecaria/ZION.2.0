@@ -22,17 +22,202 @@ import asyncio
 import qrcode
 from io import BytesIO
 import base64
+from functools import lru_cache
+from contextlib import asynccontextmanager
+import time
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'zion_city')]  # Fallback for compatibility
+# ============================================================
+# PRODUCTION CONFIGURATION
+# ============================================================
 
-# Create the main app without a prefix
-app = FastAPI(title="ZION.CITY API", version="1.0.0")
+# Environment detection
+IS_PRODUCTION = os.environ.get('ENVIRONMENT', 'development') == 'production'
+
+# MongoDB connection with optimized settings for production
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(
+    mongo_url,
+    maxPoolSize=100,              # Maximum connection pool size
+    minPoolSize=10,               # Minimum connections to maintain
+    maxIdleTimeMS=45000,          # Close idle connections after 45 seconds
+    serverSelectionTimeoutMS=5000, # Timeout for server selection
+    connectTimeoutMS=10000,        # Connection timeout
+    socketTimeoutMS=30000,         # Socket timeout for operations
+    retryWrites=True,              # Retry failed writes
+    w='majority' if IS_PRODUCTION else 1,  # Write concern
+)
+db = client[os.environ.get('DB_NAME', 'zion_city')]
+
+# ============================================================
+# IN-MEMORY CACHE (Simple LRU Cache for frequent queries)
+# ============================================================
+
+class SimpleCache:
+    """Simple in-memory cache with TTL for frequent queries"""
+    def __init__(self, default_ttl: int = 300):  # 5 minutes default
+        self._cache: Dict[str, Any] = {}
+        self._timestamps: Dict[str, float] = {}
+        self.default_ttl = default_ttl
+        self._lock = asyncio.Lock()
+    
+    async def get(self, key: str) -> Optional[Any]:
+        """Get value from cache if not expired"""
+        async with self._lock:
+            if key in self._cache:
+                if time.time() - self._timestamps[key] < self.default_ttl:
+                    return self._cache[key]
+                else:
+                    # Expired, remove it
+                    del self._cache[key]
+                    del self._timestamps[key]
+        return None
+    
+    async def set(self, key: str, value: Any, ttl: int = None):
+        """Set value in cache with TTL"""
+        async with self._lock:
+            self._cache[key] = value
+            self._timestamps[key] = time.time()
+    
+    async def delete(self, key: str):
+        """Delete key from cache"""
+        async with self._lock:
+            self._cache.pop(key, None)
+            self._timestamps.pop(key, None)
+    
+    async def clear_expired(self):
+        """Clean up expired entries"""
+        async with self._lock:
+            current_time = time.time()
+            expired_keys = [
+                k for k, t in self._timestamps.items() 
+                if current_time - t >= self.default_ttl
+            ]
+            for key in expired_keys:
+                del self._cache[key]
+                del self._timestamps[key]
+
+# Initialize cache
+cache = SimpleCache(default_ttl=300)  # 5 minutes TTL
+
+# ============================================================
+# RATE LIMITING (In-memory, simple implementation)
+# ============================================================
+
+class RateLimiter:
+    """Simple in-memory rate limiter"""
+    def __init__(self):
+        self._requests: Dict[str, List[float]] = {}
+        self._lock = asyncio.Lock()
+    
+    async def is_allowed(self, key: str, max_requests: int, window_seconds: int) -> bool:
+        """Check if request is allowed within rate limit"""
+        async with self._lock:
+            current_time = time.time()
+            window_start = current_time - window_seconds
+            
+            # Clean old requests
+            if key in self._requests:
+                self._requests[key] = [t for t in self._requests[key] if t > window_start]
+            else:
+                self._requests[key] = []
+            
+            # Check limit
+            if len(self._requests[key]) >= max_requests:
+                return False
+            
+            # Add current request
+            self._requests[key].append(current_time)
+            return True
+    
+    async def cleanup(self):
+        """Clean up old entries"""
+        async with self._lock:
+            current_time = time.time()
+            # Remove entries older than 1 hour
+            for key in list(self._requests.keys()):
+                self._requests[key] = [t for t in self._requests[key] if current_time - t < 3600]
+                if not self._requests[key]:
+                    del self._requests[key]
+
+# Initialize rate limiter
+rate_limiter = RateLimiter()
+
+# Rate limit configurations
+RATE_LIMITS = {
+    "ai_chat": {"max_requests": 20, "window_seconds": 60},      # 20 AI requests/minute
+    "ai_analysis": {"max_requests": 10, "window_seconds": 60},  # 10 file analyses/minute
+    "search": {"max_requests": 30, "window_seconds": 60},       # 30 searches/minute
+    "posts": {"max_requests": 10, "window_seconds": 60},        # 10 posts/minute
+    "default": {"max_requests": 100, "window_seconds": 60},     # 100 general requests/minute
+}
+
+async def check_rate_limit(user_id: str, limit_type: str = "default") -> bool:
+    """Check if user is within rate limit"""
+    config = RATE_LIMITS.get(limit_type, RATE_LIMITS["default"])
+    key = f"{limit_type}:{user_id}"
+    return await rate_limiter.is_allowed(key, config["max_requests"], config["window_seconds"])
+
+# ============================================================
+# APP LIFECYCLE & BACKGROUND TASKS
+# ============================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup/shutdown tasks"""
+    # Startup
+    logger.info("🚀 Starting ZION.CITY API server...")
+    
+    # Create database indexes on startup (idempotent)
+    asyncio.create_task(ensure_indexes())
+    
+    # Start background cleanup task
+    cleanup_task = asyncio.create_task(periodic_cleanup())
+    
+    yield
+    
+    # Shutdown
+    logger.info("🛑 Shutting down ZION.CITY API server...")
+    cleanup_task.cancel()
+    client.close()
+
+async def ensure_indexes():
+    """Ensure all database indexes exist (runs on startup)"""
+    try:
+        # Key indexes for performance
+        await db.users.create_index("id", unique=True, background=True)
+        await db.users.create_index("email", unique=True, background=True)
+        await db.posts.create_index([("created_at", -1)], background=True)
+        await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.notifications.create_index([("user_id", 1), ("is_read", 1), ("created_at", -1)], background=True)
+        await db.agent_conversations.create_index([("user_id", 1), ("updated_at", -1)], background=True)
+        logger.info("✅ Database indexes verified")
+    except Exception as e:
+        logger.warning(f"Index creation warning: {e}")
+
+async def periodic_cleanup():
+    """Background task for periodic cleanup"""
+    while True:
+        try:
+            await asyncio.sleep(300)  # Run every 5 minutes
+            await cache.clear_expired()
+            await rate_limiter.cleanup()
+            logger.debug("🧹 Periodic cleanup completed")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Cleanup error: {e}")
+
+# Create the main app with lifespan manager
+app = FastAPI(
+    title="ZION.CITY API", 
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/api/docs" if not IS_PRODUCTION else None,  # Disable docs in production
+    redoc_url="/api/redoc" if not IS_PRODUCTION else None
+)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -41,9 +226,9 @@ api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development')  # Fallback for compatibility
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development')
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 if IS_PRODUCTION else 30  # Longer sessions in production
 
 # === WEBSOCKET CONNECTION MANAGER ===
 class ChatConnectionManager:
