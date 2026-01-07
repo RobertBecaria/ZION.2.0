@@ -312,11 +312,20 @@ function UniversalWall({
 
       if (response.ok) {
         Object.keys(comments).forEach(postId => fetchComments(postId));
-        fetchPosts();
+        // Decrement comment count locally
+        setPosts(prev => prev.map(p => ({
+          ...p,
+          comments_count: Math.max(0, (p.comments_count || 1) - 1)
+        })));
       }
     } catch (error) {
       console.error('Error deleting comment:', error);
     }
+  };
+  
+  // Handle post created - prepend new post to list
+  const handlePostCreated = async () => {
+    await fetchPosts(0, false); // Refresh from start to show new post at top
   };
 
   return (
@@ -327,7 +336,7 @@ function UniversalWall({
         moduleColor={moduleColor}
         moduleName={moduleName}
         backendUrl={backendUrl}
-        onPostCreated={fetchPosts}
+        onPostCreated={handlePostCreated}
       />
 
       {/* Posts Feed */}
@@ -341,27 +350,53 @@ function UniversalWall({
             </div>
           </div>
         ) : (
-          posts.map((post) => (
-            <PostItem
-              key={post.id}
-              post={post}
-              moduleColor={moduleColor}
-              user={user}
-              backendUrl={backendUrl}
-              showComments={showComments[post.id]}
-              comments={comments[post.id]}
-              newComment={newComment[post.id]}
-              onLike={handleLike}
-              onReaction={handleReaction}
-              onToggleComments={toggleComments}
-              onNewCommentChange={handleNewCommentChange}
-              onCommentSubmit={handleCommentSubmit}
-              onCommentLike={handleCommentLike}
-              onCommentEdit={handleCommentEdit}
-              onCommentDelete={handleCommentDelete}
-              onImageClick={openLightbox}
-            />
-          ))
+          <>
+            {posts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                moduleColor={moduleColor}
+                user={user}
+                backendUrl={backendUrl}
+                showComments={showComments[post.id]}
+                comments={comments[post.id]}
+                newComment={newComment[post.id]}
+                onLike={handleLike}
+                onReaction={handleReaction}
+                onToggleComments={toggleComments}
+                onNewCommentChange={handleNewCommentChange}
+                onCommentSubmit={handleCommentSubmit}
+                onCommentLike={handleCommentLike}
+                onCommentEdit={handleCommentEdit}
+                onCommentDelete={handleCommentDelete}
+                onImageClick={openLightbox}
+              />
+            ))}
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="load-more-container" ref={loadMoreRef}>
+                <button
+                  className="load-more-btn"
+                  onClick={loadMorePosts}
+                  disabled={isLoadingMore}
+                  data-testid="load-more-posts-btn"
+                  style={{
+                    '--module-color': moduleColor
+                  }}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="spinner" size={18} />
+                      Загрузка...
+                    </>
+                  ) : (
+                    'Показать ещё'
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
