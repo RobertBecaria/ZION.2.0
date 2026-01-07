@@ -7737,10 +7737,20 @@ async def get_posts(
     
     # ========== OPTIMIZED: Fetch posts with projection ==========
     # Only fetch fields we need, skip heavy fields initially
+    # Get total count for pagination (count once on first page only for performance)
+    total_count = 0
+    if skip == 0:
+        total_count = await db.posts.count_documents(query)
+    
     posts = await db.posts.find(
         query,
         {"_id": 0}  # Exclude _id
-    ).sort("created_at", -1).skip(skip).limit(limit * 2).to_list(limit * 2)
+    ).sort("created_at", -1).skip(skip).limit(limit + 1).to_list(limit + 1)  # Fetch one extra to check if more exist
+    
+    # Check if there are more posts available
+    has_more = len(posts) > limit
+    if has_more:
+        posts = posts[:limit]  # Remove the extra post we fetched
     
     # First pass: filter by visibility
     visible_posts = []
@@ -7750,11 +7760,9 @@ async def get_posts(
         
         if await can_user_see_post(post, current_user, user_membership):
             visible_posts.append(post)
-            if len(visible_posts) >= limit:
-                break
     
     if not visible_posts:
-        return []
+        return {"posts": [], "has_more": has_more, "total": total_count}
     
     # ========== OPTIMIZED: Batch fetch all related data ==========
     post_ids = [p["id"] for p in visible_posts]
