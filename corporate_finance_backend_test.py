@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://zion-eric-ai.preview.emergentagent.com/api"
+BACKEND_URL = "https://zion-hardening.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"

@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://zion-eric-ai.preview.emergentagent.com/api"
+BASE_URL = "https://zion-hardening.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "testpassword123"
 
