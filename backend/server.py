@@ -24471,10 +24471,19 @@ async def agent_chat(
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         
+        # Rate limiting for AI requests
+        if not await check_rate_limit(user_id, "ai_chat"):
+            raise HTTPException(
+                status_code=429, 
+                detail="Слишком много запросов. Пожалуйста, подождите минуту."
+            )
+        
         response = await eric_agent.chat(user_id, request)
         return response.dict()
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
