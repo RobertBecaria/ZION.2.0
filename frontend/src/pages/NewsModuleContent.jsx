@@ -1,17 +1,20 @@
-import React from 'react';
-import NewsFeed from '../components/NewsFeed';
-import ChannelView from '../components/ChannelView';
-import NewsUserProfile from '../components/NewsUserProfile';
-import FriendsPage from '../components/FriendsPage';
-import ChannelsPage from '../components/ChannelsPage';
-import PeopleDiscovery from '../components/PeopleDiscovery';
-import UniversalChatLayout from '../components/UniversalChatLayout';
+import React, { memo, useCallback, lazy, Suspense, useMemo } from 'react';
+
+// Lazy load all components
+const NewsFeed = lazy(() => import('../components/NewsFeed'));
+const ChannelView = lazy(() => import('../components/ChannelView'));
+const NewsUserProfile = lazy(() => import('../components/NewsUserProfile'));
+const FriendsPage = lazy(() => import('../components/FriendsPage'));
+const ChannelsPage = lazy(() => import('../components/ChannelsPage'));
+const PeopleDiscovery = lazy(() => import('../components/PeopleDiscovery'));
+const UniversalChatLayout = lazy(() => import('../components/UniversalChatLayout'));
+
+const LoadingFallback = () => <div className="module-loading"><div className="loading-spinner" /><p>Загрузка...</p></div>;
 
 /**
- * News Module Content - Extracted from App.js
- * Handles all news-related views
+ * News Module Content - Optimized with memoization and lazy loading
  */
-function NewsModuleContent({
+const NewsModuleContent = memo(function NewsModuleContent({
   activeView,
   setActiveView,
   user,
@@ -26,111 +29,136 @@ function NewsModuleContent({
   handleGroupSelect,
   handleCreateGroup,
 }) {
-  // News Feed View
-  if ((activeView === 'wall' || activeView === 'feed') && !selectedChannelId) {
-    return (
-      <NewsFeed
-        user={user}
-        moduleColor={currentModule.color}
-      />
-    );
-  }
+  const { color: moduleColor } = currentModule;
 
-  // Channel View
-  if (activeView === 'channel-view' && selectedChannelId) {
-    return (
-      <ChannelView
-        channelId={selectedChannelId}
-        user={user}
-        moduleColor={currentModule.color}
-        onBack={() => {
-          setSelectedChannelId(null);
-          setActiveView('channels');
-        }}
-      />
-    );
-  }
+  // Memoized navigation
+  const nav = useMemo(() => ({
+    toFeed: () => setActiveView('feed'),
+    toChannels: () => setActiveView('channels'),
+    toChannelView: () => setActiveView('channel-view'),
+    toUserProfile: () => setActiveView('news-user-profile'),
+  }), [setActiveView]);
 
-  // User Profile View in News
-  if (activeView === 'news-user-profile' && selectedNewsUserId) {
-    return (
-      <NewsUserProfile
-        userId={selectedNewsUserId}
-        user={user}
-        moduleColor={currentModule.color}
-        onBack={() => {
-          setSelectedNewsUserId(null);
-          setActiveView('feed');
-        }}
-        onOpenChat={(person) => console.log('Open chat with', person)}
-      />
-    );
-  }
+  // Memoized handlers
+  const handleBackFromChannel = useCallback(() => {
+    setSelectedChannelId(null);
+    nav.toChannels();
+  }, [setSelectedChannelId, nav]);
 
-  // Friends Page
-  if (activeView === 'friends' || activeView === 'followers' || activeView === 'following') {
-    return (
-      <FriendsPage
-        user={user}
-        moduleColor={currentModule.color}
-        initialTab={activeView === 'followers' ? 'followers' : activeView === 'following' ? 'following' : 'friends'}
-        onBack={() => setActiveView('feed')}
-        onOpenChat={(person) => console.log('Open chat with', person)}
-      />
-    );
-  }
+  const handleBackFromProfile = useCallback(() => {
+    setSelectedNewsUserId(null);
+    nav.toFeed();
+  }, [setSelectedNewsUserId, nav]);
 
-  // Channels Page
-  if (activeView === 'channels' && !selectedChannelId) {
-    return (
-      <ChannelsPage
-        user={user}
-        moduleColor={currentModule.color}
-        onViewChannel={(channel) => {
-          setSelectedChannelId(channel.id);
-          setActiveView('channel-view');
-        }}
-      />
-    );
-  }
+  const handleViewChannel = useCallback((channel) => {
+    setSelectedChannelId(channel.id);
+    nav.toChannelView();
+  }, [setSelectedChannelId, nav]);
 
-  // People Discovery Page
-  if (activeView === 'people-discovery') {
-    return (
-      <PeopleDiscovery
-        user={user}
-        moduleColor={currentModule.color}
-        onNavigateToProfile={(person) => {
-          setSelectedNewsUserId(person.id);
-          setActiveView('news-user-profile');
-        }}
-        onClose={() => setActiveView('feed')}
-      />
-    );
-  }
+  const handleNavigateToProfile = useCallback((person) => {
+    setSelectedNewsUserId(person.id);
+    nav.toUserProfile();
+  }, [setSelectedNewsUserId, nav]);
 
-  // Chat View
-  if (activeView === 'chat') {
-    return (
-      <UniversalChatLayout
-        activeGroup={activeGroup}
-        activeDirectChat={activeDirectChat}
-        chatGroups={chatGroups}
-        onGroupSelect={handleGroupSelect}
-        moduleColor={currentModule.color}
-        onCreateGroup={handleCreateGroup}
-        user={user}
-      />
-    );
-  }
+  // Get initial tab for friends page
+  const getFriendsInitialTab = () => {
+    if (activeView === 'followers') return 'followers';
+    if (activeView === 'following') return 'following';
+    return 'friends';
+  };
 
-  // Default: News Feed
+  // View renderer
+  const renderContent = () => {
+    // News Feed View
+    if ((activeView === 'wall' || activeView === 'feed') && !selectedChannelId) {
+      return <NewsFeed user={user} moduleColor={moduleColor} />;
+    }
+
+    // Channel View
+    if (activeView === 'channel-view' && selectedChannelId) {
+      return (
+        <ChannelView
+          channelId={selectedChannelId}
+          user={user}
+          moduleColor={moduleColor}
+          onBack={handleBackFromChannel}
+        />
+      );
+    }
+
+    // User Profile View
+    if (activeView === 'news-user-profile' && selectedNewsUserId) {
+      return (
+        <NewsUserProfile
+          userId={selectedNewsUserId}
+          user={user}
+          moduleColor={moduleColor}
+          onBack={handleBackFromProfile}
+          onOpenChat={(person) => console.log('Open chat with', person)}
+        />
+      );
+    }
+
+    // Friends Page
+    if (['friends', 'followers', 'following'].includes(activeView)) {
+      return (
+        <FriendsPage
+          user={user}
+          moduleColor={moduleColor}
+          initialTab={getFriendsInitialTab()}
+          onBack={nav.toFeed}
+          onOpenChat={(person) => console.log('Open chat with', person)}
+        />
+      );
+    }
+
+    // Channels Page
+    if (activeView === 'channels' && !selectedChannelId) {
+      return (
+        <ChannelsPage
+          user={user}
+          moduleColor={moduleColor}
+          onViewChannel={handleViewChannel}
+        />
+      );
+    }
+
+    // People Discovery
+    if (activeView === 'people-discovery') {
+      return (
+        <PeopleDiscovery
+          user={user}
+          moduleColor={moduleColor}
+          onNavigateToProfile={handleNavigateToProfile}
+          onClose={nav.toFeed}
+        />
+      );
+    }
+
+    // Chat View
+    if (activeView === 'chat') {
+      return (
+        <UniversalChatLayout
+          activeGroup={activeGroup}
+          activeDirectChat={activeDirectChat}
+          chatGroups={chatGroups}
+          onGroupSelect={handleGroupSelect}
+          moduleColor={moduleColor}
+          onCreateGroup={handleCreateGroup}
+          user={user}
+        />
+      );
+    }
+
+    // Default: News Feed
+    return <NewsFeed user={user} moduleColor={moduleColor} />;
+  };
+
   return (
-    <NewsFeed
-      user={user}
-      moduleColor={currentModule.color}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      {renderContent()}
+    </Suspense>
   );
-}
+});
 
 export default NewsModuleContent;
