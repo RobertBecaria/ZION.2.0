@@ -1,22 +1,25 @@
-import React from 'react';
-import { WalletDashboard } from '../components/finances';
+import React, { memo, lazy, Suspense } from 'react';
+
+// Lazy load component
+const WalletDashboard = lazy(() => import('../components/finances').then(m => ({ default: m.WalletDashboard })));
+
+const LoadingFallback = () => <div className="module-loading"><div className="loading-spinner" /><p>Загрузка...</p></div>;
 
 /**
- * Finance Module Content (ФИНАНСЫ) - Extracted from App.js
- * Handles all finance/wallet-related views
+ * Finance Module Content (ФИНАНСЫ) - Optimized with memoization and lazy loading
  */
-function FinanceModuleContent({
-  activeView,
+const FinanceModuleContent = memo(function FinanceModuleContent({
   user,
   currentModule,
 }) {
-  // All views show WalletDashboard for now
   return (
-    <WalletDashboard
-      user={user}
-      moduleColor={currentModule.color}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      <WalletDashboard
+        user={user}
+        moduleColor={currentModule.color}
+      />
+    </Suspense>
   );
-}
+});
 
 export default FinanceModuleContent;

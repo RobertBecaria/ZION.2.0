@@ -1,20 +1,21 @@
-import React from 'react';
-import {
-  GoodWillSearch,
-  GoodWillEventDetail,
-  GoodWillEventForm,
-  GoodWillCalendar,
-  GoodWillOrganizerProfile,
-  GoodWillMyEvents,
-  GoodWillInvitations,
-  GoodWillGroups
-} from '../components/goodwill';
+import React, { memo, useCallback, lazy, Suspense, useMemo } from 'react';
+
+// Lazy load all components
+const GoodWillSearch = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillSearch })));
+const GoodWillEventDetail = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillEventDetail })));
+const GoodWillEventForm = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillEventForm })));
+const GoodWillCalendar = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillCalendar })));
+const GoodWillOrganizerProfile = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillOrganizerProfile })));
+const GoodWillMyEvents = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillMyEvents })));
+const GoodWillInvitations = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillInvitations })));
+const GoodWillGroups = lazy(() => import('../components/goodwill').then(m => ({ default: m.GoodWillGroups })));
+
+const LoadingFallback = () => <div className="module-loading"><div className="loading-spinner" /><p>Загрузка...</p></div>;
 
 /**
- * Events/Good Will Module Content (ДОБРАЯ ВОЛЯ) - Extracted from App.js
- * Handles all good will events-related views
+ * Events/Good Will Module Content (ДОБРАЯ ВОЛЯ) - Optimized with memoization and lazy loading
  */
-function EventsModuleContent({
+const EventsModuleContent = memo(function EventsModuleContent({
   activeView,
   setActiveView,
   user,
@@ -22,139 +23,114 @@ function EventsModuleContent({
   selectedGoodWillEventId,
   setSelectedGoodWillEventId,
 }) {
-  const token = localStorage.getItem('zion_token');
+  const { color: moduleColor } = currentModule;
+  const token = useMemo(() => localStorage.getItem('zion_token'), []);
 
-  // Search/Browse
-  if (activeView === 'goodwill-search') {
-    return (
-      <GoodWillSearch
-        token={token}
-        moduleColor={currentModule.color}
-        onSelectEvent={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-      />
-    );
-  }
+  // Memoized handlers
+  const handleSelectEvent = useCallback((event) => {
+    setSelectedGoodWillEventId(event.id);
+    setActiveView('goodwill-event-detail');
+  }, [setSelectedGoodWillEventId, setActiveView]);
 
-  // Event Detail
-  if (activeView === 'goodwill-event-detail' && selectedGoodWillEventId) {
-    return (
-      <GoodWillEventDetail
-        eventId={selectedGoodWillEventId}
-        token={token}
-        moduleColor={currentModule.color}
-        onBack={() => setActiveView('goodwill-search')}
-        currentUser={user}
-      />
-    );
-  }
+  const handleEventCreated = useCallback((event) => {
+    setSelectedGoodWillEventId(event.id);
+    setActiveView('goodwill-event-detail');
+  }, [setSelectedGoodWillEventId, setActiveView]);
 
-  // Calendar
-  if (activeView === 'goodwill-calendar') {
-    return (
-      <GoodWillCalendar
-        token={token}
-        moduleColor={currentModule.color}
-        onSelectEvent={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-      />
-    );
-  }
+  const nav = useMemo(() => ({
+    toSearch: () => setActiveView('goodwill-search'),
+    toMyEvents: () => setActiveView('goodwill-my-events'),
+    toCreateEvent: () => setActiveView('goodwill-create-event'),
+  }), [setActiveView]);
 
-  // My Events
-  if (activeView === 'goodwill-my-events') {
-    return (
-      <GoodWillMyEvents
-        token={token}
-        moduleColor={currentModule.color}
-        onSelectEvent={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-        onCreateEvent={() => setActiveView('goodwill-create-event')}
-      />
-    );
-  }
+  // View renderer
+  const renderContent = () => {
+    switch (activeView) {
+      case 'goodwill-search':
+      case 'goodwill-favorites':
+      default:
+        return (
+          <GoodWillSearch
+            token={token}
+            moduleColor={moduleColor}
+            onSelectEvent={handleSelectEvent}
+          />
+        );
 
-  // Create Event
-  if (activeView === 'goodwill-create-event') {
-    return (
-      <GoodWillEventForm
-        token={token}
-        moduleColor={currentModule.color}
-        onBack={() => setActiveView('goodwill-my-events')}
-        onEventCreated={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-      />
-    );
-  }
+      case 'goodwill-event-detail':
+        if (!selectedGoodWillEventId) return <GoodWillSearch token={token} moduleColor={moduleColor} onSelectEvent={handleSelectEvent} />;
+        return (
+          <GoodWillEventDetail
+            eventId={selectedGoodWillEventId}
+            token={token}
+            moduleColor={moduleColor}
+            onBack={nav.toSearch}
+            currentUser={user}
+          />
+        );
 
-  // Invitations
-  if (activeView === 'goodwill-invitations') {
-    return (
-      <GoodWillInvitations
-        token={token}
-        moduleColor={currentModule.color}
-        onSelectEvent={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-      />
-    );
-  }
+      case 'goodwill-calendar':
+        return (
+          <GoodWillCalendar
+            token={token}
+            moduleColor={moduleColor}
+            onSelectEvent={handleSelectEvent}
+          />
+        );
 
-  // Favorites
-  if (activeView === 'goodwill-favorites') {
-    return (
-      <GoodWillSearch
-        token={token}
-        moduleColor={currentModule.color}
-        onSelectEvent={(event) => {
-          setSelectedGoodWillEventId(event.id);
-          setActiveView('goodwill-event-detail');
-        }}
-      />
-    );
-  }
+      case 'goodwill-my-events':
+        return (
+          <GoodWillMyEvents
+            token={token}
+            moduleColor={moduleColor}
+            onSelectEvent={handleSelectEvent}
+            onCreateEvent={nav.toCreateEvent}
+          />
+        );
 
-  // Organizer Profile
-  if (activeView === 'goodwill-organizer-profile') {
-    return (
-      <GoodWillOrganizerProfile
-        token={token}
-        moduleColor={currentModule.color}
-        onProfileCreated={() => setActiveView('goodwill-my-events')}
-      />
-    );
-  }
+      case 'goodwill-create-event':
+        return (
+          <GoodWillEventForm
+            token={token}
+            moduleColor={moduleColor}
+            onBack={nav.toMyEvents}
+            onEventCreated={handleEventCreated}
+          />
+        );
 
-  // Groups
-  if (activeView === 'goodwill-groups') {
-    return (
-      <GoodWillGroups
-        token={token}
-        moduleColor={currentModule.color}
-      />
-    );
-  }
+      case 'goodwill-invitations':
+        return (
+          <GoodWillInvitations
+            token={token}
+            moduleColor={moduleColor}
+            onSelectEvent={handleSelectEvent}
+          />
+        );
 
-  // Default: Search
+      case 'goodwill-organizer-profile':
+        return (
+          <GoodWillOrganizerProfile
+            token={token}
+            moduleColor={moduleColor}
+            onProfileCreated={nav.toMyEvents}
+          />
+        );
+
+      case 'goodwill-groups':
+        return (
+          <GoodWillGroups
+            token={token}
+            moduleColor={moduleColor}
+          />
+        );
+    }
+  };
+
   return (
-    <GoodWillSearch
-      token={token}
-      moduleColor={currentModule.color}
-      onSelectEvent={(event) => {
-        setSelectedGoodWillEventId(event.id);
-        setActiveView('goodwill-event-detail');
-      }}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      {renderContent()}
+    </Suspense>
   );
-}
+});
 
 export default EventsModuleContent;

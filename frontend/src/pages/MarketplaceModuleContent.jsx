@@ -1,20 +1,37 @@
-import React from 'react';
-import {
-  MarketplaceSearch,
-  MarketplaceProductDetail,
-  MarketplaceListingForm,
-  MyListings,
-  MarketplaceFavorites,
-  MyThings,
-  MyThingsItemForm
-} from '../components/marketplace';
-import { ERICProfile } from '../components/eric';
+import React, { memo, useCallback, lazy, Suspense, useMemo } from 'react';
+
+// Lazy load all components
+const MarketplaceSearch = lazy(() => import('../components/marketplace').then(m => ({ default: m.MarketplaceSearch })));
+const MarketplaceProductDetail = lazy(() => import('../components/marketplace').then(m => ({ default: m.MarketplaceProductDetail })));
+const MarketplaceListingForm = lazy(() => import('../components/marketplace').then(m => ({ default: m.MarketplaceListingForm })));
+const MyListings = lazy(() => import('../components/marketplace').then(m => ({ default: m.MyListings })));
+const MarketplaceFavorites = lazy(() => import('../components/marketplace').then(m => ({ default: m.MarketplaceFavorites })));
+const MyThings = lazy(() => import('../components/marketplace').then(m => ({ default: m.MyThings })));
+const MyThingsItemForm = lazy(() => import('../components/marketplace').then(m => ({ default: m.MyThingsItemForm })));
+const ERICProfile = lazy(() => import('../components/eric').then(m => ({ default: m.ERICProfile })));
+
+const LoadingFallback = () => <div className="module-loading"><div className="loading-spinner" /><p>Загрузка...</p></div>;
+
+// Category to view mapping
+const CATEGORY_VIEW_MAP = {
+  smart_things: 'my-things-smart',
+  wardrobe: 'my-things-wardrobe',
+  garage: 'my-things-garage',
+  home: 'my-things-home',
+  electronics: 'my-things-electronics',
+  collection: 'my-things-collection'
+};
+
+const VIEW_TO_CATEGORY_MAP = Object.fromEntries(
+  Object.entries(CATEGORY_VIEW_MAP).map(([k, v]) => [v, k])
+);
+
+const MY_THINGS_VIEWS = ['my-things', ...Object.values(CATEGORY_VIEW_MAP)];
 
 /**
- * Marketplace Module Content (ВЕЩИ) - Extracted from App.js
- * Handles all marketplace-related views
+ * Marketplace Module Content (ВЕЩИ) - Optimized with memoization and lazy loading
  */
-function MarketplaceModuleContent({
+const MarketplaceModuleContent = memo(function MarketplaceModuleContent({
   activeView,
   setActiveView,
   user,
@@ -30,196 +47,180 @@ function MarketplaceModuleContent({
   listForSaleItem,
   setListForSaleItem,
 }) {
-  const token = localStorage.getItem('zion_token');
+  const { color: moduleColor } = currentModule;
+  const token = useMemo(() => localStorage.getItem('zion_token'), []);
 
-  // Get category view map
-  const categoryViewMap = {
-    smart_things: 'my-things-smart',
-    wardrobe: 'my-things-wardrobe',
-    garage: 'my-things-garage',
-    home: 'my-things-home',
-    electronics: 'my-things-electronics',
-    collection: 'my-things-collection'
-  };
+  // Get category from view
+  const currentCategory = useMemo(() => 
+    VIEW_TO_CATEGORY_MAP[activeView] || selectedInventoryCategory,
+    [activeView, selectedInventoryCategory]
+  );
 
-  const getCategoryFromView = (view) => {
-    const reverseMap = {
-      'my-things-smart': 'smart_things',
-      'my-things-wardrobe': 'wardrobe',
-      'my-things-garage': 'garage',
-      'my-things-home': 'home',
-      'my-things-electronics': 'electronics',
-      'my-things-collection': 'collection'
-    };
-    return reverseMap[view] || selectedInventoryCategory;
-  };
+  // Memoized handlers
+  const handleViewProduct = useCallback((product) => {
+    setSelectedMarketplaceProduct(product);
+    setActiveView('marketplace-product-detail');
+  }, [setSelectedMarketplaceProduct, setActiveView]);
 
-  // Marketplace Search/Browse
-  if ((activeView === 'marketplace-search' || activeView === 'wall' || activeView === 'feed') && !selectedMarketplaceProduct) {
+  const handleCreateListing = useCallback(() => {
+    setEditMarketplaceProduct(null);
+    setActiveView('marketplace-create-listing');
+  }, [setEditMarketplaceProduct, setActiveView]);
+
+  const handleBackToSearch = useCallback(() => {
+    setSelectedMarketplaceProduct(null);
+    setActiveView('marketplace-search');
+  }, [setSelectedMarketplaceProduct, setActiveView]);
+
+  const handleBackToMyListings = useCallback(() => {
+    setEditMarketplaceProduct(null);
+    setActiveView('marketplace-my-listings');
+  }, [setEditMarketplaceProduct, setActiveView]);
+
+  const handleEditProduct = useCallback((product) => {
+    setEditMarketplaceProduct(product);
+    setActiveView('marketplace-create-listing');
+  }, [setEditMarketplaceProduct, setActiveView]);
+
+  const handleCategoryChange = useCallback((category) => {
+    setSelectedInventoryCategory(category);
+    setActiveView(category ? (CATEGORY_VIEW_MAP[category] || 'my-things') : 'my-things');
+  }, [setSelectedInventoryCategory, setActiveView]);
+
+  const handleAddItem = useCallback(() => {
+    setEditInventoryItem(null);
+    setActiveView('my-things-add-item');
+  }, [setEditInventoryItem, setActiveView]);
+
+  const handleViewEditItem = useCallback((item) => {
+    setEditInventoryItem(item);
+    setActiveView('my-things-add-item');
+  }, [setEditInventoryItem, setActiveView]);
+
+  const handleBackFromItemForm = useCallback(() => {
+    setEditInventoryItem(null);
+    setActiveView(CATEGORY_VIEW_MAP[selectedInventoryCategory] || 'my-things');
+  }, [setEditInventoryItem, setActiveView, selectedInventoryCategory]);
+
+  // View renderer
+  const renderContent = () => {
+    // Marketplace Search/Browse
+    if ((activeView === 'marketplace-search' || activeView === 'wall' || activeView === 'feed') && !selectedMarketplaceProduct) {
+      return (
+        <MarketplaceSearch
+          user={user}
+          token={token}
+          moduleColor={moduleColor}
+          onViewProduct={handleViewProduct}
+          onCreateListing={handleCreateListing}
+        />
+      );
+    }
+
+    // Product Detail
+    if (activeView === 'marketplace-product-detail' && selectedMarketplaceProduct) {
+      return (
+        <MarketplaceProductDetail
+          productId={selectedMarketplaceProduct.id}
+          token={token}
+          moduleColor={moduleColor}
+          onBack={handleBackToSearch}
+          onContactSeller={(product) => console.log('Contact seller:', product.seller_id)}
+        />
+      );
+    }
+
+    // Create/Edit Listing
+    if (activeView === 'marketplace-create-listing') {
+      return (
+        <MarketplaceListingForm
+          user={user}
+          token={token}
+          moduleColor={moduleColor}
+          editProduct={editMarketplaceProduct}
+          onBack={handleBackToMyListings}
+          onSuccess={handleBackToMyListings}
+        />
+      );
+    }
+
+    // My Listings
+    if (activeView === 'marketplace-my-listings') {
+      return (
+        <MyListings
+          token={token}
+          moduleColor={moduleColor}
+          onCreateNew={handleCreateListing}
+          onEdit={handleEditProduct}
+          onViewProduct={handleViewProduct}
+        />
+      );
+    }
+
+    // Favorites
+    if (activeView === 'marketplace-favorites') {
+      return (
+        <MarketplaceFavorites
+          token={token}
+          moduleColor={moduleColor}
+          onViewProduct={handleViewProduct}
+        />
+      );
+    }
+
+    // ERIC AI
+    if (activeView === 'eric-ai') {
+      return <ERICProfile user={user} />;
+    }
+
+    // My Things views
+    if (MY_THINGS_VIEWS.includes(activeView) && !editInventoryItem && !listForSaleItem) {
+      return (
+        <MyThings
+          user={user}
+          token={token}
+          moduleColor={moduleColor}
+          selectedCategory={currentCategory}
+          onCategoryChange={handleCategoryChange}
+          onAddItem={handleAddItem}
+          onViewItem={handleViewEditItem}
+          onEditItem={handleViewEditItem}
+          onListForSale={setListForSaleItem}
+        />
+      );
+    }
+
+    // Add/Edit Inventory Item
+    if (activeView === 'my-things-add-item') {
+      return (
+        <MyThingsItemForm
+          token={token}
+          moduleColor={moduleColor}
+          editItem={editInventoryItem}
+          defaultCategory={selectedInventoryCategory}
+          onBack={handleBackFromItemForm}
+          onSuccess={handleBackFromItemForm}
+        />
+      );
+    }
+
+    // Default: Marketplace Search
     return (
       <MarketplaceSearch
         user={user}
         token={token}
-        moduleColor={currentModule.color}
-        onViewProduct={(product) => {
-          setSelectedMarketplaceProduct(product);
-          setActiveView('marketplace-product-detail');
-        }}
-        onCreateListing={() => {
-          setEditMarketplaceProduct(null);
-          setActiveView('marketplace-create-listing');
-        }}
+        moduleColor={moduleColor}
+        onViewProduct={handleViewProduct}
+        onCreateListing={handleCreateListing}
       />
     );
-  }
+  };
 
-  // Product Detail
-  if (activeView === 'marketplace-product-detail' && selectedMarketplaceProduct) {
-    return (
-      <MarketplaceProductDetail
-        productId={selectedMarketplaceProduct.id}
-        token={token}
-        moduleColor={currentModule.color}
-        onBack={() => {
-          setSelectedMarketplaceProduct(null);
-          setActiveView('marketplace-search');
-        }}
-        onContactSeller={(product) => console.log('Contact seller:', product.seller_id)}
-      />
-    );
-  }
-
-  // Create/Edit Listing
-  if (activeView === 'marketplace-create-listing') {
-    return (
-      <MarketplaceListingForm
-        user={user}
-        token={token}
-        moduleColor={currentModule.color}
-        editProduct={editMarketplaceProduct}
-        onBack={() => {
-          setEditMarketplaceProduct(null);
-          setActiveView('marketplace-my-listings');
-        }}
-        onSuccess={() => {
-          setEditMarketplaceProduct(null);
-          setActiveView('marketplace-my-listings');
-        }}
-      />
-    );
-  }
-
-  // My Listings
-  if (activeView === 'marketplace-my-listings') {
-    return (
-      <MyListings
-        token={token}
-        moduleColor={currentModule.color}
-        onCreateNew={() => {
-          setEditMarketplaceProduct(null);
-          setActiveView('marketplace-create-listing');
-        }}
-        onEdit={(product) => {
-          setEditMarketplaceProduct(product);
-          setActiveView('marketplace-create-listing');
-        }}
-        onViewProduct={(product) => {
-          setSelectedMarketplaceProduct(product);
-          setActiveView('marketplace-product-detail');
-        }}
-      />
-    );
-  }
-
-  // Favorites
-  if (activeView === 'marketplace-favorites') {
-    return (
-      <MarketplaceFavorites
-        token={token}
-        moduleColor={currentModule.color}
-        onViewProduct={(product) => {
-          setSelectedMarketplaceProduct(product);
-          setActiveView('marketplace-product-detail');
-        }}
-      />
-    );
-  }
-
-  // ERIC AI Assistant
-  if (activeView === 'eric-ai') {
-    return <ERICProfile user={user} />;
-  }
-
-  // My Things views
-  const myThingsViews = ['my-things', 'my-things-smart', 'my-things-wardrobe', 'my-things-garage', 'my-things-home', 'my-things-electronics', 'my-things-collection'];
-  if (myThingsViews.includes(activeView) && !editInventoryItem && !listForSaleItem) {
-    return (
-      <MyThings
-        user={user}
-        token={token}
-        moduleColor={currentModule.color}
-        selectedCategory={getCategoryFromView(activeView)}
-        onCategoryChange={(category) => {
-          setSelectedInventoryCategory(category);
-          if (category) {
-            setActiveView(categoryViewMap[category] || 'my-things');
-          } else {
-            setActiveView('my-things');
-          }
-        }}
-        onAddItem={() => {
-          setEditInventoryItem(null);
-          setActiveView('my-things-add-item');
-        }}
-        onViewItem={(item) => {
-          setEditInventoryItem(item);
-          setActiveView('my-things-add-item');
-        }}
-        onEditItem={(item) => {
-          setEditInventoryItem(item);
-          setActiveView('my-things-add-item');
-        }}
-        onListForSale={(item) => setListForSaleItem(item)}
-      />
-    );
-  }
-
-  // Add/Edit Inventory Item
-  if (activeView === 'my-things-add-item') {
-    return (
-      <MyThingsItemForm
-        token={token}
-        moduleColor={currentModule.color}
-        editItem={editInventoryItem}
-        defaultCategory={selectedInventoryCategory}
-        onBack={() => {
-          setEditInventoryItem(null);
-          setActiveView(categoryViewMap[selectedInventoryCategory] || 'my-things');
-        }}
-        onSuccess={() => {
-          setEditInventoryItem(null);
-          setActiveView(categoryViewMap[selectedInventoryCategory] || 'my-things');
-        }}
-      />
-    );
-  }
-
-  // Default: Marketplace Search
   return (
-    <MarketplaceSearch
-      user={user}
-      token={token}
-      moduleColor={currentModule.color}
-      onViewProduct={(product) => {
-        setSelectedMarketplaceProduct(product);
-        setActiveView('marketplace-product-detail');
-      }}
-      onCreateListing={() => {
-        setEditMarketplaceProduct(null);
-        setActiveView('marketplace-create-listing');
-      }}
-    />
+    <Suspense fallback={<LoadingFallback />}>
+      {renderContent()}
+    </Suspense>
   );
-}
+});
 
 export default MarketplaceModuleContent;
