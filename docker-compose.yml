@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # ZION.CITY Application
+  # =============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zion-city-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Database
+      - MONGO_URL=${MONGO_URL}
+      - DB_NAME=${DB_NAME:-zion_city}
+      
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://yourdomain.com}
+      
+      # AI Services
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - EMERGENT_LLM_KEY=${EMERGENT_LLM_KEY}
+      
+      # Performance
+      - GUNICORN_WORKERS=3  # Optimal for 2 vCPU
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - zion-network
+    depends_on:
+      - redis
+
+  # =============================================================================
+  # Redis (for rate limiting and caching)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: zion-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - zion-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # MongoDB (Optional - use if not using MongoDB Atlas)
+  # =============================================================================
+  # mongodb:
+  #   image: mongo:7
+  #   container_name: zion-mongodb
+  #   restart: unless-stopped
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
+  #     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+  #     - MONGO_INITDB_DATABASE=zion_city
+  #   volumes:
+  #     - mongo-data:/data/db
+  #   networks:
+  #     - zion-network
+  #   healthcheck:
+  #     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+
+networks:
+  zion-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  # mongo-data:  # Uncomment if using local MongoDB
