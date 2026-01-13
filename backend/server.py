@@ -26128,100 +26128,111 @@ async def admin_login(login_data: AdminLogin, request: Request):
         admin_name=MASTER_ADMIN_USERNAME
     )
 
+# Cache for dashboard stats (simple in-memory with TTL)
+_dashboard_cache: Dict[str, Any] = {}
+_dashboard_cache_time: float = 0
+DASHBOARD_CACHE_TTL = 30  # 30 seconds cache
+
 @api_router.get("/admin/dashboard")
 async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
-    """Get admin dashboard statistics"""
+    """Get admin dashboard statistics - optimized with aggregation and caching"""
+    global _dashboard_cache, _dashboard_cache_time
+
+    # Check cache
+    if _dashboard_cache and (time.time() - _dashboard_cache_time) < DASHBOARD_CACHE_TTL:
+        return _dashboard_cache
+
     try:
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=7)
         month_start = today_start - timedelta(days=30)
-        
-        # Total users count
-        total_users = await db.users.count_documents({})
-        
-        # Active users (is_active=True)
-        active_users = await db.users.count_documents({"is_active": True})
-        
-        # Inactive/Deactivated users
-        inactive_users = await db.users.count_documents({"is_active": False})
-        
-        # Users registered today
-        new_today = await db.users.count_documents({
-            "created_at": {"$gte": today_start}
-        })
-        
-        # Users registered this week
-        new_this_week = await db.users.count_documents({
-            "created_at": {"$gte": week_start}
-        })
-        
-        # Users registered this month
-        new_this_month = await db.users.count_documents({
-            "created_at": {"$gte": month_start}
-        })
-        
-        # Users logged in today
-        logged_in_today = await db.users.count_documents({
-            "last_login": {"$gte": today_start}
-        })
-        
-        # Users logged in this week
-        logged_in_this_week = await db.users.count_documents({
-            "last_login": {"$gte": week_start}
-        })
-        
-        # Online users (based on last_seen within 5 minutes)
         five_minutes_ago = now - timedelta(minutes=5)
-        online_users = await db.users.count_documents({
-            "last_seen": {"$gte": five_minutes_ago}
-        })
-        
-        # Registration trend (last 7 days)
-        registration_trend = []
-        for i in range(7):
-            day_start = today_start - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
-            count = await db.users.count_documents({
-                "created_at": {"$gte": day_start, "$lt": day_end}
-            })
-            registration_trend.append({
-                "date": day_start.strftime("%Y-%m-%d"),
-                "count": count
-            })
-        registration_trend.reverse()
-        
-        # Login activity trend (last 7 days)
-        login_trend = []
-        for i in range(7):
-            day_start = today_start - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
-            count = await db.users.count_documents({
-                "last_login": {"$gte": day_start, "$lt": day_end}
-            })
-            login_trend.append({
-                "date": day_start.strftime("%Y-%m-%d"),
-                "count": count
-            })
-        login_trend.reverse()
-        
-        # User roles distribution
-        role_distribution = []
-        pipeline = [
-            {"$group": {"_id": "$role", "count": {"$sum": 1}}},
-            {"$sort": {"count": -1}}
+
+        # Single aggregation for all counts - much faster than multiple count_documents
+        counts_pipeline = [
+            {
+                "$facet": {
+                    "total": [{"$count": "count"}],
+                    "active": [{"$match": {"is_active": True}}, {"$count": "count"}],
+                    "inactive": [{"$match": {"is_active": False}}, {"$count": "count"}],
+                    "online": [{"$match": {"last_seen": {"$gte": five_minutes_ago}}}, {"$count": "count"}],
+                    "new_today": [{"$match": {"created_at": {"$gte": today_start}}}, {"$count": "count"}],
+                    "new_week": [{"$match": {"created_at": {"$gte": week_start}}}, {"$count": "count"}],
+                    "new_month": [{"$match": {"created_at": {"$gte": month_start}}}, {"$count": "count"}],
+                    "logged_today": [{"$match": {"last_login": {"$gte": today_start}}}, {"$count": "count"}],
+                    "logged_week": [{"$match": {"last_login": {"$gte": week_start}}}, {"$count": "count"}],
+                    "role_dist": [
+                        {"$group": {"_id": "$role", "count": {"$sum": 1}}},
+                        {"$sort": {"count": -1}}
+                    ]
+                }
+            }
         ]
-        async for doc in db.users.aggregate(pipeline):
-            role_distribution.append({
-                "role": doc["_id"] or "UNKNOWN",
-                "count": doc["count"]
-            })
-        
-        # Recent registrations (last 10)
+
+        counts_result = await db.users.aggregate(counts_pipeline).to_list(1)
+        counts = counts_result[0] if counts_result else {}
+
+        # Helper to extract count from facet result
+        def get_count(key):
+            arr = counts.get(key, [])
+            return arr[0]["count"] if arr else 0
+
+        total_users = get_count("total")
+        active_users = get_count("active")
+        inactive_users = get_count("inactive")
+        online_users = get_count("online")
+        new_today = get_count("new_today")
+        new_this_week = get_count("new_week")
+        new_this_month = get_count("new_month")
+        logged_in_today = get_count("logged_today")
+        logged_in_this_week = get_count("logged_week")
+
+        # Role distribution from facet
+        role_distribution = [
+            {"role": doc["_id"] or "UNKNOWN", "count": doc["count"]}
+            for doc in counts.get("role_dist", [])
+        ]
+
+        # Single aggregation for registration trend (7 days)
+        reg_trend_pipeline = [
+            {"$match": {"created_at": {"$gte": week_start}}},
+            {
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        reg_trend_data = {doc["_id"]: doc["count"] async for doc in db.users.aggregate(reg_trend_pipeline)}
+
+        # Single aggregation for login trend (7 days)
+        login_trend_pipeline = [
+            {"$match": {"last_login": {"$gte": week_start}}},
+            {
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$last_login"}},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        login_trend_data = {doc["_id"]: doc["count"] async for doc in db.users.aggregate(login_trend_pipeline)}
+
+        # Build trend arrays with all 7 days (fill missing days with 0)
+        registration_trend = []
+        login_trend = []
+        for i in range(6, -1, -1):
+            day = (today_start - timedelta(days=i)).strftime("%Y-%m-%d")
+            registration_trend.append({"date": day, "count": reg_trend_data.get(day, 0)})
+            login_trend.append({"date": day, "count": login_trend_data.get(day, 0)})
+
+        # Recent registrations (last 10) - single query
         recent_users = []
         cursor = db.users.find(
             {},
-            {"_id": 0, "password_hash": 0}
+            {"_id": 0, "id": 1, "email": 1, "first_name": 1, "last_name": 1, "created_at": 1, "is_active": 1}
         ).sort("created_at", -1).limit(10)
         async for user in cursor:
             recent_users.append({
@@ -26232,8 +26243,8 @@ async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
                 "created_at": user.get("created_at"),
                 "is_active": user.get("is_active", True)
             })
-        
-        return {
+
+        result = {
             "total_users": total_users,
             "active_users": active_users,
             "inactive_users": inactive_users,
@@ -26248,6 +26259,12 @@ async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
             "role_distribution": role_distribution,
             "recent_users": recent_users
         }
+
+        # Update cache
+        _dashboard_cache = result
+        _dashboard_cache_time = time.time()
+
+        return result
     except Exception as e:
         logger.error(f"Admin dashboard error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -26769,38 +26786,64 @@ async def get_admin_token_holders(
     admin: str = Depends(get_current_admin),
     limit: int = Query(50, ge=1, le=200)
 ):
-    """Get list of TOKEN holders for admin panel"""
+    """Get list of TOKEN holders for admin panel - optimized with $lookup"""
     try:
-        # Get all wallets with tokens
-        holders = await db.wallets.find(
-            {"token_balance": {"$gt": 0}},
-            {"_id": 0}
-        ).sort("token_balance", -1).limit(limit).to_list(limit)
-        
+        # Use aggregation with $lookup to join users in single query (fixes N+1)
+        pipeline = [
+            {"$match": {"token_balance": {"$gt": 0}}},
+            {"$sort": {"token_balance": -1}},
+            {"$limit": limit},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "id",
+                    "as": "user_info",
+                    "pipeline": [
+                        {"$project": {"_id": 0, "first_name": 1, "last_name": 1, "email": 1}}
+                    ]
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "user_id": 1,
+                    "token_balance": 1,
+                    "coin_balance": 1,
+                    "total_dividends_received": 1,
+                    "user_info": {"$arrayElemAt": ["$user_info", 0]}
+                }
+            }
+        ]
+
+        holders = await db.wallets.aggregate(pipeline).to_list(limit)
+
         # Calculate total tokens
         total = sum(h["token_balance"] for h in holders)
-        
-        # Enrich with user names and percentages
+
+        # Format response
         enriched = []
         for holder in holders:
-            user = await db.users.find_one({"id": holder["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            user = holder.get("user_info", {})
+            first_name = user.get("first_name", "")
+            last_name = user.get("last_name", "")
             enriched.append({
                 "user_id": holder["user_id"],
-                "user_name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
-                "email": user.get("email") if user else None,
+                "user_name": f"{first_name} {last_name}".strip() or "Unknown",
+                "email": user.get("email"),
                 "token_balance": holder["token_balance"],
                 "coin_balance": holder.get("coin_balance", 0),
                 "percentage": round((holder["token_balance"] / total * 100) if total > 0 else 0, 4),
                 "total_dividends_received": holder.get("total_dividends_received", 0)
             })
-        
+
         return {
             "success": True,
             "holders": enriched,
             "total_tokens": total,
             "total_supply": TOTAL_TOKENS
         }
-        
+
     except Exception as e:
         logger.error(f"Admin token holders error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
