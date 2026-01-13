@@ -3,10 +3,18 @@
 
 db = db.getSiblingDB('zion_city');
 
+// SECURITY: Require password from environment variable
+const appPassword = process.env.MONGO_APP_PASSWORD;
+if (!appPassword || appPassword === 'change_this_password') {
+  print('ERROR: MONGO_APP_PASSWORD environment variable is required and must be changed from default!');
+  print('Generate a secure password with: openssl rand -base64 32');
+  throw new Error('MONGO_APP_PASSWORD not properly configured');
+}
+
 // Create application user
 db.createUser({
   user: 'zion_app',
-  pwd: process.env.MONGO_APP_PASSWORD || 'change_this_password',
+  pwd: appPassword,
   roles: [
     { role: 'readWrite', db: 'zion_city' }
   ]
