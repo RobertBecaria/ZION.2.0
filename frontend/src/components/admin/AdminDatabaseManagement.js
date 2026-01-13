@@ -5,7 +5,17 @@ import {
   ChevronDown, ChevronUp, X
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL + '/api';
+// Get backend URL - handle both with and without /api suffix
+const getBackendUrl = () => {
+  const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+  // If URL already ends with /api, don't add it again
+  if (baseUrl.endsWith('/api')) {
+    return baseUrl;
+  }
+  return baseUrl + '/api';
+};
+
+const BACKEND_URL = getBackendUrl();
 
 const formatBytes = (bytes) => {
   if (bytes === 0) return '0 Bytes';
