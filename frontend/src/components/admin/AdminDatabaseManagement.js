@@ -5,10 +5,23 @@ import {
   ChevronDown, ChevronUp, X
 } from 'lucide-react';
 
-// Get backend URL - handle both with and without /api suffix
+// Get backend URL - smart detection for both preview and production
 const getBackendUrl = () => {
-  const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
-  // If URL already ends with /api, don't add it again
+  // First try environment variable
+  let baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+  
+  // If running on production domain but env var points to preview, use current origin
+  const currentHost = window.location.hostname;
+  const isProduction = currentHost === 'zioncity.app' || 
+                       currentHost.endsWith('.zioncity.app') ||
+                       currentHost.endsWith('.emergent.host');
+  
+  // If baseUrl is empty or points to preview while we're on production, use current origin
+  if (!baseUrl || (isProduction && baseUrl.includes('preview.emergentagent.com'))) {
+    baseUrl = window.location.origin;
+  }
+  
+  // Ensure we have /api suffix
   if (baseUrl.endsWith('/api')) {
     return baseUrl;
   }
