@@ -26045,6 +26045,480 @@ async def admin_initialize_tokens(
         logger.error(f"Admin initialize tokens error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- Central Bank / Master Wallet Endpoints ---
+
+class MasterWalletTransfer(BaseModel):
+    """Transfer from master wallet to user"""
+    to_user_email: str
+    amount: float
+    description: Optional[str] = None
+
+class SystemSettings(BaseModel):
+    """System-wide ALTYN settings"""
+    welcome_bonus_coins: float = WELCOME_BONUS_COINS
+    transaction_fee_rate: float = TRANSACTION_FEE_RATE
+
+@api_router.get("/admin/finance/master-wallet")
+async def get_master_wallet(admin: str = Depends(get_current_admin)):
+    """Get master wallet (treasury) details"""
+    try:
+        treasury = await get_or_create_treasury()
+        
+        # Get recent treasury transactions
+        recent_tx = await db.transactions.find(
+            {"$or": [{"from_user_id": TREASURY_USER_ID}, {"to_user_id": TREASURY_USER_ID}]},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(20).to_list(20)
+        
+        # Enrich with user names
+        for tx in recent_tx:
+            if tx.get("from_user_id") != TREASURY_USER_ID:
+                user = await db.users.find_one({"id": tx["from_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+                tx["from_user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
+            else:
+                tx["from_user_name"] = "Treasury"
+            
+            if tx.get("to_user_id") != TREASURY_USER_ID:
+                user = await db.users.find_one({"id": tx["to_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1})
+                tx["to_user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
+            else:
+                tx["to_user_name"] = "Treasury"
+        
+        return {
+            "success": True,
+            "treasury": {
+                "id": treasury.get("id"),
+                "coin_balance": treasury.get("coin_balance", 0),
+                "token_balance": treasury.get("token_balance", 0),
+                "total_dividends_distributed": treasury.get("total_dividends_received", 0)
+            },
+            "recent_transactions": recent_tx,
+            "settings": {
+                "welcome_bonus_coins": WELCOME_BONUS_COINS,
+                "transaction_fee_rate": TRANSACTION_FEE_RATE,
+                "total_token_supply": TOTAL_TOKENS
+            }
+        }
+    except Exception as e:
+        logger.error(f"Master wallet error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/master-wallet/send")
+async def send_from_master_wallet(
+    transfer: MasterWalletTransfer,
+    admin: str = Depends(get_current_admin)
+):
+    """Send ALTYN COINS from master wallet (treasury) to user"""
+    try:
+        if transfer.amount <= 0:
+            raise HTTPException(status_code=400, detail="Сумма должна быть положительной")
+        
+        # Find recipient
+        recipient = await db.users.find_one({"email": transfer.to_user_email}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1})
+        if not recipient:
+            raise HTTPException(status_code=404, detail="Получатель не найден")
+        
+        # Get treasury
+        treasury = await get_or_create_treasury()
+        
+        if treasury.get("coin_balance", 0) < transfer.amount:
+            raise HTTPException(status_code=400, detail="Недостаточно средств в казначействе")
+        
+        # Get recipient wallet
+        recipient_wallet = await get_or_create_wallet(recipient["id"])
+        
+        # Create transaction
+        tx = Transaction(
+            from_wallet_id=treasury["id"],
+            to_wallet_id=recipient_wallet["id"],
+            from_user_id=TREASURY_USER_ID,
+            to_user_id=recipient["id"],
+            amount=transfer.amount,
+            asset_type=AssetType.COIN,
+            transaction_type=TransactionType.TRANSFER,
+            description=transfer.description or f"Перевод из казначейства от {admin}"
+        )
+        
+        # Update balances
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$inc": {"coin_balance": -transfer.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        await db.wallets.update_one(
+            {"user_id": recipient["id"]},
+            {"$inc": {"coin_balance": transfer.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Save transaction
+        tx_dict = tx.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        await db.transactions.insert_one(tx_dict)
+        
+        return {
+            "success": True,
+            "transaction": {
+                "id": tx.id,
+                "code": tx.code,
+                "amount": transfer.amount,
+                "recipient": f"{recipient['first_name']} {recipient['last_name']}",
+                "description": tx.description
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Master wallet send error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/give-welcome-bonus")
+async def give_welcome_bonus(
+    user_email: str = Query(..., description="User email"),
+    amount: Optional[float] = Query(None, description="Custom amount, uses default if not provided"),
+    admin: str = Depends(get_current_admin)
+):
+    """Give welcome bonus to a user manually"""
+    try:
+        bonus_amount = amount if amount is not None else WELCOME_BONUS_COINS
+        
+        if bonus_amount <= 0:
+            raise HTTPException(status_code=400, detail="Сумма должна быть положительной")
+        
+        # Find user
+        user = await db.users.find_one({"email": user_email}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1})
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        # Get treasury and user wallet
+        treasury = await get_or_create_treasury()
+        user_wallet = await get_or_create_wallet(user["id"])
+        
+        # Create transaction
+        tx = Transaction(
+            from_wallet_id=treasury["id"],
+            to_wallet_id=user_wallet["id"],
+            from_user_id=TREASURY_USER_ID,
+            to_user_id=user["id"],
+            amount=bonus_amount,
+            asset_type=AssetType.COIN,
+            transaction_type=TransactionType.WELCOME_BONUS,
+            description=f"Welcome bonus (manual) от {admin}"
+        )
+        
+        # Update user wallet
+        await db.wallets.update_one(
+            {"user_id": user["id"]},
+            {"$inc": {"coin_balance": bonus_amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Save transaction
+        tx_dict = tx.dict()
+        tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+        await db.transactions.insert_one(tx_dict)
+        
+        return {
+            "success": True,
+            "transaction": {
+                "id": tx.id,
+                "code": tx.code,
+                "amount": bonus_amount,
+                "recipient": f"{user['first_name']} {user['last_name']}"
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Welcome bonus error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Transaction Explorer & Log ---
+
+@api_router.get("/admin/finance/transactions")
+async def get_all_transactions(
+    admin: str = Depends(get_current_admin),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = None,
+    tx_type: Optional[str] = None,
+    status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
+):
+    """Get all transactions with filtering"""
+    try:
+        query = {}
+        
+        # Search by transaction code or user
+        if search:
+            query["$or"] = [
+                {"code": {"$regex": search, "$options": "i"}},
+                {"id": {"$regex": search, "$options": "i"}},
+                {"description": {"$regex": search, "$options": "i"}}
+            ]
+        
+        # Filter by type
+        if tx_type:
+            query["transaction_type"] = tx_type
+        
+        # Filter by status
+        if status:
+            query["status"] = status
+        
+        # Date range
+        if date_from:
+            query["created_at"] = {"$gte": date_from}
+        if date_to:
+            if "created_at" in query:
+                query["created_at"]["$lte"] = date_to
+            else:
+                query["created_at"] = {"$lte": date_to}
+        
+        # Get total count
+        total = await db.transactions.count_documents(query)
+        
+        # Fetch transactions
+        transactions = await db.transactions.find(
+            query,
+            {"_id": 0}
+        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        
+        # Enrich with user names
+        for tx in transactions:
+            if tx.get("from_user_id") == TREASURY_USER_ID:
+                tx["from_user_name"] = "Treasury"
+            else:
+                user = await db.users.find_one({"id": tx.get("from_user_id")}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+                tx["from_user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
+                tx["from_user_email"] = user.get("email") if user else None
+            
+            if tx.get("to_user_id") == TREASURY_USER_ID:
+                tx["to_user_name"] = "Treasury"
+            else:
+                user = await db.users.find_one({"id": tx.get("to_user_id")}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+                tx["to_user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
+                tx["to_user_email"] = user.get("email") if user else None
+        
+        return {
+            "success": True,
+            "transactions": transactions,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": skip + len(transactions) < total
+        }
+        
+    except Exception as e:
+        logger.error(f"Transactions list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/finance/transactions/{tx_code}")
+async def get_transaction_by_code(
+    tx_code: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Get transaction details by code"""
+    try:
+        # Search by code or id
+        tx = await db.transactions.find_one(
+            {"$or": [{"code": tx_code}, {"id": tx_code}]},
+            {"_id": 0}
+        )
+        
+        if not tx:
+            raise HTTPException(status_code=404, detail="Транзакция не найдена")
+        
+        # Enrich with user details
+        if tx.get("from_user_id") == TREASURY_USER_ID:
+            tx["from_user"] = {"name": "Treasury", "type": "treasury"}
+        else:
+            user = await db.users.find_one({"id": tx["from_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            tx["from_user"] = {
+                "id": tx["from_user_id"],
+                "name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
+                "email": user.get("email") if user else None
+            }
+        
+        if tx.get("to_user_id") == TREASURY_USER_ID:
+            tx["to_user"] = {"name": "Treasury", "type": "treasury"}
+        else:
+            user = await db.users.find_one({"id": tx["to_user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            tx["to_user"] = {
+                "id": tx["to_user_id"],
+                "name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
+                "email": user.get("email") if user else None
+            }
+        
+        # Check if there's a reversal
+        if tx.get("is_reversed"):
+            reversal = await db.transactions.find_one(
+                {"original_transaction_id": tx["id"]},
+                {"_id": 0, "id": 1, "code": 1, "created_at": 1}
+            )
+            tx["reversal_transaction"] = reversal
+        
+        return {
+            "success": True,
+            "transaction": tx
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Transaction detail error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/transactions/{tx_code}/reverse")
+async def reverse_transaction(
+    tx_code: str,
+    reason: str = Query(..., description="Reason for reversal"),
+    admin: str = Depends(get_current_admin)
+):
+    """Reverse a transaction (creates a counter-transaction)"""
+    try:
+        # Find original transaction
+        original_tx = await db.transactions.find_one(
+            {"$or": [{"code": tx_code}, {"id": tx_code}]},
+            {"_id": 0}
+        )
+        
+        if not original_tx:
+            raise HTTPException(status_code=404, detail="Транзакция не найдена")
+        
+        if original_tx.get("is_reversed"):
+            raise HTTPException(status_code=400, detail="Транзакция уже отменена")
+        
+        if original_tx.get("original_transaction_id"):
+            raise HTTPException(status_code=400, detail="Нельзя отменить транзакцию отмены")
+        
+        # Create reversal transaction (swap from/to)
+        reversal_tx = Transaction(
+            from_wallet_id=original_tx["to_wallet_id"],
+            to_wallet_id=original_tx["from_wallet_id"],
+            from_user_id=original_tx["to_user_id"],
+            to_user_id=original_tx["from_user_id"],
+            amount=original_tx["amount"],
+            asset_type=AssetType(original_tx["asset_type"]),
+            transaction_type=TransactionType.TRANSFER,
+            description=f"REVERSAL: {reason} (Original: {original_tx.get('code', original_tx['id'])})",
+            original_transaction_id=original_tx["id"]
+        )
+        
+        # Update wallets (reverse the flow)
+        balance_field = "coin_balance" if original_tx["asset_type"] == "COIN" else "token_balance"
+        
+        # Take from recipient
+        if original_tx["to_user_id"] == TREASURY_USER_ID:
+            await db.wallets.update_one(
+                {"is_treasury": True},
+                {"$inc": {balance_field: -original_tx["amount"]}}
+            )
+        else:
+            await db.wallets.update_one(
+                {"user_id": original_tx["to_user_id"]},
+                {"$inc": {balance_field: -original_tx["amount"]}}
+            )
+        
+        # Give back to sender
+        if original_tx["from_user_id"] == TREASURY_USER_ID:
+            await db.wallets.update_one(
+                {"is_treasury": True},
+                {"$inc": {balance_field: original_tx["amount"]}}
+            )
+        else:
+            await db.wallets.update_one(
+                {"user_id": original_tx["from_user_id"]},
+                {"$inc": {balance_field: original_tx["amount"]}}
+            )
+        
+        # Mark original as reversed
+        await db.transactions.update_one(
+            {"id": original_tx["id"]},
+            {"$set": {
+                "is_reversed": True,
+                "reversed_by": admin,
+                "reversed_at": datetime.now(timezone.utc).isoformat(),
+                "reversal_reason": reason
+            }}
+        )
+        
+        # Save reversal transaction
+        reversal_dict = reversal_tx.dict()
+        reversal_dict["created_at"] = reversal_dict["created_at"].isoformat()
+        await db.transactions.insert_one(reversal_dict)
+        
+        return {
+            "success": True,
+            "message": "Транзакция отменена",
+            "reversal": {
+                "id": reversal_tx.id,
+                "code": reversal_tx.code,
+                "amount": original_tx["amount"],
+                "reason": reason
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Transaction reversal error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/finance/stats")
+async def get_finance_stats(admin: str = Depends(get_current_admin)):
+    """Get comprehensive finance statistics"""
+    try:
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=7)
+        month_start = today_start - timedelta(days=30)
+        
+        # Transaction counts by type
+        tx_by_type = await db.transactions.aggregate([
+            {"$group": {"_id": "$transaction_type", "count": {"$sum": 1}, "total": {"$sum": "$amount"}}}
+        ]).to_list(20)
+        
+        # Transactions today
+        tx_today = await db.transactions.count_documents({"created_at": {"$gte": today_start.isoformat()}})
+        
+        # Total volume today
+        volume_today = await db.transactions.aggregate([
+            {"$match": {"created_at": {"$gte": today_start.isoformat()}, "asset_type": "COIN"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]).to_list(1)
+        
+        # Total wallets
+        total_wallets = await db.wallets.count_documents({"is_treasury": False})
+        
+        # Wallets with balance
+        wallets_with_coins = await db.wallets.count_documents({"coin_balance": {"$gt": 0}, "is_treasury": False})
+        wallets_with_tokens = await db.wallets.count_documents({"token_balance": {"$gt": 0}, "is_treasury": False})
+        
+        # Welcome bonuses given
+        welcome_bonuses = await db.transactions.count_documents({"transaction_type": "WELCOME_BONUS"})
+        
+        # Reversed transactions
+        reversed_count = await db.transactions.count_documents({"is_reversed": True})
+        
+        return {
+            "success": True,
+            "stats": {
+                "transactions_today": tx_today,
+                "volume_today": volume_today[0]["total"] if volume_today else 0,
+                "transactions_by_type": {t["_id"]: {"count": t["count"], "total": t["total"]} for t in tx_by_type},
+                "total_wallets": total_wallets,
+                "wallets_with_coins": wallets_with_coins,
+                "wallets_with_tokens": wallets_with_tokens,
+                "welcome_bonuses_given": welcome_bonuses,
+                "reversed_transactions": reversed_count
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Finance stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============================================================
 # ADMIN DATABASE MANAGEMENT ENDPOINTS
 # ============================================================
