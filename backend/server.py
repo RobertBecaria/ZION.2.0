@@ -5064,7 +5064,6 @@ async def create_family_with_members(
         }
         
     except Exception as e:
-        print(f"Error creating family: {str(e)}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5180,7 +5179,7 @@ async def update_family_banner(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Banner upload error: {str(e)}")
+        logger.error(f"Banner upload error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5218,7 +5217,7 @@ async def update_family_avatar(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Avatar upload error: {str(e)}")
+        logger.error(f"Avatar upload error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5270,7 +5269,7 @@ async def update_family_basic_info(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Update family error: {str(e)}")
+        logger.error(f"Update family error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5308,7 +5307,7 @@ async def search_users_basic(
         return {"users": user_results}
         
     except Exception as e:
-        print(f"User search error: {str(e)}")
+        logger.error(f"User search error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5368,7 +5367,7 @@ async def get_family_members_list(
         return {"success": True, "members": member_list}
         
     except Exception as e:
-        print(f"Get members error: {str(e)}")
+        logger.error(f"Get members error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5441,7 +5440,7 @@ async def add_family_member(
         return {"success": True, "member": member_response}
         
     except Exception as e:
-        print(f"Add member error: {str(e)}")
+        logger.error(f"Add member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5510,7 +5509,7 @@ async def remove_family_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Remove member error: {str(e)}")
+        logger.error(f"Remove member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5561,7 +5560,7 @@ async def update_family_privacy_settings(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Update privacy error: {str(e)}")
+        logger.error(f"Update privacy error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5592,7 +5591,7 @@ async def delete_family(
         return {"success": True, "message": "Family deleted successfully"}
         
     except Exception as e:
-        print(f"Delete family error: {str(e)}")
+        logger.error(f"Delete family error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5663,7 +5662,7 @@ async def create_household(
         }
         
     except Exception as e:
-        print(f"Error creating household: {str(e)}")
+        logger.error(f"Error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5720,7 +5719,7 @@ async def get_user_household(current_user: User = Depends(get_current_user)):
         }
         
     except Exception as e:
-        print(f"Error getting household: {str(e)}")
+        logger.error(f"Error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5772,7 +5771,7 @@ async def update_household(
             raise HTTPException(status_code=404, detail="Household not found")
             
     except Exception as e:
-        print(f"Update household error: {str(e)}")
+        logger.error(f"Update household error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5826,7 +5825,7 @@ async def add_household_member(
         return {"success": True, "member": new_member}
         
     except Exception as e:
-        print(f"Add household member error: {str(e)}")
+        logger.error(f"Add household member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5870,7 +5869,7 @@ async def remove_household_member(
             raise HTTPException(status_code=404, detail="Member not found")
             
     except Exception as e:
-        print(f"Remove household member error: {str(e)}")
+        logger.error(f"Remove household member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -5899,7 +5898,7 @@ async def delete_household(
         return {"success": True, "message": "Household deleted"}
         
     except Exception as e:
-        print(f"Delete household error: {str(e)}")
+        logger.error(f"Delete household error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -6028,7 +6027,7 @@ async def get_public_family_profile(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error getting public profile: {str(e)}")
+        logger.error(f"Error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -9803,7 +9802,7 @@ async def search_work_organizations(
         return {"organizations": results, "count": len(results)}
         
     except Exception as e:
-        print(f"Organization search error: {str(e)}")
+        logger.error(f"Organization search error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -9881,7 +9880,7 @@ async def create_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Create organization error: {str(e)}")
+        logger.error(f"Create organization error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -9939,7 +9938,7 @@ async def get_user_work_organizations(
         return {"organizations": organizations, "count": len(organizations)}
         
     except Exception as e:
-        print(f"Get organizations error: {str(e)}")
+        logger.error(f"Get organizations error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10000,7 +9999,7 @@ async def get_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get organization error: {str(e)}")
+        logger.error(f"Get organization error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10089,7 +10088,7 @@ async def add_work_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Add member error: {str(e)}")
+        logger.error(f"Add member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10169,7 +10168,7 @@ async def get_work_organization_members(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get members error: {str(e)}")
+        logger.error(f"Get members error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10216,7 +10215,7 @@ async def update_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Update organization error: {str(e)}")
+        logger.error(f"Update organization error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10273,7 +10272,7 @@ async def leave_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Leave organization error: {str(e)}")
+        logger.error(f"Leave organization error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10378,7 +10377,7 @@ async def remove_work_organization_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Remove member error: {str(e)}")
+        logger.error(f"Remove member error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10488,7 +10487,7 @@ async def update_work_member_role(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Update member role error: {str(e)}")
+        logger.error(f"Update member role error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10602,7 +10601,7 @@ async def transfer_organization_ownership(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Transfer ownership error: {str(e)}")
+        logger.error(f"Transfer ownership error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10670,7 +10669,7 @@ async def join_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Join organization error: {str(e)}")
+        logger.error(f"Join organization error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10742,7 +10741,7 @@ async def request_join_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Request join error: {str(e)}")
+        logger.error(f"Request join error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10763,7 +10762,7 @@ async def get_my_join_requests(
         return {"requests": requests}
         
     except Exception as e:
-        print(f"Get my requests error: {str(e)}")
+        logger.error(f"Get my requests error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10802,7 +10801,7 @@ async def get_organization_join_requests(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get org requests error: {str(e)}")
+        logger.error(f"Get org requests error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10913,7 +10912,7 @@ async def approve_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Approve request error: {str(e)}")
+        logger.error(f"Approve request error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -10984,7 +10983,7 @@ async def reject_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Reject request error: {str(e)}")
+        logger.error(f"Reject request error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11019,7 +11018,7 @@ async def cancel_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Cancel request error: {str(e)}")
+        logger.error(f"Cancel request error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11099,7 +11098,7 @@ async def get_work_feed(
         return {"posts": posts, "count": len(posts)}
         
     except Exception as e:
-        print(f"Get feed error: {str(e)}")
+        logger.error(f"Get feed error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11170,7 +11169,7 @@ async def create_work_post(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Create post error: {str(e)}")
+        logger.error(f"Create post error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11228,7 +11227,7 @@ async def get_work_posts(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get posts error: {str(e)}")
+        logger.error(f"Get posts error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11277,7 +11276,7 @@ async def delete_work_post(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Delete post error: {str(e)}")
+        logger.error(f"Delete post error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11347,7 +11346,7 @@ async def toggle_post_like(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Toggle like error: {str(e)}")
+        logger.error(f"Toggle like error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11398,7 +11397,7 @@ async def add_post_comment(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Add comment error: {str(e)}")
+        logger.error(f"Add comment error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -11430,7 +11429,7 @@ async def get_work_post_comments(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get comments error: {str(e)}")
+        logger.error(f"Get comments error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -16133,10 +16132,10 @@ async def check_and_send_event_reminders():
                             {"$set": {"reminders_sent": reminders_sent}}
                         )
                         
-                        print(f"✓ Sent {interval_key} reminder for event: {event['title']}")
+                        logger.info(f" Sent {interval_key} reminder for event: {event['title']}")
         
     except Exception as e:
-        print(f"Error in check_and_send_event_reminders: {str(e)}")
+        logger.error(f"Error: {e}")
 
 
 async def get_event_participants(event: dict) -> List[str]:
@@ -16220,10 +16219,10 @@ async def create_event_reminder_notification(user_id: str, event: dict, interval
         }
         
         await db.work_notifications.insert_one(notification)
-        print(f"✓ Created reminder notification for user {user_id}")
+        logger.info(f" Created reminder notification for user {user_id}")
         
     except Exception as e:
-        print(f"Error creating reminder notification: {str(e)}")
+        logger.error(f"Error: {e}")
 
 
 @api_router.post("/work/events/check-reminders")
@@ -25408,7 +25407,7 @@ async def analyze_file_upload(
                 question=enhanced_message
             )
             
-            print(f"[DEBUG] analyze_file_smart result - routing: {result.get('routing', {})}")
+            logger.debug(f" analyze_file_smart result - routing: {result.get('routing', {})}")
             
             # Extract analysis from result
             if result.get("success"):
@@ -25434,7 +25433,7 @@ async def analyze_file_upload(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        print(f"File analysis error: {e}")
+        logger.error(f"File analysis error: {e}")
         logger.error(f"Internal error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 

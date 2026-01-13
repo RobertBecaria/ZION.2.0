@@ -12,10 +12,33 @@ from .logging import (
     JSONFormatter
 )
 
+from .exceptions import (
+    ZionException,
+    ValidationError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+    ConflictError,
+    handle_exceptions,
+    handle_exceptions_sync,
+    ensure_found
+)
+
 __all__ = [
+    # Logging
     'setup_logging',
     'get_logger',
     'ContextLogger',
     'request_context',
-    'JSONFormatter'
+    'JSONFormatter',
+    # Exceptions
+    'ZionException',
+    'ValidationError',
+    'NotFoundError',
+    'PermissionDeniedError',
+    'RateLimitError',
+    'ConflictError',
+    'handle_exceptions',
+    'handle_exceptions_sync',
+    'ensure_found',
 ]
