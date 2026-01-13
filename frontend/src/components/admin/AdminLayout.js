@@ -112,6 +112,7 @@ const AdminLayout = ({ onLogout }) => {
         <div className="p-6 lg:p-8">
           {activeTab === 'dashboard' && <AdminDashboard />}
           {activeTab === 'users' && <AdminUserManagement />}
+          {activeTab === 'altyn' && <AdminAltynManagement />}
           {activeTab === 'database' && <AdminDatabaseManagement />}
         </div>
       </main>
