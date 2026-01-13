@@ -25303,6 +25303,472 @@ async def get_business_analytics(
 
 # ===== END ERIC AI AGENT ENDPOINTS =====
 
+# ============================================================
+# ADMIN PANEL ENDPOINTS
+# ============================================================
+
+# Master Admin Credentials (stored in memory for security)
+MASTER_ADMIN_USERNAME = "Architect"
+MASTER_ADMIN_PASSWORD = "X17resto1!X21resto1!"
+
+class AdminLogin(BaseModel):
+    username: str
+    password: str
+
+class AdminToken(BaseModel):
+    access_token: str
+    token_type: str
+    admin_name: str
+
+class AdminUserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    is_active: Optional[bool] = None
+    role: Optional[str] = None
+
+class AdminUserResponse(BaseModel):
+    id: str
+    email: str
+    first_name: str
+    last_name: str
+    phone: Optional[str] = None
+    role: str
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    avatar_url: Optional[str] = None
+
+def create_admin_token(admin_name: str, expires_delta: Optional[timedelta] = None):
+    """Create JWT token for admin"""
+    to_encode = {"sub": admin_name, "type": "admin"}
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(hours=24)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify admin token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Неверные учетные данные администратора",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        admin_name: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        if admin_name is None or token_type != "admin":
+            raise credentials_exception
+        return admin_name
+    except jwt.PyJWTError:
+        raise credentials_exception
+
+@api_router.post("/admin/login", response_model=AdminToken)
+async def admin_login(login_data: AdminLogin):
+    """Admin login endpoint"""
+    if login_data.username != MASTER_ADMIN_USERNAME or login_data.password != MASTER_ADMIN_PASSWORD:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверное имя пользователя или пароль"
+        )
+    
+    access_token = create_admin_token(MASTER_ADMIN_USERNAME, timedelta(hours=24))
+    return AdminToken(
+        access_token=access_token,
+        token_type="bearer",
+        admin_name=MASTER_ADMIN_USERNAME
+    )
+
+@api_router.get("/admin/dashboard")
+async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
+    """Get admin dashboard statistics"""
+    try:
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=7)
+        month_start = today_start - timedelta(days=30)
+        
+        # Total users count
+        total_users = await db.users.count_documents({})
+        
+        # Active users (is_active=True)
+        active_users = await db.users.count_documents({"is_active": True})
+        
+        # Inactive/Deactivated users
+        inactive_users = await db.users.count_documents({"is_active": False})
+        
+        # Users registered today
+        new_today = await db.users.count_documents({
+            "created_at": {"$gte": today_start}
+        })
+        
+        # Users registered this week
+        new_this_week = await db.users.count_documents({
+            "created_at": {"$gte": week_start}
+        })
+        
+        # Users registered this month
+        new_this_month = await db.users.count_documents({
+            "created_at": {"$gte": month_start}
+        })
+        
+        # Users logged in today
+        logged_in_today = await db.users.count_documents({
+            "last_login": {"$gte": today_start}
+        })
+        
+        # Users logged in this week
+        logged_in_this_week = await db.users.count_documents({
+            "last_login": {"$gte": week_start}
+        })
+        
+        # Online users (based on last_seen within 5 minutes)
+        five_minutes_ago = now - timedelta(minutes=5)
+        online_users = await db.users.count_documents({
+            "last_seen": {"$gte": five_minutes_ago}
+        })
+        
+        # Registration trend (last 7 days)
+        registration_trend = []
+        for i in range(7):
+            day_start = today_start - timedelta(days=i)
+            day_end = day_start + timedelta(days=1)
+            count = await db.users.count_documents({
+                "created_at": {"$gte": day_start, "$lt": day_end}
+            })
+            registration_trend.append({
+                "date": day_start.strftime("%Y-%m-%d"),
+                "count": count
+            })
+        registration_trend.reverse()
+        
+        # Login activity trend (last 7 days)
+        login_trend = []
+        for i in range(7):
+            day_start = today_start - timedelta(days=i)
+            day_end = day_start + timedelta(days=1)
+            count = await db.users.count_documents({
+                "last_login": {"$gte": day_start, "$lt": day_end}
+            })
+            login_trend.append({
+                "date": day_start.strftime("%Y-%m-%d"),
+                "count": count
+            })
+        login_trend.reverse()
+        
+        # User roles distribution
+        role_distribution = []
+        pipeline = [
+            {"$group": {"_id": "$role", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}}
+        ]
+        async for doc in db.users.aggregate(pipeline):
+            role_distribution.append({
+                "role": doc["_id"] or "UNKNOWN",
+                "count": doc["count"]
+            })
+        
+        # Recent registrations (last 10)
+        recent_users = []
+        cursor = db.users.find(
+            {},
+            {"_id": 0, "password_hash": 0}
+        ).sort("created_at", -1).limit(10)
+        async for user in cursor:
+            recent_users.append({
+                "id": user.get("id"),
+                "email": user.get("email"),
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "created_at": user.get("created_at"),
+                "is_active": user.get("is_active", True)
+            })
+        
+        return {
+            "total_users": total_users,
+            "active_users": active_users,
+            "inactive_users": inactive_users,
+            "online_users": online_users,
+            "new_today": new_today,
+            "new_this_week": new_this_week,
+            "new_this_month": new_this_month,
+            "logged_in_today": logged_in_today,
+            "logged_in_this_week": logged_in_this_week,
+            "registration_trend": registration_trend,
+            "login_trend": login_trend,
+            "role_distribution": role_distribution,
+            "recent_users": recent_users
+        }
+    except Exception as e:
+        logger.error(f"Admin dashboard error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/users")
+async def get_admin_users(
+    admin: str = Depends(get_current_admin),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc"
+):
+    """Get all users with pagination and filtering"""
+    try:
+        query = {}
+        
+        # Search filter
+        if search:
+            search_regex = {"$regex": search, "$options": "i"}
+            query["$or"] = [
+                {"email": search_regex},
+                {"first_name": search_regex},
+                {"last_name": search_regex},
+                {"phone": search_regex}
+            ]
+        
+        # Status filter
+        if status_filter == "active":
+            query["is_active"] = True
+        elif status_filter == "inactive":
+            query["is_active"] = False
+        
+        # Get total count
+        total = await db.users.count_documents(query)
+        
+        # Sorting
+        sort_direction = -1 if sort_order == "desc" else 1
+        sort_field = sort_by if sort_by in ["created_at", "last_login", "email", "first_name"] else "created_at"
+        
+        # Fetch users
+        users = []
+        cursor = db.users.find(
+            query,
+            {"_id": 0, "password_hash": 0}
+        ).sort(sort_field, sort_direction).skip(skip).limit(limit)
+        
+        async for user in cursor:
+            users.append({
+                "id": user.get("id"),
+                "email": user.get("email"),
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", ""),
+                "phone": user.get("phone"),
+                "role": user.get("role", "ADULT"),
+                "is_active": user.get("is_active", True),
+                "is_verified": user.get("is_verified", False),
+                "created_at": user.get("created_at"),
+                "last_login": user.get("last_login"),
+                "avatar_url": user.get("avatar_url")
+            })
+        
+        return {
+            "users": users,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": skip + len(users) < total
+        }
+    except Exception as e:
+        logger.error(f"Admin users list error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/users/{user_id}")
+async def get_admin_user_detail(
+    user_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Get detailed user information"""
+    try:
+        user = await db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "password_hash": 0}
+        )
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        # Get additional stats
+        posts_count = await db.posts.count_documents({"user_id": user_id})
+        comments_count = await db.comments.count_documents({"user_id": user_id})
+        
+        # Get family memberships
+        family_memberships = await db.family_members.find(
+            {"user_id": user_id, "is_active": True}
+        ).to_list(100)
+        
+        # Get work memberships
+        work_memberships = await db.work_members.find(
+            {"user_id": user_id, "status": "ACTIVE"}
+        ).to_list(100)
+        
+        return {
+            **user,
+            "stats": {
+                "posts_count": posts_count,
+                "comments_count": comments_count,
+                "family_memberships": len(family_memberships),
+                "work_memberships": len(work_memberships)
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin user detail error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/admin/users/{user_id}")
+async def update_admin_user(
+    user_id: str,
+    user_data: AdminUserUpdate,
+    admin: str = Depends(get_current_admin)
+):
+    """Update user information"""
+    try:
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        update_data = {}
+        if user_data.first_name is not None:
+            update_data["first_name"] = user_data.first_name
+        if user_data.last_name is not None:
+            update_data["last_name"] = user_data.last_name
+        if user_data.email is not None:
+            # Check if email is already taken
+            existing = await db.users.find_one({"email": user_data.email, "id": {"$ne": user_id}})
+            if existing:
+                raise HTTPException(status_code=400, detail="Email уже используется")
+            update_data["email"] = user_data.email
+        if user_data.phone is not None:
+            update_data["phone"] = user_data.phone
+        if user_data.is_active is not None:
+            update_data["is_active"] = user_data.is_active
+        if user_data.role is not None:
+            update_data["role"] = user_data.role
+        
+        if update_data:
+            update_data["updated_at"] = datetime.now(timezone.utc)
+            await db.users.update_one(
+                {"id": user_id},
+                {"$set": update_data}
+            )
+        
+        # Fetch updated user
+        updated_user = await db.users.find_one(
+            {"id": user_id},
+            {"_id": 0, "password_hash": 0}
+        )
+        
+        return {"message": "Пользователь обновлен", "user": updated_user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin user update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/admin/users/{user_id}/status")
+async def toggle_user_status(
+    user_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Toggle user active/inactive status"""
+    try:
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        new_status = not user.get("is_active", True)
+        
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {
+                "is_active": new_status,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        status_text = "активирован" if new_status else "деактивирован"
+        return {"message": f"Пользователь {status_text}", "is_active": new_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin user status toggle error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/admin/users/{user_id}")
+async def delete_admin_user(
+    user_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Delete a user (soft delete by deactivating, or hard delete)"""
+    try:
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        # Hard delete the user
+        await db.users.delete_one({"id": user_id})
+        
+        # Also clean up related data
+        await db.posts.delete_many({"user_id": user_id})
+        await db.comments.delete_many({"user_id": user_id})
+        await db.notifications.delete_many({"user_id": user_id})
+        await db.agent_conversations.delete_many({"user_id": user_id})
+        
+        return {"message": "Пользователь удален"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin user delete error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: str,
+    password_data: dict,
+    admin: str = Depends(get_current_admin)
+):
+    """Reset user password"""
+    try:
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        new_password = password_data.get("new_password")
+        if not new_password or len(new_password) < 6:
+            raise HTTPException(status_code=400, detail="Пароль должен быть не менее 6 символов")
+        
+        hashed_password = get_password_hash(new_password)
+        
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {
+                "password_hash": hashed_password,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        return {"message": "Пароль сброшен"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin password reset error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/verify")
+async def verify_admin_token(admin: str = Depends(get_current_admin)):
+    """Verify admin token is valid"""
+    return {"valid": True, "admin_name": admin}
+
+# ===== END ADMIN PANEL ENDPOINTS =====
+
 # Include the router in the main app
 app.include_router(api_router)
 
