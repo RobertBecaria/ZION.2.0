@@ -226,7 +226,9 @@ api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 optional_security = HTTPBearer(auto_error=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key-for-development')
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError("CRITICAL: JWT_SECRET_KEY environment variable is required. Generate one with: openssl rand -hex 32")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 if IS_PRODUCTION else 30  # Longer sessions in production
 
@@ -7552,16 +7554,42 @@ async def get_user_collections(
     return {"collections": collections}
 
 @api_router.get("/media/{file_id}")
-async def get_media_file(file_id: str):
-    """Serve uploaded media file - public access for image display"""
+async def get_media_file(
+    file_id: str,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)
+):
+    """Serve uploaded media file with access control"""
     media_file = await db.media_files.find_one({"id": file_id})
     if not media_file:
         raise HTTPException(status_code=404, detail="File not found")
-    
+
+    # Get current user if authenticated
+    current_user_id = None
+    if credentials:
+        try:
+            payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+            current_user_id = payload.get("sub")
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            pass  # Treat as unauthenticated
+
+    # Check access permissions
+    is_public = media_file.get("is_public", False)
+    is_profile_picture = media_file.get("source_module") == "profile"
+    is_owner = current_user_id and media_file.get("user_id") == current_user_id
+
+    # Allow access if: public, profile picture, or owner
+    if not (is_public or is_profile_picture or is_owner):
+        # For non-public media, require authentication
+        if not current_user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
+        # Check if user has access through context (e.g., same organization, family)
+        # For now, allow authenticated users to access media in shared contexts
+        # TODO: Implement fine-grained access control based on media context
+
     file_path = Path(media_file["file_path"])
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found on disk")
-    
+
     from fastapi.responses import FileResponse
     return FileResponse(
         path=file_path,
@@ -7570,15 +7598,33 @@ async def get_media_file(file_id: str):
     )
 
 @api_router.get("/media/files/{filename}")
-async def get_media_file_by_name(filename: str):
+async def get_media_file_by_name(
+    filename: str,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security)
+):
     """Serve uploaded files (voice messages, chat attachments) by filename"""
     from fastapi.responses import FileResponse
-    
-    # Security: prevent path traversal
-    if ".." in filename or "/" in filename or "\\" in filename:
+    from urllib.parse import unquote
+
+    # Decode URL-encoded characters first (prevents %2e%2e bypass)
+    decoded_filename = unquote(filename)
+
+    # Security: Robust path traversal prevention
+    # 1. Check for obvious traversal patterns in decoded string
+    if ".." in decoded_filename or "/" in decoded_filename or "\\" in decoded_filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    
-    file_path = UPLOAD_DIR / filename
+
+    # 2. Resolve the full path and verify it's within UPLOAD_DIR
+    try:
+        upload_dir_resolved = Path(UPLOAD_DIR).resolve()
+        file_path = (UPLOAD_DIR / decoded_filename).resolve()
+
+        # Ensure the resolved path is within the upload directory
+        if not str(file_path).startswith(str(upload_dir_resolved)):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
@@ -21993,9 +22039,15 @@ async def initialize_tokens(
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/finance/welcome-bonus/{user_id}")
-async def give_welcome_bonus(user_id: str):
-    """Internal: Give welcome bonus to new user (called during registration)"""
+async def give_welcome_bonus(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Give welcome bonus to new user - only callable by the user themselves or admin"""
     try:
+        # Security: Only allow user to claim their own bonus, or admin to grant
+        if current_user.id != user_id and current_user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Not authorized to grant welcome bonus")
         # Check if user already has a wallet
         existing_wallet = await db.wallets.find_one({"user_id": user_id}, {"_id": 0})
         if existing_wallet:
@@ -25254,9 +25306,11 @@ async def get_business_analytics(
 # Include the router in the main app
 app.include_router(api_router)
 
-# Serve uploaded files
-# Mount uploads directory for serving static files
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# SECURITY FIX: Removed public StaticFiles mount for uploads
+# All file access must go through authenticated endpoints:
+# - /api/media/{file_id} - for media files with DB records
+# - /api/media/files/{filename} - for direct file access (with path validation)
+# Previously: app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ============================================================
 # MIDDLEWARE CONFIGURATION

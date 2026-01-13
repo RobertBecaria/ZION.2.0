@@ -84,10 +84,15 @@ COPY --from=frontend-builder /app/frontend/build /app/frontend/build
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set permissions
+# Set permissions for non-root execution
+# Backend runs as www-data user for security
 RUN chown -R www-data:www-data /app/frontend/build \
     && chown -R www-data:www-data /app/uploads \
-    && chown -R www-data:www-data /app/logs
+    && chown -R www-data:www-data /app/logs \
+    && chown -R www-data:www-data /app/backend \
+    && chown -R www-data:www-data /var/log/supervisor \
+    && chown -R www-data:www-data /var/log/nginx \
+    && chmod 755 /var/log/supervisor /var/log/nginx
 
 # Expose port
 EXPOSE 80 443
