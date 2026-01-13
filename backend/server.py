@@ -392,14 +392,119 @@ async def lifespan(app: FastAPI):
 async def ensure_indexes():
     """Ensure all database indexes exist (runs on startup)"""
     try:
-        # Key indexes for performance
+        # === USERS ===
         await db.users.create_index("id", unique=True, background=True)
         await db.users.create_index("email", unique=True, background=True)
+        await db.users.create_index([("created_at", -1)], background=True)
+
+        # === POSTS ===
+        await db.posts.create_index("id", unique=True, background=True)
         await db.posts.create_index([("created_at", -1)], background=True)
         await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.posts.create_index([("family_id", 1), ("created_at", -1)], background=True)
+        await db.posts.create_index([("source_module", 1), ("created_at", -1)], background=True)
+        await db.posts.create_index("visibility", background=True)
+
+        # === POST INTERACTIONS ===
+        await db.post_likes.create_index([("post_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.post_likes.create_index("post_id", background=True)
+        await db.post_likes.create_index("user_id", background=True)
+        await db.post_comments.create_index([("post_id", 1), ("created_at", -1)], background=True)
+        await db.post_comments.create_index("user_id", background=True)
+        await db.post_reactions.create_index([("post_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.post_reactions.create_index("post_id", background=True)
+
+        # === CHAT ===
+        await db.chat_groups.create_index("id", unique=True, background=True)
+        await db.chat_groups.create_index("members", background=True)
+        await db.chat_group_members.create_index([("group_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.chat_group_members.create_index("user_id", background=True)
+        await db.chat_messages.create_index([("group_id", 1), ("created_at", -1)], background=True)
+        await db.chat_messages.create_index([("sender_id", 1), ("created_at", -1)], background=True)
+        await db.direct_chats.create_index([("participants", 1)], background=True)
+        await db.direct_chats.create_index([("updated_at", -1)], background=True)
+        await db.direct_messages.create_index([("chat_id", 1), ("created_at", -1)], background=True)
+
+        # === NOTIFICATIONS ===
         await db.notifications.create_index([("user_id", 1), ("is_read", 1), ("created_at", -1)], background=True)
+        await db.notifications.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.notifications.create_index([("created_at", 1)], expireAfterSeconds=2592000, background=True)  # 30 days TTL
+
+        # === FAMILY ===
+        await db.family_units.create_index("id", unique=True, background=True)
+        await db.family_units.create_index("creator_id", background=True)
+        await db.family_members.create_index([("family_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.family_members.create_index("user_id", background=True)
+        await db.family_members.create_index("family_id", background=True)
+        await db.family_subscriptions.create_index([("family_id", 1), ("status", 1)], background=True)
+        await db.family_profiles.create_index("id", unique=True, background=True)
+        await db.family_profiles.create_index("creator_id", background=True)
+
+        # === CONNECTIONS ===
+        await db.connections.create_index([("from_user_id", 1), ("to_user_id", 1)], unique=True, background=True)
+        await db.connections.create_index([("to_user_id", 1), ("status", 1)], background=True)
+        await db.connections.create_index([("from_user_id", 1), ("status", 1)], background=True)
+
+        # === ORGANIZATIONS / WORK ===
+        await db.organizations.create_index("id", unique=True, background=True)
+        await db.organizations.create_index("organization_type", background=True)
+        await db.work_members.create_index([("organization_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.work_members.create_index("user_id", background=True)
+        await db.user_affiliations.create_index([("user_id", 1), ("organization_id", 1)], unique=True, background=True)
+        await db.user_affiliations.create_index("organization_id", background=True)
+        await db.work_tasks.create_index([("organization_id", 1), ("status", 1)], background=True)
+        await db.work_tasks.create_index([("assigned_to", 1), ("status", 1)], background=True)
+
+        # === SERVICES ===
+        await db.service_listings.create_index("id", unique=True, background=True)
+        await db.service_listings.create_index("provider_id", background=True)
+        await db.service_listings.create_index("category", background=True)
+        await db.service_listings.create_index([("status", 1), ("created_at", -1)], background=True)
+        await db.service_bookings.create_index([("service_id", 1), ("status", 1)], background=True)
+        await db.service_bookings.create_index([("customer_id", 1), ("created_at", -1)], background=True)
+        await db.service_bookings.create_index([("provider_id", 1), ("created_at", -1)], background=True)
+
+        # === MARKETPLACE ===
+        await db.marketplace_products.create_index("id", unique=True, background=True)
+        await db.marketplace_products.create_index("seller_id", background=True)
+        await db.marketplace_products.create_index([("status", 1), ("created_at", -1)], background=True)
+        await db.marketplace_products.create_index("category", background=True)
+        await db.marketplace_orders.create_index([("buyer_id", 1), ("created_at", -1)], background=True)
+        await db.marketplace_orders.create_index([("seller_id", 1), ("created_at", -1)], background=True)
+        await db.marketplace_orders.create_index([("status", 1), ("created_at", -1)], background=True)
+
+        # === FINANCE ===
+        await db.wallets.create_index("user_id", unique=True, background=True)
+        await db.transactions.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.transactions.create_index([("wallet_id", 1), ("created_at", -1)], background=True)
+        await db.transactions.create_index([("type", 1), ("status", 1)], background=True)
+
+        # === EVENTS ===
+        await db.goodwill_events.create_index("id", unique=True, background=True)
+        await db.goodwill_events.create_index("organizer_id", background=True)
+        await db.goodwill_events.create_index([("start_date", 1)], background=True)
+        await db.goodwill_events.create_index([("status", 1), ("start_date", 1)], background=True)
+        await db.event_participants.create_index([("event_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.event_participants.create_index("user_id", background=True)
+
+        # === MEDIA ===
+        await db.media_files.create_index("id", unique=True, background=True)
+        await db.media_files.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.media_files.create_index("reference_id", background=True)
+
+        # === AGENT CONVERSATIONS ===
         await db.agent_conversations.create_index([("user_id", 1), ("updated_at", -1)], background=True)
-        logger.info("✅ Database indexes verified")
+        await db.agent_conversations.create_index("id", unique=True, background=True)
+
+        # === NEWS ===
+        await db.news_feeds.create_index([("created_at", -1)], background=True)
+        await db.news_feeds.create_index([("category", 1), ("created_at", -1)], background=True)
+
+        # === JOURNAL ===
+        await db.journal_entries.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.journal_entries.create_index("id", unique=True, background=True)
+
+        logger.info("✅ Database indexes verified (50+ indexes)")
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
 
@@ -3611,11 +3716,32 @@ async def get_user_by_email(email: str):
         return User(**user_data)
     return None
 
-async def get_user_by_id(user_id: str):
+async def get_user_by_id(user_id: str, use_cache: bool = True):
+    """Get user by ID with caching for performance"""
+    if not user_id:
+        return None
+
+    cache_key = f"user:{user_id}"
+
+    # Try cache first
+    if use_cache:
+        cached = await cache.get(cache_key)
+        if cached:
+            return User(**cached)
+
+    # Fetch from database
     user_data = await db.users.find_one({"id": user_id})
     if user_data:
+        # Store in cache (exclude _id for serialization)
+        cache_data = {k: v for k, v in user_data.items() if k != "_id"}
+        await cache.set(cache_key, cache_data)
         return User(**user_data)
     return None
+
+
+async def invalidate_user_cache(user_id: str):
+    """Invalidate user cache when user data is updated"""
+    await cache.delete(f"user:{user_id}")
 
 async def authenticate_user(email: str, password: str):
     user = await get_user_by_email(email)
@@ -3812,48 +3938,75 @@ async def get_module_connections(user_id: str, module: str) -> List[str]:
         return [user_id]  # Only user's own posts for unknown modules
 
 async def get_user_chat_groups(user_id: str):
-    """Get all chat groups where user is a member"""
+    """Get all chat groups where user is a member - optimized with batch queries"""
     memberships = await db.chat_group_members.find({"user_id": user_id, "is_active": True}).to_list(100)
-    
+
+    if not memberships:
+        return []
+
+    # Get all group IDs
+    group_ids = [m["group_id"] for m in memberships]
+    membership_map = {m["group_id"]: m for m in memberships}
+
+    # Batch fetch all groups
+    groups_cursor = db.chat_groups.find({"id": {"$in": group_ids}, "is_active": True})
+    groups_list = await groups_cursor.to_list(100)
+
+    if not groups_list:
+        return []
+
+    active_group_ids = [g["id"] for g in groups_list]
+
+    # Batch get member counts using aggregation
+    member_counts_pipeline = [
+        {"$match": {"group_id": {"$in": active_group_ids}, "is_active": True}},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    member_counts_result = await db.chat_group_members.aggregate(member_counts_pipeline).to_list(100)
+    member_counts = {r["_id"]: r["count"] for r in member_counts_result}
+
+    # Batch get latest messages using aggregation
+    latest_messages_pipeline = [
+        {"$match": {"group_id": {"$in": active_group_ids}, "is_deleted": False}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {"_id": "$group_id", "latest": {"$first": "$$ROOT"}}}
+    ]
+    latest_messages_result = await db.chat_messages.aggregate(latest_messages_pipeline).to_list(100)
+    latest_messages = {}
+    for r in latest_messages_result:
+        msg = r["latest"]
+        msg.pop("_id", None)
+        latest_messages[r["_id"]] = msg
+
+    # Batch get unread counts using aggregation
+    unread_counts_pipeline = [
+        {"$match": {
+            "group_id": {"$in": active_group_ids},
+            "user_id": {"$ne": user_id},
+            "status": {"$ne": "read"},
+            "is_deleted": False
+        }},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    unread_counts_result = await db.chat_messages.aggregate(unread_counts_pipeline).to_list(100)
+    unread_counts = {r["_id"]: r["count"] for r in unread_counts_result}
+
+    # Build response
     groups = []
-    for membership in memberships:
-        group = await db.chat_groups.find_one({"id": membership["group_id"], "is_active": True})
-        if group:
-            # Remove MongoDB _id
-            group.pop("_id", None)
-            membership.pop("_id", None)
-            
-            # Get member count
-            member_count = await db.chat_group_members.count_documents({
-                "group_id": group["id"], 
-                "is_active": True
-            })
-            
-            # Get latest message
-            latest_message = await db.chat_messages.find_one(
-                {"group_id": group["id"], "is_deleted": False},
-                sort=[("created_at", -1)]
-            )
-            if latest_message:
-                latest_message.pop("_id", None)
-            
-            # Get unread count (messages not from this user that haven't been read)
-            unread_count = await db.chat_messages.count_documents({
-                "group_id": group["id"],
-                "user_id": {"$ne": user_id},
-                "status": {"$ne": "read"},
-                "is_deleted": False
-            })
-            
-            groups.append({
-                "group": group,
-                "user_role": membership["role"],
-                "member_count": member_count,
-                "latest_message": latest_message,
-                "unread_count": unread_count,
-                "joined_at": membership["joined_at"]
-            })
-    
+    for group in groups_list:
+        group.pop("_id", None)
+        membership = membership_map.get(group["id"], {})
+        membership.pop("_id", None)
+
+        groups.append({
+            "group": group,
+            "user_role": membership.get("role"),
+            "member_count": member_counts.get(group["id"], 0),
+            "latest_message": latest_messages.get(group["id"]),
+            "unread_count": unread_counts.get(group["id"], 0),
+            "joined_at": membership.get("joined_at")
+        })
+
     return groups
 
 # === NEW FAMILY SYSTEM HELPER FUNCTIONS ===
@@ -4151,12 +4304,12 @@ async def delete_account(
     })
     
     if family_profile:
-        # Get all adult members of the family (excluding the current user)
+        # Get adult members of the family (excluding the current user), limit 100
         family_members = await db.family_members.find({
             "family_id": family_profile["id"],
             "user_id": {"$ne": current_user.id},
             "is_deleted": {"$ne": True}
-        }).to_list(None)
+        }).limit(100).to_list(100)
         
         # Filter adult members (you can adjust age logic as needed)
         adult_members = []
@@ -4252,7 +4405,9 @@ async def update_profile_picture(
             "updated_at": datetime.now(timezone.utc)
         }}
     )
-    
+    # Invalidate user cache
+    await invalidate_user_cache(current_user.id)
+
     return {"message": "Фото профиля обновлено", "profile_picture": profile_picture}
 
 @api_router.delete("/users/profile-picture")
@@ -4267,7 +4422,9 @@ async def delete_profile_picture(
             "updated_at": datetime.now(timezone.utc)
         }}
     )
-    
+    # Invalidate user cache
+    await invalidate_user_cache(current_user.id)
+
     return {"message": "Фото профиля удалено"}
 
 @api_router.post("/onboarding")
@@ -4399,11 +4556,11 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
     })
     
     if family_unit:
-        # Get family members to find upcoming birthdays
+        # Get family members to find upcoming birthdays (limit 100)
         family_members = await db.family_unit_members.find({
             "family_unit_id": family_unit["id"],
             "is_active": True
-        }).to_list(None)
+        }).limit(100).to_list(100)
         
         # Find upcoming birthday
         today = datetime.now(timezone.utc).date()
@@ -4438,12 +4595,12 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
             "address_country": family_unit.get("address_country")
         }
     
-    # Get organization memberships
+    # Get organization memberships (limit 50)
     organizations = []
     org_members = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).limit(50).to_list(50)
     
     for member in org_members:
         org = await db.work_organizations.find_one({"id": member["organization_id"]})
@@ -4528,16 +4685,16 @@ async def get_user_dynamic_profile(
     viewer_relationship = "public"
     shared_organizations = []
     
-    # Check if users are in same organization
+    # Check if users are in same organization (limit 50 each)
     viewer_orgs = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
-    
+    }).limit(50).to_list(50)
+
     target_orgs = await db.work_members.find({
         "user_id": user_id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).limit(50).to_list(50)
     
     viewer_org_ids = {m["organization_id"] for m in viewer_orgs}
     target_org_ids = {m["organization_id"] for m in target_orgs}
@@ -4688,7 +4845,9 @@ async def update_my_profile(
             {"id": current_user.id},
             {"$set": update_fields}
         )
-    
+        # Invalidate user cache
+        await invalidate_user_cache(current_user.id)
+
     return {"success": True, "message": "Profile updated successfully"}
 
 @api_router.put("/users/me/profile/privacy")
@@ -7213,11 +7372,12 @@ async def send_message_with_attachment(
     stored_filename = f"chat_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file asynchronously
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
+    file_content = await file.read()
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Determine message type
     content_type = file.content_type or ""
     if content_type.startswith("image/"):
@@ -7298,12 +7458,12 @@ async def send_voice_message(
     stored_filename = f"voice_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file asynchronously
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_content = await file.read()
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_content)
-    
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Create voice message
     new_message = ChatMessage(
         direct_chat_id=chat_id,
@@ -8345,23 +8505,33 @@ async def get_post_likes(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    likes = await db.post_likes.find({"post_id": post_id}).to_list(None)
-    
-    # Get user info for each like
+    # Limit to first 1000 likes to prevent memory issues
+    likes = await db.post_likes.find({"post_id": post_id}).limit(1000).to_list(1000)
+
+    if not likes:
+        return []
+
+    # Batch fetch all user info to avoid N+1 queries
+    user_ids = list(set(like["user_id"] for like in likes))
+    users_cursor = db.users.find({"id": {"$in": user_ids}}, {"id": 1, "first_name": 1, "last_name": 1})
+    users_list = await users_cursor.to_list(1000)
+    users_map = {u["id"]: u for u in users_list}
+
+    # Build result
     result = []
     for like in likes:
-        user = await get_user_by_id(like["user_id"])
+        user = users_map.get(like["user_id"])
         if user:
             result.append({
                 "id": like["id"],
                 "user": {
-                    "id": user.id,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name
+                    "id": user["id"],
+                    "first_name": user.get("first_name", ""),
+                    "last_name": user.get("last_name", "")
                 },
                 "created_at": like["created_at"]
             })
-    
+
     return result
 
 # Post Comments Endpoints
@@ -8375,11 +8545,11 @@ async def get_post_comments(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    # Get all comments for this post, sorted by creation time
+    # Get comments for this post, sorted by creation time (limit 500)
     comments = await db.post_comments.find({
         "post_id": post_id,
         "is_deleted": False
-    }).sort("created_at", 1).to_list(None)
+    }).sort("created_at", 1).limit(500).to_list(500)
     
     # Build nested structure for replies
     comments_dict = {}
@@ -8686,9 +8856,19 @@ async def get_post_reactions(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    reactions = await db.post_reactions.find({"post_id": post_id}).to_list(None)
-    
-    # Group reactions by emoji and get user info
+    # Limit to 1000 reactions to prevent memory issues
+    reactions = await db.post_reactions.find({"post_id": post_id}).limit(1000).to_list(1000)
+
+    if not reactions:
+        return []
+
+    # Batch fetch all user info to avoid N+1 queries
+    user_ids = list(set(r["user_id"] for r in reactions))
+    users_cursor = db.users.find({"id": {"$in": user_ids}}, {"id": 1, "first_name": 1, "last_name": 1})
+    users_list = await users_cursor.to_list(1000)
+    users_map = {u["id"]: u for u in users_list}
+
+    # Group reactions by emoji
     reaction_groups = {}
     for reaction in reactions:
         emoji = reaction["emoji"]
@@ -8699,16 +8879,16 @@ async def get_post_reactions(
                 "users": []
             }
         reaction_groups[emoji]["count"] += 1
-        
-        # Get user info
-        user = await get_user_by_id(reaction["user_id"])
+
+        # Get user info from batch-fetched map
+        user = users_map.get(reaction["user_id"])
         if user:
             reaction_groups[emoji]["users"].append({
-                "id": user.id,
-                "first_name": user.first_name,
-                "last_name": user.last_name
+                "id": user["id"],
+                "first_name": user.get("first_name", ""),
+                "last_name": user.get("last_name", "")
             })
-    
+
     return list(reaction_groups.values())
 
 @api_router.delete("/posts/{post_id}/reactions")
@@ -12463,9 +12643,9 @@ async def get_organization_teachers(
         if subject is not None:
             query["teaching_subjects"] = subject
         
-        # Get teachers
-        teachers_cursor = db.work_members.find(query)
-        teachers = await teachers_cursor.to_list(None)
+        # Get teachers (limit 200)
+        teachers_cursor = db.work_members.find(query).limit(200)
+        teachers = await teachers_cursor.to_list(200)
         
         # Enrich with user details
         teacher_responses = []
@@ -12613,8 +12793,8 @@ async def get_organization_classes(
         if grade:
             pipeline[0]["$match"]["grade"] = grade
         
-        classes_data = await db.work_students.aggregate(pipeline).to_list(None)
-        
+        classes_data = await db.work_students.aggregate(pipeline).to_list(500)
+
         # If no students with classes, create classes based on teacher assignments
         if not classes_data and is_teacher:
             # Get teacher's teaching grades and supervised class
@@ -12653,16 +12833,16 @@ async def get_organization_classes(
                 
                 classes_data = sorted(generated_classes, key=lambda x: (x["grade"], x["_id"]))
         
-        # Get all teachers to find class supervisors
-        teachers_cursor = db.teachers.find({"organization_id": organization_id})
-        teachers_list = await teachers_cursor.to_list(None)
-        
-        # Also check work_members for teacher data
+        # Get teachers to find class supervisors (limit 200)
+        teachers_cursor = db.teachers.find({"organization_id": organization_id}).limit(200)
+        teachers_list = await teachers_cursor.to_list(200)
+
+        # Also check work_members for teacher data (limit 200)
         members_cursor = db.work_members.find({
             "organization_id": organization_id,
             "is_teacher": True
-        })
-        members_list = await members_cursor.to_list(None)
+        }).limit(200)
+        members_list = await members_cursor.to_list(200)
         
         # Merge teacher info
         all_teachers = {}
@@ -12823,17 +13003,17 @@ async def get_organization_students(
         else:
             query["academic_status"] = "ACTIVE"  # Default to active students
         
-        # Get students
-        students_cursor = db.work_students.find(query)
-        students = await students_cursor.to_list(None)
-        
+        # Get students (limit 500)
+        students_cursor = db.work_students.find(query).limit(500)
+        students = await students_cursor.to_list(500)
+
         # Enrich with parent details
         student_responses = []
         for student in students:
             # Parse date_of_birth if it's a string
             if isinstance(student.get('date_of_birth'), str):
                 student['date_of_birth'] = datetime.fromisoformat(student['date_of_birth']).date()
-            
+
             # Calculate age
             dob = student.get('date_of_birth')
             age = None
@@ -13078,12 +13258,12 @@ async def get_my_children(
 ):
     """Get all children for the current user (parent)"""
     try:
-        # Find all students where user is a parent
+        # Find all students where user is a parent (limit 50)
         students_cursor = db.work_students.find({
             "parent_ids": current_user.id,
             "is_active": True
-        })
-        students = await students_cursor.to_list(None)
+        }).limit(50)
+        students = await students_cursor.to_list(50)
         
         # Enrich with parent details
         student_responses = []
@@ -13229,14 +13409,14 @@ async def get_my_school_roles(
         })
         roles["is_parent"] = children_count > 0
         
-        # Get schools where user has children
+        # Get schools where user has children (limit 50)
         if roles["is_parent"]:
             students_cursor = db.work_students.find({
                 "parent_ids": current_user.id,
                 "is_active": True,
                 "organization_id": {"$ne": None}
-            })
-            students = await students_cursor.to_list(None)
+            }).limit(50)
+            students = await students_cursor.to_list(50)
             
             # Get unique organization IDs
             org_ids = list(set([s["organization_id"] for s in students if s.get("organization_id")]))
@@ -13254,20 +13434,20 @@ async def get_my_school_roles(
                         "children_ids": [s["student_id"] for s in children_in_school]
                     })
         
-        # Check if user is a teacher in any educational organization
+        # Check if user is a teacher in any educational organization (limit 50)
         # First check work_members with is_teacher flag
         teacher_memberships_cursor = db.work_members.find({
             "user_id": current_user.id,
             "is_teacher": True,
             "status": "active"
-        })
-        teacher_memberships = await teacher_memberships_cursor.to_list(None)
-        
-        # Also check the dedicated teachers collection
+        }).limit(50)
+        teacher_memberships = await teacher_memberships_cursor.to_list(50)
+
+        # Also check the dedicated teachers collection (limit 50)
         teachers_cursor = db.teachers.find({
             "user_id": current_user.id
-        })
-        teachers_records = await teachers_cursor.to_list(None)
+        }).limit(50)
+        teachers_records = await teachers_cursor.to_list(50)
         
         roles["is_teacher"] = len(teacher_memberships) > 0 or len(teachers_records) > 0
         
@@ -13375,9 +13555,9 @@ async def get_enrollment_requests(
         else:
             query["status"] = "PENDING"  # Default to pending
         
-        # Get requests
-        requests_cursor = db.student_enrollment_requests.find(query)
-        requests = await requests_cursor.to_list(None)
+        # Get requests (limit 200)
+        requests_cursor = db.student_enrollment_requests.find(query).limit(200)
+        requests = await requests_cursor.to_list(200)
         
         # Get organization name
         org = await db.work_organizations.find_one({"id": organization_id})
@@ -13668,9 +13848,9 @@ async def get_schedules(
         if day_of_week:
             query["day_of_week"] = day_of_week
         
-        # Get schedules
-        schedules_cursor = db.class_schedules.find(query).sort([("day_of_week", 1), ("lesson_number", 1)])
-        schedules = await schedules_cursor.to_list(None)
+        # Get schedules (limit 500)
+        schedules_cursor = db.class_schedules.find(query).sort([("day_of_week", 1), ("lesson_number", 1)]).limit(500)
+        schedules = await schedules_cursor.to_list(500)
         
         # Enrich with teacher names
         schedule_responses = []
@@ -13826,10 +14006,10 @@ async def get_student_grades(
         if academic_period:
             query["academic_period"] = academic_period
         
-        # Get grades
-        grades_cursor = db.student_grades.find(query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
-        
+        # Get grades (limit 500)
+        grades_cursor = db.student_grades.find(query).sort("date", -1).limit(500)
+        grades = await grades_cursor.to_list(500)
+
         # Enrich with teacher and student names
         grade_responses = []
         for grade in grades:
@@ -13883,14 +14063,14 @@ async def get_class_grades(
         if not membership:
             raise HTTPException(status_code=403, detail="Недостаточно прав")
         
-        # Get all students in this class
+        # Get all students in this class (limit 100)
         students_cursor = db.work_students.find({
             "organization_id": organization_id,
             "grade": grade,
             "assigned_class": assigned_class,
             "is_active": True
-        })
-        students = await students_cursor.to_list(None)
+        }).limit(100)
+        students = await students_cursor.to_list(100)
         
         if not students:
             return []
@@ -13906,10 +14086,10 @@ async def get_class_grades(
         if subject:
             grade_query["subject"] = subject
         
-        # Get all grades for these students
-        grades_cursor = db.student_grades.find(grade_query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
-        
+        # Get grades for these students (limit 2000)
+        grades_cursor = db.student_grades.find(grade_query).sort("date", -1).limit(2000)
+        grades = await grades_cursor.to_list(2000)
+
         # Group by student and subject
         student_summaries = []
         
@@ -14120,10 +14300,10 @@ async def get_journal_posts(
             # No filter specified - show all allowed audiences
             query["audience_type"] = {"$in": [a.value for a in allowed_audiences]}
         
-        # Get posts
-        posts_cursor = db.journal_posts.find(query).sort("created_at", -1)
-        posts = await posts_cursor.to_list(None)
-        
+        # Get posts (limit 100)
+        posts_cursor = db.journal_posts.find(query).sort("created_at", -1).limit(100)
+        posts = await posts_cursor.to_list(100)
+
         # Enrich with author and organization data
         post_responses = []
         org = await db.work_organizations.find_one({"organization_id": organization_id})
@@ -14727,9 +14907,9 @@ async def get_classmates_for_invitation(
         if assigned_class:
             query["assigned_class"] = assigned_class
         
-        # Get students from work_students collection
-        students_cursor = db.work_students.find(query, {"_id": 0})
-        students = await students_cursor.to_list(None)
+        # Get students from work_students collection (limit 200)
+        students_cursor = db.work_students.find(query, {"_id": 0}).limit(200)
+        students = await students_cursor.to_list(200)
         
         classmates = []
         for student in students:
@@ -19280,11 +19460,11 @@ async def get_news_post_comments(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    # Get all comments for this post
+    # Get comments for this post (limit 500)
     comments = await db.news_post_comments.find({
         "post_id": post_id,
         "is_deleted": {"$ne": True}
-    }).sort("created_at", 1).to_list(None)
+    }).sort("created_at", 1).limit(500).to_list(500)
     
     # Build response with author info and nested replies
     comments_dict = {}
