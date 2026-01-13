@@ -4,6 +4,8 @@ import './App.css';
 import { AuthProvider, useAuth, ErrorBoundary, LoginForm, RegistrationForm, OnboardingWizard } from './components/auth';
 // Layout Components
 import { ModuleNavigation, LeftSidebar, RightSidebar } from './components/layout';
+// Admin Components
+import { AdminPanel } from './components/admin';
 // Config
 import { getModuleByKey, getSidebarTintStyle } from './config/moduleConfig';
 // Hooks
