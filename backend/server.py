@@ -103,6 +103,72 @@ class SimpleCache:
 # Initialize cache
 cache = SimpleCache(default_ttl=300)  # 5 minutes TTL
 
+# User cache for frequent lookups (shorter TTL for user data)
+user_cache = SimpleCache(default_ttl=120)  # 2 minutes TTL for user data
+
+async def get_user_by_id_cached(user_id: str) -> Optional[dict]:
+    """Get user by ID with caching to reduce DB queries.
+
+    This is a performance optimization for the 200+ places where
+    we look up user data. Returns a dict (not User model) to avoid
+    serialization overhead.
+    """
+    if not user_id:
+        return None
+
+    cache_key = f"user:{user_id}"
+
+    # Try cache first
+    cached = await user_cache.get(cache_key)
+    if cached:
+        return cached
+
+    # Fetch from database
+    user = await db.users.find_one({"id": user_id})
+    if user:
+        user.pop("_id", None)
+        user.pop("password_hash", None)  # Never cache sensitive data
+        await user_cache.set(cache_key, user)
+        return user
+
+    return None
+
+async def get_users_by_ids_cached(user_ids: List[str]) -> Dict[str, dict]:
+    """Batch fetch multiple users with caching.
+
+    Returns a dict mapping user_id -> user_data for efficient lookups.
+    This eliminates N+1 queries when fetching multiple users.
+    """
+    if not user_ids:
+        return {}
+
+    result = {}
+    missing_ids = []
+
+    # Check cache for each user
+    for user_id in user_ids:
+        cache_key = f"user:{user_id}"
+        cached = await user_cache.get(cache_key)
+        if cached:
+            result[user_id] = cached
+        else:
+            missing_ids.append(user_id)
+
+    # Batch fetch missing users from database
+    if missing_ids:
+        users = await db.users.find(
+            {"id": {"$in": missing_ids}},
+            {"_id": 0, "password_hash": 0}  # Exclude sensitive fields
+        ).to_list(len(missing_ids))
+
+        for user in users:
+            user_id = user.get("id")
+            if user_id:
+                await user_cache.set(f"user:{user_id}", user)
+                result[user_id] = user
+
+    return result
+
 # ============================================================
 # RATE LIMITING (In-memory, simple implementation)
 # ============================================================
@@ -148,6 +214,8 @@ rate_limiter = RateLimiter()
 
 # Rate limit configurations
 RATE_LIMITS = {
+    "auth_login": {"max_requests": 5, "window_seconds": 60},    # 5 login attempts/minute
+    "auth_register": {"max_requests": 3, "window_seconds": 60}, # 3 registrations/minute
     "ai_chat": {"max_requests": 20, "window_seconds": 60},      # 20 AI requests/minute
     "ai_analysis": {"max_requests": 10, "window_seconds": 60},  # 10 file analyses/minute
     "search": {"max_requests": 30, "window_seconds": 60},       # 30 searches/minute
@@ -187,14 +255,67 @@ async def lifespan(app: FastAPI):
 async def ensure_indexes():
     """Ensure all database indexes exist (runs on startup)"""
     try:
-        # Key indexes for performance
+        # ===== USER INDEXES =====
         await db.users.create_index("id", unique=True, background=True)
         await db.users.create_index("email", unique=True, background=True)
+        await db.users.create_index([("first_name", 1), ("last_name", 1)], background=True)
+
+        # ===== POST INDEXES =====
         await db.posts.create_index([("created_at", -1)], background=True)
         await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.posts.create_index([("visibility", 1), ("created_at", -1)], background=True)
+
+        # ===== POST INTERACTIONS (Critical for feed performance) =====
+        await db.post_likes.create_index("post_id", background=True)
+        await db.post_likes.create_index([("post_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.post_comments.create_index("post_id", background=True)
+        await db.post_comments.create_index([("post_id", 1), ("created_at", -1)], background=True)
+        await db.post_reactions.create_index("post_id", background=True)
+        await db.post_reactions.create_index([("post_id", 1), ("user_id", 1)], background=True)
+
+        # ===== CHAT INDEXES (Critical for messaging) =====
+        await db.chat_groups.create_index("id", unique=True, background=True)
+        await db.chat_group_members.create_index([("user_id", 1), ("is_active", 1)], background=True)
+        await db.chat_group_members.create_index([("group_id", 1), ("is_active", 1)], background=True)
+        await db.chat_messages.create_index([("group_id", 1), ("is_deleted", 1), ("created_at", -1)], background=True)
+        await db.chat_messages.create_index([("direct_chat_id", 1), ("is_deleted", 1), ("created_at", -1)], background=True)
+        await db.direct_chats.create_index("id", unique=True, background=True)
+        await db.direct_chats.create_index([("participant_ids", 1), ("is_active", 1)], background=True)
+
+        # ===== FAMILY INDEXES =====
+        await db.family_members.create_index([("user_id", 1), ("is_active", 1)], background=True)
+        await db.family_members.create_index([("family_id", 1), ("is_active", 1)], background=True)
+        await db.family_units.create_index("id", unique=True, background=True)
+        await db.families.create_index("id", unique=True, background=True)
+
+        # ===== WORK/ORGANIZATIONS INDEXES =====
+        await db.work_organizations.create_index("id", unique=True, background=True)
+        await db.work_organizations.create_index([("is_active", 1), ("allow_public_discovery", 1)], background=True)
+        await db.work_members.create_index([("user_id", 1), ("status", 1)], background=True)
+        await db.work_members.create_index([("organization_id", 1), ("status", 1)], background=True)
+        await db.user_affiliations.create_index([("user_id", 1), ("is_active", 1)], background=True)
+
+        # ===== NOTIFICATIONS INDEXES =====
         await db.notifications.create_index([("user_id", 1), ("is_read", 1), ("created_at", -1)], background=True)
+
+        # ===== EVENTS INDEXES =====
+        await db.goodwill_events.create_index([("status", 1), ("start_date", 1)], background=True)
+        await db.goodwill_events.create_index([("organizer_id", 1), ("status", 1)], background=True)
+        await db.event_registrations.create_index([("event_id", 1), ("user_id", 1)], background=True)
+
+        # ===== SERVICES/MARKETPLACE INDEXES =====
+        await db.service_listings.create_index([("status", 1), ("category_id", 1)], background=True)
+        await db.marketplace_products.create_index([("status", 1), ("category", 1)], background=True)
+        await db.inventory_items.create_index([("user_id", 1), ("category", 1)], background=True)
+
+        # ===== AI/AGENT INDEXES =====
         await db.agent_conversations.create_index([("user_id", 1), ("updated_at", -1)], background=True)
-        logger.info("✅ Database indexes verified")
+
+        # ===== MEDIA INDEXES =====
+        await db.media_files.create_index("id", unique=True, background=True)
+        await db.media_files.create_index([("user_id", 1), ("created_at", -1)], background=True)
+
+        logger.info("✅ Database indexes verified (35+ indexes)")
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
 
@@ -3325,6 +3446,173 @@ def extract_youtube_id_from_url(url: str) -> Optional[str]:
             return match.group(1)
     return None
 
+# ============================================================
+# SECURITY UTILITIES
+# ============================================================
+
+def safe_regex(pattern: str) -> str:
+    """Escape special regex characters to prevent NoSQL injection.
+
+    Use this for all user-provided search terms in MongoDB $regex queries.
+    """
+    return re.escape(pattern)
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Validate password meets security requirements.
+
+    Requirements:
+    - At least 12 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - At least one special character
+
+    Returns (is_valid, error_message)
+    """
+    if len(password) < 12:
+        return False, "Password must be at least 12 characters long"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one digit"
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_=+\[\]\\;'/`~]", password):
+        return False, "Password must contain at least one special character"
+    return True, "Password is valid"
+
+def is_safe_url(url: str) -> tuple[bool, str]:
+    """Validate URL is safe for server-side fetching (SSRF protection).
+
+    Blocks:
+    - Non HTTP/HTTPS schemes
+    - Private IP addresses
+    - Localhost and common internal hostnames
+    - AWS metadata endpoint
+
+    Returns (is_safe, error_message)
+    """
+    from urllib.parse import urlparse
+    import ipaddress
+    import socket
+
+    BLOCKED_HOSTS = [
+        'localhost', '127.0.0.1', '0.0.0.0',
+        '169.254.169.254',  # AWS metadata
+        'metadata.google.internal',  # GCP metadata
+        '100.100.100.200',  # Alibaba Cloud metadata
+    ]
+
+    try:
+        parsed = urlparse(url)
+
+        # Check scheme
+        if parsed.scheme not in ['http', 'https']:
+            return False, "Only HTTP and HTTPS URLs are allowed"
+
+        # Check for empty hostname
+        if not parsed.hostname:
+            return False, "Invalid URL: no hostname"
+
+        hostname = parsed.hostname.lower()
+
+        # Check for blocked hosts
+        if hostname in BLOCKED_HOSTS:
+            return False, "Access to this host is not allowed"
+
+        # Check for internal hostnames
+        if hostname.endswith('.local') or hostname.endswith('.internal'):
+            return False, "Access to internal hosts is not allowed"
+
+        # Try to resolve hostname and check IP
+        try:
+            resolved_ip = socket.gethostbyname(hostname)
+            ip = ipaddress.ip_address(resolved_ip)
+
+            if ip.is_private:
+                return False, "Access to private IP addresses is not allowed"
+            if ip.is_loopback:
+                return False, "Access to loopback addresses is not allowed"
+            if ip.is_link_local:
+                return False, "Access to link-local addresses is not allowed"
+            if ip.is_reserved:
+                return False, "Access to reserved IP addresses is not allowed"
+
+        except socket.gaierror:
+            # Can't resolve - might be valid but unreachable
+            pass
+        except ValueError:
+            # Not a valid IP address format
+            pass
+
+        return True, "URL is safe"
+
+    except Exception as e:
+        return False, f"Invalid URL: {str(e)}"
+
+# Magic bytes for file type validation
+MAGIC_BYTES = {
+    'image/jpeg': [b'\xff\xd8\xff'],
+    'image/png': [b'\x89PNG\r\n\x1a\n'],
+    'image/gif': [b'GIF87a', b'GIF89a'],
+    'image/webp': [b'RIFF', b'WEBP'],  # RIFF....WEBP
+    'application/pdf': [b'%PDF'],
+    'video/mp4': [b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp', b'\x00\x00\x00\x20ftyp', b'ftyp'],
+    'video/webm': [b'\x1aE\xdf\xa3'],
+    'audio/mpeg': [b'\xff\xfb', b'\xff\xfa', b'\xff\xf3', b'ID3'],
+    'audio/webm': [b'\x1aE\xdf\xa3'],
+    'audio/ogg': [b'OggS'],
+}
+
+async def validate_file_magic(file: UploadFile, max_size: int = 10_000_000) -> tuple[bool, str]:
+    """Validate file using magic bytes and size.
+
+    This provides stronger validation than just checking content_type header,
+    which can be spoofed by attackers.
+
+    Returns (is_valid, error_message)
+    """
+    try:
+        # Read first 12 bytes for magic number detection
+        header = await file.read(12)
+        await file.seek(0)
+
+        if not header:
+            return False, "Empty file"
+
+        content_type = file.content_type or ""
+
+        # Check if content type has magic byte signatures defined
+        if content_type in MAGIC_BYTES:
+            signatures = MAGIC_BYTES[content_type]
+            matched = False
+
+            for sig in signatures:
+                if header.startswith(sig):
+                    matched = True
+                    break
+                # Special case for WEBP (RIFF....WEBP pattern)
+                if content_type == 'image/webp' and header[:4] == b'RIFF' and b'WEBP' in header[:12]:
+                    matched = True
+                    break
+
+            if not matched:
+                return False, f"File content does not match declared type ({content_type})"
+
+        # Read full content to check size
+        content = await file.read()
+        await file.seek(0)
+
+        if len(content) > max_size:
+            max_mb = max_size // (1024 * 1024)
+            return False, f"File too large. Maximum size is {max_mb}MB"
+
+        return True, "File is valid"
+
+    except Exception as e:
+        logger.error(f"File validation error: {e}")
+        return False, "Error validating file"
+
 def get_file_type(mime_type: str) -> str:
     """Determine file type based on MIME type"""
     if mime_type in ALLOWED_IMAGE_TYPES:
@@ -3400,8 +3688,15 @@ async def get_user_by_email(email: str):
     return None
 
 async def get_user_by_id(user_id: str):
-    user_data = await db.users.find_one({"id": user_id})
+    """Get user by ID with caching (returns User model)."""
+    user_data = await get_user_by_id_cached(user_id)
     if user_data:
+        # For User model, we need password_hash, fetch from DB if not cached
+        if "password_hash" not in user_data:
+            full_user = await db.users.find_one({"id": user_id})
+            if full_user:
+                full_user.pop("_id", None)
+                return User(**full_user)
         return User(**user_data)
     return None
 
@@ -3600,49 +3895,85 @@ async def get_module_connections(user_id: str, module: str) -> List[str]:
         return [user_id]  # Only user's own posts for unknown modules
 
 async def get_user_chat_groups(user_id: str):
-    """Get all chat groups where user is a member"""
-    memberships = await db.chat_group_members.find({"user_id": user_id, "is_active": True}).to_list(100)
-    
-    groups = []
-    for membership in memberships:
-        group = await db.chat_groups.find_one({"id": membership["group_id"], "is_active": True})
+    """Get all chat groups where user is a member.
+
+    Optimized to use batch queries instead of N+1 pattern.
+    Reduces 41 queries for 10 groups down to 5 queries total.
+    """
+    # 1. Get all memberships for user
+    memberships = await db.chat_group_members.find(
+        {"user_id": user_id, "is_active": True}
+    ).to_list(100)
+
+    if not memberships:
+        return []
+
+    # Extract group IDs
+    group_ids = [m["group_id"] for m in memberships]
+    membership_map = {m["group_id"]: m for m in memberships}
+
+    # 2. Batch fetch all groups
+    groups_list = await db.chat_groups.find(
+        {"id": {"$in": group_ids}, "is_active": True}
+    ).to_list(100)
+    groups_map = {g["id"]: g for g in groups_list}
+
+    # 3. Batch get member counts using aggregation
+    member_count_pipeline = [
+        {"$match": {"group_id": {"$in": group_ids}, "is_active": True}},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    member_counts = await db.chat_group_members.aggregate(member_count_pipeline).to_list(100)
+    counts_map = {c["_id"]: c["count"] for c in member_counts}
+
+    # 4. Get latest messages for each group using aggregation
+    latest_msg_pipeline = [
+        {"$match": {"group_id": {"$in": group_ids}, "is_deleted": False}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {
+            "_id": "$group_id",
+            "latest": {"$first": "$$ROOT"}
+        }}
+    ]
+    latest_messages = await db.chat_messages.aggregate(latest_msg_pipeline).to_list(100)
+    latest_map = {}
+    for lm in latest_messages:
+        msg = lm["latest"]
+        msg.pop("_id", None)
+        latest_map[lm["_id"]] = msg
+
+    # 5. Get unread counts using aggregation
+    unread_pipeline = [
+        {"$match": {
+            "group_id": {"$in": group_ids},
+            "user_id": {"$ne": user_id},
+            "status": {"$ne": "read"},
+            "is_deleted": False
+        }},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    unread_counts = await db.chat_messages.aggregate(unread_pipeline).to_list(100)
+    unread_map = {u["_id"]: u["count"] for u in unread_counts}
+
+    # Build result using pre-fetched data
+    result = []
+    for group_id in group_ids:
+        group = groups_map.get(group_id)
         if group:
-            # Remove MongoDB _id
             group.pop("_id", None)
+            membership = membership_map[group_id]
             membership.pop("_id", None)
-            
-            # Get member count
-            member_count = await db.chat_group_members.count_documents({
-                "group_id": group["id"], 
-                "is_active": True
-            })
-            
-            # Get latest message
-            latest_message = await db.chat_messages.find_one(
-                {"group_id": group["id"], "is_deleted": False},
-                sort=[("created_at", -1)]
-            )
-            if latest_message:
-                latest_message.pop("_id", None)
-            
-            # Get unread count (messages not from this user that haven't been read)
-            unread_count = await db.chat_messages.count_documents({
-                "group_id": group["id"],
-                "user_id": {"$ne": user_id},
-                "status": {"$ne": "read"},
-                "is_deleted": False
-            })
-            
-            groups.append({
+
+            result.append({
                 "group": group,
                 "user_role": membership["role"],
-                "member_count": member_count,
-                "latest_message": latest_message,
-                "unread_count": unread_count,
+                "member_count": counts_map.get(group_id, 0),
+                "latest_message": latest_map.get(group_id),
+                "unread_count": unread_map.get(group_id, 0),
                 "joined_at": membership["joined_at"]
             })
-    
-    return groups
+
+    return result
 
 # === NEW FAMILY SYSTEM HELPER FUNCTIONS ===
 
@@ -3652,10 +3983,10 @@ async def find_matching_family_units(address_street: str, address_city: str, add
     
     # Build query - must match address + last name
     query = {
-        "address_street": {"$regex": f".*{address_street}.*", "$options": "i"},
-        "address_city": {"$regex": f".*{address_city}.*", "$options": "i"},
-        "address_country": {"$regex": f".*{address_country}.*", "$options": "i"},
-        "family_surname": {"$regex": f".*{last_name}.*", "$options": "i"},
+        "address_street": {"$regex": f".*{safe_regex(address_street)}.*", "$options": "i"},
+        "address_city": {"$regex": f".*{safe_regex(address_city)}.*", "$options": "i"},
+        "address_country": {"$regex": f".*{safe_regex(address_country)}.*", "$options": "i"},
+        "family_surname": {"$regex": f".*{safe_regex(last_name)}.*", "$options": "i"},
         "is_active": True
     }
     
@@ -3733,7 +4064,23 @@ async def check_vote_majority(join_request_id: str) -> bool:
 # === API ENDPOINTS ===
 
 @api_router.post("/auth/register", response_model=Token)
-async def register_user(user_data: UserRegistration):
+async def register_user(user_data: UserRegistration, request: Request):
+    # Rate limiting by IP address
+    client_ip = request.client.host if request.client else "unknown"
+    if not await rate_limiter.is_allowed(f"auth_register:{client_ip}", 3, 60):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many registration attempts. Please try again later."
+        )
+
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(user_data.password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_msg
+        )
+
     # Check if user already exists
     existing_user = await get_user_by_email(user_data.email)
     if existing_user:
@@ -3741,7 +4088,7 @@ async def register_user(user_data: UserRegistration):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
+
     # Create new user
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
@@ -3785,7 +4132,15 @@ async def register_user(user_data: UserRegistration):
     return Token(access_token=access_token, token_type="bearer", user=user_response)
 
 @api_router.post("/auth/login", response_model=Token)
-async def login_user(login_data: UserLogin):
+async def login_user(login_data: UserLogin, request: Request):
+    # Rate limiting by IP address
+    client_ip = request.client.host if request.client else "unknown"
+    if not await rate_limiter.is_allowed(f"auth_login:{client_ip}", 5, 60):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login attempts. Please try again later."
+        )
+
     user = await authenticate_user(login_data.email, login_data.password)
     if not user:
         raise HTTPException(
@@ -3925,7 +4280,7 @@ async def delete_account(
             "family_id": family_profile["id"],
             "user_id": {"$ne": current_user.id},
             "is_deleted": {"$ne": True}
-        }).to_list(None)
+        }).to_list(100)
         
         # Filter adult members (you can adjust age logic as needed)
         adult_members = []
@@ -4172,7 +4527,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
         family_members = await db.family_unit_members.find({
             "family_unit_id": family_unit["id"],
             "is_active": True
-        }).to_list(None)
+        }).to_list(100)
         
         # Find upcoming birthday
         today = datetime.now(timezone.utc).date()
@@ -4212,7 +4567,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
     org_members = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     for member in org_members:
         org = await db.work_organizations.find_one({"id": member["organization_id"]})
@@ -4301,12 +4656,12 @@ async def get_user_dynamic_profile(
     viewer_orgs = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     target_orgs = await db.work_members.find({
         "user_id": user_id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     viewer_org_ids = {m["organization_id"] for m in viewer_orgs}
     target_org_ids = {m["organization_id"] for m in target_orgs}
@@ -4710,8 +5065,8 @@ async def create_family_with_members(
         }
         
     except Exception as e:
-        print(f"Error creating family: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/family-profiles")
 async def get_user_family_profiles(current_user: User = Depends(get_current_user)):
@@ -4825,8 +5180,9 @@ async def update_family_banner(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Banner upload error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Banner upload error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/family-profiles/{family_id}/avatar")
 async def update_family_avatar(
@@ -4862,8 +5218,9 @@ async def update_family_avatar(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Avatar upload error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Avatar upload error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # NEW: Settings Management Endpoints
 
@@ -4913,8 +5270,9 @@ async def update_family_basic_info(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Update family error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Update family error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/users/search/basic")
 async def search_users_basic(
@@ -4927,11 +5285,12 @@ async def search_users_basic(
             return {"users": []}
         
         # Search in users collection
+        safe_query = safe_regex(query)
         users = await db.users.find({
             "$or": [
-                {"name": {"$regex": query, "$options": "i"}},
-                {"surname": {"$regex": query, "$options": "i"}},
-                {"email": {"$regex": query, "$options": "i"}}
+                {"name": {"$regex": safe_query, "$options": "i"}},
+                {"surname": {"$regex": safe_query, "$options": "i"}},
+                {"email": {"$regex": safe_query, "$options": "i"}}
             ]
         }).limit(10).to_list(10)
         
@@ -4949,8 +5308,9 @@ async def search_users_basic(
         return {"users": user_results}
         
     except Exception as e:
-        print(f"User search error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"User search error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/family/{family_id}/members")
 async def get_family_members_list(
@@ -5008,8 +5368,9 @@ async def get_family_members_list(
         return {"success": True, "members": member_list}
         
     except Exception as e:
-        print(f"Get members error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get members error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/family/{family_id}/members")
 async def add_family_member(
@@ -5080,8 +5441,9 @@ async def add_family_member(
         return {"success": True, "member": member_response}
         
     except Exception as e:
-        print(f"Add member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Add member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/family/{family_id}/members/{member_id}")
 async def remove_family_member(
@@ -5148,8 +5510,9 @@ async def remove_family_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Remove member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Remove member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/family/{family_id}/privacy")
 async def update_family_privacy_settings(
@@ -5198,8 +5561,9 @@ async def update_family_privacy_settings(
             raise HTTPException(status_code=404, detail="Family not found")
             
     except Exception as e:
-        print(f"Update privacy error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Update privacy error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/family/{family_id}")
 async def delete_family(
@@ -5228,8 +5592,9 @@ async def delete_family(
         return {"success": True, "message": "Family deleted successfully"}
         
     except Exception as e:
-        print(f"Delete family error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Delete family error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # END: Settings Management Endpoints
 
@@ -5298,8 +5663,9 @@ async def create_household(
         }
         
     except Exception as e:
-        print(f"Error creating household: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/household")
 async def get_user_household(current_user: User = Depends(get_current_user)):
@@ -5354,8 +5720,9 @@ async def get_user_household(current_user: User = Depends(get_current_user)):
         }
         
     except Exception as e:
-        print(f"Error getting household: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/household/{household_id}/update")
 async def update_household(
@@ -5405,8 +5772,9 @@ async def update_household(
             raise HTTPException(status_code=404, detail="Household not found")
             
     except Exception as e:
-        print(f"Update household error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Update household error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/household/{household_id}/members")
 async def add_household_member(
@@ -5458,8 +5826,9 @@ async def add_household_member(
         return {"success": True, "member": new_member}
         
     except Exception as e:
-        print(f"Add household member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Add household member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/household/{household_id}/members/{member_id}")
 async def remove_household_member(
@@ -5501,8 +5870,9 @@ async def remove_household_member(
             raise HTTPException(status_code=404, detail="Member not found")
             
     except Exception as e:
-        print(f"Remove household member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Remove household member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/household/{household_id}")
 async def delete_household(
@@ -5529,8 +5899,9 @@ async def delete_household(
         return {"success": True, "message": "Household deleted"}
         
     except Exception as e:
-        print(f"Delete household error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Delete household error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # END: Household Management Endpoints
 
@@ -5657,8 +6028,9 @@ async def get_public_family_profile(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error getting public profile: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # END: Public Family Profile Endpoints
 
@@ -6772,7 +7144,7 @@ async def get_user_contacts(
     query = {"id": {"$ne": current_user.id}}
     
     if search:
-        search_regex = {"$regex": search, "$options": "i"}
+        search_regex = {"$regex": safe_regex(search), "$options": "i"}
         query["$or"] = [
             {"first_name": search_regex},
             {"last_name": search_regex},
@@ -6853,12 +7225,13 @@ async def search_direct_chat_messages(
         raise HTTPException(status_code=403, detail="Not authorized to search this chat")
     
     # Search messages
+    safe_query_pattern = safe_regex(query)
     messages = await db.chat_messages.find({
         "direct_chat_id": chat_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": safe_query_pattern, "$options": "i"},
         "is_deleted": False
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
+
     # Add sender info
     for message in messages:
         message.pop("_id", None)
@@ -6870,10 +7243,10 @@ async def search_direct_chat_messages(
                 "last_name": sender.last_name,
                 "profile_picture": sender.profile_picture
             }
-    
+
     total = await db.chat_messages.count_documents({
         "direct_chat_id": chat_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": safe_query_pattern, "$options": "i"},
         "is_deleted": False
     })
     
@@ -6901,14 +7274,15 @@ async def search_group_chat_messages(
     
     if not membership:
         raise HTTPException(status_code=403, detail="Not a member of this group")
-    
+
     # Search messages
+    safe_query_pattern = safe_regex(query)
     messages = await db.chat_messages.find({
         "group_id": group_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": safe_query_pattern, "$options": "i"},
         "is_deleted": False
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
+
     # Add sender info
     for message in messages:
         message.pop("_id", None)
@@ -6920,13 +7294,13 @@ async def search_group_chat_messages(
                 "last_name": sender.last_name,
                 "profile_picture": sender.profile_picture
             }
-    
+
     total = await db.chat_messages.count_documents({
         "group_id": group_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": safe_query_pattern, "$options": "i"},
         "is_deleted": False
     })
-    
+
     return {
         "messages": messages,
         "total": total,
@@ -6951,22 +7325,26 @@ async def send_message_with_attachment(
     
     if not chat:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Validate and save file
+
+    # Validate file type and magic bytes
     is_valid, error = validate_file(file)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error)
-    
+    is_valid, error = await validate_file_magic(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error)
+
     # Generate unique filename
     file_ext = os.path.splitext(file.filename)[1]
     stored_filename = f"chat_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file (async I/O)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
+    file_content = await file.read()
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Determine message type
     content_type = file.content_type or ""
     if content_type.startswith("image/"):
@@ -7032,27 +7410,32 @@ async def send_voice_message(
     
     if not chat:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     # Validate audio file
     allowed_audio_types = ["audio/webm", "audio/ogg", "audio/mp3", "audio/mpeg", "audio/wav", "audio/x-wav"]
     content_type = file.content_type or ""
-    
+
     if not any(audio_type in content_type for audio_type in allowed_audio_types):
         # Also accept webm without proper content type
         if not file.filename.endswith(('.webm', '.ogg', '.mp3', '.wav')):
             raise HTTPException(status_code=400, detail="Invalid audio file format")
-    
+
+    # Validate file magic bytes
+    is_valid, error = await validate_file_magic(file, max_size=50_000_000)  # 50MB for voice
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error)
+
     # Generate unique filename
     file_ext = os.path.splitext(file.filename)[1] or '.webm'
     stored_filename = f"voice_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file (async I/O)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_content = await file.read()
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_content)
-    
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Create voice message
     new_message = ChatMessage(
         direct_chat_id=chat_id,
@@ -7394,11 +7777,16 @@ async def upload_media_file(
     current_user: User = Depends(get_current_user)
 ):
     """Upload a media file (image, document, or video) with module tagging"""
-    # Validate file
+    # Validate file type
     is_valid, error_message = validate_file(file)
     if not is_valid:
         raise HTTPException(status_code=400, detail=error_message)
-    
+
+    # Validate file magic bytes (prevent spoofed content types)
+    is_valid, error_message = await validate_file_magic(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_message)
+
     # Validate source_module
     valid_modules = ["family", "work", "education", "health", "government", "business", "community", "personal"]
     if source_module not in valid_modules:
@@ -7439,7 +7827,8 @@ async def upload_media_file(
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
+        logger.error(f"File upload failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="File upload failed")
 
 @api_router.get("/media")
 async def get_user_media(
@@ -7477,7 +7866,7 @@ async def get_media_by_modules(current_user: User = Depends(get_current_user)):
     """Get user's media organized by modules"""
     
     # Get all user's media
-    media_files = await db.media_files.find({"uploaded_by": current_user.id}).to_list(1000)
+    media_files = await db.media_files.find({"uploaded_by": current_user.id}).to_list(200)
     
     # Organize by modules
     modules = {}
@@ -8088,28 +8477,38 @@ async def get_post_likes(
     post_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of users who liked a post"""
+    """Get list of users who liked a post.
+
+    Optimized: Uses batch user fetch instead of N+1 queries.
+    """
     post = await db.posts.find_one({"id": post_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
-    likes = await db.post_likes.find({"post_id": post_id}).to_list(None)
-    
-    # Get user info for each like
+
+    likes = await db.post_likes.find({"post_id": post_id}).to_list(100)
+
+    if not likes:
+        return []
+
+    # Batch fetch all users at once
+    user_ids = [like["user_id"] for like in likes]
+    users_map = await get_users_by_ids_cached(user_ids)
+
+    # Build result using pre-fetched users
     result = []
     for like in likes:
-        user = await get_user_by_id(like["user_id"])
+        user = users_map.get(like["user_id"])
         if user:
             result.append({
                 "id": like["id"],
                 "user": {
-                    "id": user.id,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name
+                    "id": user.get("id"),
+                    "first_name": user.get("first_name"),
+                    "last_name": user.get("last_name")
                 },
                 "created_at": like["created_at"]
             })
-    
+
     return result
 
 # Post Comments Endpoints
@@ -8118,24 +8517,34 @@ async def get_post_comments(
     post_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get comments for a post"""
+    """Get comments for a post.
+
+    Optimized: Uses batch user fetch instead of N+1 queries.
+    """
     post = await db.posts.find_one({"id": post_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
     # Get all comments for this post, sorted by creation time
     comments = await db.post_comments.find({
         "post_id": post_id,
         "is_deleted": False
-    }).sort("created_at", 1).to_list(None)
-    
+    }).sort("created_at", 1).to_list(100)
+
+    if not comments:
+        return []
+
+    # Batch fetch all users at once (excluding ERIC AI)
+    user_ids = [c["user_id"] for c in comments if c["user_id"] != "eric-ai"]
+    users_map = await get_users_by_ids_cached(user_ids) if user_ids else {}
+
     # Build nested structure for replies
     comments_dict = {}
     top_level_comments = []
-    
+
     for comment in comments:
         comment.pop("_id", None)
-        
+
         # Get author info - handle ERIC AI special case
         if comment["user_id"] == "eric-ai":
             comment["author"] = {
@@ -8145,17 +8554,17 @@ async def get_post_comments(
                 "profile_picture": "/eric-avatar.jpg"
             }
         else:
-            author = await get_user_by_id(comment["user_id"])
+            author = users_map.get(comment["user_id"], {})
             comment["author"] = {
-                "id": author.id,
-                "first_name": author.first_name,
-                "last_name": author.last_name,
-                "profile_picture": author.profile_picture
+                "id": author.get("id"),
+                "first_name": author.get("first_name"),
+                "last_name": author.get("last_name"),
+                "profile_picture": author.get("profile_picture")
             } if author else {}
-        
+
         comment["replies"] = []
         comments_dict[comment["id"]] = comment
-        
+
         if comment["parent_comment_id"]:
             # This is a reply
             parent = comments_dict.get(comment["parent_comment_id"])
@@ -8164,7 +8573,7 @@ async def get_post_comments(
         else:
             # This is a top-level comment
             top_level_comments.append(comment)
-    
+
     return top_level_comments
 
 @api_router.post("/posts/{post_id}/comments")
@@ -8434,7 +8843,7 @@ async def get_post_reactions(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    reactions = await db.post_reactions.find({"post_id": post_id}).to_list(None)
+    reactions = await db.post_reactions.find({"post_id": post_id}).to_list(100)
     
     # Group reactions by emoji and get user info
     reaction_groups = {}
@@ -9279,12 +9688,17 @@ async def upload_document_scan(
     
     if not existing_doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    
-    # Validate file
+
+    # Validate file type
     is_valid, message = validate_file(file)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
-    
+
+    # Validate file magic bytes
+    is_valid, message = await validate_file_magic(file)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+
     # Save file using existing media system
     media_file = await save_uploaded_file(file, current_user.id)
     media_file.source_module = "my_documents"
@@ -9323,20 +9737,21 @@ async def search_work_organizations(
     try:
         # Build search query
         search_query = {"allow_public_discovery": True}
-        
+
         # Name search
         if search_data.get("query"):
+            safe_search = safe_regex(search_data["query"])
             search_query["$or"] = [
-                {"name": {"$regex": search_data["query"], "$options": "i"}},
-                {"description": {"$regex": search_data["query"], "$options": "i"}}
+                {"name": {"$regex": safe_search, "$options": "i"}},
+                {"description": {"$regex": safe_search, "$options": "i"}}
             ]
-        
+
         # Filters
         if search_data.get("industry"):
             search_query["industry"] = search_data["industry"]
-        
+
         if search_data.get("city"):
-            search_query["address_city"] = {"$regex": search_data["city"], "$options": "i"}
+            search_query["address_city"] = {"$regex": safe_regex(search_data["city"]), "$options": "i"}
         
         if search_data.get("organization_type"):
             search_query["organization_type"] = search_data["organization_type"]
@@ -9388,8 +9803,9 @@ async def search_work_organizations(
         return {"organizations": results, "count": len(results)}
         
     except Exception as e:
-        print(f"Organization search error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Organization search error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations", response_model=WorkOrganizationResponse)
 async def create_work_organization(
@@ -9465,8 +9881,9 @@ async def create_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Create organization error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Create organization error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations")
 async def get_user_work_organizations(
@@ -9522,8 +9939,9 @@ async def get_user_work_organizations(
         return {"organizations": organizations, "count": len(organizations)}
         
     except Exception as e:
-        print(f"Get organizations error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get organizations error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}", response_model=WorkOrganizationResponse)
 async def get_work_organization(
@@ -9582,8 +10000,9 @@ async def get_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get organization error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get organization error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/members")
 async def add_work_member(
@@ -9670,8 +10089,9 @@ async def add_work_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Add member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Add member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/members")
 async def get_work_organization_members(
@@ -9710,7 +10130,7 @@ async def get_work_organization_members(
         members = await db.work_members.find({
             "organization_id": organization_id,
             "is_active": True
-        }).to_list(1000)
+        }).to_list(200)
         
         # Enrich with user details
         member_responses = []
@@ -9749,8 +10169,9 @@ async def get_work_organization_members(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get members error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get members error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/work/organizations/{organization_id}")
 async def update_work_organization(
@@ -9795,8 +10216,9 @@ async def update_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Update organization error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Update organization error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/leave")
 async def leave_work_organization(
@@ -9851,8 +10273,9 @@ async def leave_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Leave organization error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Leave organization error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/organizations/{organization_id}/members/{user_id}")
 async def remove_work_organization_member(
@@ -9955,8 +10378,9 @@ async def remove_work_organization_member(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Remove member error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Remove member error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/work/organizations/{organization_id}/members/{user_id}/role")
 async def update_work_member_role(
@@ -10064,8 +10488,9 @@ async def update_work_member_role(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Update member role error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Update member role error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/transfer-ownership")
 async def transfer_organization_ownership(
@@ -10177,8 +10602,9 @@ async def transfer_organization_ownership(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Transfer ownership error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Transfer ownership error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/join")
 async def join_work_organization(
@@ -10244,8 +10670,9 @@ async def join_work_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Join organization error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Join organization error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/request-join")
 async def request_join_organization(
@@ -10315,8 +10742,9 @@ async def request_join_organization(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Request join error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Request join error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/join-requests/my-requests")
 async def get_my_join_requests(
@@ -10335,8 +10763,9 @@ async def get_my_join_requests(
         return {"requests": requests}
         
     except Exception as e:
-        print(f"Get my requests error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get my requests error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/join-requests")
 async def get_organization_join_requests(
@@ -10373,8 +10802,9 @@ async def get_organization_join_requests(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get org requests error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get org requests error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/join-requests/{request_id}/approve")
 async def approve_join_request(
@@ -10483,8 +10913,9 @@ async def approve_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Approve request error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Approve request error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/join-requests/{request_id}/reject")
 async def reject_join_request(
@@ -10553,8 +10984,9 @@ async def reject_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Reject request error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Reject request error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/join-requests/{request_id}")
 async def cancel_join_request(
@@ -10587,8 +11019,9 @@ async def cancel_join_request(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Cancel request error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Cancel request error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === WORK ORGANIZATION POSTS API ENDPOINTS ===
 
@@ -10666,8 +11099,9 @@ async def get_work_feed(
         return {"posts": posts, "count": len(posts)}
         
     except Exception as e:
-        print(f"Get feed error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get feed error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/posts")
 async def create_work_post(
@@ -10736,8 +11170,9 @@ async def create_work_post(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Create post error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Create post error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/posts")
 async def get_work_posts(
@@ -10793,8 +11228,9 @@ async def get_work_posts(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get posts error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get posts error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/posts/{post_id}")
 async def delete_work_post(
@@ -10841,8 +11277,9 @@ async def delete_work_post(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Delete post error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Delete post error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/posts/{post_id}/like")
 async def toggle_post_like(
@@ -10910,8 +11347,9 @@ async def toggle_post_like(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Toggle like error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Toggle like error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/posts/{post_id}/comment")
 async def add_post_comment(
@@ -10960,8 +11398,9 @@ async def add_post_comment(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Add comment error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Add comment error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/posts/{post_id}/comments")
 async def get_work_post_comments(
@@ -10991,8 +11430,9 @@ async def get_work_post_comments(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Get comments error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Get comments error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === END WORK ORGANIZATION SYSTEM API ENDPOINTS ===
 
@@ -11050,7 +11490,8 @@ async def create_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/departments")
 async def list_departments(
@@ -11097,7 +11538,8 @@ async def list_departments(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/organizations/{organization_id}/departments/{dept_id}")
 async def update_department(
@@ -11155,7 +11597,8 @@ async def update_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/organizations/{organization_id}/departments/{dept_id}")
 async def delete_department(
@@ -11189,7 +11632,8 @@ async def delete_department(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/organizations/{organization_id}/departments/{dept_id}/members")
 async def add_department_member(
@@ -11261,7 +11705,8 @@ async def add_department_member(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/departments/{dept_id}/members")
 async def list_department_members(
@@ -11304,7 +11749,8 @@ async def list_department_members(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/organizations/{organization_id}/departments/{dept_id}/members/{user_id}")
 async def remove_department_member(
@@ -11351,7 +11797,8 @@ async def remove_department_member(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== ANNOUNCEMENTS API ENDPOINTS =====
 
@@ -11412,7 +11859,8 @@ async def create_announcement(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/announcements")
 async def list_announcements(
@@ -11493,7 +11941,8 @@ async def list_announcements(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/organizations/{organization_id}/announcements/{announcement_id}")
 async def update_announcement(
@@ -11543,7 +11992,8 @@ async def update_announcement(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/organizations/{organization_id}/announcements/{announcement_id}")
 async def delete_announcement(
@@ -11586,7 +12036,8 @@ async def delete_announcement(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.patch("/organizations/{organization_id}/announcements/{announcement_id}/pin")
 async def pin_announcement(
@@ -11619,7 +12070,8 @@ async def pin_announcement(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/organizations/{organization_id}/announcements/{announcement_id}/view")
 async def track_announcement_view(
@@ -11656,7 +12108,8 @@ async def track_announcement_view(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/organizations/{organization_id}/announcements/{announcement_id}/react")
 async def react_to_announcement(
@@ -11720,7 +12173,8 @@ async def react_to_announcement(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END DEPARTMENTS & ANNOUNCEMENTS ENDPOINTS =====
 
@@ -11760,7 +12214,8 @@ async def follow_organization(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/organizations/{organization_id}/follow")
 async def unfollow_organization(
@@ -11783,7 +12238,8 @@ async def unfollow_organization(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/follow/status")
 async def get_follow_status(
@@ -11803,7 +12259,8 @@ async def get_follow_status(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/followers")
 async def get_organization_followers(
@@ -11842,7 +12299,8 @@ async def get_organization_followers(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== ENHANCED JOIN REQUEST WITH NOTIFICATIONS =====
 
@@ -11928,7 +12386,8 @@ async def create_join_request_with_notification(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/organizations/{organization_id}/public")
 async def get_organization_public_profile(
@@ -11981,7 +12440,8 @@ async def get_organization_public_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END ORGANIZATION FOLLOW & JOIN REQUEST ENDPOINTS =====
 
@@ -12066,7 +12526,8 @@ async def update_my_member_settings(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === TEACHER-SPECIFIC ENDPOINTS ===
 
@@ -12125,7 +12586,8 @@ async def update_my_teacher_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/teachers", response_model=List[TeacherResponse])
 async def get_organization_teachers(
@@ -12165,7 +12627,7 @@ async def get_organization_teachers(
         
         # Get teachers
         teachers_cursor = db.work_members.find(query)
-        teachers = await teachers_cursor.to_list(None)
+        teachers = await teachers_cursor.to_list(100)
         
         # Enrich with user details
         teacher_responses = []
@@ -12199,7 +12661,8 @@ async def get_organization_teachers(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/teachers/{teacher_id}", response_model=TeacherResponse)
 async def get_teacher_profile(
@@ -12250,7 +12713,8 @@ async def get_teacher_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/schools/constants")
 async def get_school_constants():
@@ -12311,7 +12775,7 @@ async def get_organization_classes(
         if grade:
             pipeline[0]["$match"]["grade"] = grade
         
-        classes_data = await db.work_students.aggregate(pipeline).to_list(None)
+        classes_data = await db.work_students.aggregate(pipeline).to_list(100)
         
         # If no students with classes, create classes based on teacher assignments
         if not classes_data and is_teacher:
@@ -12353,14 +12817,14 @@ async def get_organization_classes(
         
         # Get all teachers to find class supervisors
         teachers_cursor = db.teachers.find({"organization_id": organization_id})
-        teachers_list = await teachers_cursor.to_list(None)
+        teachers_list = await teachers_cursor.to_list(100)
         
         # Also check work_members for teacher data
         members_cursor = db.work_members.find({
             "organization_id": organization_id,
             "is_teacher": True
         })
-        members_list = await members_cursor.to_list(None)
+        members_list = await members_cursor.to_list(100)
         
         # Merge teacher info
         all_teachers = {}
@@ -12423,7 +12887,8 @@ async def get_organization_classes(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # === STUDENT MANAGEMENT ENDPOINTS ===
@@ -12477,7 +12942,8 @@ async def create_student(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/students", response_model=List[StudentResponse])
 async def get_organization_students(
@@ -12521,7 +12987,7 @@ async def get_organization_students(
         
         # Get students
         students_cursor = db.work_students.find(query)
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         # Enrich with parent details
         student_responses = []
@@ -12578,7 +13044,8 @@ async def get_organization_students(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/students/{student_id}", response_model=StudentResponse)
 async def get_student_profile(
@@ -12659,7 +13126,8 @@ async def get_student_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/work/organizations/{organization_id}/students/{student_id}")
 async def update_student_profile(
@@ -12712,7 +13180,8 @@ async def update_student_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/students/{student_id}/parents")
 async def link_parent_to_student(
@@ -12762,7 +13231,8 @@ async def link_parent_to_student(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/users/me/children", response_model=List[StudentResponse])
 async def get_my_children(
@@ -12775,7 +13245,7 @@ async def get_my_children(
             "parent_ids": current_user.id,
             "is_active": True
         })
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         # Enrich with parent details
         student_responses = []
@@ -12830,7 +13300,8 @@ async def get_my_children(
         return student_responses
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/users/me/children")
 async def add_child_profile(
@@ -12890,7 +13361,8 @@ async def add_child_profile(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/users/me/school-roles")
 async def get_my_school_roles(
@@ -12926,7 +13398,7 @@ async def get_my_school_roles(
                 "is_active": True,
                 "organization_id": {"$ne": None}
             })
-            students = await students_cursor.to_list(None)
+            students = await students_cursor.to_list(100)
             
             # Get unique organization IDs
             org_ids = list(set([s["organization_id"] for s in students if s.get("organization_id")]))
@@ -12951,13 +13423,13 @@ async def get_my_school_roles(
             "is_teacher": True,
             "status": "active"
         })
-        teacher_memberships = await teacher_memberships_cursor.to_list(None)
+        teacher_memberships = await teacher_memberships_cursor.to_list(100)
         
         # Also check the dedicated teachers collection
         teachers_cursor = db.teachers.find({
             "user_id": current_user.id
         })
-        teachers_records = await teachers_cursor.to_list(None)
+        teachers_records = await teachers_cursor.to_list(100)
         
         roles["is_teacher"] = len(teacher_memberships) > 0 or len(teachers_records) > 0
         
@@ -12989,7 +13461,8 @@ async def get_my_school_roles(
         return roles
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === ENROLLMENT REQUEST ENDPOINTS ===
 
@@ -13036,7 +13509,8 @@ async def create_enrollment_request(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/enrollment-requests", response_model=List[EnrollmentRequestResponse])
 async def get_enrollment_requests(
@@ -13065,7 +13539,7 @@ async def get_enrollment_requests(
         
         # Get requests
         requests_cursor = db.student_enrollment_requests.find(query)
-        requests = await requests_cursor.to_list(None)
+        requests = await requests_cursor.to_list(100)
         
         # Get organization name
         org = await db.work_organizations.find_one({"id": organization_id})
@@ -13106,7 +13580,8 @@ async def get_enrollment_requests(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/enrollment-requests/{request_id}/approve")
 async def approve_enrollment_request(
@@ -13181,7 +13656,8 @@ async def approve_enrollment_request(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/enrollment-requests/{request_id}/reject")
 async def reject_enrollment_request(
@@ -13233,7 +13709,8 @@ async def reject_enrollment_request(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === CLASS SCHEDULE ENDPOINTS ===
 
@@ -13310,7 +13787,8 @@ async def create_schedule(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/schedules", response_model=List[ScheduleResponse])
 async def get_schedules(
@@ -13354,7 +13832,7 @@ async def get_schedules(
         
         # Get schedules
         schedules_cursor = db.class_schedules.find(query).sort([("day_of_week", 1), ("lesson_number", 1)])
-        schedules = await schedules_cursor.to_list(None)
+        schedules = await schedules_cursor.to_list(100)
         
         # Enrich with teacher names
         schedule_responses = []
@@ -13382,7 +13860,8 @@ async def get_schedules(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === GRADE/GRADEBOOK ENDPOINTS ===
 
@@ -13464,7 +13943,8 @@ async def create_grade(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/students/{student_id}/grades", response_model=List[GradeResponse])
 async def get_student_grades(
@@ -13510,7 +13990,7 @@ async def get_student_grades(
         
         # Get grades
         grades_cursor = db.student_grades.find(query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
+        grades = await grades_cursor.to_list(100)
         
         # Enrich with teacher and student names
         grade_responses = []
@@ -13541,7 +14021,8 @@ async def get_student_grades(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/grades/by-class")
 async def get_class_grades(
@@ -13571,7 +14052,7 @@ async def get_class_grades(
             "assigned_class": assigned_class,
             "is_active": True
         })
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         if not students:
             return []
@@ -13589,7 +14070,7 @@ async def get_class_grades(
         
         # Get all grades for these students
         grades_cursor = db.student_grades.find(grade_query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
+        grades = await grades_cursor.to_list(100)
         
         # Group by student and subject
         student_summaries = []
@@ -13646,7 +14127,8 @@ async def get_class_grades(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === JOURNAL POSTS ENDPOINTS (МОЯ ЛЕНТА) ===
 
@@ -13742,7 +14224,8 @@ async def create_journal_post(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/journal/organizations/{organization_id}/posts", response_model=List[JournalPostResponse])
 async def get_journal_posts(
@@ -13801,7 +14284,7 @@ async def get_journal_posts(
         
         # Get posts
         posts_cursor = db.journal_posts.find(query).sort("created_at", -1)
-        posts = await posts_cursor.to_list(None)
+        posts = await posts_cursor.to_list(100)
         
         # Enrich with author and organization data
         post_responses = []
@@ -13838,7 +14321,8 @@ async def get_journal_posts(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # === ACADEMIC CALENDAR ENDPOINTS ===
@@ -13957,7 +14441,8 @@ async def create_academic_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 def get_event_color(event_type: str) -> str:
@@ -14067,7 +14552,8 @@ async def get_academic_events(
         return responses
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 class RSVPInput(BaseModel):
@@ -14146,7 +14632,8 @@ async def rsvp_to_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.get("/journal/calendar/{event_id}/rsvp")
@@ -14185,7 +14672,8 @@ async def get_event_rsvp(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ==================== BIRTHDAY WISH LIST ENDPOINTS ====================
@@ -14237,7 +14725,8 @@ async def update_event_wishlist(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.post("/journal/calendar/{event_id}/wishlist/claim")
@@ -14322,7 +14811,8 @@ async def claim_birthday_wish(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.get("/journal/calendar/{event_id}/wishlist")
@@ -14376,7 +14866,8 @@ async def get_event_wishlist(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.get("/journal/organizations/{organization_id}/classmates")
@@ -14400,7 +14891,7 @@ async def get_classmates_for_invitation(
         
         # Get students from work_students collection
         students_cursor = db.work_students.find(query, {"_id": 0})
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         classmates = []
         for student in students:
@@ -14430,7 +14921,8 @@ async def get_classmates_for_invitation(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.delete("/journal/calendar/{event_id}")
@@ -14465,7 +14957,8 @@ async def delete_academic_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # === JOURNAL POST INTERACTIONS (Likes & Comments) ===
@@ -14517,7 +15010,8 @@ async def like_journal_post(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.post("/journal/posts/{post_id}/comments")
@@ -14576,7 +15070,8 @@ async def create_journal_comment(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.get("/journal/posts/{post_id}/comments")
@@ -14655,7 +15150,8 @@ async def get_journal_comments(
         return result
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.post("/journal/comments/{comment_id}/like")
@@ -14704,7 +15200,8 @@ async def like_journal_comment(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.get("/work/organizations/{organization_id}/change-requests")
@@ -14772,7 +15269,8 @@ async def get_change_requests(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/change-requests/{request_id}/approve")
 async def approve_change_request(
@@ -14876,7 +15374,8 @@ async def approve_change_request(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/change-requests/{request_id}/reject")
 async def reject_change_request(
@@ -14962,7 +15461,8 @@ async def reject_change_request(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === WORK NOTIFICATION ENDPOINTS ===
 
@@ -14994,7 +15494,8 @@ async def get_user_notifications(
         return {"success": True, "notifications": notification_responses}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.patch("/work/notifications/{notification_id}/read")
 async def mark_work_notification_read(
@@ -15016,7 +15517,8 @@ async def mark_work_notification_read(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.patch("/work/notifications/read-all")
 async def mark_all_work_notifications_read(
@@ -15035,7 +15537,8 @@ async def mark_all_work_notifications_read(
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === WORK ORGANIZATION EVENT ENDPOINTS ===
 
@@ -15131,7 +15634,8 @@ async def create_organization_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/events")
 async def get_organization_events(
@@ -15249,7 +15753,8 @@ async def get_organization_events(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/events/{event_id}")
 async def get_organization_event(
@@ -15316,7 +15821,8 @@ async def get_organization_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.patch("/work/organizations/{organization_id}/events/{event_id}")
 async def update_organization_event(
@@ -15397,7 +15903,8 @@ async def update_organization_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/organizations/{organization_id}/events/{event_id}")
 async def delete_organization_event(
@@ -15437,7 +15944,8 @@ async def delete_organization_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/events/{event_id}/rsvp")
 async def rsvp_to_work_event(
@@ -15478,7 +15986,8 @@ async def rsvp_to_work_event(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/teams")
 async def create_team(
@@ -15516,7 +16025,8 @@ async def create_team(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/teams")
 async def get_teams(
@@ -15551,7 +16061,8 @@ async def get_teams(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END MEMBER SETTINGS & CHANGE REQUEST ENDPOINTS =====
 
@@ -15622,10 +16133,10 @@ async def check_and_send_event_reminders():
                             {"$set": {"reminders_sent": reminders_sent}}
                         )
                         
-                        print(f"✓ Sent {interval_key} reminder for event: {event['title']}")
+                        logger.info(f" Sent {interval_key} reminder for event: {event['title']}")
         
     except Exception as e:
-        print(f"Error in check_and_send_event_reminders: {str(e)}")
+        logger.error(f"Error: {e}")
 
 
 async def get_event_participants(event: dict) -> List[str]:
@@ -15709,10 +16220,10 @@ async def create_event_reminder_notification(user_id: str, event: dict, interval
         }
         
         await db.work_notifications.insert_one(notification)
-        print(f"✓ Created reminder notification for user {user_id}")
+        logger.info(f" Created reminder notification for user {user_id}")
         
     except Exception as e:
-        print(f"Error creating reminder notification: {str(e)}")
+        logger.error(f"Error: {e}")
 
 
 @api_router.post("/work/events/check-reminders")
@@ -16018,7 +16529,8 @@ async def create_task(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/tasks")
 async def get_organization_tasks(
@@ -16084,7 +16596,8 @@ async def get_organization_tasks(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/tasks/my-tasks")
 async def get_my_tasks(
@@ -16116,7 +16629,8 @@ async def get_my_tasks(
         return {"tasks": task_responses}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/tasks/calendar")
 async def get_tasks_for_calendar(
@@ -16253,7 +16767,8 @@ async def get_tasks_for_calendar(
         
     except Exception as e:
         logger.error(f"Error fetching calendar tasks: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/tasks/{task_id}")
 async def get_task(
@@ -16278,7 +16793,8 @@ async def get_task(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/work/organizations/{organization_id}/tasks/{task_id}")
 async def update_task(
@@ -16332,7 +16848,8 @@ async def update_task(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/tasks/{task_id}/accept")
 async def accept_task(
@@ -16402,7 +16919,8 @@ async def accept_task(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/tasks/{task_id}/status")
 async def update_task_status(
@@ -16506,7 +17024,8 @@ async def update_task_status(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/tasks/{task_id}/subtasks")
 async def add_subtask(
@@ -16545,7 +17064,8 @@ async def add_subtask(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.patch("/work/organizations/{organization_id}/tasks/{task_id}/subtasks/{subtask_id}")
 async def update_subtask(
@@ -16586,7 +17106,8 @@ async def update_subtask(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/work/organizations/{organization_id}/tasks/{task_id}/discuss")
 async def create_task_discussion(
@@ -16646,7 +17167,8 @@ async def create_task_discussion(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/organizations/{organization_id}/tasks/{task_id}")
 async def delete_task(
@@ -16691,7 +17213,8 @@ async def delete_task(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === TASK TEMPLATES ===
 
@@ -16725,7 +17248,8 @@ async def create_task_template(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/work/organizations/{organization_id}/task-templates")
 async def get_task_templates(
@@ -16747,7 +17271,8 @@ async def get_task_templates(
         return {"templates": templates}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/work/organizations/{organization_id}/task-templates/{template_id}")
 async def delete_task_template(
@@ -16787,7 +17312,8 @@ async def delete_task_template(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @api_router.patch("/work/organizations/{organization_id}/task-templates/{template_id}")
@@ -16848,7 +17374,8 @@ async def update_task_template(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END WORK TASK MANAGEMENT ENDPOINTS =====
 
@@ -17196,7 +17723,7 @@ async def get_friends(
             {"user1_id": current_user.id},
             {"user2_id": current_user.id}
         ]
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     # Get friend IDs
     friend_ids = []
@@ -17212,7 +17739,7 @@ async def get_friends(
         friends_data = await db.users.find(
             {"id": {"$in": friend_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for friend in friends_data:
             # Find the friendship record for created_at
@@ -17376,7 +17903,7 @@ async def get_my_followers(
     """Get users who follow the current user"""
     follows = await db.user_follows.find({
         "target_id": current_user.id
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     follower_ids = [f["follower_id"] for f in follows]
     
@@ -17385,7 +17912,7 @@ async def get_my_followers(
         followers_data = await db.users.find(
             {"id": {"$in": follower_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for follower in followers_data:
             follow_record = next((f for f in follows if f["follower_id"] == follower["id"]), None)
@@ -17406,7 +17933,7 @@ async def get_my_following(
     """Get users the current user is following"""
     follows = await db.user_follows.find({
         "follower_id": current_user.id
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     target_ids = [f["target_id"] for f in follows]
     
@@ -17415,7 +17942,7 @@ async def get_my_following(
         following_data = await db.users.find(
             {"id": {"$in": target_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for user in following_data:
             follow_record = next((f for f in follows if f["target_id"] == user["id"]), None)
@@ -17483,18 +18010,18 @@ async def get_user_suggestions(
                 {"user1_id": current_user.id},
                 {"user2_id": current_user.id}
             ]
-        }, {"_id": 0, "user1_id": 1, "user2_id": 1}).to_list(1000),
+        }, {"_id": 0, "user1_id": 1, "user2_id": 1}).to_list(200),
         
         db.user_follows.find({
             "follower_id": current_user.id
-        }, {"_id": 0, "target_id": 1}).to_list(1000),
+        }, {"_id": 0, "target_id": 1}).to_list(200),
         
         db.friend_requests.find({
             "$or": [
                 {"sender_id": current_user.id, "status": "pending"},
                 {"receiver_id": current_user.id, "status": "pending"}
             ]
-        }, {"_id": 0, "sender_id": 1, "receiver_id": 1}).to_list(1000)
+        }, {"_id": 0, "sender_id": 1, "receiver_id": 1}).to_list(200)
     )
     
     friend_ids = set()
@@ -17698,9 +18225,9 @@ async def search_users(
     """Search users by name"""
     if len(query) < 2:
         return {"users": []}
-    
+
     # Search by first_name or last_name (case-insensitive)
-    search_regex = {"$regex": query, "$options": "i"}
+    search_regex = {"$regex": safe_regex(query), "$options": "i"}
     
     users = await db.users.find(
         {
@@ -17838,13 +18365,21 @@ async def get_link_preview(
     """Fetch OpenGraph metadata for a URL to generate link preview"""
     import aiohttp
     from urllib.parse import urlparse, parse_qs
-    
+
     url = request.url.strip()
-    
+
+    # SSRF Protection - validate URL before fetching
+    is_safe, error_msg = is_safe_url(url)
+    if not is_safe:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid URL: {error_msg}"
+        )
+
     # Check if it's a YouTube URL
     youtube_id = None
     is_youtube = False
-    
+
     parsed_url = urlparse(url)
     
     # Check for youtube.com/watch?v=
@@ -18346,7 +18881,7 @@ async def get_news_events(
         # Get subscribed channel IDs
         subscriptions = await db.channel_subscriptions.find(
             {"subscriber_id": current_user.id}
-        ).to_list(1000)
+        ).to_list(200)
         subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
         
         # Get friend IDs
@@ -18355,7 +18890,7 @@ async def get_news_events(
                 {"user_id": current_user.id, "status": "ACCEPTED"},
                 {"friend_id": current_user.id, "status": "ACCEPTED"}
             ]
-        }).to_list(1000)
+        }).to_list(200)
         friend_ids = [
             f["friend_id"] if f["user_id"] == current_user.id else f["user_id"]
             for f in friendships
@@ -18581,7 +19116,7 @@ async def get_news_feed(
             {"user1_id": current_user.id},
             {"user2_id": current_user.id}
         ]
-    }).to_list(1000)
+    }).to_list(200)
     
     friend_ids = set()
     for f in friendships:
@@ -18593,13 +19128,13 @@ async def get_news_feed(
     # Get users I'm following
     following = await db.user_follows.find({
         "follower_id": current_user.id
-    }).to_list(1000)
+    }).to_list(200)
     following_ids = {f["target_id"] for f in following}
     
     # Get subscribed channels
     subscriptions = await db.channel_subscriptions.find({
         "subscriber_id": current_user.id
-    }).to_list(1000)
+    }).to_list(200)
     subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
     
     # Build query for posts I can see
@@ -18914,7 +19449,7 @@ async def get_news_post_comments(
     comments = await db.news_post_comments.find({
         "post_id": post_id,
         "is_deleted": {"$ne": True}
-    }).sort("created_at", 1).to_list(None)
+    }).sort("created_at", 1).to_list(100)
     
     # Build response with author info and nested replies
     comments_dict = {}
@@ -19765,7 +20300,7 @@ async def get_service_listings(
         if subcategory_id:
             query["subcategory_id"] = subcategory_id
         if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+            query["city"] = {"$regex": safe_regex(city), "$options": "i"}
         if min_rating:
             query["rating"] = {"$gte": min_rating}
         if price_min is not None:
@@ -19776,9 +20311,10 @@ async def get_service_listings(
                 {"price_from": {"$lte": price_max}}
             ]
         if search:
+            safe_search = safe_regex(search)
             query["$or"] = [
-                {"name": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
+                {"name": {"$regex": safe_search, "$options": "i"}},
+                {"description": {"$regex": safe_search, "$options": "i"}},
                 {"tags": {"$in": [search.lower()]}}
             ]
         
@@ -19810,7 +20346,8 @@ async def get_service_listings(
         
     except Exception as e:
         logger.error(f"Error fetching listings: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/services/listings/{listing_id}")
 async def get_service_listing(listing_id: str):
@@ -19851,7 +20388,8 @@ async def get_service_listing(listing_id: str):
         raise
     except Exception as e:
         logger.error(f"Error fetching listing: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/services/listings/{listing_id}")
 async def update_service_listing(
@@ -20022,7 +20560,8 @@ async def create_service_booking(
         raise
     except Exception as e:
         logger.error(f"Error creating booking: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/services/bookings/my")
 async def get_my_bookings(
@@ -20183,7 +20722,8 @@ async def get_available_slots(
         raise
     except Exception as e:
         logger.error(f"Error getting slots: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== REVIEW ENDPOINTS =====
 
@@ -20228,7 +20768,7 @@ async def create_service_review(
         await db.service_reviews.insert_one(review_dict)
         
         # Update service rating
-        all_reviews = await db.service_reviews.find({"service_id": review_data.service_id}).to_list(1000)
+        all_reviews = await db.service_reviews.find({"service_id": review_data.service_id}).to_list(200)
         avg_rating = sum(r["rating"] for r in all_reviews) / len(all_reviews)
         
         await db.service_listings.update_one(
@@ -20250,7 +20790,8 @@ async def create_service_review(
         raise
     except Exception as e:
         logger.error(f"Error creating review: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/services/reviews/{service_id}")
 async def get_service_reviews(
@@ -20280,7 +20821,8 @@ async def get_service_reviews(
         
     except Exception as e:
         logger.error(f"Error getting reviews: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 class ProviderReplyRequest(BaseModel):
     response: str
@@ -20338,7 +20880,8 @@ async def reply_to_review(
         raise
     except Exception as e:
         logger.error(f"Error replying to review: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/services/reviews/{review_id}/helpful")
 async def mark_review_helpful(
@@ -20384,7 +20927,8 @@ async def mark_review_helpful(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error marking helpful: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END SERVICES MODULE =====
 
@@ -20770,7 +21314,8 @@ async def create_marketplace_product(
         raise
     except Exception as e:
         logger.error(f"Error creating product: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/marketplace/products")
 async def get_marketplace_products(
@@ -20789,20 +21334,21 @@ async def get_marketplace_products(
     """Get marketplace products with filters"""
     try:
         query = {"status": ProductStatus.ACTIVE}
-        
+
         if search:
+            safe_search = safe_regex(search)
             query["$or"] = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
+                {"title": {"$regex": safe_search, "$options": "i"}},
+                {"description": {"$regex": safe_search, "$options": "i"}},
                 {"tags": {"$in": [search.lower()]}}
             ]
-        
+
         if category:
             query["category"] = category
         if subcategory:
             query["subcategory"] = subcategory
         if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+            query["city"] = {"$regex": safe_regex(city), "$options": "i"}
         if condition:
             query["condition"] = condition
         if seller_type:
@@ -20843,7 +21389,8 @@ async def get_marketplace_products(
         
     except Exception as e:
         logger.error(f"Error fetching products: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/marketplace/products/{product_id}")
 async def get_marketplace_product(product_id: str):
@@ -20877,7 +21424,8 @@ async def get_marketplace_product(product_id: str):
         raise
     except Exception as e:
         logger.error(f"Error fetching product: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/marketplace/products/{product_id}")
 async def update_marketplace_product(
@@ -20916,7 +21464,8 @@ async def update_marketplace_product(
         raise
     except Exception as e:
         logger.error(f"Error updating product: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/marketplace/products/{product_id}")
 async def delete_marketplace_product(
@@ -20950,7 +21499,8 @@ async def delete_marketplace_product(
         raise
     except Exception as e:
         logger.error(f"Error deleting product: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/marketplace/my-products")
 async def get_my_marketplace_products(
@@ -20976,7 +21526,8 @@ async def get_my_marketplace_products(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error fetching my products: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # Favorites
 @api_router.post("/marketplace/favorites/{product_id}")
@@ -21017,7 +21568,8 @@ async def toggle_favorite(
         raise
     except Exception as e:
         logger.error(f"Error toggling favorite: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/marketplace/favorites")
 async def get_favorites(
@@ -21046,7 +21598,8 @@ async def get_favorites(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error fetching favorites: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # === INVENTORY (MY THINGS) API ENDPOINTS ===
 
@@ -21075,7 +21628,8 @@ async def create_inventory_item(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error creating inventory item: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/inventory/items")
 async def get_inventory_items(
@@ -21094,13 +21648,14 @@ async def get_inventory_items(
             query["category"] = category
         
         if search:
+            safe_search = safe_regex(search)
             query["$or"] = [
-                {"name": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
-                {"brand": {"$regex": search, "$options": "i"}},
-                {"model": {"$regex": search, "$options": "i"}}
+                {"name": {"$regex": safe_search, "$options": "i"}},
+                {"description": {"$regex": safe_search, "$options": "i"}},
+                {"brand": {"$regex": safe_search, "$options": "i"}},
+                {"model": {"$regex": safe_search, "$options": "i"}}
             ]
-        
+
         items = await db.inventory_items.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
         
         # Get summary by category
@@ -21122,7 +21677,8 @@ async def get_inventory_items(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error fetching inventory: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/inventory/items/{item_id}")
 async def get_inventory_item(
@@ -21148,7 +21704,8 @@ async def get_inventory_item(
         raise
     except Exception as e:
         logger.error(f"Error fetching inventory item: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/inventory/items/{item_id}")
 async def update_inventory_item(
@@ -21184,7 +21741,8 @@ async def update_inventory_item(
         raise
     except Exception as e:
         logger.error(f"Error updating inventory item: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.delete("/inventory/items/{item_id}")
 async def delete_inventory_item(
@@ -21212,7 +21770,8 @@ async def delete_inventory_item(
         raise
     except Exception as e:
         logger.error(f"Error deleting inventory item: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/inventory/items/{item_id}/list-for-sale")
 async def list_item_for_sale(
@@ -21281,7 +21840,8 @@ async def list_item_for_sale(
         raise
     except Exception as e:
         logger.error(f"Error listing item for sale: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/inventory/expiring-warranties")
 async def get_expiring_warranties(
@@ -21308,7 +21868,8 @@ async def get_expiring_warranties(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error fetching expiring warranties: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END MARKETPLACE MODULE =====
 
@@ -21571,7 +22132,8 @@ async def get_my_wallet(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error getting wallet: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/transfer")
 async def transfer_assets(
@@ -21665,7 +22227,8 @@ async def transfer_assets(
         raise
     except Exception as e:
         logger.error(f"Error transferring assets: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/transactions")
 async def get_transactions(
@@ -21711,7 +22274,8 @@ async def get_transactions(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error getting transactions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/exchange-rates")
 async def get_exchange_rates():
@@ -21732,7 +22296,8 @@ async def get_exchange_rates():
         
     except Exception as e:
         logger.error(f"Error getting exchange rates: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/token-holders")
 async def get_token_holders(
@@ -21777,7 +22342,8 @@ async def get_token_holders(
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error getting token holders: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/treasury")
 async def get_treasury_stats(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -21824,7 +22390,8 @@ async def get_treasury_stats(credentials: HTTPAuthorizationCredentials = Depends
         raise
     except Exception as e:
         logger.error(f"Error getting treasury stats: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/admin/emission")
 async def create_emission(
@@ -21881,7 +22448,8 @@ async def create_emission(
         raise
     except Exception as e:
         logger.error(f"Error creating emission: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/admin/distribute-dividends")
 async def distribute_dividends(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -21987,7 +22555,8 @@ async def distribute_dividends(credentials: HTTPAuthorizationCredentials = Depen
         raise
     except Exception as e:
         logger.error(f"Error distributing dividends: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/admin/initialize-tokens")
 async def initialize_tokens(
@@ -22049,7 +22618,8 @@ async def initialize_tokens(
         raise
     except Exception as e:
         logger.error(f"Error initializing tokens: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/welcome-bonus/{user_id}")
 async def give_welcome_bonus(
@@ -22207,7 +22777,8 @@ async def pay_for_product(
         raise
     except Exception as e:
         logger.error(f"Error processing payment: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 class ServicePaymentRequest(BaseModel):
     """Request to pay for a service booking"""
@@ -22335,7 +22906,8 @@ async def pay_for_service(
         raise
     except Exception as e:
         logger.error(f"Error processing service payment: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/finance/corporate-wallet")
 async def create_corporate_wallet(
@@ -22400,7 +22972,8 @@ async def create_corporate_wallet(
         raise
     except Exception as e:
         logger.error(f"Error creating corporate wallet: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/corporate/wallets")
 async def get_user_corporate_wallets(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -22448,7 +23021,8 @@ async def get_user_corporate_wallets(credentials: HTTPAuthorizationCredentials =
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error getting corporate wallets: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/corporate/wallet/{organization_id}")
 async def get_corporate_wallet(
@@ -22502,7 +23076,8 @@ async def get_corporate_wallet(
         raise
     except Exception as e:
         logger.error(f"Error getting corporate wallet: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 class CorporateTransferRequest(BaseModel):
     """Request to transfer from corporate wallet"""
@@ -22637,7 +23212,8 @@ async def corporate_transfer(
         raise
     except Exception as e:
         logger.error(f"Error in corporate transfer: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/corporate/transactions/{organization_id}")
 async def get_corporate_transactions(
@@ -22723,7 +23299,8 @@ async def get_corporate_transactions(
         raise
     except Exception as e:
         logger.error(f"Error getting corporate transactions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/finance/portfolio")
 async def get_portfolio(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -22791,7 +23368,8 @@ async def get_portfolio(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         logger.error(f"Error getting portfolio: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END FINANCES MODULE =====
 
@@ -23164,7 +23742,8 @@ async def create_organizer_profile(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/goodwill/organizer-profile")
 async def get_my_organizer_profile(
@@ -23274,13 +23853,14 @@ async def list_interest_groups(
 ):
     """List interest groups"""
     query = {"is_public": True}
-    
+
     if category_id:
         query["category_id"] = category_id
     if search:
+        safe_search = safe_regex(search)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"name": {"$regex": safe_search, "$options": "i"}},
+            {"description": {"$regex": safe_search, "$options": "i"}}
         ]
     
     groups = await db.interest_groups.find(query, {"_id": 0}).sort("members_count", -1).skip(offset).limit(limit).to_list(limit)
@@ -23440,7 +24020,8 @@ async def create_event(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/goodwill/events")
 async def list_events(
@@ -23486,11 +24067,12 @@ async def list_events(
     if category_id:
         query["category_id"] = category_id
     if city:
-        query["city"] = {"$regex": city, "$options": "i"}
+        query["city"] = {"$regex": safe_regex(city), "$options": "i"}
     if search:
+        safe_search = safe_regex(search)
         query["$and"] = query.get("$and", []) + [{"$or": [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"title": {"$regex": safe_search, "$options": "i"}},
+            {"description": {"$regex": safe_search, "$options": "i"}}
         ]}]
     if status:
         query["status"] = status
@@ -23810,7 +24392,8 @@ async def purchase_event_ticket(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/goodwill/my-events")
 async def get_my_events(
@@ -24095,7 +24678,7 @@ async def add_event_review(
         await db.event_reviews.insert_one(review_dict)
         
         # Update event stats
-        all_reviews = await db.event_reviews.find({"event_id": event_id}, {"_id": 0, "rating": 1}).to_list(1000)
+        all_reviews = await db.event_reviews.find({"event_id": event_id}, {"_id": 0, "rating": 1}).to_list(200)
         avg_rating = sum(r["rating"] for r in all_reviews) / len(all_reviews) if all_reviews else 0
         
         await db.goodwill_events.update_one(
@@ -24110,7 +24693,8 @@ async def add_event_review(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/goodwill/events/{event_id}/reviews")
 async def get_event_reviews(event_id: str, limit: int = 20, offset: int = 0):
@@ -24611,7 +25195,8 @@ async def agent_chat(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.get("/agent/conversations")
 async def get_agent_conversations(
@@ -24782,7 +25367,8 @@ async def analyze_image(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/agent/analyze-file-upload")
 async def analyze_file_upload(
@@ -24810,6 +25396,11 @@ async def analyze_file_upload(
         
         # Handle file upload
         if file and file.filename:
+            # Validate file magic bytes
+            is_valid, error = await validate_file_magic(file, max_size=25_000_000)  # 25MB limit
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error)
+
             # Read file content
             file_content = await file.read()
             mime_type = file.content_type or "application/octet-stream"
@@ -24829,7 +25420,7 @@ async def analyze_file_upload(
                 question=enhanced_message
             )
             
-            print(f"[DEBUG] analyze_file_smart result - routing: {result.get('routing', {})}")
+            logger.debug(f" analyze_file_smart result - routing: {result.get('routing', {})}")
             
             # Extract analysis from result
             if result.get("success"):
@@ -24855,8 +25446,9 @@ async def analyze_file_upload(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        print(f"File analysis error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"File analysis error: {e}")
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/agent/analyze-document")
 async def analyze_document(
@@ -24879,7 +25471,8 @@ async def analyze_document(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/agent/chat-with-image")
 async def chat_with_image(
@@ -24903,7 +25496,8 @@ async def chat_with_image(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== ERIC SEARCH ENDPOINTS =====
 
@@ -24939,7 +25533,8 @@ async def eric_search(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/agent/chat-with-search")
 async def chat_with_search(
@@ -24970,7 +25565,8 @@ async def chat_with_search(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 class QueryBusinessesRequest(BaseModel):
     query: str
@@ -24998,7 +25594,8 @@ async def query_businesses(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== BUSINESS ERIC SETTINGS ENDPOINTS =====
 
@@ -25051,7 +25648,8 @@ async def get_business_eric_settings(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.put("/work/organizations/{organization_id}/eric-settings")
 async def update_business_eric_settings(
@@ -25092,7 +25690,8 @@ async def update_business_eric_settings(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @api_router.post("/agent/query-business/{organization_id}")
 async def query_business_eric(
@@ -25115,7 +25714,8 @@ async def query_business_eric(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== BUSINESS ANALYTICS ENDPOINTS =====
 
@@ -25208,7 +25808,7 @@ async def get_business_analytics(
             bookings = await db.service_bookings.find({
                 "service_id": {"$in": service_ids},
                 "created_at": {"$gte": start_date_str}
-            }, {"_id": 0}).to_list(1000)
+            }, {"_id": 0}).to_list(200)
             
             analytics["bookings"]["total"] = len(bookings)
             analytics["summary"]["total_bookings"] = len(bookings)
@@ -25312,7 +25912,8 @@ async def get_business_analytics(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Internal error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # ===== END ERIC AI AGENT ENDPOINTS =====
 
@@ -26811,13 +27412,24 @@ app.include_router(api_router)
 # ============================================================
 
 # CORS middleware with production-optimized settings
-cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+# CORS Configuration - Security hardened
+cors_origins_env = os.environ.get('CORS_ORIGINS', '')
+if IS_PRODUCTION and not cors_origins_env:
+    raise RuntimeError("CORS_ORIGINS environment variable is required in production")
+
+# Parse CORS origins - never allow wildcard with credentials in production
+if cors_origins_env and cors_origins_env != '*':
+    cors_origins = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
+else:
+    # Development fallback - still more restrictive than full wildcard
+    cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"] if not IS_PRODUCTION else []
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=cors_origins if cors_origins != ['*'] else ["*"],
+    allow_origins=cors_origins,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
     max_age=86400,  # Cache preflight requests for 24 hours
 )
 
