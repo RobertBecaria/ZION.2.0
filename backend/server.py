@@ -26800,6 +26800,12 @@ async def get_backup_history(
 # Include the router in the main app
 app.include_router(api_router)
 
+# Root-level health endpoint for Kubernetes (without /api prefix)
+@app.get("/health")
+async def root_health_check():
+    """Root-level health check for Kubernetes probes"""
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+
 # SECURITY FIX: Removed public StaticFiles mount for uploads
 # All file access must go through authenticated endpoints:
 # - /api/media/{file_id} - for media files with DB records
