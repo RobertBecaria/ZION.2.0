@@ -25768,6 +25768,271 @@ async def verify_admin_token(admin: str = Depends(get_current_admin)):
     return {"valid": True, "admin_name": admin}
 
 # ============================================================
+# ADMIN ALTYN MANAGEMENT ENDPOINTS  
+# ============================================================
+
+@api_router.get("/admin/finance/treasury")
+async def get_admin_treasury_stats(admin: str = Depends(get_current_admin)):
+    """Get platform treasury statistics for admin panel"""
+    try:
+        treasury = await get_or_create_treasury()
+        
+        # Get total coins in circulation
+        coin_stats = await db.wallets.aggregate([
+            {"$match": {"is_treasury": False}},
+            {"$group": {"_id": None, "total": {"$sum": "$coin_balance"}}}
+        ]).to_list(1)
+        
+        # Get emission history
+        emissions = await db.emissions.find({}, {"_id": 0}).sort("created_at", -1).limit(10).to_list(10)
+        
+        # Get dividend history
+        dividends = await db.dividend_payouts.find({}, {"_id": 0}).sort("distribution_date", -1).limit(10).to_list(10)
+        
+        return {
+            "success": True,
+            "treasury": {
+                "collected_fees": treasury.get("coin_balance", 0),
+                "total_coins_in_circulation": coin_stats[0]["total"] if coin_stats else 0,
+                "total_token_supply": TOTAL_TOKENS
+            },
+            "recent_emissions": emissions,
+            "recent_dividends": dividends
+        }
+        
+    except Exception as e:
+        logger.error(f"Admin treasury stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/finance/token-holders")
+async def get_admin_token_holders(
+    admin: str = Depends(get_current_admin),
+    limit: int = Query(50, ge=1, le=200)
+):
+    """Get list of TOKEN holders for admin panel"""
+    try:
+        # Get all wallets with tokens
+        holders = await db.wallets.find(
+            {"token_balance": {"$gt": 0}},
+            {"_id": 0}
+        ).sort("token_balance", -1).limit(limit).to_list(limit)
+        
+        # Calculate total tokens
+        total = sum(h["token_balance"] for h in holders)
+        
+        # Enrich with user names and percentages
+        enriched = []
+        for holder in holders:
+            user = await db.users.find_one({"id": holder["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            enriched.append({
+                "user_id": holder["user_id"],
+                "user_name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
+                "email": user.get("email") if user else None,
+                "token_balance": holder["token_balance"],
+                "coin_balance": holder.get("coin_balance", 0),
+                "percentage": round((holder["token_balance"] / total * 100) if total > 0 else 0, 4),
+                "total_dividends_received": holder.get("total_dividends_received", 0)
+            })
+        
+        return {
+            "success": True,
+            "holders": enriched,
+            "total_tokens": total,
+            "total_supply": TOTAL_TOKENS
+        }
+        
+    except Exception as e:
+        logger.error(f"Admin token holders error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/emission")
+async def create_admin_emission(
+    request: EmissionRequest,
+    admin: str = Depends(get_current_admin)
+):
+    """Create new ALTYN COIN emission from admin panel"""
+    try:
+        if request.amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be positive")
+        
+        # Get treasury (emissions go to treasury initially)
+        treasury = await get_or_create_treasury()
+        
+        # Add coins to treasury
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$inc": {"coin_balance": request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record emission
+        emission = Emission(
+            amount=request.amount,
+            created_by_user_id=f"ADMIN:{admin}",
+            description=request.description or f"Эмиссия {request.amount:,.0f} ALTYN COINS (Admin Panel)"
+        )
+        
+        emission_dict = emission.dict()
+        emission_dict["created_at"] = emission_dict["created_at"].isoformat()
+        await db.emissions.insert_one(emission_dict)
+        
+        return {
+            "success": True,
+            "emission": {
+                "id": emission.id,
+                "amount": request.amount,
+                "description": emission.description
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin emission error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/distribute-dividends")
+async def admin_distribute_dividends(admin: str = Depends(get_current_admin)):
+    """Distribute collected fees to TOKEN holders from admin panel"""
+    try:
+        treasury = await get_or_create_treasury()
+        fees_to_distribute = treasury.get("coin_balance", 0)
+        
+        if fees_to_distribute <= 0:
+            raise HTTPException(status_code=400, detail="Нет комиссий для распределения")
+        
+        # Get all TOKEN holders
+        token_holders = await db.wallets.find(
+            {"token_balance": {"$gt": 0}, "is_treasury": False},
+            {"_id": 0}
+        ).to_list(10000)
+        
+        if not token_holders:
+            raise HTTPException(status_code=400, detail="Нет держателей токенов")
+        
+        # Calculate total tokens
+        total_tokens = sum(h["token_balance"] for h in token_holders)
+        
+        # Distribute proportionally
+        distribution_details = []
+        for holder in token_holders:
+            percentage = holder["token_balance"] / total_tokens
+            dividend_amount = fees_to_distribute * percentage
+            
+            # Update holder's wallet
+            await db.wallets.update_one(
+                {"user_id": holder["user_id"]},
+                {
+                    "$inc": {
+                        "coin_balance": dividend_amount,
+                        "total_dividends_received": dividend_amount
+                    },
+                    "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+                }
+            )
+            
+            # Record transaction
+            tx = Transaction(
+                from_wallet_id=treasury["id"],
+                to_wallet_id=holder["id"],
+                from_user_id=TREASURY_USER_ID,
+                to_user_id=holder["user_id"],
+                amount=dividend_amount,
+                asset_type=AssetType.COIN,
+                transaction_type=TransactionType.DIVIDEND,
+                description=f"Dividend payout ({percentage*100:.4f}% of fees) - Admin Panel"
+            )
+            tx_dict = tx.dict()
+            tx_dict["created_at"] = tx_dict["created_at"].isoformat()
+            await db.transactions.insert_one(tx_dict)
+            
+            distribution_details.append({
+                "user_id": holder["user_id"],
+                "amount": round(dividend_amount, 2),
+                "token_percentage": round(percentage * 100, 4)
+            })
+        
+        # Clear treasury
+        await db.wallets.update_one(
+            {"is_treasury": True},
+            {"$set": {"coin_balance": 0, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        
+        # Record payout
+        payout = DividendPayout(
+            total_fees_distributed=fees_to_distribute,
+            token_holders_count=len(token_holders),
+            created_by=f"ADMIN:{admin}",
+            details=distribution_details
+        )
+        payout_dict = payout.dict()
+        payout_dict["distribution_date"] = payout_dict["distribution_date"].isoformat()
+        await db.dividend_payouts.insert_one(payout_dict)
+        
+        return {
+            "success": True,
+            "payout": {
+                "id": payout.id,
+                "total_distributed": fees_to_distribute,
+                "holders_count": len(token_holders),
+                "distribution_details": distribution_details
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin dividend distribution error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/finance/initialize-tokens")
+async def admin_initialize_tokens(
+    user_email: str = Query(..., description="User email to initialize tokens for"),
+    token_amount: float = Query(TOTAL_TOKENS, description="Amount of tokens"),
+    coin_amount: float = Query(1_000_000, description="Amount of coins"),
+    admin: str = Depends(get_current_admin)
+):
+    """Initialize TOKENS and COINS for a user from admin panel"""
+    try:
+        # Find target user
+        target_user = await db.users.find_one({"email": user_email}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1})
+        if not target_user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        user_id = target_user["id"]
+        
+        # Get or create wallet
+        wallet = await get_or_create_wallet(user_id)
+        
+        # Update wallet with tokens and coins
+        await db.wallets.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "token_balance": token_amount,
+                    "coin_balance": coin_amount,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": f"Инициализировано {token_amount:,.0f} AT и {coin_amount:,.0f} AC для {target_user['first_name']} {target_user['last_name']}",
+            "user": {
+                "id": user_id,
+                "name": f"{target_user['first_name']} {target_user['last_name']}",
+                "token_balance": token_amount,
+                "coin_balance": coin_amount
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin initialize tokens error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================
 # ADMIN DATABASE MANAGEMENT ENDPOINTS
 # ============================================================
 
