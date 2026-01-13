@@ -331,12 +331,24 @@ const AdminDatabaseManagement = () => {
   const handleBackup = async () => {
     try {
       setBackupLoading(true);
+      setError('');
       const token = localStorage.getItem('admin_token');
+      
+      // Use AbortController for timeout (2 minutes)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      
       const response = await fetch(`${BACKEND_URL}/admin/database/backup`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
-      if (!response.ok) throw new Error('Ошибка создания резервной копии');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ошибка ${response.status}: ${errorText || 'Не удалось создать резервную копию'}`);
+      }
       
       const data = await response.json();
       
@@ -357,7 +369,17 @@ const AdminDatabaseManagement = () => {
       
       alert(`Резервная копия создана успешно!\nРазмер: ${formatBytes(data.size_bytes)}\nКоллекций: ${data.collections_count}`);
     } catch (err) {
-      alert('Ошибка: ' + err.message);
+      console.error('Backup error:', err);
+      if (err.name === 'AbortError') {
+        setError('Превышено время ожидания. База данных слишком большая для экспорта.');
+        alert('Ошибка: Превышено время ожидания (2 минуты). Попробуйте позже или обратитесь к администратору.');
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        setError('Ошибка сети. Проверьте подключение к интернету и попробуйте снова.');
+        alert('Ошибка сети: Не удалось подключиться к серверу. Проверьте:\n1. Подключение к интернету\n2. Доступность сервера\n3. Попробуйте обновить страницу');
+      } else {
+        setError(err.message);
+        alert('Ошибка: ' + err.message);
+      }
     } finally {
       setBackupLoading(false);
     }
