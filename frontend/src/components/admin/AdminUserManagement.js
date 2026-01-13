@@ -52,9 +52,30 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
     }
   };
 
+  // Validate password strength on frontend
+  const validatePassword = (password) => {
+    if (password.length < 12) {
+      return 'Пароль должен быть не менее 12 символов';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Пароль должен содержать хотя бы одну заглавную букву';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Пароль должен содержать хотя бы одну строчную букву';
+    }
+    if (!/\d/.test(password)) {
+      return 'Пароль должен содержать хотя бы одну цифру';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return 'Пароль должен содержать хотя бы один специальный символ (!@#$%^&*(),.?":{}|<>)';
+    }
+    return null;
+  };
+
   const handleResetPassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      alert('Пароль должен быть не менее 6 символов');
+    const validationError = validatePassword(newPassword);
+    if (validationError) {
+      alert(validationError);
       return;
     }
 
@@ -70,9 +91,12 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
         body: JSON.stringify({ new_password: newPassword })
       });
 
-      if (!response.ok) throw new Error('Ошибка сброса пароля');
-      
-      alert('Пароль успешно сброшен');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Ошибка сброса пароля');
+      }
+
+      alert('Пароль успешно сброшен. Пользователь уведомлен.');
       setShowResetPassword(false);
       setNewPassword('');
     } catch (err) {
@@ -251,9 +275,12 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Новый пароль (мин. 6 символов)"
+                placeholder="Новый пароль (мин. 12 символов, A-Z, a-z, 0-9, спецсимвол)"
                 className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"
               />
+              <p className="text-amber-400/70 text-xs mb-3">
+                Требования: минимум 12 символов, заглавная и строчная буква, цифра и спецсимвол (!@#$%^&amp;*(),.?&quot;:{'{}'}|&lt;&gt;)
+              </p>
               <div className="flex gap-2">
                 <button
                   onClick={handleResetPassword}

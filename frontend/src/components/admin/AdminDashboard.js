@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   Users, UserCheck, UserX, Activity, TrendingUp, Clock,
   Calendar, RefreshCw, BarChart2, UserPlus
@@ -12,7 +12,8 @@ const getBackendUrl = () => {
 };
 const BACKEND_URL = getBackendUrl();
 
-const StatCard = ({ title, value, icon: Icon, color, subtitle, trend }) => (
+// Memoized StatCard to prevent unnecessary re-renders
+const StatCard = memo(({ title, value, icon: Icon, color, subtitle, trend }) => (
   <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all">
     <div className="flex items-start justify-between">
       <div>
@@ -31,9 +32,10 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, trend }) => (
       </div>
     </div>
   </div>
-);
+));
 
-const MiniChart = ({ data, label, color }) => {
+// Memoized MiniChart component
+const MiniChart = memo(({ data, label, color }) => {
   const max = Math.max(...data.map(d => d.count), 1);
   
   return (
@@ -55,9 +57,10 @@ const MiniChart = ({ data, label, color }) => {
       </div>
     </div>
   );
-};
+});
 
-const RecentUsersList = ({ users }) => (
+// Memoized RecentUsersList component
+const RecentUsersList = memo(({ users }) => (
   <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
     <h3 className="text-slate-300 font-medium mb-4 flex items-center gap-2">
       <UserPlus className="w-5 h-5" />
@@ -87,9 +90,10 @@ const RecentUsersList = ({ users }) => (
       ))}
     </div>
   </div>
-);
+));
 
-const RoleDistribution = ({ roles }) => {
+// Memoized RoleDistribution component
+const RoleDistribution = memo(({ roles }) => {
   const total = roles.reduce((sum, r) => sum + r.count, 0);
   const colors = {
     'ADULT': 'bg-purple-500',
@@ -124,14 +128,15 @@ const RoleDistribution = ({ roles }) => {
       </div>
     </div>
   );
-};
+});
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchDashboard = async () => {
+  // Memoized fetch function to prevent recreation on each render
+  const fetchDashboard = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('admin_token');
@@ -147,16 +152,17 @@ const AdminDashboard = () => {
 
       const data = await response.json();
       setStats(data);
+      setError('');
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   if (loading) {
     return (

@@ -25921,9 +25921,83 @@ async def get_business_analytics(
 # ADMIN PANEL ENDPOINTS
 # ============================================================
 
-# Master Admin Credentials (stored in memory for security)
-MASTER_ADMIN_USERNAME = "Architect"
-MASTER_ADMIN_PASSWORD = "X17resto1!X21resto1!"
+# Master Admin Credentials - loaded from environment variables for security
+MASTER_ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME')
+MASTER_ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+
+if not MASTER_ADMIN_USERNAME or not MASTER_ADMIN_PASSWORD:
+    logger.warning("SECURITY WARNING: ADMIN_USERNAME and ADMIN_PASSWORD environment variables are not set. Admin panel will be disabled.")
+    ADMIN_PANEL_ENABLED = False
+else:
+    ADMIN_PANEL_ENABLED = True
+
+# Rate limiting for admin login - track failed attempts
+admin_login_attempts: Dict[str, List[float]] = {}
+ADMIN_LOGIN_MAX_ATTEMPTS = 5
+ADMIN_LOGIN_WINDOW_SECONDS = 300  # 5 minutes
+ADMIN_LOGIN_LOCKOUT_SECONDS = 900  # 15 minutes lockout after max attempts
+
+def check_admin_rate_limit(ip_address: str) -> bool:
+    """Check if IP is rate limited for admin login"""
+    current_time = time.time()
+
+    if ip_address not in admin_login_attempts:
+        admin_login_attempts[ip_address] = []
+        return True
+
+    # Clean old attempts outside the window
+    admin_login_attempts[ip_address] = [
+        t for t in admin_login_attempts[ip_address]
+        if current_time - t < ADMIN_LOGIN_LOCKOUT_SECONDS
+    ]
+
+    # Check if in lockout period (more than max attempts in window)
+    recent_attempts = [
+        t for t in admin_login_attempts[ip_address]
+        if current_time - t < ADMIN_LOGIN_WINDOW_SECONDS
+    ]
+
+    if len(recent_attempts) >= ADMIN_LOGIN_MAX_ATTEMPTS:
+        return False
+
+    return True
+
+def record_admin_login_attempt(ip_address: str):
+    """Record a failed login attempt"""
+    current_time = time.time()
+    if ip_address not in admin_login_attempts:
+        admin_login_attempts[ip_address] = []
+    admin_login_attempts[ip_address].append(current_time)
+
+def clear_admin_login_attempts(ip_address: str):
+    """Clear login attempts after successful login"""
+    if ip_address in admin_login_attempts:
+        del admin_login_attempts[ip_address]
+
+# Audit logging for admin operations
+async def log_admin_action(
+    admin_name: str,
+    action: str,
+    target_type: str,
+    target_id: Optional[str] = None,
+    details: Optional[Dict] = None,
+    ip_address: Optional[str] = None
+):
+    """Log admin actions for audit trail"""
+    try:
+        audit_entry = {
+            "id": str(uuid.uuid4()),
+            "admin_name": admin_name,
+            "action": action,
+            "target_type": target_type,
+            "target_id": target_id,
+            "details": details or {},
+            "ip_address": ip_address,
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.admin_audit_logs.insert_one(audit_entry)
+    except Exception as e:
+        logger.error(f"Failed to log admin action: {e}")
 
 class AdminLogin(BaseModel):
     username: str
@@ -25956,12 +26030,13 @@ class AdminUserResponse(BaseModel):
     avatar_url: Optional[str] = None
 
 def create_admin_token(admin_name: str, expires_delta: Optional[timedelta] = None):
-    """Create JWT token for admin"""
+    """Create JWT token for admin - default 2 hours for security"""
     to_encode = {"sub": admin_name, "type": "admin"}
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(hours=24)
+        # Reduced from 24 hours to 2 hours for security
+        expire = datetime.now(timezone.utc) + timedelta(hours=2)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -25984,115 +26059,180 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(
         raise credentials_exception
 
 @api_router.post("/admin/login", response_model=AdminToken)
-async def admin_login(login_data: AdminLogin):
-    """Admin login endpoint"""
+async def admin_login(login_data: AdminLogin, request: Request):
+    """Admin login endpoint with rate limiting and audit logging"""
+    # Check if admin panel is enabled
+    if not ADMIN_PANEL_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Admin panel is not configured"
+        )
+
+    # Get client IP for rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+
+    # Check rate limit
+    if not check_admin_rate_limit(client_ip):
+        logger.warning(f"Admin login rate limit exceeded for IP: {client_ip}")
+        await log_admin_action(
+            admin_name="SYSTEM",
+            action="LOGIN_RATE_LIMITED",
+            target_type="admin_login",
+            details={"ip_address": client_ip, "username_attempted": login_data.username},
+            ip_address=client_ip
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Слишком много попыток входа. Попробуйте через 15 минут."
+        )
+
+    # Validate credentials
     if login_data.username != MASTER_ADMIN_USERNAME or login_data.password != MASTER_ADMIN_PASSWORD:
+        record_admin_login_attempt(client_ip)
+        logger.warning(f"Failed admin login attempt from IP: {client_ip}")
+        await log_admin_action(
+            admin_name="SYSTEM",
+            action="LOGIN_FAILED",
+            target_type="admin_login",
+            details={"ip_address": client_ip, "username_attempted": login_data.username},
+            ip_address=client_ip
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя пользователя или пароль"
         )
-    
-    access_token = create_admin_token(MASTER_ADMIN_USERNAME, timedelta(hours=24))
+
+    # Successful login - clear rate limit and create token
+    clear_admin_login_attempts(client_ip)
+
+    # Token expires in 2 hours for security
+    access_token = create_admin_token(MASTER_ADMIN_USERNAME, timedelta(hours=2))
+
+    # Log successful login
+    await log_admin_action(
+        admin_name=MASTER_ADMIN_USERNAME,
+        action="LOGIN_SUCCESS",
+        target_type="admin_login",
+        details={"ip_address": client_ip},
+        ip_address=client_ip
+    )
+
+    logger.info(f"Admin login successful from IP: {client_ip}")
+
     return AdminToken(
         access_token=access_token,
         token_type="bearer",
         admin_name=MASTER_ADMIN_USERNAME
     )
 
+# Cache for dashboard stats (simple in-memory with TTL)
+_dashboard_cache: Dict[str, Any] = {}
+_dashboard_cache_time: float = 0
+DASHBOARD_CACHE_TTL = 30  # 30 seconds cache
+
 @api_router.get("/admin/dashboard")
 async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
-    """Get admin dashboard statistics"""
+    """Get admin dashboard statistics - optimized with aggregation and caching"""
+    global _dashboard_cache, _dashboard_cache_time
+
+    # Check cache
+    if _dashboard_cache and (time.time() - _dashboard_cache_time) < DASHBOARD_CACHE_TTL:
+        return _dashboard_cache
+
     try:
         now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=7)
         month_start = today_start - timedelta(days=30)
-        
-        # Total users count
-        total_users = await db.users.count_documents({})
-        
-        # Active users (is_active=True)
-        active_users = await db.users.count_documents({"is_active": True})
-        
-        # Inactive/Deactivated users
-        inactive_users = await db.users.count_documents({"is_active": False})
-        
-        # Users registered today
-        new_today = await db.users.count_documents({
-            "created_at": {"$gte": today_start}
-        })
-        
-        # Users registered this week
-        new_this_week = await db.users.count_documents({
-            "created_at": {"$gte": week_start}
-        })
-        
-        # Users registered this month
-        new_this_month = await db.users.count_documents({
-            "created_at": {"$gte": month_start}
-        })
-        
-        # Users logged in today
-        logged_in_today = await db.users.count_documents({
-            "last_login": {"$gte": today_start}
-        })
-        
-        # Users logged in this week
-        logged_in_this_week = await db.users.count_documents({
-            "last_login": {"$gte": week_start}
-        })
-        
-        # Online users (based on last_seen within 5 minutes)
         five_minutes_ago = now - timedelta(minutes=5)
-        online_users = await db.users.count_documents({
-            "last_seen": {"$gte": five_minutes_ago}
-        })
-        
-        # Registration trend (last 7 days)
-        registration_trend = []
-        for i in range(7):
-            day_start = today_start - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
-            count = await db.users.count_documents({
-                "created_at": {"$gte": day_start, "$lt": day_end}
-            })
-            registration_trend.append({
-                "date": day_start.strftime("%Y-%m-%d"),
-                "count": count
-            })
-        registration_trend.reverse()
-        
-        # Login activity trend (last 7 days)
-        login_trend = []
-        for i in range(7):
-            day_start = today_start - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
-            count = await db.users.count_documents({
-                "last_login": {"$gte": day_start, "$lt": day_end}
-            })
-            login_trend.append({
-                "date": day_start.strftime("%Y-%m-%d"),
-                "count": count
-            })
-        login_trend.reverse()
-        
-        # User roles distribution
-        role_distribution = []
-        pipeline = [
-            {"$group": {"_id": "$role", "count": {"$sum": 1}}},
-            {"$sort": {"count": -1}}
+
+        # Single aggregation for all counts - much faster than multiple count_documents
+        counts_pipeline = [
+            {
+                "$facet": {
+                    "total": [{"$count": "count"}],
+                    "active": [{"$match": {"is_active": True}}, {"$count": "count"}],
+                    "inactive": [{"$match": {"is_active": False}}, {"$count": "count"}],
+                    "online": [{"$match": {"last_seen": {"$gte": five_minutes_ago}}}, {"$count": "count"}],
+                    "new_today": [{"$match": {"created_at": {"$gte": today_start}}}, {"$count": "count"}],
+                    "new_week": [{"$match": {"created_at": {"$gte": week_start}}}, {"$count": "count"}],
+                    "new_month": [{"$match": {"created_at": {"$gte": month_start}}}, {"$count": "count"}],
+                    "logged_today": [{"$match": {"last_login": {"$gte": today_start}}}, {"$count": "count"}],
+                    "logged_week": [{"$match": {"last_login": {"$gte": week_start}}}, {"$count": "count"}],
+                    "role_dist": [
+                        {"$group": {"_id": "$role", "count": {"$sum": 1}}},
+                        {"$sort": {"count": -1}}
+                    ]
+                }
+            }
         ]
-        async for doc in db.users.aggregate(pipeline):
-            role_distribution.append({
-                "role": doc["_id"] or "UNKNOWN",
-                "count": doc["count"]
-            })
-        
-        # Recent registrations (last 10)
+
+        counts_result = await db.users.aggregate(counts_pipeline).to_list(1)
+        counts = counts_result[0] if counts_result else {}
+
+        # Helper to extract count from facet result
+        def get_count(key):
+            arr = counts.get(key, [])
+            return arr[0]["count"] if arr else 0
+
+        total_users = get_count("total")
+        active_users = get_count("active")
+        inactive_users = get_count("inactive")
+        online_users = get_count("online")
+        new_today = get_count("new_today")
+        new_this_week = get_count("new_week")
+        new_this_month = get_count("new_month")
+        logged_in_today = get_count("logged_today")
+        logged_in_this_week = get_count("logged_week")
+
+        # Role distribution from facet
+        role_distribution = [
+            {"role": doc["_id"] or "UNKNOWN", "count": doc["count"]}
+            for doc in counts.get("role_dist", [])
+        ]
+
+        # Single aggregation for registration trend (7 days)
+        reg_trend_pipeline = [
+            {"$match": {"created_at": {"$gte": week_start}}},
+            {
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        reg_trend_data = {doc["_id"]: doc["count"] async for doc in db.users.aggregate(reg_trend_pipeline)}
+
+        # Single aggregation for login trend (7 days)
+        login_trend_pipeline = [
+            {"$match": {"last_login": {"$gte": week_start}}},
+            {
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$last_login"}},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ]
+        login_trend_data = {doc["_id"]: doc["count"] async for doc in db.users.aggregate(login_trend_pipeline)}
+
+        # Build trend arrays with all 7 days (fill missing days with 0)
+        registration_trend = []
+        login_trend = []
+        for i in range(6, -1, -1):
+            day = (today_start - timedelta(days=i)).strftime("%Y-%m-%d")
+            registration_trend.append({"date": day, "count": reg_trend_data.get(day, 0)})
+            login_trend.append({"date": day, "count": login_trend_data.get(day, 0)})
+
+        # Recent registrations (last 10) - single query
         recent_users = []
         cursor = db.users.find(
             {},
-            {"_id": 0, "password_hash": 0}
+            {"_id": 0, "id": 1, "email": 1, "first_name": 1, "last_name": 1, "created_at": 1, "is_active": 1}
         ).sort("created_at", -1).limit(10)
         async for user in cursor:
             recent_users.append({
@@ -26103,8 +26243,8 @@ async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
                 "created_at": user.get("created_at"),
                 "is_active": user.get("is_active", True)
             })
-        
-        return {
+
+        result = {
             "total_users": total_users,
             "active_users": active_users,
             "inactive_users": inactive_users,
@@ -26119,6 +26259,12 @@ async def get_admin_dashboard(admin: str = Depends(get_current_admin)):
             "role_distribution": role_distribution,
             "recent_users": recent_users
         }
+
+        # Update cache
+        _dashboard_cache = result
+        _dashboard_cache_time = time.time()
+
+        return result
     except Exception as e:
         logger.error(f"Admin dashboard error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -26237,69 +26383,131 @@ async def get_admin_user_detail(
         logger.error(f"Admin user detail error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def sanitize_input(value: str, max_length: int = 255) -> str:
+    """Sanitize string input by removing potentially dangerous characters"""
+    if not value:
+        return value
+    # Remove null bytes and control characters
+    value = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', value)
+    # Trim and limit length
+    return value.strip()[:max_length]
+
 @api_router.put("/admin/users/{user_id}")
 async def update_admin_user(
     user_id: str,
     user_data: AdminUserUpdate,
+    request: Request,
     admin: str = Depends(get_current_admin)
 ):
-    """Update user information"""
+    """Update user information with audit logging and input sanitization"""
     try:
         user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
-        
+
         update_data = {}
+        changes = {}  # Track changes for audit
+
         if user_data.first_name is not None:
-            update_data["first_name"] = user_data.first_name
+            sanitized = sanitize_input(user_data.first_name, 100)
+            if sanitized != user.get("first_name"):
+                update_data["first_name"] = sanitized
+                changes["first_name"] = {"old": user.get("first_name"), "new": sanitized}
+
         if user_data.last_name is not None:
-            update_data["last_name"] = user_data.last_name
+            sanitized = sanitize_input(user_data.last_name, 100)
+            if sanitized != user.get("last_name"):
+                update_data["last_name"] = sanitized
+                changes["last_name"] = {"old": user.get("last_name"), "new": sanitized}
+
         if user_data.email is not None:
+            sanitized = sanitize_input(user_data.email.lower(), 255)
+            # Validate email format
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', sanitized):
+                raise HTTPException(status_code=400, detail="Неверный формат email")
             # Check if email is already taken
-            existing = await db.users.find_one({"email": user_data.email, "id": {"$ne": user_id}})
+            existing = await db.users.find_one({"email": sanitized, "id": {"$ne": user_id}})
             if existing:
                 raise HTTPException(status_code=400, detail="Email уже используется")
-            update_data["email"] = user_data.email
+            if sanitized != user.get("email"):
+                update_data["email"] = sanitized
+                changes["email"] = {"old": user.get("email"), "new": sanitized}
+
         if user_data.phone is not None:
-            update_data["phone"] = user_data.phone
+            sanitized = sanitize_input(user_data.phone, 20)
+            # Remove non-digit characters except + for phone
+            sanitized = re.sub(r'[^\d+]', '', sanitized)
+            if sanitized != user.get("phone"):
+                update_data["phone"] = sanitized
+                changes["phone"] = {"old": user.get("phone"), "new": sanitized}
+
         if user_data.is_active is not None:
-            update_data["is_active"] = user_data.is_active
+            if user_data.is_active != user.get("is_active", True):
+                update_data["is_active"] = user_data.is_active
+                changes["is_active"] = {"old": user.get("is_active", True), "new": user_data.is_active}
+
         if user_data.role is not None:
-            update_data["role"] = user_data.role
-        
+            # Validate role is from allowed list
+            allowed_roles = ["ADULT", "CHILD", "TEEN", "ADMIN"]
+            if user_data.role not in allowed_roles:
+                raise HTTPException(status_code=400, detail=f"Недопустимая роль. Разрешены: {', '.join(allowed_roles)}")
+            if user_data.role != user.get("role"):
+                update_data["role"] = user_data.role
+                changes["role"] = {"old": user.get("role"), "new": user_data.role}
+
         if update_data:
             update_data["updated_at"] = datetime.now(timezone.utc)
             await db.users.update_one(
                 {"id": user_id},
                 {"$set": update_data}
             )
-        
+
+            # Get client IP for audit
+            client_ip = request.client.host if request.client else "unknown"
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                client_ip = forwarded_for.split(",")[0].strip()
+
+            # Audit log
+            await log_admin_action(
+                admin_name=admin,
+                action="USER_UPDATED",
+                target_type="user",
+                target_id=user_id,
+                details={"user_email": user.get("email"), "changes": changes},
+                ip_address=client_ip
+            )
+
+            logger.info(f"Admin {admin} updated user {user_id}")
+
         # Fetch updated user
         updated_user = await db.users.find_one(
             {"id": user_id},
             {"_id": 0, "password_hash": 0}
         )
-        
+
         return {"message": "Пользователь обновлен", "user": updated_user}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Admin user update error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка обновления пользователя")
 
 @api_router.put("/admin/users/{user_id}/status")
 async def toggle_user_status(
     user_id: str,
+    request: Request,
     admin: str = Depends(get_current_admin)
 ):
-    """Toggle user active/inactive status"""
+    """Toggle user active/inactive status with audit logging"""
     try:
         user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
-        
-        new_status = not user.get("is_active", True)
-        
+
+        old_status = user.get("is_active", True)
+        new_status = not old_status
+
         await db.users.update_one(
             {"id": user_id},
             {"$set": {
@@ -26307,82 +26515,237 @@ async def toggle_user_status(
                 "updated_at": datetime.now(timezone.utc)
             }}
         )
-        
+
+        # Get client IP for audit
+        client_ip = request.client.host if request.client else "unknown"
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+
+        # Audit log
+        action = "USER_ACTIVATED" if new_status else "USER_DEACTIVATED"
+        await log_admin_action(
+            admin_name=admin,
+            action=action,
+            target_type="user",
+            target_id=user_id,
+            details={"user_email": user.get("email"), "old_status": old_status, "new_status": new_status},
+            ip_address=client_ip
+        )
+
         status_text = "активирован" if new_status else "деактивирован"
+        logger.info(f"Admin {admin} {action.lower()} user {user_id}")
         return {"message": f"Пользователь {status_text}", "is_active": new_status}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Admin user status toggle error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка изменения статуса")
 
 @api_router.delete("/admin/users/{user_id}")
 async def delete_admin_user(
     user_id: str,
+    request: Request,
     admin: str = Depends(get_current_admin)
 ):
-    """Delete a user (soft delete by deactivating, or hard delete)"""
+    """Delete a user with audit logging"""
     try:
         user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
-        
+
+        # Store user info for audit before deletion
+        user_email = user.get("email")
+        user_name = f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+
         # Hard delete the user
         await db.users.delete_one({"id": user_id})
-        
+
         # Also clean up related data
         await db.posts.delete_many({"user_id": user_id})
         await db.comments.delete_many({"user_id": user_id})
         await db.notifications.delete_many({"user_id": user_id})
         await db.agent_conversations.delete_many({"user_id": user_id})
-        
+
+        # Get client IP for audit
+        client_ip = request.client.host if request.client else "unknown"
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+
+        # Audit log
+        await log_admin_action(
+            admin_name=admin,
+            action="USER_DELETED",
+            target_type="user",
+            target_id=user_id,
+            details={"user_email": user_email, "user_name": user_name},
+            ip_address=client_ip
+        )
+
+        logger.info(f"Admin {admin} deleted user {user_id} ({user_email})")
         return {"message": "Пользователь удален"}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Admin user delete error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка удаления пользователя")
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Validate password meets security requirements"""
+    if len(password) < 12:
+        return False, "Пароль должен быть не менее 12 символов"
+    if not re.search(r'[A-Z]', password):
+        return False, "Пароль должен содержать хотя бы одну заглавную букву"
+    if not re.search(r'[a-z]', password):
+        return False, "Пароль должен содержать хотя бы одну строчную букву"
+    if not re.search(r'\d', password):
+        return False, "Пароль должен содержать хотя бы одну цифру"
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "Пароль должен содержать хотя бы один специальный символ (!@#$%^&*(),.?\":{}|<>)"
+    return True, ""
 
 @api_router.post("/admin/users/{user_id}/reset-password")
 async def reset_user_password(
     user_id: str,
     password_data: dict,
+    request: Request,
     admin: str = Depends(get_current_admin)
 ):
-    """Reset user password"""
+    """Reset user password with strong password requirements and audit logging"""
     try:
         user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
-        
+
         new_password = password_data.get("new_password")
-        if not new_password or len(new_password) < 6:
-            raise HTTPException(status_code=400, detail="Пароль должен быть не менее 6 символов")
-        
+        if not new_password:
+            raise HTTPException(status_code=400, detail="Пароль не указан")
+
+        # Validate password strength
+        is_valid, error_message = validate_password_strength(new_password)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error_message)
+
         hashed_password = get_password_hash(new_password)
-        
+
         await db.users.update_one(
             {"id": user_id},
             {"$set": {
                 "password_hash": hashed_password,
-                "updated_at": datetime.now(timezone.utc)
+                "updated_at": datetime.now(timezone.utc),
+                "password_changed_at": datetime.now(timezone.utc),
+                "password_changed_by_admin": True
             }}
         )
-        
-        return {"message": "Пароль сброшен"}
+
+        # Get client IP for audit
+        client_ip = request.client.host if request.client else "unknown"
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+
+        # Audit log
+        await log_admin_action(
+            admin_name=admin,
+            action="PASSWORD_RESET",
+            target_type="user",
+            target_id=user_id,
+            details={"user_email": user.get("email")},
+            ip_address=client_ip
+        )
+
+        # Create notification for user about password reset
+        try:
+            notification = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "type": "SECURITY_ALERT",
+                "title": "Пароль сброшен",
+                "message": "Ваш пароль был сброшен администратором. Если вы не запрашивали сброс, свяжитесь с поддержкой.",
+                "is_read": False,
+                "created_at": datetime.now(timezone.utc)
+            }
+            await db.notifications.insert_one(notification)
+        except Exception as notify_error:
+            logger.warning(f"Failed to create password reset notification: {notify_error}")
+
+        logger.info(f"Admin {admin} reset password for user {user_id}")
+        return {"message": "Пароль сброшен. Пользователь уведомлен."}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Admin password reset error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка сброса пароля")
 
 @api_router.get("/admin/verify")
 async def verify_admin_token(admin: str = Depends(get_current_admin)):
     """Verify admin token is valid"""
     return {"valid": True, "admin_name": admin}
 
+@api_router.get("/admin/audit-logs")
+async def get_admin_audit_logs(
+    admin: str = Depends(get_current_admin),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    action: Optional[str] = None,
+    target_type: Optional[str] = None,
+    admin_name_filter: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get admin audit logs with filtering and pagination"""
+    try:
+        query = {}
+
+        if action:
+            query["action"] = action
+
+        if target_type:
+            query["target_type"] = target_type
+
+        if admin_name_filter:
+            query["admin_name"] = {"$regex": admin_name_filter, "$options": "i"}
+
+        if start_date:
+            try:
+                start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                query.setdefault("created_at", {})["$gte"] = start
+            except ValueError:
+                pass
+
+        if end_date:
+            try:
+                end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                query.setdefault("created_at", {})["$lte"] = end
+            except ValueError:
+                pass
+
+        total = await db.admin_audit_logs.count_documents(query)
+
+        logs = []
+        cursor = db.admin_audit_logs.find(
+            query,
+            {"_id": 0}
+        ).sort("created_at", -1).skip(skip).limit(limit)
+
+        async for log in cursor:
+            logs.append(log)
+
+        return {
+            "logs": logs,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": skip + len(logs) < total
+        }
+
+    except Exception as e:
+        logger.error(f"Admin audit logs error: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка загрузки журнала аудита")
+
 # ============================================================
-# ADMIN ALTYN MANAGEMENT ENDPOINTS  
+# ADMIN ALTYN MANAGEMENT ENDPOINTS
 # ============================================================
 
 @api_router.get("/admin/finance/treasury")
@@ -26423,38 +26786,64 @@ async def get_admin_token_holders(
     admin: str = Depends(get_current_admin),
     limit: int = Query(50, ge=1, le=200)
 ):
-    """Get list of TOKEN holders for admin panel"""
+    """Get list of TOKEN holders for admin panel - optimized with $lookup"""
     try:
-        # Get all wallets with tokens
-        holders = await db.wallets.find(
-            {"token_balance": {"$gt": 0}},
-            {"_id": 0}
-        ).sort("token_balance", -1).limit(limit).to_list(limit)
-        
+        # Use aggregation with $lookup to join users in single query (fixes N+1)
+        pipeline = [
+            {"$match": {"token_balance": {"$gt": 0}}},
+            {"$sort": {"token_balance": -1}},
+            {"$limit": limit},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "id",
+                    "as": "user_info",
+                    "pipeline": [
+                        {"$project": {"_id": 0, "first_name": 1, "last_name": 1, "email": 1}}
+                    ]
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "user_id": 1,
+                    "token_balance": 1,
+                    "coin_balance": 1,
+                    "total_dividends_received": 1,
+                    "user_info": {"$arrayElemAt": ["$user_info", 0]}
+                }
+            }
+        ]
+
+        holders = await db.wallets.aggregate(pipeline).to_list(limit)
+
         # Calculate total tokens
         total = sum(h["token_balance"] for h in holders)
-        
-        # Enrich with user names and percentages
+
+        # Format response
         enriched = []
         for holder in holders:
-            user = await db.users.find_one({"id": holder["user_id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+            user = holder.get("user_info", {})
+            first_name = user.get("first_name", "")
+            last_name = user.get("last_name", "")
             enriched.append({
                 "user_id": holder["user_id"],
-                "user_name": f"{user['first_name']} {user['last_name']}" if user else "Unknown",
-                "email": user.get("email") if user else None,
+                "user_name": f"{first_name} {last_name}".strip() or "Unknown",
+                "email": user.get("email"),
                 "token_balance": holder["token_balance"],
                 "coin_balance": holder.get("coin_balance", 0),
                 "percentage": round((holder["token_balance"] / total * 100) if total > 0 else 0, 4),
                 "total_dividends_received": holder.get("total_dividends_received", 0)
             })
-        
+
         return {
             "success": True,
             "holders": enriched,
             "total_tokens": total,
             "total_supply": TOTAL_TOKENS
         }
-        
+
     except Exception as e:
         logger.error(f"Admin token holders error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -26462,33 +26851,62 @@ async def get_admin_token_holders(
 @api_router.post("/admin/finance/emission")
 async def create_admin_emission(
     request: EmissionRequest,
+    http_request: Request,
     admin: str = Depends(get_current_admin)
 ):
-    """Create new ALTYN COIN emission from admin panel"""
+    """Create new ALTYN COIN emission from admin panel with audit logging"""
     try:
         if request.amount <= 0:
             raise HTTPException(status_code=400, detail="Amount must be positive")
-        
+
+        # Limit single emission to prevent accidental large emissions
+        if request.amount > 10000000:  # 10 million limit per emission
+            raise HTTPException(status_code=400, detail="Сумма эмиссии не может превышать 10,000,000 AC")
+
         # Get treasury (emissions go to treasury initially)
         treasury = await get_or_create_treasury()
-        
+        old_balance = treasury.get("coin_balance", 0)
+
         # Add coins to treasury
         await db.wallets.update_one(
             {"is_treasury": True},
             {"$inc": {"coin_balance": request.amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
         )
-        
+
         # Record emission
         emission = Emission(
             amount=request.amount,
             created_by_user_id=f"ADMIN:{admin}",
             description=request.description or f"Эмиссия {request.amount:,.0f} ALTYN COINS (Admin Panel)"
         )
-        
+
         emission_dict = emission.dict()
         emission_dict["created_at"] = emission_dict["created_at"].isoformat()
         await db.emissions.insert_one(emission_dict)
-        
+
+        # Get client IP for audit
+        client_ip = http_request.client.host if http_request.client else "unknown"
+        forwarded_for = http_request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+
+        # Audit log
+        await log_admin_action(
+            admin_name=admin,
+            action="COIN_EMISSION",
+            target_type="finance",
+            target_id=emission.id,
+            details={
+                "amount": request.amount,
+                "description": emission.description,
+                "treasury_balance_before": old_balance,
+                "treasury_balance_after": old_balance + request.amount
+            },
+            ip_address=client_ip
+        )
+
+        logger.info(f"Admin {admin} created emission of {request.amount} AC")
+
         return {
             "success": True,
             "emission": {
@@ -26497,12 +26915,12 @@ async def create_admin_emission(
                 "description": emission.description
             }
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Admin emission error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Ошибка создания эмиссии")
 
 @api_router.post("/admin/finance/distribute-dividends")
 async def admin_distribute_dividends(admin: str = Depends(get_current_admin)):
