@@ -4,12 +4,22 @@ import {
   Calendar, RefreshCw, BarChart2, UserPlus
 } from 'lucide-react';
 
-// Get backend URL - handle both with and without /api suffix
+// Get backend URL - smart detection for both preview and production
 const getBackendUrl = () => {
-  const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+  let baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+  const currentHost = window.location.hostname;
+  const isProduction = currentHost === 'zioncity.app' || 
+                       currentHost.endsWith('.zioncity.app') ||
+                       currentHost.endsWith('.emergent.host');
+  
+  if (!baseUrl || (isProduction && baseUrl.includes('preview.emergentagent.com'))) {
+    baseUrl = window.location.origin;
+  }
+  
   if (baseUrl.endsWith('/api')) return baseUrl;
   return baseUrl + '/api';
 };
+
 const BACKEND_URL = getBackendUrl();
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle, trend }) => (
