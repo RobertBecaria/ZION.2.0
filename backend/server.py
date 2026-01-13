@@ -25767,6 +25767,282 @@ async def verify_admin_token(admin: str = Depends(get_current_admin)):
     """Verify admin token is valid"""
     return {"valid": True, "admin_name": admin}
 
+# ============================================================
+# ADMIN DATABASE MANAGEMENT ENDPOINTS
+# ============================================================
+
+@api_router.get("/admin/database/status")
+async def get_database_status(admin: str = Depends(get_current_admin)):
+    """Get database status and statistics"""
+    try:
+        # Get database stats
+        db_stats = await db.command("dbStats")
+        
+        # Get collection list
+        collection_names = await db.list_collection_names()
+        
+        # Get per-collection stats
+        collections_info = []
+        for coll_name in sorted(collection_names):
+            try:
+                coll_stats = await db.command("collStats", coll_name)
+                doc_count = await db[coll_name].count_documents({})
+                collections_info.append({
+                    "name": coll_name,
+                    "document_count": doc_count,
+                    "size_bytes": coll_stats.get("size", 0),
+                    "storage_size_bytes": coll_stats.get("storageSize", 0),
+                    "index_count": coll_stats.get("nindexes", 0),
+                    "index_size_bytes": coll_stats.get("totalIndexSize", 0)
+                })
+            except Exception as e:
+                collections_info.append({
+                    "name": coll_name,
+                    "document_count": 0,
+                    "size_bytes": 0,
+                    "error": str(e)
+                })
+        
+        # Check for last backup info
+        backup_info = await db.admin_backups.find_one(
+            {}, 
+            sort=[("created_at", -1)]
+        )
+        
+        return {
+            "database_name": db.name,
+            "total_size_bytes": db_stats.get("dataSize", 0),
+            "storage_size_bytes": db_stats.get("storageSize", 0),
+            "index_size_bytes": db_stats.get("indexSize", 0),
+            "total_collections": len(collection_names),
+            "total_documents": sum(c.get("document_count", 0) for c in collections_info),
+            "collections": collections_info,
+            "last_backup": {
+                "timestamp": backup_info.get("created_at") if backup_info else None,
+                "size_bytes": backup_info.get("size_bytes") if backup_info else None,
+                "collections_count": backup_info.get("collections_count") if backup_info else None
+            } if backup_info else None
+        }
+    except Exception as e:
+        logger.error(f"Database status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/database/backup")
+async def create_database_backup(admin: str = Depends(get_current_admin)):
+    """Create a database backup as JSON"""
+    try:
+        backup_data = {
+            "metadata": {
+                "version": "1.0",
+                "database_name": db.name,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": admin
+            },
+            "collections": {}
+        }
+        
+        # Get all collection names (exclude system collections)
+        collection_names = await db.list_collection_names()
+        excluded_collections = ["admin_backups"]  # Don't backup backups
+        
+        for coll_name in collection_names:
+            if coll_name.startswith("system.") or coll_name in excluded_collections:
+                continue
+                
+            try:
+                # Fetch all documents from collection
+                cursor = db[coll_name].find({})
+                documents = await cursor.to_list(length=None)
+                
+                # Convert ObjectId and datetime to strings
+                serialized_docs = []
+                for doc in documents:
+                    serialized_doc = {}
+                    for key, value in doc.items():
+                        if key == "_id":
+                            continue  # Skip MongoDB _id
+                        elif isinstance(value, datetime):
+                            serialized_doc[key] = value.isoformat()
+                        elif hasattr(value, '__str__'):
+                            serialized_doc[key] = str(value) if not isinstance(value, (str, int, float, bool, list, dict, type(None))) else value
+                        else:
+                            serialized_doc[key] = value
+                    serialized_docs.append(serialized_doc)
+                
+                backup_data["collections"][coll_name] = {
+                    "document_count": len(serialized_docs),
+                    "documents": serialized_docs
+                }
+            except Exception as e:
+                logger.error(f"Error backing up collection {coll_name}: {e}")
+                backup_data["collections"][coll_name] = {
+                    "error": str(e),
+                    "documents": []
+                }
+        
+        # Calculate backup size
+        backup_json = json.dumps(backup_data, ensure_ascii=False, default=str)
+        backup_size = len(backup_json.encode('utf-8'))
+        
+        # Store backup metadata
+        await db.admin_backups.insert_one({
+            "id": str(uuid.uuid4()),
+            "created_at": datetime.now(timezone.utc),
+            "created_by": admin,
+            "size_bytes": backup_size,
+            "collections_count": len(backup_data["collections"]),
+            "document_count": sum(c.get("document_count", 0) for c in backup_data["collections"].values())
+        })
+        
+        # Return backup data
+        return {
+            "success": True,
+            "backup": backup_data,
+            "size_bytes": backup_size,
+            "collections_count": len(backup_data["collections"]),
+            "filename": f"zion_city_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        }
+    except Exception as e:
+        logger.error(f"Database backup error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/database/restore")
+async def restore_database_backup(
+    backup_data: dict,
+    mode: str = Query("merge", description="Restore mode: 'replace' or 'merge'"),
+    admin: str = Depends(get_current_admin)
+):
+    """Restore database from backup"""
+    try:
+        # Validate backup structure
+        if "metadata" not in backup_data or "collections" not in backup_data:
+            raise HTTPException(status_code=400, detail="Неверный формат резервной копии")
+        
+        metadata = backup_data["metadata"]
+        collections = backup_data["collections"]
+        
+        restore_results = {
+            "mode": mode,
+            "backup_date": metadata.get("created_at"),
+            "backup_version": metadata.get("version"),
+            "collections_restored": [],
+            "errors": [],
+            "total_documents_restored": 0
+        }
+        
+        # Protected collections that should not be fully replaced
+        protected_collections = ["admin_backups"]
+        
+        for coll_name, coll_data in collections.items():
+            if coll_name in protected_collections:
+                continue
+                
+            try:
+                documents = coll_data.get("documents", [])
+                if not documents:
+                    continue
+                
+                # Convert ISO datetime strings back to datetime objects
+                for doc in documents:
+                    for key, value in doc.items():
+                        if isinstance(value, str) and len(value) > 18:
+                            try:
+                                # Try to parse ISO datetime
+                                if 'T' in value and ('+' in value or 'Z' in value or value.count(':') >= 2):
+                                    doc[key] = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                            except:
+                                pass
+                
+                if mode == "replace":
+                    # Delete existing documents and insert new ones
+                    await db[coll_name].delete_many({})
+                    if documents:
+                        await db[coll_name].insert_many(documents)
+                    restore_results["collections_restored"].append({
+                        "name": coll_name,
+                        "documents_restored": len(documents),
+                        "mode": "replaced"
+                    })
+                else:
+                    # Merge mode - upsert based on 'id' field
+                    inserted_count = 0
+                    updated_count = 0
+                    for doc in documents:
+                        if "id" in doc:
+                            result = await db[coll_name].update_one(
+                                {"id": doc["id"]},
+                                {"$set": doc},
+                                upsert=True
+                            )
+                            if result.upserted_id:
+                                inserted_count += 1
+                            elif result.modified_count:
+                                updated_count += 1
+                        else:
+                            await db[coll_name].insert_one(doc)
+                            inserted_count += 1
+                    
+                    restore_results["collections_restored"].append({
+                        "name": coll_name,
+                        "documents_inserted": inserted_count,
+                        "documents_updated": updated_count,
+                        "mode": "merged"
+                    })
+                
+                restore_results["total_documents_restored"] += len(documents)
+                
+            except Exception as e:
+                logger.error(f"Error restoring collection {coll_name}: {e}")
+                restore_results["errors"].append({
+                    "collection": coll_name,
+                    "error": str(e)
+                })
+        
+        # Log the restore operation
+        await db.admin_backups.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "restore",
+            "created_at": datetime.now(timezone.utc),
+            "created_by": admin,
+            "mode": mode,
+            "backup_date": metadata.get("created_at"),
+            "collections_count": len(restore_results["collections_restored"]),
+            "document_count": restore_results["total_documents_restored"]
+        })
+        
+        return {
+            "success": True,
+            "message": "База данных восстановлена" if not restore_results["errors"] else "База данных частично восстановлена",
+            "results": restore_results
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Database restore error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/database/backup-history")
+async def get_backup_history(
+    admin: str = Depends(get_current_admin),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """Get backup and restore history"""
+    try:
+        cursor = db.admin_backups.find({}).sort("created_at", -1).limit(limit)
+        history = await cursor.to_list(length=limit)
+        
+        # Remove MongoDB _id
+        for item in history:
+            item.pop("_id", None)
+        
+        return {
+            "history": history,
+            "total": len(history)
+        }
+    except Exception as e:
+        logger.error(f"Backup history error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ===== END ADMIN PANEL ENDPOINTS =====
 
 # Include the router in the main app
