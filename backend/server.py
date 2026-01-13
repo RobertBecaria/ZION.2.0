@@ -102,6 +102,72 @@ class SimpleCache:
 # Initialize cache
 cache = SimpleCache(default_ttl=300)  # 5 minutes TTL
 
+# User cache for frequent lookups (shorter TTL for user data)
+user_cache = SimpleCache(default_ttl=120)  # 2 minutes TTL for user data
+
+async def get_user_by_id_cached(user_id: str) -> Optional[dict]:
+    """Get user by ID with caching to reduce DB queries.
+
+    This is a performance optimization for the 200+ places where
+    we look up user data. Returns a dict (not User model) to avoid
+    serialization overhead.
+    """
+    if not user_id:
+        return None
+
+    cache_key = f"user:{user_id}"
+
+    # Try cache first
+    cached = await user_cache.get(cache_key)
+    if cached:
+        return cached
+
+    # Fetch from database
+    user = await db.users.find_one({"id": user_id})
+    if user:
+        user.pop("_id", None)
+        user.pop("password_hash", None)  # Never cache sensitive data
+        await user_cache.set(cache_key, user)
+        return user
+
+    return None
+
+async def get_users_by_ids_cached(user_ids: List[str]) -> Dict[str, dict]:
+    """Batch fetch multiple users with caching.
+
+    Returns a dict mapping user_id -> user_data for efficient lookups.
+    This eliminates N+1 queries when fetching multiple users.
+    """
+    if not user_ids:
+        return {}
+
+    result = {}
+    missing_ids = []
+
+    # Check cache for each user
+    for user_id in user_ids:
+        cache_key = f"user:{user_id}"
+        cached = await user_cache.get(cache_key)
+        if cached:
+            result[user_id] = cached
+        else:
+            missing_ids.append(user_id)
+
+    # Batch fetch missing users from database
+    if missing_ids:
+        users = await db.users.find(
+            {"id": {"$in": missing_ids}},
+            {"_id": 0, "password_hash": 0}  # Exclude sensitive fields
+        ).to_list(len(missing_ids))
+
+        for user in users:
+            user_id = user.get("id")
+            if user_id:
+                await user_cache.set(f"user:{user_id}", user)
+                result[user_id] = user
+
+    return result
+
 # ============================================================
 # RATE LIMITING (In-memory, simple implementation)
 # ============================================================
@@ -188,14 +254,67 @@ async def lifespan(app: FastAPI):
 async def ensure_indexes():
     """Ensure all database indexes exist (runs on startup)"""
     try:
-        # Key indexes for performance
+        # ===== USER INDEXES =====
         await db.users.create_index("id", unique=True, background=True)
         await db.users.create_index("email", unique=True, background=True)
+        await db.users.create_index([("first_name", 1), ("last_name", 1)], background=True)
+
+        # ===== POST INDEXES =====
         await db.posts.create_index([("created_at", -1)], background=True)
         await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.posts.create_index([("visibility", 1), ("created_at", -1)], background=True)
+
+        # ===== POST INTERACTIONS (Critical for feed performance) =====
+        await db.post_likes.create_index("post_id", background=True)
+        await db.post_likes.create_index([("post_id", 1), ("user_id", 1)], unique=True, background=True)
+        await db.post_comments.create_index("post_id", background=True)
+        await db.post_comments.create_index([("post_id", 1), ("created_at", -1)], background=True)
+        await db.post_reactions.create_index("post_id", background=True)
+        await db.post_reactions.create_index([("post_id", 1), ("user_id", 1)], background=True)
+
+        # ===== CHAT INDEXES (Critical for messaging) =====
+        await db.chat_groups.create_index("id", unique=True, background=True)
+        await db.chat_group_members.create_index([("user_id", 1), ("is_active", 1)], background=True)
+        await db.chat_group_members.create_index([("group_id", 1), ("is_active", 1)], background=True)
+        await db.chat_messages.create_index([("group_id", 1), ("is_deleted", 1), ("created_at", -1)], background=True)
+        await db.chat_messages.create_index([("direct_chat_id", 1), ("is_deleted", 1), ("created_at", -1)], background=True)
+        await db.direct_chats.create_index("id", unique=True, background=True)
+        await db.direct_chats.create_index([("participant_ids", 1), ("is_active", 1)], background=True)
+
+        # ===== FAMILY INDEXES =====
+        await db.family_members.create_index([("user_id", 1), ("is_active", 1)], background=True)
+        await db.family_members.create_index([("family_id", 1), ("is_active", 1)], background=True)
+        await db.family_units.create_index("id", unique=True, background=True)
+        await db.families.create_index("id", unique=True, background=True)
+
+        # ===== WORK/ORGANIZATIONS INDEXES =====
+        await db.work_organizations.create_index("id", unique=True, background=True)
+        await db.work_organizations.create_index([("is_active", 1), ("allow_public_discovery", 1)], background=True)
+        await db.work_members.create_index([("user_id", 1), ("status", 1)], background=True)
+        await db.work_members.create_index([("organization_id", 1), ("status", 1)], background=True)
+        await db.user_affiliations.create_index([("user_id", 1), ("is_active", 1)], background=True)
+
+        # ===== NOTIFICATIONS INDEXES =====
         await db.notifications.create_index([("user_id", 1), ("is_read", 1), ("created_at", -1)], background=True)
+
+        # ===== EVENTS INDEXES =====
+        await db.goodwill_events.create_index([("status", 1), ("start_date", 1)], background=True)
+        await db.goodwill_events.create_index([("organizer_id", 1), ("status", 1)], background=True)
+        await db.event_registrations.create_index([("event_id", 1), ("user_id", 1)], background=True)
+
+        # ===== SERVICES/MARKETPLACE INDEXES =====
+        await db.service_listings.create_index([("status", 1), ("category_id", 1)], background=True)
+        await db.marketplace_products.create_index([("status", 1), ("category", 1)], background=True)
+        await db.inventory_items.create_index([("user_id", 1), ("category", 1)], background=True)
+
+        # ===== AI/AGENT INDEXES =====
         await db.agent_conversations.create_index([("user_id", 1), ("updated_at", -1)], background=True)
-        logger.info("✅ Database indexes verified")
+
+        # ===== MEDIA INDEXES =====
+        await db.media_files.create_index("id", unique=True, background=True)
+        await db.media_files.create_index([("user_id", 1), ("created_at", -1)], background=True)
+
+        logger.info("✅ Database indexes verified (35+ indexes)")
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
 
@@ -3568,8 +3687,15 @@ async def get_user_by_email(email: str):
     return None
 
 async def get_user_by_id(user_id: str):
-    user_data = await db.users.find_one({"id": user_id})
+    """Get user by ID with caching (returns User model)."""
+    user_data = await get_user_by_id_cached(user_id)
     if user_data:
+        # For User model, we need password_hash, fetch from DB if not cached
+        if "password_hash" not in user_data:
+            full_user = await db.users.find_one({"id": user_id})
+            if full_user:
+                full_user.pop("_id", None)
+                return User(**full_user)
         return User(**user_data)
     return None
 
@@ -3768,49 +3894,85 @@ async def get_module_connections(user_id: str, module: str) -> List[str]:
         return [user_id]  # Only user's own posts for unknown modules
 
 async def get_user_chat_groups(user_id: str):
-    """Get all chat groups where user is a member"""
-    memberships = await db.chat_group_members.find({"user_id": user_id, "is_active": True}).to_list(100)
-    
-    groups = []
-    for membership in memberships:
-        group = await db.chat_groups.find_one({"id": membership["group_id"], "is_active": True})
+    """Get all chat groups where user is a member.
+
+    Optimized to use batch queries instead of N+1 pattern.
+    Reduces 41 queries for 10 groups down to 5 queries total.
+    """
+    # 1. Get all memberships for user
+    memberships = await db.chat_group_members.find(
+        {"user_id": user_id, "is_active": True}
+    ).to_list(100)
+
+    if not memberships:
+        return []
+
+    # Extract group IDs
+    group_ids = [m["group_id"] for m in memberships]
+    membership_map = {m["group_id"]: m for m in memberships}
+
+    # 2. Batch fetch all groups
+    groups_list = await db.chat_groups.find(
+        {"id": {"$in": group_ids}, "is_active": True}
+    ).to_list(100)
+    groups_map = {g["id"]: g for g in groups_list}
+
+    # 3. Batch get member counts using aggregation
+    member_count_pipeline = [
+        {"$match": {"group_id": {"$in": group_ids}, "is_active": True}},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    member_counts = await db.chat_group_members.aggregate(member_count_pipeline).to_list(100)
+    counts_map = {c["_id"]: c["count"] for c in member_counts}
+
+    # 4. Get latest messages for each group using aggregation
+    latest_msg_pipeline = [
+        {"$match": {"group_id": {"$in": group_ids}, "is_deleted": False}},
+        {"$sort": {"created_at": -1}},
+        {"$group": {
+            "_id": "$group_id",
+            "latest": {"$first": "$$ROOT"}
+        }}
+    ]
+    latest_messages = await db.chat_messages.aggregate(latest_msg_pipeline).to_list(100)
+    latest_map = {}
+    for lm in latest_messages:
+        msg = lm["latest"]
+        msg.pop("_id", None)
+        latest_map[lm["_id"]] = msg
+
+    # 5. Get unread counts using aggregation
+    unread_pipeline = [
+        {"$match": {
+            "group_id": {"$in": group_ids},
+            "user_id": {"$ne": user_id},
+            "status": {"$ne": "read"},
+            "is_deleted": False
+        }},
+        {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
+    ]
+    unread_counts = await db.chat_messages.aggregate(unread_pipeline).to_list(100)
+    unread_map = {u["_id"]: u["count"] for u in unread_counts}
+
+    # Build result using pre-fetched data
+    result = []
+    for group_id in group_ids:
+        group = groups_map.get(group_id)
         if group:
-            # Remove MongoDB _id
             group.pop("_id", None)
+            membership = membership_map[group_id]
             membership.pop("_id", None)
-            
-            # Get member count
-            member_count = await db.chat_group_members.count_documents({
-                "group_id": group["id"], 
-                "is_active": True
-            })
-            
-            # Get latest message
-            latest_message = await db.chat_messages.find_one(
-                {"group_id": group["id"], "is_deleted": False},
-                sort=[("created_at", -1)]
-            )
-            if latest_message:
-                latest_message.pop("_id", None)
-            
-            # Get unread count (messages not from this user that haven't been read)
-            unread_count = await db.chat_messages.count_documents({
-                "group_id": group["id"],
-                "user_id": {"$ne": user_id},
-                "status": {"$ne": "read"},
-                "is_deleted": False
-            })
-            
-            groups.append({
+
+            result.append({
                 "group": group,
                 "user_role": membership["role"],
-                "member_count": member_count,
-                "latest_message": latest_message,
-                "unread_count": unread_count,
+                "member_count": counts_map.get(group_id, 0),
+                "latest_message": latest_map.get(group_id),
+                "unread_count": unread_map.get(group_id, 0),
                 "joined_at": membership["joined_at"]
             })
-    
-    return groups
+
+    return result
 
 # === NEW FAMILY SYSTEM HELPER FUNCTIONS ===
 
@@ -4117,7 +4279,7 @@ async def delete_account(
             "family_id": family_profile["id"],
             "user_id": {"$ne": current_user.id},
             "is_deleted": {"$ne": True}
-        }).to_list(None)
+        }).to_list(100)
         
         # Filter adult members (you can adjust age logic as needed)
         adult_members = []
@@ -4364,7 +4526,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
         family_members = await db.family_unit_members.find({
             "family_unit_id": family_unit["id"],
             "is_active": True
-        }).to_list(None)
+        }).to_list(100)
         
         # Find upcoming birthday
         today = datetime.now(timezone.utc).date()
@@ -4404,7 +4566,7 @@ async def get_my_dynamic_profile(current_user: User = Depends(get_current_user))
     org_members = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     for member in org_members:
         org = await db.work_organizations.find_one({"id": member["organization_id"]})
@@ -4493,12 +4655,12 @@ async def get_user_dynamic_profile(
     viewer_orgs = await db.work_members.find({
         "user_id": current_user.id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     target_orgs = await db.work_members.find({
         "user_id": user_id,
         "status": "ACTIVE"
-    }).to_list(None)
+    }).to_list(100)
     
     viewer_org_ids = {m["organization_id"] for m in viewer_orgs}
     target_org_ids = {m["organization_id"] for m in target_orgs}
@@ -7177,11 +7339,12 @@ async def send_message_with_attachment(
     stored_filename = f"chat_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file (async I/O)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
+    file_content = await file.read()
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Determine message type
     content_type = file.content_type or ""
     if content_type.startswith("image/"):
@@ -7267,12 +7430,12 @@ async def send_voice_message(
     stored_filename = f"voice_{chat_id}_{str(uuid.uuid4())}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, stored_filename)
     
-    # Save file
+    # Save file (async I/O)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_content = await file.read()
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_content)
-    
+    async with aiofiles.open(file_path, "wb") as buffer:
+        await buffer.write(file_content)
+
     # Create voice message
     new_message = ChatMessage(
         direct_chat_id=chat_id,
@@ -7703,7 +7866,7 @@ async def get_media_by_modules(current_user: User = Depends(get_current_user)):
     """Get user's media organized by modules"""
     
     # Get all user's media
-    media_files = await db.media_files.find({"uploaded_by": current_user.id}).to_list(1000)
+    media_files = await db.media_files.find({"uploaded_by": current_user.id}).to_list(200)
     
     # Organize by modules
     modules = {}
@@ -8314,28 +8477,38 @@ async def get_post_likes(
     post_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of users who liked a post"""
+    """Get list of users who liked a post.
+
+    Optimized: Uses batch user fetch instead of N+1 queries.
+    """
     post = await db.posts.find_one({"id": post_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
-    likes = await db.post_likes.find({"post_id": post_id}).to_list(None)
-    
-    # Get user info for each like
+
+    likes = await db.post_likes.find({"post_id": post_id}).to_list(100)
+
+    if not likes:
+        return []
+
+    # Batch fetch all users at once
+    user_ids = [like["user_id"] for like in likes]
+    users_map = await get_users_by_ids_cached(user_ids)
+
+    # Build result using pre-fetched users
     result = []
     for like in likes:
-        user = await get_user_by_id(like["user_id"])
+        user = users_map.get(like["user_id"])
         if user:
             result.append({
                 "id": like["id"],
                 "user": {
-                    "id": user.id,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name
+                    "id": user.get("id"),
+                    "first_name": user.get("first_name"),
+                    "last_name": user.get("last_name")
                 },
                 "created_at": like["created_at"]
             })
-    
+
     return result
 
 # Post Comments Endpoints
@@ -8344,24 +8517,34 @@ async def get_post_comments(
     post_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get comments for a post"""
+    """Get comments for a post.
+
+    Optimized: Uses batch user fetch instead of N+1 queries.
+    """
     post = await db.posts.find_one({"id": post_id})
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
     # Get all comments for this post, sorted by creation time
     comments = await db.post_comments.find({
         "post_id": post_id,
         "is_deleted": False
-    }).sort("created_at", 1).to_list(None)
-    
+    }).sort("created_at", 1).to_list(100)
+
+    if not comments:
+        return []
+
+    # Batch fetch all users at once (excluding ERIC AI)
+    user_ids = [c["user_id"] for c in comments if c["user_id"] != "eric-ai"]
+    users_map = await get_users_by_ids_cached(user_ids) if user_ids else {}
+
     # Build nested structure for replies
     comments_dict = {}
     top_level_comments = []
-    
+
     for comment in comments:
         comment.pop("_id", None)
-        
+
         # Get author info - handle ERIC AI special case
         if comment["user_id"] == "eric-ai":
             comment["author"] = {
@@ -8371,17 +8554,17 @@ async def get_post_comments(
                 "profile_picture": "/eric-avatar.jpg"
             }
         else:
-            author = await get_user_by_id(comment["user_id"])
+            author = users_map.get(comment["user_id"], {})
             comment["author"] = {
-                "id": author.id,
-                "first_name": author.first_name,
-                "last_name": author.last_name,
-                "profile_picture": author.profile_picture
+                "id": author.get("id"),
+                "first_name": author.get("first_name"),
+                "last_name": author.get("last_name"),
+                "profile_picture": author.get("profile_picture")
             } if author else {}
-        
+
         comment["replies"] = []
         comments_dict[comment["id"]] = comment
-        
+
         if comment["parent_comment_id"]:
             # This is a reply
             parent = comments_dict.get(comment["parent_comment_id"])
@@ -8390,7 +8573,7 @@ async def get_post_comments(
         else:
             # This is a top-level comment
             top_level_comments.append(comment)
-    
+
     return top_level_comments
 
 @api_router.post("/posts/{post_id}/comments")
@@ -8660,7 +8843,7 @@ async def get_post_reactions(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    reactions = await db.post_reactions.find({"post_id": post_id}).to_list(None)
+    reactions = await db.post_reactions.find({"post_id": post_id}).to_list(100)
     
     # Group reactions by emoji and get user info
     reaction_groups = {}
@@ -9947,7 +10130,7 @@ async def get_work_organization_members(
         members = await db.work_members.find({
             "organization_id": organization_id,
             "is_active": True
-        }).to_list(1000)
+        }).to_list(200)
         
         # Enrich with user details
         member_responses = []
@@ -12444,7 +12627,7 @@ async def get_organization_teachers(
         
         # Get teachers
         teachers_cursor = db.work_members.find(query)
-        teachers = await teachers_cursor.to_list(None)
+        teachers = await teachers_cursor.to_list(100)
         
         # Enrich with user details
         teacher_responses = []
@@ -12592,7 +12775,7 @@ async def get_organization_classes(
         if grade:
             pipeline[0]["$match"]["grade"] = grade
         
-        classes_data = await db.work_students.aggregate(pipeline).to_list(None)
+        classes_data = await db.work_students.aggregate(pipeline).to_list(100)
         
         # If no students with classes, create classes based on teacher assignments
         if not classes_data and is_teacher:
@@ -12634,14 +12817,14 @@ async def get_organization_classes(
         
         # Get all teachers to find class supervisors
         teachers_cursor = db.teachers.find({"organization_id": organization_id})
-        teachers_list = await teachers_cursor.to_list(None)
+        teachers_list = await teachers_cursor.to_list(100)
         
         # Also check work_members for teacher data
         members_cursor = db.work_members.find({
             "organization_id": organization_id,
             "is_teacher": True
         })
-        members_list = await members_cursor.to_list(None)
+        members_list = await members_cursor.to_list(100)
         
         # Merge teacher info
         all_teachers = {}
@@ -12804,7 +12987,7 @@ async def get_organization_students(
         
         # Get students
         students_cursor = db.work_students.find(query)
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         # Enrich with parent details
         student_responses = []
@@ -13062,7 +13245,7 @@ async def get_my_children(
             "parent_ids": current_user.id,
             "is_active": True
         })
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         # Enrich with parent details
         student_responses = []
@@ -13215,7 +13398,7 @@ async def get_my_school_roles(
                 "is_active": True,
                 "organization_id": {"$ne": None}
             })
-            students = await students_cursor.to_list(None)
+            students = await students_cursor.to_list(100)
             
             # Get unique organization IDs
             org_ids = list(set([s["organization_id"] for s in students if s.get("organization_id")]))
@@ -13240,13 +13423,13 @@ async def get_my_school_roles(
             "is_teacher": True,
             "status": "active"
         })
-        teacher_memberships = await teacher_memberships_cursor.to_list(None)
+        teacher_memberships = await teacher_memberships_cursor.to_list(100)
         
         # Also check the dedicated teachers collection
         teachers_cursor = db.teachers.find({
             "user_id": current_user.id
         })
-        teachers_records = await teachers_cursor.to_list(None)
+        teachers_records = await teachers_cursor.to_list(100)
         
         roles["is_teacher"] = len(teacher_memberships) > 0 or len(teachers_records) > 0
         
@@ -13356,7 +13539,7 @@ async def get_enrollment_requests(
         
         # Get requests
         requests_cursor = db.student_enrollment_requests.find(query)
-        requests = await requests_cursor.to_list(None)
+        requests = await requests_cursor.to_list(100)
         
         # Get organization name
         org = await db.work_organizations.find_one({"id": organization_id})
@@ -13649,7 +13832,7 @@ async def get_schedules(
         
         # Get schedules
         schedules_cursor = db.class_schedules.find(query).sort([("day_of_week", 1), ("lesson_number", 1)])
-        schedules = await schedules_cursor.to_list(None)
+        schedules = await schedules_cursor.to_list(100)
         
         # Enrich with teacher names
         schedule_responses = []
@@ -13807,7 +13990,7 @@ async def get_student_grades(
         
         # Get grades
         grades_cursor = db.student_grades.find(query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
+        grades = await grades_cursor.to_list(100)
         
         # Enrich with teacher and student names
         grade_responses = []
@@ -13869,7 +14052,7 @@ async def get_class_grades(
             "assigned_class": assigned_class,
             "is_active": True
         })
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         if not students:
             return []
@@ -13887,7 +14070,7 @@ async def get_class_grades(
         
         # Get all grades for these students
         grades_cursor = db.student_grades.find(grade_query).sort("date", -1)
-        grades = await grades_cursor.to_list(None)
+        grades = await grades_cursor.to_list(100)
         
         # Group by student and subject
         student_summaries = []
@@ -14101,7 +14284,7 @@ async def get_journal_posts(
         
         # Get posts
         posts_cursor = db.journal_posts.find(query).sort("created_at", -1)
-        posts = await posts_cursor.to_list(None)
+        posts = await posts_cursor.to_list(100)
         
         # Enrich with author and organization data
         post_responses = []
@@ -14708,7 +14891,7 @@ async def get_classmates_for_invitation(
         
         # Get students from work_students collection
         students_cursor = db.work_students.find(query, {"_id": 0})
-        students = await students_cursor.to_list(None)
+        students = await students_cursor.to_list(100)
         
         classmates = []
         for student in students:
@@ -17540,7 +17723,7 @@ async def get_friends(
             {"user1_id": current_user.id},
             {"user2_id": current_user.id}
         ]
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     # Get friend IDs
     friend_ids = []
@@ -17556,7 +17739,7 @@ async def get_friends(
         friends_data = await db.users.find(
             {"id": {"$in": friend_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for friend in friends_data:
             # Find the friendship record for created_at
@@ -17720,7 +17903,7 @@ async def get_my_followers(
     """Get users who follow the current user"""
     follows = await db.user_follows.find({
         "target_id": current_user.id
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     follower_ids = [f["follower_id"] for f in follows]
     
@@ -17729,7 +17912,7 @@ async def get_my_followers(
         followers_data = await db.users.find(
             {"id": {"$in": follower_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for follower in followers_data:
             follow_record = next((f for f in follows if f["follower_id"] == follower["id"]), None)
@@ -17750,7 +17933,7 @@ async def get_my_following(
     """Get users the current user is following"""
     follows = await db.user_follows.find({
         "follower_id": current_user.id
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(200)
     
     target_ids = [f["target_id"] for f in follows]
     
@@ -17759,7 +17942,7 @@ async def get_my_following(
         following_data = await db.users.find(
             {"id": {"$in": target_ids}},
             {"_id": 0, "password_hash": 0}
-        ).to_list(1000)
+        ).to_list(200)
         
         for user in following_data:
             follow_record = next((f for f in follows if f["target_id"] == user["id"]), None)
@@ -17827,18 +18010,18 @@ async def get_user_suggestions(
                 {"user1_id": current_user.id},
                 {"user2_id": current_user.id}
             ]
-        }, {"_id": 0, "user1_id": 1, "user2_id": 1}).to_list(1000),
+        }, {"_id": 0, "user1_id": 1, "user2_id": 1}).to_list(200),
         
         db.user_follows.find({
             "follower_id": current_user.id
-        }, {"_id": 0, "target_id": 1}).to_list(1000),
+        }, {"_id": 0, "target_id": 1}).to_list(200),
         
         db.friend_requests.find({
             "$or": [
                 {"sender_id": current_user.id, "status": "pending"},
                 {"receiver_id": current_user.id, "status": "pending"}
             ]
-        }, {"_id": 0, "sender_id": 1, "receiver_id": 1}).to_list(1000)
+        }, {"_id": 0, "sender_id": 1, "receiver_id": 1}).to_list(200)
     )
     
     friend_ids = set()
@@ -18698,7 +18881,7 @@ async def get_news_events(
         # Get subscribed channel IDs
         subscriptions = await db.channel_subscriptions.find(
             {"subscriber_id": current_user.id}
-        ).to_list(1000)
+        ).to_list(200)
         subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
         
         # Get friend IDs
@@ -18707,7 +18890,7 @@ async def get_news_events(
                 {"user_id": current_user.id, "status": "ACCEPTED"},
                 {"friend_id": current_user.id, "status": "ACCEPTED"}
             ]
-        }).to_list(1000)
+        }).to_list(200)
         friend_ids = [
             f["friend_id"] if f["user_id"] == current_user.id else f["user_id"]
             for f in friendships
@@ -18933,7 +19116,7 @@ async def get_news_feed(
             {"user1_id": current_user.id},
             {"user2_id": current_user.id}
         ]
-    }).to_list(1000)
+    }).to_list(200)
     
     friend_ids = set()
     for f in friendships:
@@ -18945,13 +19128,13 @@ async def get_news_feed(
     # Get users I'm following
     following = await db.user_follows.find({
         "follower_id": current_user.id
-    }).to_list(1000)
+    }).to_list(200)
     following_ids = {f["target_id"] for f in following}
     
     # Get subscribed channels
     subscriptions = await db.channel_subscriptions.find({
         "subscriber_id": current_user.id
-    }).to_list(1000)
+    }).to_list(200)
     subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
     
     # Build query for posts I can see
@@ -19266,7 +19449,7 @@ async def get_news_post_comments(
     comments = await db.news_post_comments.find({
         "post_id": post_id,
         "is_deleted": {"$ne": True}
-    }).sort("created_at", 1).to_list(None)
+    }).sort("created_at", 1).to_list(100)
     
     # Build response with author info and nested replies
     comments_dict = {}
@@ -20585,7 +20768,7 @@ async def create_service_review(
         await db.service_reviews.insert_one(review_dict)
         
         # Update service rating
-        all_reviews = await db.service_reviews.find({"service_id": review_data.service_id}).to_list(1000)
+        all_reviews = await db.service_reviews.find({"service_id": review_data.service_id}).to_list(200)
         avg_rating = sum(r["rating"] for r in all_reviews) / len(all_reviews)
         
         await db.service_listings.update_one(
@@ -24483,7 +24666,7 @@ async def add_event_review(
         await db.event_reviews.insert_one(review_dict)
         
         # Update event stats
-        all_reviews = await db.event_reviews.find({"event_id": event_id}, {"_id": 0, "rating": 1}).to_list(1000)
+        all_reviews = await db.event_reviews.find({"event_id": event_id}, {"_id": 0, "rating": 1}).to_list(200)
         avg_rating = sum(r["rating"] for r in all_reviews) / len(all_reviews) if all_reviews else 0
         
         await db.goodwill_events.update_one(
@@ -25613,7 +25796,7 @@ async def get_business_analytics(
             bookings = await db.service_bookings.find({
                 "service_id": {"$in": service_ids},
                 "created_at": {"$gte": start_date_str}
-            }, {"_id": 0}).to_list(1000)
+            }, {"_id": 0}).to_list(200)
             
             analytics["bookings"]["total"] = len(bookings)
             analytics["summary"]["total_bookings"] = len(bookings)
