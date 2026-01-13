@@ -75,7 +75,7 @@ const EmissionModal = ({ onClose, onSuccess }) => {
 
     try {
       const token = localStorage.getItem('admin_token');
-      const response = await fetch(`${BACKEND_URL}/finance/admin/emission`, {
+      const response = await fetch(`${BACKEND_URL}/admin/finance/emission`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
