@@ -388,7 +388,7 @@ const AdminAltynManagement = () => {
     setDistributingDividends(true);
     try {
       const token = localStorage.getItem('admin_token');
-      const response = await fetch(`${BACKEND_URL}/finance/admin/distribute-dividends`, {
+      const response = await fetch(`${BACKEND_URL}/admin/finance/distribute-dividends`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
