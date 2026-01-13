@@ -124,26 +124,29 @@ services:
           memory: 2G
 
   # =============================================================================
-  # MongoDB Express - Database Admin UI (optional, disable in production)
+  # MongoDB Express - Database Admin UI
+  # SECURITY WARNING: NEVER expose this in production!
+  # Only use for local development or behind VPN with strong authentication
+  # Start only when needed: docker compose --profile admin up mongo-express
   # =============================================================================
   mongo-express:
     image: mongo-express:latest
     container_name: zion-mongo-admin
-    restart: unless-stopped
+    restart: "no"  # Don't auto-restart - manual access only
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"  # Bind to localhost only - not accessible externally
     environment:
       - ME_CONFIG_MONGODB_ADMINUSERNAME=zion_admin
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:?MONGO_PASSWORD is required}
       - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_BASICAUTH_USERNAME=${ADMIN_USER:-admin}
-      - ME_CONFIG_BASICAUTH_PASSWORD=${ADMIN_PASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=${ADMIN_USER:?ADMIN_USER is required for mongo-express}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required for mongo-express}
     networks:
       - zion-network
     depends_on:
       - mongodb
     profiles:
-      - admin  # Only start with: docker compose --profile admin up
+      - admin  # CRITICAL: Only start with: docker compose --profile admin up mongo-express
 
   # =============================================================================
   # Automated Backups
