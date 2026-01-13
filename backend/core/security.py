@@ -1,14 +1,97 @@
 """
 ZION.CITY Security Utilities
-Centralized security functions for input validation and protection
+Centralized security functions for authentication, validation and protection
 """
+import os
 import re
-from typing import Tuple, Set
+from datetime import datetime, timedelta, timezone
+from typing import Tuple, Set, Optional
 from urllib.parse import urlparse
 import ipaddress
 import logging
 
+import jwt
+from passlib.context import CryptContext
+
 logger = logging.getLogger("zion")
+
+
+# === JWT CONFIGURATION ===
+
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get('ACCESS_TOKEN_EXPIRE_MINUTES', 60 * 24 * 7))  # 7 days default
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def get_secret_key() -> str:
+    """Get JWT secret key, raising error if not configured"""
+    if not SECRET_KEY:
+        raise RuntimeError("CRITICAL: JWT_SECRET_KEY environment variable is required")
+    return SECRET_KEY
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    """Hash a password using bcrypt"""
+    return pwd_context.hash(password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT access token.
+
+    Args:
+        data: Payload data (typically {"sub": user_id})
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT token string
+    """
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+    return jwt.encode(to_encode, get_secret_key(), algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    """
+    Decode and validate a JWT token.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Decoded payload dictionary
+
+    Raises:
+        jwt.PyJWTError: If token is invalid or expired
+    """
+    return jwt.decode(token, get_secret_key(), algorithms=[ALGORITHM])
+
+
+def verify_token(token: str) -> Optional[str]:
+    """
+    Verify a JWT token and return the user ID.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        User ID if valid, None otherwise
+    """
+    try:
+        payload = decode_token(token)
+        return payload.get("sub")
+    except jwt.PyJWTError as e:
+        logger.warning(f"Token verification failed: {e}")
+        return None
 
 
 # === INPUT VALIDATION ===
