@@ -335,7 +335,11 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL]);
+
+  useEffect(() => {
+    fetchMyInfo();
+  }, [fetchMyInfo]);
 
   const resetFormData = (data) => {
     let formattedDate = '';
