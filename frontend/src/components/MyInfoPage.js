@@ -217,11 +217,20 @@ const SectionCard = ({
 
 // Form Field Component
 const FormField = ({ label, hint, icon: Icon, children, fullWidth, testId }) => (
-  <div className={`form-field ${fullWidth ? 'full-width' : ''}`} data-testid={testId}>
-    <label className="field-label">
-      {Icon && <Icon size={14} />}
+  <div 
+    className={`form-field ${fullWidth ? 'full-width' : ''}`} 
+    data-testid={testId}
+    style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '8px',
+      gridColumn: fullWidth ? '1 / -1' : 'auto'
+    }}
+  >
+    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 500, color: '#4B5563' }}>
+      {Icon && <Icon size={14} style={{ color: '#9CA3AF' }} />}
       <span>{label}</span>
-      {hint && <span className="field-hint">{hint}</span>}
+      {hint && <span style={{ fontSize: '0.75rem', color: '#9CA3AF', fontWeight: 400, marginLeft: '4px' }}>{hint}</span>}
     </label>
     {children}
   </div>
@@ -229,7 +238,22 @@ const FormField = ({ label, hint, icon: Icon, children, fullWidth, testId }) => 
 
 // Display Value Component  
 const DisplayValue = ({ value, placeholder = 'Не указано', highlight }) => (
-  <div className={`display-value ${highlight ? 'highlight' : ''} ${!value ? 'empty' : ''}`}>
+  <div 
+    className={`display-value ${highlight ? 'highlight' : ''} ${!value ? 'empty' : ''}`}
+    style={{
+      padding: '12px 14px',
+      background: highlight ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)' : '#F9FAFB',
+      border: `1px solid ${highlight ? '#A7F3D0' : '#E5E7EB'}`,
+      borderRadius: '10px',
+      fontSize: '0.95rem',
+      color: highlight ? '#065F46' : (!value ? '#9CA3AF' : '#111827'),
+      minHeight: '46px',
+      display: 'flex',
+      alignItems: 'center',
+      fontStyle: !value ? 'italic' : 'normal',
+      fontWeight: highlight ? 500 : 'normal'
+    }}
+  >
     {value || placeholder}
   </div>
 );
