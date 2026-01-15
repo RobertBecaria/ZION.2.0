@@ -1,12 +1,162 @@
-import React, { useState, useEffect } from 'react';
-import { User, MapPin, Phone, Calendar, Heart, Edit2, Save, X, Lock, AlertTriangle, Upload, Mail, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  User, MapPin, Phone, Calendar, Heart, Edit2, Save, X, Lock, 
+  AlertTriangle, Upload, Mail, Image as ImageIcon, CheckCircle2,
+  Sparkles
+} from 'lucide-react';
 import HouseholdSection from './HouseholdSection';
 import ChildrenSection from './ChildrenSection';
+
+// Profile Completion Progress Bar Component
+const ProfileCompletionBar = ({ percentage, animate }) => {
+  const [displayPercentage, setDisplayPercentage] = useState(0);
+  
+  useEffect(() => {
+    if (animate) {
+      const timer = setTimeout(() => {
+        setDisplayPercentage(percentage);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setDisplayPercentage(percentage);
+    }
+  }, [percentage, animate]);
+
+  const getProgressColor = () => {
+    if (percentage >= 80) return 'from-emerald-400 to-emerald-600';
+    if (percentage >= 50) return 'from-amber-400 to-amber-600';
+    return 'from-rose-400 to-rose-600';
+  };
+
+  const getStatusText = () => {
+    if (percentage >= 80) return 'Отличный профиль!';
+    if (percentage >= 50) return 'Хороший прогресс';
+    return 'Заполните профиль';
+  };
+
+  const getStatusIcon = () => {
+    if (percentage >= 80) return <Sparkles size={16} className="text-emerald-500" />;
+    return <CheckCircle2 size={16} className="text-gray-400" />;
+  };
+
+  return (
+    <div 
+      className="profile-completion-card"
+      data-testid="profile-completion-bar"
+    >
+      <div className="completion-header">
+        <div className="completion-title">
+          {getStatusIcon()}
+          <span>{getStatusText()}</span>
+        </div>
+        <div className="completion-percentage">
+          <span className="percentage-value">{Math.round(displayPercentage)}%</span>
+          <span className="percentage-label">заполнено</span>
+        </div>
+      </div>
+      <div className="progress-bar-container">
+        <div 
+          className={`progress-bar-fill bg-gradient-to-r ${getProgressColor()}`}
+          style={{ 
+            width: `${displayPercentage}%`,
+            transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        />
+      </div>
+      <div className="completion-tips">
+        {percentage < 100 && (
+          <span className="tip-text">
+            Добавьте больше информации для улучшения вашего профиля
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Section Card Component
+const SectionCard = ({ 
+  icon: Icon, 
+  title, 
+  children, 
+  isEditing, 
+  onEdit, 
+  onSave, 
+  onCancel, 
+  saving,
+  accentColor = '#059669',
+  testId
+}) => (
+  <div className="section-card" data-testid={testId}>
+    <div className="section-card-header">
+      <div className="section-title-group">
+        <div className="section-icon" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
+          <Icon size={20} />
+        </div>
+        <h2>{title}</h2>
+      </div>
+      <div className="section-actions">
+        {!isEditing ? (
+          <button 
+            className="btn-edit" 
+            onClick={onEdit}
+            data-testid={`${testId}-edit-btn`}
+          >
+            <Edit2 size={16} />
+            <span>Редактировать</span>
+          </button>
+        ) : (
+          <div className="edit-action-group">
+            <button 
+              className="btn-save" 
+              onClick={onSave} 
+              disabled={saving}
+              data-testid={`${testId}-save-btn`}
+            >
+              <Save size={16} />
+              <span>{saving ? 'Сохранение...' : 'Сохранить'}</span>
+            </button>
+            <button 
+              className="btn-cancel" 
+              onClick={onCancel} 
+              disabled={saving}
+              data-testid={`${testId}-cancel-btn`}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+    <div className="section-card-content">
+      {children}
+    </div>
+  </div>
+);
+
+// Form Field Component
+const FormField = ({ label, hint, icon: Icon, children, fullWidth, testId }) => (
+  <div className={`form-field ${fullWidth ? 'full-width' : ''}`} data-testid={testId}>
+    <label className="field-label">
+      {Icon && <Icon size={14} />}
+      <span>{label}</span>
+      {hint && <span className="field-hint">{hint}</span>}
+    </label>
+    {children}
+  </div>
+);
+
+// Display Value Component  
+const DisplayValue = ({ value, placeholder = 'Не указано', highlight }) => (
+  <div className={`display-value ${highlight ? 'highlight' : ''} ${!value ? 'empty' : ''}`}>
+    {value || placeholder}
+  </div>
+);
 
 const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   const [myInfo, setMyInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editingSection, setEditingSection] = useState(null); // 'basic', 'address', 'marriage', null
+  const [editingSection, setEditingSection] = useState(null);
   const [formData, setFormData] = useState({});
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -22,11 +172,47 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Calculate profile completion percentage
+  const profileCompletion = useMemo(() => {
+    if (!myInfo) return 0;
+    
+    const fields = [
+      { key: 'first_name', weight: 10 },
+      { key: 'last_name', weight: 10 },
+      { key: 'email', weight: 10 },
+      { key: 'phone', weight: 8 },
+      { key: 'gender', weight: 5 },
+      { key: 'date_of_birth', weight: 8 },
+      { key: 'profile_picture', weight: 15 },
+      { key: 'address_city', weight: 8 },
+      { key: 'address_country', weight: 7 },
+      { key: 'address_street', weight: 5 },
+      { key: 'marriage_status', weight: 7 },
+      { key: 'middle_name', weight: 4 },
+      { key: 'name_alias', weight: 3 },
+    ];
+    
+    let totalWeight = 0;
+    let completedWeight = 0;
+    
+    fields.forEach(({ key, weight }) => {
+      totalWeight += weight;
+      if (myInfo[key] && myInfo[key] !== '' && myInfo[key] !== 'SINGLE') {
+        completedWeight += weight;
+      }
+    });
+    
+    // Special handling for required fields that are always filled
+    if (myInfo.first_name) completedWeight = Math.max(completedWeight, 10);
+    if (myInfo.last_name) completedWeight = Math.max(completedWeight, 20);
+    if (myInfo.email) completedWeight = Math.max(completedWeight, 30);
+    
+    return Math.min(100, Math.round((completedWeight / totalWeight) * 100));
+  }, [myInfo]);
+
   useEffect(() => {
     fetchMyInfo();
   }, []);
-
 
   const fetchMyInfo = async () => {
     try {
@@ -51,7 +237,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   };
 
   const resetFormData = (data) => {
-    // Format date_of_birth to YYYY-MM-DD for input type="date"
     let formattedDate = '';
     if (data.date_of_birth) {
       try {
@@ -71,7 +256,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       name_alias: data.name_alias || '',
       phone: data.phone || '',
       email: data.email || '',
-      gender: data.gender || '', // NEW: Include gender
+      gender: data.gender || '',
       date_of_birth: formattedDate,
       address_street: data.address_street || '',
       address_city: data.address_city || '',
@@ -114,7 +299,7 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
           name_alias: formData.name_alias || null,
           phone: formData.phone || null,
           email: formData.email,
-          gender: formData.gender || null, // NEW: Include gender
+          gender: formData.gender || null,
           date_of_birth: formData.date_of_birth || null
         };
       } else if (section === 'address') {
@@ -149,7 +334,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
         setSuccess('Изменения успешно сохранены');
         setTimeout(() => setSuccess(''), 3000);
         
-        // Notify parent if email changed
         if (payload.email && payload.email !== myInfo.email && onProfileUpdate) {
           onProfileUpdate();
         }
@@ -229,7 +413,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       });
 
       if (response.ok) {
-        // Logout user
         localStorage.removeItem('zion_token');
         window.location.reload();
       } else {
@@ -239,6 +422,88 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
     } catch (error) {
       console.error('Error deleting account:', error);
       setError('Произошла ошибка при удалении аккаунта');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleProfilePictureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      setError('Пожалуйста, выберите изображение');
+      return;
+    }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Размер файла не должен превышать 10MB');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setSaving(true);
+        setError('');
+        const token = localStorage.getItem('zion_token');
+        
+        const response = await fetch(`${BACKEND_URL}/api/users/profile-picture`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            profile_picture: event.target.result
+          })
+        });
+        
+        if (response.ok) {
+          await fetchMyInfo();
+          if (onProfileUpdate) {
+            onProfileUpdate();
+          }
+          setSuccess('Фото профиля обновлено');
+          setTimeout(() => setSuccess(''), 3000);
+        } else {
+          setError('Не удалось загрузить фото');
+        }
+      } catch (error) {
+        console.error('Error uploading:', error);
+        setError('Ошибка при загрузке фото');
+      } finally {
+        setSaving(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (!window.confirm('Удалить фото профиля?')) return;
+    
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('zion_token');
+      
+      const response = await fetch(`${BACKEND_URL}/api/users/profile-picture`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        await fetchMyInfo();
+        if (onProfileUpdate) {
+          onProfileUpdate();
+        }
+        setSuccess('Фото профиля удалено');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting:', error);
+      setError('Ошибка при удалении фото');
     } finally {
       setSaving(false);
     }
@@ -257,7 +522,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   const getMarriageStatusLabel = (status) => {
     const gender = myInfo?.gender;
     
-    // Gender-aware labels
     const labelsForMale = {
       'SINGLE': 'Не женат',
       'MARRIED': 'Женат',
@@ -279,7 +543,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       'WIDOWED': 'Вдовец/Вдова'
     };
     
-    // Choose labels based on gender
     let labels;
     if (gender === 'MALE') {
       labels = labelsForMale;
@@ -295,7 +558,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   const getMarriageStatusOptions = () => {
     const gender = myInfo?.gender;
     
-    // Gender-aware options for dropdown
     if (gender === 'MALE') {
       return [
         { value: 'SINGLE', label: 'Не женат' },
@@ -311,7 +573,6 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
         { value: 'WIDOWED', label: 'Вдова' }
       ];
     } else {
-      // For IT or unknown gender, use neutral/both forms
       return [
         { value: 'SINGLE', label: 'Не женат/Не замужем' },
         { value: 'MARRIED', label: 'Женат/Замужем' },
@@ -337,9 +598,9 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
 
   if (loading) {
     return (
-      <div className="my-info-page">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+      <div className="my-info-page-v2" data-testid="my-info-loading">
+        <div className="loading-container">
+          <div className="loading-spinner-modern" />
           <p>Загрузка данных...</p>
         </div>
       </div>
@@ -348,8 +609,9 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
 
   if (!myInfo) {
     return (
-      <div className="my-info-page">
-        <div className="error-message">
+      <div className="my-info-page-v2" data-testid="my-info-error">
+        <div className="error-container">
+          <AlertTriangle size={48} className="error-icon" />
           <p>Не удалось загрузить данные</p>
         </div>
       </div>
@@ -357,463 +619,355 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
   }
 
   return (
-    <div className="my-info-page">
-      <div className="page-header">
-        <h1>
-          <User size={28} />
-          МОЯ ИНФОРМАЦИЯ
-        </h1>
-        <p className="page-subtitle">Централизованное хранилище ваших персональных данных</p>
-      </div>
+    <div className="my-info-page-v2" data-testid="my-info-page">
+      {/* Page Header */}
+      <header className="page-header-v2">
+        <div className="header-content">
+          <h1>
+            <User size={28} />
+            Мой Профиль
+          </h1>
+          <p className="subtitle">Управление персональными данными</p>
+        </div>
+      </header>
 
-      {/* Success/Error Messages */}
+      {/* Alerts */}
       {success && (
-        <div className="alert alert-success">
+        <div className="alert-v2 alert-success" data-testid="success-alert">
+          <CheckCircle2 size={18} />
           {success}
         </div>
       )}
       {error && (
-        <div className="alert alert-error">
+        <div className="alert-v2 alert-error" data-testid="error-alert">
+          <AlertTriangle size={18} />
           {error}
         </div>
       )}
 
+      {/* Profile Completion Progress */}
+      <ProfileCompletionBar percentage={profileCompletion} animate={true} />
+
       {/* Profile Picture Section */}
-      <div className="info-section">
-        <div className="section-header">
-          <h2>
-            <ImageIcon size={20} />
-            Фото профиля
-          </h2>
-        </div>
-        
-        <div className="profile-picture-section">
-          <div className="profile-picture-preview">
+      <SectionCard
+        icon={ImageIcon}
+        title="Фото профиля"
+        isEditing={false}
+        onEdit={() => document.getElementById('profile-pic-input-v2').click()}
+        accentColor={moduleColor}
+        testId="profile-picture-section"
+      >
+        <div className="profile-picture-container">
+          <div className="avatar-wrapper">
             {myInfo.profile_picture ? (
-              <img src={myInfo.profile_picture} alt="Profile" className="profile-pic" />
+              <img 
+                src={myInfo.profile_picture} 
+                alt="Profile" 
+                className="avatar-image"
+                data-testid="profile-avatar-image"
+              />
             ) : (
-              <div className="profile-pic-placeholder">
+              <div className="avatar-placeholder-v2" data-testid="profile-avatar-placeholder">
                 <User size={48} />
               </div>
             )}
+            <div className="avatar-overlay">
+              <Upload size={24} />
+            </div>
           </div>
           
-          <div className="profile-picture-actions">
+          <div className="picture-actions">
             <input
               type="file"
-              id="profile-pic-input"
+              id="profile-pic-input-v2"
               accept="image/*"
               style={{ display: 'none' }}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                // Validate file type
-                if (!file.type.startsWith('image/')) {
-                  setError('Пожалуйста, выберите изображение');
-                  return;
-                }
-                
-                // Validate file size (10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                  setError('Размер файла не должен превышать 10MB');
-                  return;
-                }
-                
-                // Convert to base64
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                  try {
-                    setSaving(true);
-                    setError('');
-                    const token = localStorage.getItem('zion_token');
-                    
-                    const response = await fetch(`${BACKEND_URL}/api/users/profile-picture`, {
-                      method: 'PUT',
-                      headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        profile_picture: event.target.result
-                      })
-                    });
-                    
-                    if (response.ok) {
-                      await fetchMyInfo();
-                      // Refresh parent user state
-                      if (onProfileUpdate) {
-                        onProfileUpdate();
-                      }
-                      setSuccess('Фото профиля обновлено');
-                      setTimeout(() => setSuccess(''), 3000);
-                    } else {
-                      setError('Не удалось загрузить фото');
-                    }
-                  } catch (error) {
-                    console.error('Error uploading:', error);
-                    setError('Ошибка при загрузке фото');
-                  } finally {
-                    setSaving(false);
-                  }
-                };
-                reader.readAsDataURL(file);
-              }}
+              onChange={handleProfilePictureUpload}
+              data-testid="profile-picture-input"
             />
             <button 
-              className="btn-primary"
-              onClick={() => document.getElementById('profile-pic-input').click()}
+              className="btn-upload"
+              onClick={() => document.getElementById('profile-pic-input-v2').click()}
               disabled={saving}
+              data-testid="upload-photo-btn"
             >
-              <Upload size={18} />
+              <Upload size={16} />
               {saving ? 'Загрузка...' : 'Загрузить фото'}
             </button>
             
             {myInfo.profile_picture && (
               <button 
-                className="btn-secondary"
-                onClick={async () => {
-                  if (!window.confirm('Удалить фото профиля?')) return;
-                  
-                  try {
-                    setSaving(true);
-                    const token = localStorage.getItem('zion_token');
-                    
-                    const response = await fetch(`${BACKEND_URL}/api/users/profile-picture`, {
-                      method: 'DELETE',
-                      headers: {
-                        'Authorization': `Bearer ${token}`
-                      }
-                    });
-                    
-                    if (response.ok) {
-                      await fetchMyInfo();
-                      // Refresh parent user state
-                      if (onProfileUpdate) {
-                        onProfileUpdate();
-                      }
-                      setSuccess('Фото профиля удалено');
-                      setTimeout(() => setSuccess(''), 3000);
-                    }
-                  } catch (error) {
-                    console.error('Error deleting:', error);
-                    setError('Ошибка при удалении фото');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
+                className="btn-remove"
+                onClick={handleDeleteProfilePicture}
                 disabled={saving}
+                data-testid="delete-photo-btn"
               >
-                <X size={18} />
+                <X size={16} />
                 Удалить
               </button>
             )}
-            
-            <p className="hint">PNG, JPG, GIF до 10MB</p>
           </div>
+          <p className="upload-hint">PNG, JPG или GIF до 10MB</p>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Basic Information Section */}
-      <div className="info-section">
-        <div className="section-header">
-          <h2>Основная информация</h2>
-          {editingSection !== 'basic' ? (
-            <button className="btn-icon" onClick={() => handleEdit('basic')}>
-              <Edit2 size={18} />
-              Редактировать
-            </button>
-          ) : (
-            <div className="edit-actions">
-              <button className="btn-icon btn-success" onClick={() => handleSave('basic')} disabled={saving}>
-                <Save size={18} />
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </button>
-              <button className="btn-icon btn-secondary" onClick={handleCancel} disabled={saving}>
-                <X size={18} />
-                Отмена
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="info-grid">
-          <div className="info-item">
-            <label>Имя *</label>
+      <SectionCard
+        icon={User}
+        title="Основная информация"
+        isEditing={editingSection === 'basic'}
+        onEdit={() => handleEdit('basic')}
+        onSave={() => handleSave('basic')}
+        onCancel={handleCancel}
+        saving={saving}
+        accentColor={moduleColor}
+        testId="basic-info-section"
+      >
+        <div className="form-grid">
+          <FormField label="Имя" icon={User} testId="first-name-field">
             {editingSection === 'basic' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.first_name}
                 onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                required
+                placeholder="Введите имя"
+                data-testid="first-name-input"
               />
             ) : (
-              <div className="info-value">{myInfo.first_name}</div>
+              <DisplayValue value={myInfo.first_name} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Фамилия *</label>
+          <FormField label="Фамилия" icon={User} testId="last-name-field">
             {editingSection === 'basic' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.last_name}
                 onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                required
+                placeholder="Введите фамилию"
+                data-testid="last-name-input"
               />
             ) : (
-              <div className="info-value">{myInfo.last_name}</div>
+              <DisplayValue value={myInfo.last_name} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Отчество</label>
+          <FormField label="Отчество" testId="middle-name-field">
             {editingSection === 'basic' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.middle_name}
                 onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
+                placeholder="Введите отчество"
+                data-testid="middle-name-input"
               />
             ) : (
-              <div className="info-value">{myInfo.middle_name || 'Не указано'}</div>
+              <DisplayValue value={myInfo.middle_name} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>
-              Отображаемое имя (Псевдоним)
-              <span className="info-hint">Используется для облегчения произношения</span>
-            </label>
+          <FormField 
+            label="Псевдоним" 
+            hint="Для удобства произношения"
+            testId="alias-field"
+          >
             {editingSection === 'basic' ? (
               <input
                 type="text"
-                className="form-input"
-                placeholder="Например: ROBERT ORLANDO"
+                className="input-field"
                 value={formData.name_alias}
                 onChange={(e) => setFormData({...formData, name_alias: e.target.value})}
+                placeholder="Например: ROBERT"
+                data-testid="alias-input"
               />
             ) : (
-              <div className="info-value name-alias">
-                {myInfo.name_alias || <span className="empty-value">Не указано</span>}
-              </div>
+              <DisplayValue value={myInfo.name_alias} highlight={!!myInfo.name_alias} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>
-              <Mail size={16} />
-              Email *
-            </label>
+          <FormField label="Email" icon={Mail} testId="email-field">
             {editingSection === 'basic' ? (
               <input
                 type="email"
-                className="form-input"
+                className="input-field"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
+                placeholder="email@example.com"
+                data-testid="email-input"
               />
             ) : (
-              <div className="info-value">{myInfo.email}</div>
+              <DisplayValue value={myInfo.email} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>
-              <Phone size={16} />
-              Телефон
-            </label>
+          <FormField label="Телефон" icon={Phone} testId="phone-field">
             {editingSection === 'basic' ? (
               <input
                 type="tel"
-                className="form-input"
+                className="input-field"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                placeholder="+7 (XXX) XXX-XX-XX"
+                data-testid="phone-input"
               />
             ) : (
-              <div className="info-value">{myInfo.phone || 'Не указано'}</div>
+              <DisplayValue value={myInfo.phone} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>
-              <User size={16} />
-              Пол
-              <span className="info-hint">Для корректного отображения текста</span>
-            </label>
+          <FormField 
+            label="Пол" 
+            icon={User}
+            hint="Для корректного отображения текста"
+            testId="gender-field"
+          >
             {editingSection === 'basic' ? (
               <select
-                className="form-input"
+                className="input-field select-field"
                 value={formData.gender || ''}
                 onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                data-testid="gender-select"
               >
                 <option value="">Не указано</option>
                 <option value="MALE">Мужской</option>
                 <option value="FEMALE">Женский</option>
               </select>
             ) : (
-              <div className="info-value">
-                {myInfo.gender === 'MALE' ? 'Мужской' : 
-                 myInfo.gender === 'FEMALE' ? 'Женский' : 
-                 'Не указано'}
-              </div>
+              <DisplayValue 
+                value={myInfo.gender === 'MALE' ? 'Мужской' : myInfo.gender === 'FEMALE' ? 'Женский' : null} 
+              />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>
-              <Calendar size={16} />
-              Дата рождения
-            </label>
+          <FormField label="Дата рождения" icon={Calendar} testId="dob-field">
             {editingSection === 'basic' ? (
               <input
                 type="date"
-                className="form-input"
+                className="input-field"
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                data-testid="dob-input"
               />
             ) : (
-              <div className="info-value">{formatDate(myInfo.date_of_birth)}</div>
+              <DisplayValue value={formatDate(myInfo.date_of_birth)} />
             )}
-          </div>
+          </FormField>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Address Information */}
-      <div className="info-section">
-        <div className="section-header">
-          <h2>
-            <MapPin size={20} />
-            Адрес
-          </h2>
-          {editingSection !== 'address' ? (
-            <button className="btn-icon" onClick={() => handleEdit('address')}>
-              <Edit2 size={18} />
-              Редактировать
-            </button>
-          ) : (
-            <div className="edit-actions">
-              <button className="btn-icon btn-success" onClick={() => handleSave('address')} disabled={saving}>
-                <Save size={18} />
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </button>
-              <button className="btn-icon btn-secondary" onClick={handleCancel} disabled={saving}>
-                <X size={18} />
-                Отмена
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="info-grid">
-          <div className="info-item full-width">
-            <label>Адрес (Улица, дом)</label>
+      {/* Address Section */}
+      <SectionCard
+        icon={MapPin}
+        title="Адрес"
+        isEditing={editingSection === 'address'}
+        onEdit={() => handleEdit('address')}
+        onSave={() => handleSave('address')}
+        onCancel={handleCancel}
+        saving={saving}
+        accentColor="#3B82F6"
+        testId="address-section"
+      >
+        <div className="form-grid">
+          <FormField label="Улица, дом" fullWidth testId="street-field">
             {editingSection === 'address' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.address_street}
                 onChange={(e) => setFormData({...formData, address_street: e.target.value})}
+                placeholder="Введите адрес"
+                data-testid="street-input"
               />
             ) : (
-              <div className="info-value">{myInfo.address_street || 'Не указано'}</div>
+              <DisplayValue value={myInfo.address_street} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Город</label>
+          <FormField label="Город" testId="city-field">
             {editingSection === 'address' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.address_city}
                 onChange={(e) => setFormData({...formData, address_city: e.target.value})}
+                placeholder="Введите город"
+                data-testid="city-input"
               />
             ) : (
-              <div className="info-value">{myInfo.address_city || 'Не указано'}</div>
+              <DisplayValue value={myInfo.address_city} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Регион/Область</label>
+          <FormField label="Регион/Область" testId="state-field">
             {editingSection === 'address' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.address_state}
                 onChange={(e) => setFormData({...formData, address_state: e.target.value})}
+                placeholder="Введите регион"
+                data-testid="state-input"
               />
             ) : (
-              <div className="info-value">{myInfo.address_state || 'Не указано'}</div>
+              <DisplayValue value={myInfo.address_state} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Страна</label>
+          <FormField label="Страна" testId="country-field">
             {editingSection === 'address' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.address_country}
                 onChange={(e) => setFormData({...formData, address_country: e.target.value})}
+                placeholder="Введите страну"
+                data-testid="country-input"
               />
             ) : (
-              <div className="info-value">{myInfo.address_country || 'Не указано'}</div>
+              <DisplayValue value={myInfo.address_country} />
             )}
-          </div>
+          </FormField>
 
-          <div className="info-item">
-            <label>Почтовый индекс</label>
+          <FormField label="Почтовый индекс" testId="postal-field">
             {editingSection === 'address' ? (
               <input
                 type="text"
-                className="form-input"
+                className="input-field"
                 value={formData.address_postal_code}
                 onChange={(e) => setFormData({...formData, address_postal_code: e.target.value})}
+                placeholder="Введите индекс"
+                data-testid="postal-input"
               />
             ) : (
-              <div className="info-value">{myInfo.address_postal_code || 'Не указано'}</div>
+              <DisplayValue value={myInfo.address_postal_code} />
             )}
-          </div>
+          </FormField>
         </div>
-      </div>
+      </SectionCard>
 
-      {/* Marriage Information */}
-      <div className="info-section">
-        <div className="section-header">
-          <h2>
-            <Heart size={20} />
-            Семейное Положение
-          </h2>
-          {editingSection !== 'marriage' ? (
-            <button className="btn-icon" onClick={() => handleEdit('marriage')}>
-              <Edit2 size={18} />
-              Редактировать
-            </button>
-          ) : (
-            <div className="edit-actions">
-              <button className="btn-icon btn-success" onClick={() => handleSave('marriage')} disabled={saving}>
-                <Save size={18} />
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </button>
-              <button className="btn-icon btn-secondary" onClick={handleCancel} disabled={saving}>
-                <X size={18} />
-                Отмена
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="info-grid">
-          <div className="info-item">
-            <label>Статус</label>
+      {/* Marriage Section */}
+      <SectionCard
+        icon={Heart}
+        title="Семейное положение"
+        isEditing={editingSection === 'marriage'}
+        onEdit={() => handleEdit('marriage')}
+        onSave={() => handleSave('marriage')}
+        onCancel={handleCancel}
+        saving={saving}
+        accentColor="#EC4899"
+        testId="marriage-section"
+      >
+        <div className="form-grid">
+          <FormField label="Статус" testId="marriage-status-field">
             {editingSection === 'marriage' ? (
               <select
-                className="form-input"
+                className="input-field select-field"
                 value={formData.marriage_status}
                 onChange={(e) => setFormData({...formData, marriage_status: e.target.value})}
+                data-testid="marriage-status-select"
               >
                 {getMarriageStatusOptions().map(option => (
                   <option key={option.value} value={option.value}>
@@ -822,44 +976,46 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
                 ))}
               </select>
             ) : (
-              <div className="info-value">{getMarriageStatusLabel(myInfo.marriage_status)}</div>
+              <DisplayValue value={getMarriageStatusLabel(myInfo.marriage_status)} />
             )}
-          </div>
+          </FormField>
 
           {((editingSection === 'marriage' && formData.marriage_status === 'MARRIED') || 
             (editingSection !== 'marriage' && myInfo.marriage_status === 'MARRIED')) && (
             <>
-              <div className="info-item">
-                <label>{getSpouseLabel()}</label>
+              <FormField label={getSpouseLabel()} testId="spouse-name-field">
                 {editingSection === 'marriage' ? (
                   <input
                     type="text"
-                    className="form-input"
+                    className="input-field"
                     value={formData.spouse_name}
                     onChange={(e) => setFormData({...formData, spouse_name: e.target.value})}
+                    placeholder={`Имя ${getSpouseLabel().toLowerCase()}`}
+                    data-testid="spouse-name-input"
                   />
                 ) : (
-                  <div className="info-value">{myInfo.spouse_name || 'Не указано'}</div>
+                  <DisplayValue value={myInfo.spouse_name} />
                 )}
-              </div>
+              </FormField>
 
-              <div className="info-item">
-                <label>{getSpousePhoneLabel()}</label>
+              <FormField label={getSpousePhoneLabel()} testId="spouse-phone-field">
                 {editingSection === 'marriage' ? (
                   <input
                     type="tel"
-                    className="form-input"
+                    className="input-field"
                     value={formData.spouse_phone}
                     onChange={(e) => setFormData({...formData, spouse_phone: e.target.value})}
+                    placeholder="+7 (XXX) XXX-XX-XX"
+                    data-testid="spouse-phone-input"
                   />
                 ) : (
-                  <div className="info-value">{myInfo.spouse_phone || 'Не указано'}</div>
+                  <DisplayValue value={myInfo.spouse_phone} />
                 )}
-              </div>
+              </FormField>
             </>
           )}
         </div>
-      </div>
+      </SectionCard>
 
       {/* Household Section */}
       <HouseholdSection user={user} moduleColor={moduleColor} />
@@ -867,86 +1023,77 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
       {/* Children Section */}
       <ChildrenSection user={user} moduleColor="#1E40AF" />
 
-      {/* Password Change Section */}
-      <div className="info-section security-section">
-        <div className="section-header">
-          <h2>
-            <Lock size={20} />
-            Безопасность
-          </h2>
-          <button 
-            className="btn-icon" 
-            onClick={() => setShowPasswordSection(!showPasswordSection)}
-          >
-            {showPasswordSection ? <X size={18} /> : <Edit2 size={18} />}
-            {showPasswordSection ? 'Закрыть' : 'Изменить пароль'}
-          </button>
-        </div>
-
-        {showPasswordSection && (
-          <div className="password-change-form">
-            <div className="form-group">
-              <label>Текущий пароль *</label>
+      {/* Security Section */}
+      <SectionCard
+        icon={Lock}
+        title="Безопасность"
+        isEditing={showPasswordSection}
+        onEdit={() => setShowPasswordSection(true)}
+        onSave={handlePasswordChange}
+        onCancel={() => {
+          setShowPasswordSection(false);
+          setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+        }}
+        saving={saving}
+        accentColor="#6366F1"
+        testId="security-section"
+      >
+        {showPasswordSection ? (
+          <div className="password-form">
+            <FormField label="Текущий пароль" testId="current-password-field">
               <input
                 type="password"
-                className="form-input"
+                className="input-field"
                 value={passwordData.current_password}
                 onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
                 placeholder="Введите текущий пароль"
+                data-testid="current-password-input"
               />
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label>Новый пароль * (минимум 6 символов)</label>
+            <FormField label="Новый пароль" hint="Минимум 6 символов" testId="new-password-field">
               <input
                 type="password"
-                className="form-input"
+                className="input-field"
                 value={passwordData.new_password}
                 onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
                 placeholder="Введите новый пароль"
+                data-testid="new-password-input"
               />
-            </div>
+            </FormField>
 
-            <div className="form-group">
-              <label>Подтвердите новый пароль *</label>
+            <FormField label="Подтвердите пароль" testId="confirm-password-field">
               <input
                 type="password"
-                className="form-input"
+                className="input-field"
                 value={passwordData.confirm_password}
                 onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
                 placeholder="Повторите новый пароль"
+                data-testid="confirm-password-input"
               />
-            </div>
-
-            <button 
-              className="btn-primary" 
-              onClick={handlePasswordChange}
-              disabled={saving || !passwordData.current_password || !passwordData.new_password}
-            >
-              {saving ? 'Изменение...' : 'Изменить пароль'}
-            </button>
+            </FormField>
+          </div>
+        ) : (
+          <div className="security-info">
+            <p>Нажмите "Редактировать" чтобы изменить пароль</p>
           </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Danger Zone */}
-      <div className="info-section danger-section">
-        <div className="section-header">
-          <h2>
+      <div className="danger-zone-card" data-testid="danger-zone">
+        <div className="danger-header" onClick={() => setShowDangerZone(!showDangerZone)}>
+          <div className="danger-title">
             <AlertTriangle size={20} />
-            Опасная зона
-          </h2>
-          <button 
-            className="btn-icon btn-danger" 
-            onClick={() => setShowDangerZone(!showDangerZone)}
-          >
-            {showDangerZone ? <X size={18} /> : <AlertTriangle size={18} />}
-            {showDangerZone ? 'Закрыть' : 'Показать'}
+            <h2>Опасная зона</h2>
+          </div>
+          <button className="btn-toggle-danger" data-testid="toggle-danger-zone-btn">
+            {showDangerZone ? 'Скрыть' : 'Показать'}
           </button>
         </div>
 
         {showDangerZone && (
-          <div className="danger-zone-content">
+          <div className="danger-content">
             <div className="danger-warning">
               <AlertTriangle size={24} />
               <div>
@@ -958,23 +1105,24 @@ const MyInfoPage = ({ user, moduleColor = '#059669', onProfileUpdate }) => {
                   <li>Семейный профиль (если вы создатель)</li>
                   <li>Членство во всех группах и чатах</li>
                 </ul>
-                <p><strong>Важно:</strong> Если вы создали семейный профиль, система автоматически создаст новый профиль для взрослых членов вашей семьи и уведомит их.</p>
               </div>
             </div>
 
-            <div className="delete-confirmation">
+            <div className="delete-form">
               <label>Введите <strong>УДАЛИТЬ</strong> для подтверждения:</label>
               <input
                 type="text"
-                className="form-input"
+                className="input-field input-danger"
                 value={deleteConfirmation}
                 onChange={(e) => setDeleteConfirmation(e.target.value)}
                 placeholder="УДАЛИТЬ"
+                data-testid="delete-confirmation-input"
               />
               <button 
-                className="btn-danger" 
+                className="btn-delete-account" 
                 onClick={handleDeleteAccount}
                 disabled={saving || deleteConfirmation !== 'УДАЛИТЬ'}
+                data-testid="delete-account-btn"
               >
                 {saving ? 'Удаление...' : 'Удалить мой аккаунт навсегда'}
               </button>
