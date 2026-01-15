@@ -87,31 +87,90 @@ const SectionCard = ({
   accentColor = '#059669',
   testId
 }) => (
-  <div className="section-card" data-testid={testId}>
-    <div className="section-card-header">
-      <div className="section-title-group">
-        <div className="section-icon" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
+  <div 
+    className="section-card" 
+    data-testid={testId}
+    style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '20px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)',
+      border: '1px solid #E5E7EB'
+    }}
+  >
+    <div 
+      className="section-card-header"
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '24px',
+        paddingBottom: '16px',
+        borderBottom: '1px solid #F3F4F6'
+      }}
+    >
+      <div className="section-title-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div 
+          className="section-icon" 
+          style={{ 
+            backgroundColor: `${accentColor}15`, 
+            color: accentColor,
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           <Icon size={20} />
         </div>
-        <h2>{title}</h2>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#111827', margin: 0 }}>{title}</h2>
       </div>
-      <div className="section-actions">
+      <div className="section-actions" style={{ display: 'flex', gap: '8px' }}>
         {!isEditing ? (
           <button 
             className="btn-edit" 
             onClick={onEdit}
             data-testid={`${testId}-edit-btn`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              background: '#F3F4F6',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              color: '#374151',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
           >
             <Edit2 size={16} />
             <span>Редактировать</span>
           </button>
         ) : (
-          <div className="edit-action-group">
+          <div className="edit-action-group" style={{ display: 'flex', gap: '8px' }}>
             <button 
               className="btn-save" 
               onClick={onSave} 
               disabled={saving}
               data-testid={`${testId}-save-btn`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '0.85rem',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
             >
               <Save size={16} />
               <span>{saving ? 'Сохранение...' : 'Сохранить'}</span>
@@ -121,6 +180,18 @@ const SectionCard = ({
               onClick={onCancel} 
               disabled={saving}
               data-testid={`${testId}-cancel-btn`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                background: '#F3F4F6',
+                border: '1px solid #E5E7EB',
+                borderRadius: '8px',
+                color: '#6B7280',
+                cursor: 'pointer'
+              }}
             >
               <X size={16} />
             </button>
