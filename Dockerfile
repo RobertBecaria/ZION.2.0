@@ -52,6 +52,7 @@ COPY frontend/public/ ./public/
 COPY frontend/src/ ./src/
 
 # Build the frontend (craco build)
+ENV REACT_APP_BACKEND_URL=""
 RUN npm run build
 
 # =============================================================================

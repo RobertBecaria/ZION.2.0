@@ -644,7 +644,7 @@ class ERICAgent:
             }
         
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+            # from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
             
             # Create a new chat instance for this analysis
             chat = LlmChat(
@@ -837,7 +837,7 @@ class ERICAgent:
             )
         
         try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+            # from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
             
             # Get user settings
             settings_doc = await self.db.agent_settings.find_one(

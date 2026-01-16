@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
 
   const fetchUserProfile = async (token) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/register`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ export function AuthProvider({ children }) {
   const completeOnboarding = async (onboardingData) => {
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/onboarding`, {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         // Refresh user profile to get updated affiliations
-        const profileResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
+        const profileResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
