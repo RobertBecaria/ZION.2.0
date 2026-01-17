@@ -51,6 +51,10 @@ RUN npm install --legacy-peer-deps
 COPY frontend/public/ ./public/
 COPY frontend/src/ ./src/
 
+# Set production backend URL (empty = relative URLs for same-domain)
+ARG REACT_APP_BACKEND_URL=''
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+
 # Build the frontend (craco build)
 RUN npm run build
 

@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { BACKEND_URL } from '../config/api';
 
 /**
  * Custom hook for loading organizations data
@@ -6,10 +7,10 @@ import { useEffect, useCallback } from 'react';
 export const useOrganizationsData = (user, activeModule, setMyOrganizations) => {
   const fetchMyOrganizations = useCallback(async () => {
     if (activeModule !== 'organizations' || !user) return;
-    
+
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/work/organizations/my`, {
+      const response = await fetch(`${BACKEND_URL}/api/work/organizations/my`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

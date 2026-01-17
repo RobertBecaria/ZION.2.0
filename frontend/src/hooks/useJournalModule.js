@@ -3,8 +3,7 @@
  * Manages all state and logic for the Journal module
  */
 import { useState, useEffect, useCallback } from 'react';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config/api';
 
 const useJournalModule = (user, activeModule) => {
   // School roles state

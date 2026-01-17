@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { BACKEND_URL } from '../config/api';
 
 /**
  * Custom hook for loading family data
@@ -9,10 +10,10 @@ export const useFamilyData = (user, activeModule, setUserFamily, setLoadingFamil
       setLoadingFamily(false);
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/family-profiles`, {
+      const response = await fetch(`${BACKEND_URL}/api/family-profiles`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

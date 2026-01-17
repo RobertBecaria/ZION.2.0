@@ -3,6 +3,7 @@
  * Provides real-time WebSocket communication for chat features
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { BACKEND_URL } from '../config/api';
 
 const WS_RECONNECT_DELAY = 3000;
 const WS_PING_INTERVAL = 30000;
@@ -38,15 +39,12 @@ export const useChatWebSocket = (chatId, options = {}) => {
     const token = localStorage.getItem('zion_token');
     if (!token || !chatId) return null;
 
-    // Get the backend URL and convert to WebSocket URL
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-    
-    // Handle different URL formats
+    // Convert HTTP URL to WebSocket URL
     let wsUrl;
-    if (backendUrl.startsWith('https://')) {
-      wsUrl = backendUrl.replace('https://', 'wss://');
-    } else if (backendUrl.startsWith('http://')) {
-      wsUrl = backendUrl.replace('http://', 'ws://');
+    if (BACKEND_URL.startsWith('https://')) {
+      wsUrl = BACKEND_URL.replace('https://', 'wss://');
+    } else if (BACKEND_URL.startsWith('http://')) {
+      wsUrl = BACKEND_URL.replace('http://', 'ws://');
     } else {
       // Fallback to current location
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
