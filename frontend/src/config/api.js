@@ -8,12 +8,20 @@ const DEFAULT_BACKEND_URL = 'http://localhost:8001';
 
 /**
  * Get the backend API URL from environment variables
- * Falls back to default localhost URL if not configured
+ * - Empty string '' = use relative URLs (production same-domain)
+ * - Undefined = use default localhost URL (development)
+ * - Any URL = use that URL explicitly
  */
 export const getBackendUrl = () => {
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  if (!backendUrl) {
+  // Empty string is valid - means use relative URLs for production
+  if (backendUrl === '') {
+    return '';
+  }
+
+  // Undefined means not configured - use default for development
+  if (backendUrl === undefined) {
     if (process.env.NODE_ENV === 'development') {
       console.warn(
         'REACT_APP_BACKEND_URL is not configured. Using default: ' + DEFAULT_BACKEND_URL + '\n' +
@@ -30,15 +38,25 @@ export const getBackendUrl = () => {
 /**
  * The backend API URL
  * Use this constant for all API calls
+ * - '' (empty) for production same-domain relative URLs
+ * - 'http://localhost:8001' for development
  */
 export const BACKEND_URL = getBackendUrl();
 
 /**
  * Get WebSocket URL based on backend URL
  * Converts http:// to ws:// and https:// to wss://
+ * For relative URLs (empty string), uses current page protocol/host
  */
 export const getWebSocketUrl = () => {
   const url = BACKEND_URL;
+
+  // For relative URLs, construct WebSocket URL from current location
+  if (!url) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}`;
+  }
+
   if (url.startsWith('https://')) {
     return url.replace('https://', 'wss://');
   }

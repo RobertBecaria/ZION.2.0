@@ -31,6 +31,10 @@ FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
+# Build argument for backend URL (empty string = relative URLs for same-domain production)
+ARG REACT_APP_BACKEND_URL=''
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+
 # Set Node.js memory limit for build
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
