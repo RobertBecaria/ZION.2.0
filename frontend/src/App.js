@@ -8,6 +8,7 @@ import { ModuleNavigation, LeftSidebar, RightSidebar } from './components/layout
 import { AdminPanel } from './components/admin';
 // Config
 import { getModuleByKey, getSidebarTintStyle } from './config/moduleConfig';
+import { BACKEND_URL } from './config/api';
 // Hooks
 import { useJournalModule } from './hooks';
 // Core Components (always loaded)
@@ -147,7 +148,7 @@ function Dashboard() {
       
       try {
         const token = localStorage.getItem('zion_token');
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/family-profiles`, {
+        const response = await fetch(`${BACKEND_URL}/api/family-profiles`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -200,7 +201,7 @@ function Dashboard() {
       
       try {
         const token = localStorage.getItem('zion_token');
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/work/organizations/my`, {
+        const response = await fetch(`${BACKEND_URL}/api/work/organizations/my`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -235,7 +236,7 @@ function Dashboard() {
   const fetchMediaStats = useCallback(async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/media/modules`, {
+      const response = await fetch(`${BACKEND_URL}/api/media/modules`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -281,7 +282,7 @@ function Dashboard() {
     setLoadingGroups(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat-groups`, {
+      const response = await fetch(`${BACKEND_URL}/api/chat-groups`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

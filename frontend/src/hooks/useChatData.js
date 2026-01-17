@@ -1,16 +1,17 @@
 import { useEffect, useCallback } from 'react';
+import { BACKEND_URL } from '../config/api';
 
 /**
  * Custom hook for loading chat groups and media stats
  */
 export const useChatData = (user, setChatGroups, setActiveGroup, setLoadingGroups, setMediaStats) => {
-  
+
   const fetchChatGroups = useCallback(async () => {
     if (!user) return;
     setLoadingGroups(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/chat-groups`, {
+      const response = await fetch(`${BACKEND_URL}/api/chat-groups`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -37,7 +38,7 @@ export const useChatData = (user, setChatGroups, setActiveGroup, setLoadingGroup
     if (!user) return;
     try {
       const token = localStorage.getItem('zion_token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/media/modules`, {
+      const response = await fetch(`${BACKEND_URL}/api/media/modules`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

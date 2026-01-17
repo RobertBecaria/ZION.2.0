@@ -4,8 +4,7 @@
  * Centralizes post-related API logic for reuse across components
  */
 import { useState, useCallback, useRef } from 'react';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config/api';
 
 const usePosts = (options = {}) => {
   const {
