@@ -9,7 +9,7 @@ import json
 import uuid
 
 # Backend URL from environment
-BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://dbfix-social.preview.emergentagent.com/api"
 
 def test_detailed_responses():
     """Test and show detailed API responses"""

@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Get backend URL from environment
-BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://dbfix-social.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"

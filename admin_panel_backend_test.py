@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # Test Configuration
-BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://dbfix-social.preview.emergentagent.com/api"
 ADMIN_USERNAME = "Architect"
 ADMIN_PASSWORD = "X17resto1!X21resto1!"
 

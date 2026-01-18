@@ -18588,7 +18588,7 @@ async def get_news_feed(
     offset: int = 0,
     current_user: User = Depends(get_current_user)
 ):
-    """Get personalized news feed based on friends, following, and subscriptions"""
+    """Get personalized news feed - only posts from your network (friends, following, subscribed channels)"""
     
     # Get user's friends
     friendships = await db.user_friendships.find({
@@ -18611,35 +18611,45 @@ async def get_news_feed(
     }).to_list(1000)
     following_ids = {f["target_id"] for f in following}
     
+    # Combined network: friends + people I follow
+    network_ids = friend_ids | following_ids
+    
     # Get subscribed channels
     subscriptions = await db.channel_subscriptions.find({
         "subscriber_id": current_user.id
     }).to_list(1000)
     subscribed_channel_ids = [s["channel_id"] for s in subscriptions]
     
-    # Build query for posts I can see
-    # 1. Public posts from anyone
-    # 2. Friends+Followers posts from people I follow or am friends with
-    # 3. Friends only posts from friends
-    # 4. My own posts
+    # Build query for posts from MY NETWORK only
+    # Feed shows:
+    # 1. My own posts (any visibility)
+    # 2. PUBLIC posts from my network (friends + following)
+    # 3. FRIENDS_AND_FOLLOWERS posts from my network
+    # 4. FRIENDS_ONLY posts from friends only
     # 5. Posts from subscribed channels
+    # 
+    # NOTE: PUBLIC posts from strangers do NOT appear in feed
+    # (they can only be seen when visiting that user's profile directly)
     
     query = {
         "is_active": True,
         "$or": [
-            # Public posts
-            {"visibility": "PUBLIC"},
-            # My own posts
+            # My own posts (all visibilities)
             {"user_id": current_user.id},
-            # Friends only posts from friends
+            # PUBLIC posts from my network only
+            {
+                "visibility": "PUBLIC",
+                "user_id": {"$in": list(network_ids)}
+            },
+            # FRIENDS_AND_FOLLOWERS posts from my network
+            {
+                "visibility": "FRIENDS_AND_FOLLOWERS",
+                "user_id": {"$in": list(network_ids)}
+            },
+            # FRIENDS_ONLY posts from friends only
             {
                 "visibility": "FRIENDS_ONLY",
                 "user_id": {"$in": list(friend_ids)}
-            },
-            # Friends and followers posts from friends or people I follow
-            {
-                "visibility": "FRIENDS_AND_FOLLOWERS",
-                "user_id": {"$in": list(friend_ids | following_ids)}
             },
             # Posts from subscribed channels
             {"channel_id": {"$in": subscribed_channel_ids}}
@@ -26820,6 +26830,597 @@ async def get_backup_history(
     except Exception as e:
         logger.error(f"Backup history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ===== CHUNKED DATABASE RESTORE ENDPOINTS =====
+# These endpoints handle large database backup files by uploading in chunks
+
+# Store for tracking chunked uploads (in-memory for simplicity)
+chunked_uploads = {}
+
+class ChunkUploadInit(BaseModel):
+    filename: str
+    total_size: int
+    total_chunks: int
+    mode: str = "merge"
+
+class ChunkUploadComplete(BaseModel):
+    upload_id: str
+    mode: str = "merge"
+
+@api_router.post("/admin/database/restore/chunked/init")
+async def init_chunked_restore(
+    data: ChunkUploadInit,
+    admin: str = Depends(get_current_admin)
+):
+    """Initialize a chunked database restore upload"""
+    try:
+        upload_id = str(uuid.uuid4())
+        
+        # Create temp directory for chunks
+        chunks_dir = f"/tmp/db_restore_{upload_id}"
+        os.makedirs(chunks_dir, exist_ok=True)
+        
+        # Store upload metadata
+        chunked_uploads[upload_id] = {
+            "filename": data.filename,
+            "total_size": data.total_size,
+            "total_chunks": data.total_chunks,
+            "mode": data.mode,
+            "received_chunks": [],
+            "chunks_dir": chunks_dir,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "admin": admin
+        }
+        
+        logger.info(f"Initialized chunked restore upload: {upload_id}, total_size: {data.total_size}, chunks: {data.total_chunks}")
+        
+        return {
+            "success": True,
+            "upload_id": upload_id,
+            "message": "Загрузка инициализирована"
+        }
+    except Exception as e:
+        logger.error(f"Chunked restore init error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/admin/database/restore/chunked/upload/{upload_id}")
+async def upload_chunk(
+    upload_id: str,
+    chunk_index: int = Form(...),
+    chunk: UploadFile = File(...),
+    admin: str = Depends(get_current_admin)
+):
+    """Upload a single chunk of the database backup file"""
+    try:
+        # Verify upload exists
+        if upload_id not in chunked_uploads:
+            raise HTTPException(status_code=404, detail="Загрузка не найдена")
+        
+        upload_info = chunked_uploads[upload_id]
+        
+        # Verify admin matches
+        if upload_info["admin"] != admin:
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
+        # Validate chunk index
+        if chunk_index < 0 or chunk_index >= upload_info["total_chunks"]:
+            raise HTTPException(status_code=400, detail="Неверный индекс чанка")
+        
+        # Save chunk to temp file
+        chunk_path = os.path.join(upload_info["chunks_dir"], f"chunk_{chunk_index:06d}")
+        content = await chunk.read()
+        
+        with open(chunk_path, "wb") as f:
+            f.write(content)
+        
+        # Track received chunk
+        if chunk_index not in upload_info["received_chunks"]:
+            upload_info["received_chunks"].append(chunk_index)
+        
+        logger.info(f"Received chunk {chunk_index + 1}/{upload_info['total_chunks']} for upload {upload_id}")
+        
+        return {
+            "success": True,
+            "chunk_index": chunk_index,
+            "received_chunks": len(upload_info["received_chunks"]),
+            "total_chunks": upload_info["total_chunks"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Chunk upload error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/admin/database/restore/chunked/complete")
+async def complete_chunked_restore(
+    data: ChunkUploadComplete,
+    admin: str = Depends(get_current_admin)
+):
+    """Complete the chunked upload and perform database restore"""
+    try:
+        upload_id = data.upload_id
+        mode = data.mode
+        
+        # Verify upload exists
+        if upload_id not in chunked_uploads:
+            raise HTTPException(status_code=404, detail="Загрузка не найдена")
+        
+        upload_info = chunked_uploads[upload_id]
+        
+        # Verify admin matches
+        if upload_info["admin"] != admin:
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
+        # Verify all chunks received
+        if len(upload_info["received_chunks"]) != upload_info["total_chunks"]:
+            missing = set(range(upload_info["total_chunks"])) - set(upload_info["received_chunks"])
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Отсутствуют чанки: {list(missing)[:10]}... (всего {len(missing)})"
+            )
+        
+        # Combine chunks into single file
+        combined_path = os.path.join(upload_info["chunks_dir"], "combined.json")
+        with open(combined_path, "wb") as outfile:
+            for i in range(upload_info["total_chunks"]):
+                chunk_path = os.path.join(upload_info["chunks_dir"], f"chunk_{i:06d}")
+                with open(chunk_path, "rb") as chunk_file:
+                    outfile.write(chunk_file.read())
+        
+        logger.info(f"Combined {upload_info['total_chunks']} chunks for upload {upload_id}")
+        
+        # Parse the combined JSON
+        with open(combined_path, "r", encoding="utf-8") as f:
+            backup_data = json.load(f)
+        
+        # Validate backup structure
+        if "metadata" not in backup_data or "collections" not in backup_data:
+            raise HTTPException(status_code=400, detail="Неверный формат резервной копии")
+        
+        metadata = backup_data["metadata"]
+        collections = backup_data["collections"]
+        
+        restore_results = {
+            "mode": mode,
+            "backup_date": metadata.get("created_at"),
+            "backup_version": metadata.get("version"),
+            "collections_restored": [],
+            "errors": [],
+            "total_documents_restored": 0
+        }
+        
+        # Protected collections that should not be fully replaced
+        protected_collections = ["admin_backups"]
+        
+        for coll_name, coll_data in collections.items():
+            if coll_name in protected_collections:
+                continue
+                
+            try:
+                documents = coll_data.get("documents", [])
+                if not documents:
+                    continue
+                
+                # Convert ISO datetime strings back to datetime objects
+                for doc in documents:
+                    for key, value in doc.items():
+                        if isinstance(value, str) and len(value) > 18:
+                            try:
+                                # Try to parse ISO datetime
+                                if 'T' in value and ('+' in value or 'Z' in value or value.count(':') >= 2):
+                                    doc[key] = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                            except:
+                                pass
+                
+                if mode == "replace":
+                    # Delete existing documents and insert new ones
+                    await db[coll_name].delete_many({})
+                    if documents:
+                        await db[coll_name].insert_many(documents)
+                    restore_results["collections_restored"].append({
+                        "name": coll_name,
+                        "documents_restored": len(documents),
+                        "mode": "replaced"
+                    })
+                else:
+                    # Merge mode - upsert based on 'id' field
+                    inserted_count = 0
+                    updated_count = 0
+                    for doc in documents:
+                        if "id" in doc:
+                            result = await db[coll_name].update_one(
+                                {"id": doc["id"]},
+                                {"$set": doc},
+                                upsert=True
+                            )
+                            if result.upserted_id:
+                                inserted_count += 1
+                            elif result.modified_count:
+                                updated_count += 1
+                        else:
+                            await db[coll_name].insert_one(doc)
+                            inserted_count += 1
+                    
+                    restore_results["collections_restored"].append({
+                        "name": coll_name,
+                        "documents_inserted": inserted_count,
+                        "documents_updated": updated_count,
+                        "mode": "merged"
+                    })
+                
+                restore_results["total_documents_restored"] += len(documents)
+                
+            except Exception as e:
+                logger.error(f"Error restoring collection {coll_name}: {e}")
+                restore_results["errors"].append({
+                    "collection": coll_name,
+                    "error": str(e)
+                })
+        
+        # Log the restore operation
+        await db.admin_backups.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "restore_chunked",
+            "created_at": datetime.now(timezone.utc),
+            "admin": admin,
+            "mode": mode,
+            "original_backup_date": metadata.get("created_at"),
+            "collections_count": len(restore_results["collections_restored"]),
+            "document_count": restore_results["total_documents_restored"],
+            "file_size": upload_info["total_size"]
+        })
+        
+        # Cleanup temp files
+        import shutil
+        try:
+            shutil.rmtree(upload_info["chunks_dir"])
+        except:
+            pass
+        
+        # Remove from tracking
+        del chunked_uploads[upload_id]
+        
+        logger.info(f"Chunked restore completed for upload {upload_id}: {restore_results['total_documents_restored']} documents restored")
+        
+        return {
+            "success": True,
+            "message": "База данных восстановлена" if not restore_results["errors"] else "База данных частично восстановлена",
+            "results": restore_results
+        }
+    except HTTPException:
+        raise
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error during chunked restore: {e}")
+        raise HTTPException(status_code=400, detail=f"Ошибка парсинга JSON: {str(e)}")
+    except Exception as e:
+        logger.error(f"Chunked restore complete error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/database/restore/chunked/{upload_id}")
+async def cancel_chunked_restore(
+    upload_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Cancel and cleanup a chunked upload"""
+    try:
+        if upload_id not in chunked_uploads:
+            raise HTTPException(status_code=404, detail="Загрузка не найдена")
+        
+        upload_info = chunked_uploads[upload_id]
+        
+        # Cleanup temp files
+        import shutil
+        try:
+            shutil.rmtree(upload_info["chunks_dir"])
+        except:
+            pass
+        
+        # Remove from tracking
+        del chunked_uploads[upload_id]
+        
+        return {"success": True, "message": "Загрузка отменена"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Cancel chunked restore error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/database/restore/chunked/{upload_id}/status")
+async def get_chunked_restore_status(
+    upload_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Get status of a chunked upload"""
+    try:
+        if upload_id not in chunked_uploads:
+            raise HTTPException(status_code=404, detail="Загрузка не найдена")
+        
+        upload_info = chunked_uploads[upload_id]
+        
+        return {
+            "upload_id": upload_id,
+            "filename": upload_info["filename"],
+            "total_size": upload_info["total_size"],
+            "total_chunks": upload_info["total_chunks"],
+            "received_chunks": len(upload_info["received_chunks"]),
+            "progress": round(len(upload_info["received_chunks"]) / upload_info["total_chunks"] * 100, 1),
+            "created_at": upload_info["created_at"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get chunked restore status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== END CHUNKED DATABASE RESTORE ENDPOINTS =====
+
+
+# ===== CHUNKED DATABASE BACKUP/DOWNLOAD ENDPOINTS =====
+# These endpoints handle large database backups by downloading in chunks
+
+# Store for tracking chunked backups (in-memory)
+chunked_backups = {}
+
+class ChunkBackupInit(BaseModel):
+    chunk_size_mb: int = 5  # Chunk size in MB (default 5MB)
+
+@api_router.post("/admin/database/backup/chunked/init")
+async def init_chunked_backup(
+    data: ChunkBackupInit = ChunkBackupInit(),
+    admin: str = Depends(get_current_admin)
+):
+    """Initialize a chunked database backup - creates the backup and splits into chunks"""
+    try:
+        backup_id = str(uuid.uuid4())
+        chunk_size = data.chunk_size_mb * 1024 * 1024  # Convert to bytes
+        
+        logger.info(f"Starting chunked backup {backup_id} with chunk size {data.chunk_size_mb}MB")
+        
+        # Create the backup data
+        backup_data = {
+            "metadata": {
+                "version": "1.0",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "database_name": db.name,
+                "backup_type": "chunked"
+            },
+            "collections": {}
+        }
+        
+        excluded_collections = ["admin_backups"]
+        collection_names = await db.list_collection_names()
+        
+        for coll_name in collection_names:
+            if coll_name in excluded_collections:
+                continue
+            try:
+                cursor = db[coll_name].find({})
+                documents = await cursor.to_list(length=None)
+                
+                # Convert ObjectId and datetime to strings
+                for doc in documents:
+                    doc.pop("_id", None)
+                    for key, value in doc.items():
+                        if hasattr(value, 'isoformat'):
+                            doc[key] = value.isoformat()
+                
+                backup_data["collections"][coll_name] = {
+                    "document_count": len(documents),
+                    "documents": documents
+                }
+            except Exception as e:
+                logger.error(f"Error backing up collection {coll_name}: {e}")
+                backup_data["collections"][coll_name] = {
+                    "document_count": 0,
+                    "documents": [],
+                    "error": str(e)
+                }
+        
+        # Serialize to JSON
+        backup_json = json.dumps(backup_data, ensure_ascii=False, default=str)
+        backup_bytes = backup_json.encode('utf-8')
+        total_size = len(backup_bytes)
+        
+        # Calculate number of chunks
+        total_chunks = (total_size + chunk_size - 1) // chunk_size
+        
+        # Create temp directory and save chunks
+        chunks_dir = f"/tmp/db_backup_{backup_id}"
+        os.makedirs(chunks_dir, exist_ok=True)
+        
+        # Split into chunks and save to files
+        for i in range(total_chunks):
+            start = i * chunk_size
+            end = min(start + chunk_size, total_size)
+            chunk_data = backup_bytes[start:end]
+            
+            chunk_path = os.path.join(chunks_dir, f"chunk_{i:06d}")
+            with open(chunk_path, "wb") as f:
+                f.write(chunk_data)
+        
+        # Store backup metadata
+        chunked_backups[backup_id] = {
+            "admin": admin,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "total_size": total_size,
+            "total_chunks": total_chunks,
+            "chunk_size": chunk_size,
+            "chunks_dir": chunks_dir,
+            "collections_count": len(backup_data["collections"]),
+            "document_count": sum(c.get("document_count", 0) for c in backup_data["collections"].values()),
+            "filename": f"zion_city_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        }
+        
+        # Log the backup operation
+        await db.admin_backups.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "backup_chunked",
+            "created_at": datetime.now(timezone.utc),
+            "admin": admin,
+            "size_bytes": total_size,
+            "collections_count": len(backup_data["collections"]),
+            "document_count": sum(c.get("document_count", 0) for c in backup_data["collections"].values())
+        })
+        
+        logger.info(f"Chunked backup {backup_id} created: {total_size} bytes, {total_chunks} chunks")
+        
+        return {
+            "success": True,
+            "backup_id": backup_id,
+            "total_size": total_size,
+            "total_chunks": total_chunks,
+            "chunk_size": chunk_size,
+            "collections_count": len(backup_data["collections"]),
+            "document_count": sum(c.get("document_count", 0) for c in backup_data["collections"].values()),
+            "filename": chunked_backups[backup_id]["filename"],
+            "message": "Резервная копия создана и готова к скачиванию"
+        }
+    except Exception as e:
+        logger.error(f"Chunked backup init error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/database/backup/chunked/{backup_id}/chunk/{chunk_index}")
+async def download_backup_chunk(
+    backup_id: str,
+    chunk_index: int,
+    admin: str = Depends(get_current_admin)
+):
+    """Download a single chunk of the backup"""
+    try:
+        if backup_id not in chunked_backups:
+            raise HTTPException(status_code=404, detail="Резервная копия не найдена")
+        
+        backup_info = chunked_backups[backup_id]
+        
+        # Verify admin matches
+        if backup_info["admin"] != admin:
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
+        # Validate chunk index
+        if chunk_index < 0 or chunk_index >= backup_info["total_chunks"]:
+            raise HTTPException(status_code=400, detail="Неверный индекс чанка")
+        
+        # Read chunk from file
+        chunk_path = os.path.join(backup_info["chunks_dir"], f"chunk_{chunk_index:06d}")
+        
+        if not os.path.exists(chunk_path):
+            raise HTTPException(status_code=404, detail="Чанк не найден")
+        
+        with open(chunk_path, "rb") as f:
+            chunk_data = f.read()
+        
+        # Return chunk as binary response
+        from fastapi.responses import Response
+        return Response(
+            content=chunk_data,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f'attachment; filename="chunk_{chunk_index:06d}"',
+                "X-Chunk-Index": str(chunk_index),
+                "X-Total-Chunks": str(backup_info["total_chunks"]),
+                "X-Chunk-Size": str(len(chunk_data))
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Download backup chunk error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/database/backup/chunked/{backup_id}/status")
+async def get_chunked_backup_status(
+    backup_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Get status of a chunked backup"""
+    try:
+        if backup_id not in chunked_backups:
+            raise HTTPException(status_code=404, detail="Резервная копия не найдена")
+        
+        backup_info = chunked_backups[backup_id]
+        
+        return {
+            "backup_id": backup_id,
+            "total_size": backup_info["total_size"],
+            "total_chunks": backup_info["total_chunks"],
+            "chunk_size": backup_info["chunk_size"],
+            "collections_count": backup_info["collections_count"],
+            "document_count": backup_info["document_count"],
+            "filename": backup_info["filename"],
+            "created_at": backup_info["created_at"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get chunked backup status error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/admin/database/backup/chunked/{backup_id}")
+async def cleanup_chunked_backup(
+    backup_id: str,
+    admin: str = Depends(get_current_admin)
+):
+    """Cleanup a chunked backup after download is complete"""
+    try:
+        if backup_id not in chunked_backups:
+            raise HTTPException(status_code=404, detail="Резервная копия не найдена")
+        
+        backup_info = chunked_backups[backup_id]
+        
+        # Cleanup temp files
+        import shutil
+        try:
+            shutil.rmtree(backup_info["chunks_dir"])
+        except:
+            pass
+        
+        # Remove from tracking
+        del chunked_backups[backup_id]
+        
+        logger.info(f"Chunked backup {backup_id} cleaned up")
+        
+        return {"success": True, "message": "Резервная копия удалена"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Cleanup chunked backup error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/admin/database/backup/chunked/list")
+async def list_chunked_backups(
+    admin: str = Depends(get_current_admin)
+):
+    """List all available chunked backups for the admin"""
+    try:
+        admin_backups_list = []
+        for backup_id, info in chunked_backups.items():
+            if info["admin"] == admin:
+                admin_backups_list.append({
+                    "backup_id": backup_id,
+                    "total_size": info["total_size"],
+                    "total_chunks": info["total_chunks"],
+                    "filename": info["filename"],
+                    "created_at": info["created_at"]
+                })
+        
+        return {
+            "backups": admin_backups_list,
+            "total": len(admin_backups_list)
+        }
+    except Exception as e:
+        logger.error(f"List chunked backups error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== END CHUNKED DATABASE BACKUP ENDPOINTS =====
 
 # ===== END ADMIN PANEL ENDPOINTS =====
 

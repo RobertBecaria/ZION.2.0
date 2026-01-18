@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://social-login-fix.preview.emergentagent.com/api"
+BASE_URL = "https://dbfix-social.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@test.com"
 ADMIN_PASSWORD = "testpassword123"
 

@@ -29,7 +29,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://dbfix-social.preview.emergentagent.com/api"
 
 class ServicesBookingTester:
     def __init__(self):

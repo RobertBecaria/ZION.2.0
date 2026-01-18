@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 
 class TeamManagementAPITester:
-    def __init__(self, base_url="https://social-login-fix.preview.emergentagent.com"):
+    def __init__(self, base_url="https://dbfix-social.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.member_token = None
