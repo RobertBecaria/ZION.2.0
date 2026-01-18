@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Pin, AlertCircle, Info, ChevronRight, Eye } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementsWidget({ organizationId, departmentId = null, onViewAll, moduleColor = '#C2410C' }) {
   const [expanded, setExpanded] = useState(true);
   const [announcements, setAnnouncements] = useState([]);

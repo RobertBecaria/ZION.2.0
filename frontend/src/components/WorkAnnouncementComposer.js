@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Megaphone, AlertCircle, Info, X, Building2, Users } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementComposer({ organizationId, onClose, onSave, editingAnnouncement = null, moduleColor = '#C2410C' }) {
   const [departments, setDepartments] = useState([]);
   const [formData, setFormData] = useState({

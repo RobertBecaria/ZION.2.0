@@ -3,8 +3,8 @@ import { Megaphone, Plus, Filter, AlertCircle, Info, ArrowLeft, X } from 'lucide
 import WorkAnnouncementCard from './WorkAnnouncementCard';
 import WorkAnnouncementComposer from './WorkAnnouncementComposer';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleColor = '#C2410C' }) {
   const [announcements, setAnnouncements] = useState([]);
   const [departments, setDepartments] = useState([]);

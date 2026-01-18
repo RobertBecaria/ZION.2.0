@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Pin, AlertCircle, Info, Eye, ThumbsUp, Heart, Flame, MessageCircle, Edit3, Trash2, MoreHorizontal, Smile } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementCard({ announcement, onEdit, onDelete, onPin, onReact, currentUserId, moduleColor = '#C2410C', organizationId }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showReactions, setShowReactions] = useState(false);

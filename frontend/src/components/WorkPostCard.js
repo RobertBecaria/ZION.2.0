@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, MessageCircle, Trash2, User, CheckCircle2, MessageSquarePlus, Clock, AlertTriangle, Image } from 'lucide-react';
 
+import { BACKEND_URL } from '../config/api';
 const WorkPostCard = ({ post, currentUserId, isAdmin, onDelete, onLike, onComment }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -40,8 +41,7 @@ const WorkPostCard = ({ post, currentUserId, isAdmin, onDelete, onLike, onCommen
 
     setLoadingComments(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/posts/${post.id}/comments`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -65,8 +65,7 @@ const WorkPostCard = ({ post, currentUserId, isAdmin, onDelete, onLike, onCommen
 
     setAddingComment(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/posts/${post.id}/comment`, {
         method: 'POST',
