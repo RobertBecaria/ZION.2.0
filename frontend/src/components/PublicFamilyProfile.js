@@ -23,9 +23,6 @@ function PublicFamilyProfile({ user, familyId, onBack, moduleColor = '#059669' }
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       const response = await fetch(`${backendUrl}/api/family/${familyId}/public`, {
         headers: {

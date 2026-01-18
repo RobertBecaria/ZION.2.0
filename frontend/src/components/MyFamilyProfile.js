@@ -18,9 +18,6 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       const response = await fetch(`${backendUrl}/api/family-profiles/${family.id}/banner`, {
         method: 'PUT',
@@ -49,9 +46,6 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       const response = await fetch(`${backendUrl}/api/family-profiles/${family.id}/avatar`, {
         method: 'PUT',
@@ -95,9 +89,6 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       const response = await fetch(`${backendUrl}/api/family-profiles`, {
         headers: {

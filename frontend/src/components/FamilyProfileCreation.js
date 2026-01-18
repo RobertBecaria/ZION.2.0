@@ -37,9 +37,6 @@ const FamilyProfileCreation = ({ onBack, onFamilyCreated }) => {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured. Please set REACT_APP_BACKEND_URL environment variable.');
-      }
       
       const response = await fetch(`${backendUrl}/api/family-profiles`, {
         method: 'POST',
