@@ -32,7 +32,7 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
     try {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      
       
       const response = await fetch(`${backendUrl}/api/household`, {
         headers: {
@@ -58,7 +58,7 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
     try {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      
       
       const response = await fetch(`${backendUrl}/api/household/create`, {
         method: 'POST',
@@ -94,7 +94,7 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
     try {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      
       
       const response = await fetch(`${backendUrl}/api/users/search?query=${encodeURIComponent(query)}`, {
         headers: {
@@ -124,7 +124,7 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
     try {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      
       
       const response = await fetch(`${backendUrl}/api/household/${household.id}/members`, {
         method: 'POST',
@@ -157,7 +157,7 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
     try {
       const token = localStorage.getItem('zion_token');
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      
       
       const response = await fetch(`${backendUrl}/api/household/${household.id}/members/${memberId}`, {
         method: 'DELETE',
