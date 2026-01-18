@@ -1142,3 +1142,55 @@ New backend endpoints in `/app/backend/server.py`:
 - **agent**: testing
 - **message**: "Chunked database backup/download implementation complete. All 13 tests passed. Large database backups can now be downloaded in chunks with progress tracking and automatic assembly."
 
+
+---
+
+# Test Results - NEWS Feed Visibility Logic Update
+
+## Issue: NEWS Feed Showing Posts from All Users
+
+### Problem
+- NEWS feed was showing PUBLIC posts from ALL users on the platform
+- Users expected to only see posts from their network (friends + people they follow)
+
+### Solution Implemented
+
+#### Updated Feed Logic in `/app/backend/server.py` (GET /api/news/posts/feed):
+
+**Before (old logic):**
+- PUBLIC posts from **anyone** on the platform
+- FRIENDS_ONLY posts from friends
+- FRIENDS_AND_FOLLOWERS posts from network
+- Own posts
+- Channel posts
+
+**After (new logic):**
+- PUBLIC posts from **network only** (friends + following)
+- FRIENDS_AND_FOLLOWERS posts from network
+- FRIENDS_ONLY posts from friends only
+- Own posts
+- Channel posts
+- **No posts from strangers** in feed
+
+#### Visibility Settings Now Mean:
+- **PUBLIC**: Your network sees it in their feed. Outsiders can see it on your profile.
+- **FRIENDS_AND_FOLLOWERS**: Network sees in feed & profile. Outsiders cannot see.
+- **FRIENDS_ONLY**: Only friends see in feed & profile. Followers and outsiders cannot see.
+
+### Profile Visibility (unchanged - already correct):
+- GET /api/news/posts/user/{user_id} respects visibility:
+  - Strangers: Only see PUBLIC posts
+  - Following: See PUBLIC + FRIENDS_AND_FOLLOWERS
+  - Friends: See PUBLIC + FRIENDS_AND_FOLLOWERS + FRIENDS_ONLY
+  - Self: See all posts
+
+### Test Results
+- ✅ Feed shows only posts from user's network
+- ✅ No stranger posts appear in feed (security verified)
+- ✅ Profile visibility correctly enforced
+- ✅ All visibility levels working as expected
+
+### Agent Communication
+- **agent**: testing
+- **message**: "NEWS feed visibility logic updated successfully. Feed now shows only posts from user's network (friends + following). PUBLIC posts from strangers no longer appear in feed - they can only be seen when visiting that user's profile directly."
+
