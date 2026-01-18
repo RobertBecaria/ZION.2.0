@@ -40,8 +40,8 @@ function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      // Support both absolute URL (dev) and relative URL (production)
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
       
       const response = await fetch(`${backendUrl}/api/users/gender`, {
         method: 'PUT',
@@ -56,11 +56,19 @@ function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
         // Call onUpdate which will handle refresh and modal closing
         onUpdate(selectedGender);
       } else {
-        throw new Error('Failed to update gender');
+        // Try to get error message from response
+        let errorMessage = 'Ошибка при обновлении';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorMessage;
+        } catch (e) {
+          // If can't parse JSON, use default message
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error updating gender:', error);
-      alert('Ошибка при обновлении. Попробуйте еще раз.');
+      alert(error.message || 'Ошибка при обновлении. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }

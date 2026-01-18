@@ -16,8 +16,8 @@ const FamilyProfileList = ({ onCreateFamily, onViewFamily, onManageFamily }) => 
   const fetchFamilyProfiles = async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+      
       
       const response = await fetch(`${backendUrl}/api/family-profiles`, {
         headers: {

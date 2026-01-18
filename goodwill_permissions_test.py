@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # API Configuration
-BASE_URL = "https://admin-dashboard-685.preview.emergentagent.com/api"
+BASE_URL = "https://social-login-fix.preview.emergentagent.com/api"
 
 # Test Credentials
 ADMIN_CREDENTIALS = {

@@ -390,8 +390,8 @@ Test the ERIC AI Assistant integration across ZION.CITY platform modules to veri
 4. Privacy Settings functionality
 
 ## Test Environment
-- **Frontend URL**: https://admin-dashboard-685.preview.emergentagent.com
-- **Backend URL**: https://admin-dashboard-685.preview.emergentagent.com/api
+- **Frontend URL**: https://social-login-fix.preview.emergentagent.com
+- **Backend URL**: https://social-login-fix.preview.emergentagent.com/api
 - **Test Credentials**: admin@test.com / testpassword123
 
 ## ERIC Components to Test
@@ -507,7 +507,7 @@ Test the Admin Panel backend API endpoints for ZION.CITY platform to verify:
 4. Proper error handling and validation
 
 ## Test Environment
-- **Backend URL**: https://bd6cb021-f2d9-4f5e-a226-bfcae4895a28.preview.emergentagent.com/api
+- **Backend URL**: https://social-login-fix.preview.emergentagent.com/api
 - **Admin Credentials**: Architect / X17resto1!X21resto1!
 - **Test Date**: 2026-01-13
 
@@ -597,3 +597,79 @@ Test the Admin Panel backend API endpoints for ZION.CITY platform to verify:
 ### Agent Communication
 - **agent**: testing
 - **message**: "Admin Panel backend API testing completed with excellent results. All authentication, dashboard, and user management endpoints are fully functional. Security measures including credential validation, token verification, and input validation are working properly. All error messages are properly localized in Russian. The admin panel backend is production-ready with 100% test success rate (14/14 tests passed)."
+
+---
+
+# Test Results - Gender Update API Testing
+
+## Current Test: Gender Update API Endpoint
+
+### Test Execution Summary
+- **Date**: 2026-01-13
+- **Total Tests**: 6
+- **Passed**: 6 (100%)
+- **Failed**: 0 (0%)
+- **Testing Agent**: Backend Testing Agent
+
+### ✅ ALL TESTS PASSED
+
+#### User Registration & Authentication
+- ✅ **User Registration**: Successfully registered new test user via POST /api/auth/register
+- ✅ **Token Generation**: Access token properly generated and received
+
+#### Gender Update Functionality
+- ✅ **Gender Update (MALE)**: Successfully updated gender to MALE with correct response format
+- ✅ **Gender Update (FEMALE)**: Successfully updated gender to FEMALE with correct response format  
+- ✅ **Gender Update (IT)**: Successfully updated gender to IT with correct response format
+- ✅ **Unauthorized Access**: Correctly rejected gender update without token (403 Forbidden)
+
+### API Response Verification
+
+#### Successful Gender Update Response
+```json
+{
+  "message": "Gender updated successfully",
+  "gender": "MALE"
+}
+```
+
+#### Unauthorized Access Response
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+### Gender Update API Endpoint Details
+
+#### Backend (`/app/backend/server.py`)
+- `PUT /api/users/gender` - Update user gender with authentication
+- **Authentication**: Requires Bearer token in Authorization header
+- **Input**: `{"gender": "MALE|FEMALE|IT"}`
+- **Response**: `{"message": "Gender updated successfully", "gender": "<selected_gender>"}`
+- **Security**: Properly rejects requests without valid authentication (403)
+
+### Review Requirements Verification
+
+#### ✅ All Requirements Met
+1. **User Registration**: ✅ Successfully registered via POST /api/auth/register
+2. **Gender Update with Token**: ✅ PUT /api/users/gender works with Bearer token
+3. **Correct Response Format**: ✅ Returns {"message": "Gender updated successfully", "gender": "MALE"}
+4. **Unauthorized Access**: ✅ Returns 403 when no token provided
+5. **All Gender Options**: ✅ Successfully tested MALE, FEMALE, IT options
+
+### Test Coverage Analysis
+- **Authentication Flow**: Complete registration and token-based authentication tested
+- **API Endpoint**: PUT /api/users/gender fully functional with proper validation
+- **Security**: Authorization properly enforced with 403 response for unauthorized requests
+- **Data Validation**: All three gender options (MALE, FEMALE, IT) accepted and processed correctly
+- **Response Format**: Exact response format matches requirements specification
+
+### Status History
+- **working**: true (gender update API fully functional)
+- **agent**: testing
+- **comment**: "Gender Update API testing completed successfully. All 6 test scenarios passed with 100% success rate. User registration, authentication, gender updates for all options (MALE, FEMALE, IT), and security measures are all working correctly. The API returns the exact response format specified in requirements and properly handles unauthorized access attempts."
+
+### Agent Communication
+- **agent**: testing
+- **message**: "Gender Update API backend testing completed with perfect results. All review requirements have been successfully verified: user registration works, gender update endpoint accepts all three gender options (MALE, FEMALE, IT), returns correct response format {'message': 'Gender updated successfully', 'gender': '<value>'}, and properly rejects unauthorized requests with 403 status. The API is fully functional and secure with 100% test success rate (6/6 tests passed)."

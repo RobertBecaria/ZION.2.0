@@ -71,8 +71,8 @@ function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
     
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      if (!backendUrl) throw new Error('Backend URL not configured');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+      
 
       // Prepare family members list
       const members = [

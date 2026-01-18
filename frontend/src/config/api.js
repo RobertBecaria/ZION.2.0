@@ -13,7 +13,7 @@ const DEFAULT_BACKEND_URL = 'http://localhost:8001';
  * - Any URL = use that URL explicitly
  */
 export const getBackendUrl = () => {
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
 
   // Empty string is valid - means use relative URLs for production
   if (backendUrl === '') {

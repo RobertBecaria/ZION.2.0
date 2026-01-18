@@ -3869,15 +3869,29 @@ async def update_user_gender(
     current_user: User = Depends(get_current_user)
 ):
     """Update user's gender"""
-    await db.users.update_one(
-        {"id": current_user.id},
-        {"$set": {
-            "gender": gender_data.gender.value,
-            "updated_at": datetime.now(timezone.utc)
-        }}
-    )
+    try:
+        logger.info(f"Updating gender for user {current_user.id} to {gender_data.gender.value}")
+        
+        result = await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": {
+                "gender": gender_data.gender.value,
+                "updated_at": datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.modified_count == 0 and result.matched_count == 0:
+            logger.error(f"User {current_user.id} not found in database for gender update")
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        logger.info(f"Gender updated successfully for user {current_user.id}")
+        return {"message": "Gender updated successfully", "gender": gender_data.gender.value}
     
-    return {"message": "Gender updated successfully", "gender": gender_data.gender.value}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating gender for user {current_user.id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при обновлении пола: {str(e)}")
 
 @api_router.put("/auth/change-password")
 async def change_password(

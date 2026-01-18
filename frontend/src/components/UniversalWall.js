@@ -44,7 +44,7 @@ function UniversalWall({
     prevImage
   } = useLightbox();
   
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
 
   // Fetch posts (memoized to avoid re-creation)
   const fetchPosts = useCallback(async (page = 0, append = false) => {

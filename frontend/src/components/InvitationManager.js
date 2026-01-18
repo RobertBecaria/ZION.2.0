@@ -22,11 +22,8 @@ const InvitationManager = ({ currentUser }) => {
   const fetchInvitations = async () => {
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       // Fetch received invitations
       const receivedResponse = await fetch(`${backendUrl}/api/family-invitations/received`, {
@@ -65,11 +62,8 @@ const InvitationManager = ({ currentUser }) => {
 
     try {
       const token = localStorage.getItem('zion_token');
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
       
-      if (!backendUrl) {
-        throw new Error('Backend URL not configured');
-      }
       
       const response = await fetch(`${backendUrl}/api/family-invitations/${invitationId}/${action}`, {
         method: 'POST',

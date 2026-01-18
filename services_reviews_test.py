@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Optional
 
 # Get backend URL from environment
-BACKEND_URL = "https://admin-dashboard-685.preview.emergentagent.com/api"
+BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
 
 class ServicesReviewsTester:
     def __init__(self):

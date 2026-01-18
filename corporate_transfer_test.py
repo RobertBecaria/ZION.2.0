@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BACKEND_URL = "https://admin-dashboard-685.preview.emergentagent.com/api"
+BACKEND_URL = "https://social-login-fix.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@test.com"
