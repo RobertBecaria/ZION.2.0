@@ -45,6 +45,29 @@ class NewsVisibilityTester:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {level}: {message}")
         
+    def register_test_user(self):
+        """Register a test user if login fails"""
+        try:
+            self.log("📝 Registering new test user: testuser@test.com")
+            
+            response = self.session.post(f"{BACKEND_URL}/auth/register", json={
+                "email": "testuser@test.com",
+                "password": "testpassword123",
+                "first_name": "Test",
+                "last_name": "User"
+            })
+            
+            if response.status_code == 200:
+                self.log("✅ Test user registered successfully")
+                return True
+            else:
+                self.log(f"⚠️ Test user registration failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Registration error: {str(e)}", "ERROR")
+            return False
+
     def login_test_user(self):
         """Login as test user"""
         try:
@@ -65,6 +88,22 @@ class NewsVisibilityTester:
                 return True
             else:
                 self.log(f"⚠️ testuser@test.com login failed: {response.status_code}")
+                
+                # Try to register the user
+                if self.register_test_user():
+                    # Try login again after registration
+                    response = self.session.post(f"{BACKEND_URL}/auth/login", json={
+                        "email": "testuser@test.com",
+                        "password": "testpassword123"
+                    })
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        self.test_user_token = data.get("access_token")
+                        self.test_user_id = data.get("user", {}).get("id")
+                        
+                        self.log(f"✅ Test user login successful after registration - User ID: {self.test_user_id}")
+                        return True
                 
                 # Try with admin credentials as fallback
                 self.log("🔐 Trying admin credentials as fallback: admin@test.com")
