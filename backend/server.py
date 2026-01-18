@@ -26631,7 +26631,7 @@ async def create_database_backup(admin: str = Depends(get_current_admin)):
         
         # Get all collection names (exclude system collections)
         collection_names = await db.list_collection_names()
-        excluded_collections = ["admin_backups"]  # Don't backup backups
+        excluded_collections = ["admin_backups", "chunked_upload_sessions"]  # Don't backup backups
         
         for coll_name in collection_names:
             if coll_name.startswith("system.") or coll_name in excluded_collections:
@@ -26719,7 +26719,7 @@ async def restore_database_backup(
         }
         
         # Protected collections that should not be fully replaced
-        protected_collections = ["admin_backups"]
+        protected_collections = ["admin_backups", "chunked_upload_sessions"]
         
         for coll_name, coll_data in collections.items():
             if coll_name in protected_collections:
@@ -26835,8 +26835,8 @@ async def get_backup_history(
 # ===== CHUNKED DATABASE RESTORE ENDPOINTS =====
 # These endpoints handle large database backup files by uploading in chunks
 
-# Store for tracking chunked uploads (in-memory for simplicity)
-chunked_uploads = {}
+# Note: Upload sessions are now stored in MongoDB collection 'chunked_upload_sessions'
+# for persistence across server restarts. The old in-memory dict has been removed.
 
 class ChunkUploadInit(BaseModel):
     filename: str
@@ -26856,25 +26856,28 @@ async def init_chunked_restore(
     """Initialize a chunked database restore upload"""
     try:
         upload_id = str(uuid.uuid4())
-        
+
         # Create temp directory for chunks
         chunks_dir = f"/tmp/db_restore_{upload_id}"
         os.makedirs(chunks_dir, exist_ok=True)
-        
-        # Store upload metadata
-        chunked_uploads[upload_id] = {
+
+        # Store upload metadata in MongoDB for persistence across server restarts
+        upload_session = {
+            "upload_id": upload_id,
             "filename": data.filename,
             "total_size": data.total_size,
             "total_chunks": data.total_chunks,
             "mode": data.mode,
             "received_chunks": [],
             "chunks_dir": chunks_dir,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "admin": admin
+            "created_at": datetime.now(timezone.utc),
+            "admin": admin,
+            "status": "uploading"
         }
-        
+        await db.chunked_upload_sessions.insert_one(upload_session)
+
         logger.info(f"Initialized chunked restore upload: {upload_id}, total_size: {data.total_size}, chunks: {data.total_chunks}")
-        
+
         return {
             "success": True,
             "upload_id": upload_id,
@@ -26894,37 +26897,45 @@ async def upload_chunk(
 ):
     """Upload a single chunk of the database backup file"""
     try:
-        # Verify upload exists
-        if upload_id not in chunked_uploads:
+        # Verify upload exists in MongoDB
+        upload_info = await db.chunked_upload_sessions.find_one({"upload_id": upload_id})
+        if not upload_info:
             raise HTTPException(status_code=404, detail="Загрузка не найдена")
-        
-        upload_info = chunked_uploads[upload_id]
-        
+
         # Verify admin matches
         if upload_info["admin"] != admin:
             raise HTTPException(status_code=403, detail="Доступ запрещен")
-        
+
         # Validate chunk index
         if chunk_index < 0 or chunk_index >= upload_info["total_chunks"]:
             raise HTTPException(status_code=400, detail="Неверный индекс чанка")
-        
+
+        # Ensure chunks directory exists (may have been lost if server restarted)
+        chunks_dir = upload_info["chunks_dir"]
+        os.makedirs(chunks_dir, exist_ok=True)
+
         # Save chunk to temp file
-        chunk_path = os.path.join(upload_info["chunks_dir"], f"chunk_{chunk_index:06d}")
+        chunk_path = os.path.join(chunks_dir, f"chunk_{chunk_index:06d}")
         content = await chunk.read()
-        
+
         with open(chunk_path, "wb") as f:
             f.write(content)
-        
-        # Track received chunk
-        if chunk_index not in upload_info["received_chunks"]:
-            upload_info["received_chunks"].append(chunk_index)
-        
+
+        # Track received chunk in MongoDB
+        received_chunks = upload_info.get("received_chunks", [])
+        if chunk_index not in received_chunks:
+            received_chunks.append(chunk_index)
+            await db.chunked_upload_sessions.update_one(
+                {"upload_id": upload_id},
+                {"$set": {"received_chunks": received_chunks}}
+            )
+
         logger.info(f"Received chunk {chunk_index + 1}/{upload_info['total_chunks']} for upload {upload_id}")
-        
+
         return {
             "success": True,
             "chunk_index": chunk_index,
-            "received_chunks": len(upload_info["received_chunks"]),
+            "received_chunks": len(received_chunks),
             "total_chunks": upload_info["total_chunks"]
         }
     except HTTPException:
@@ -26943,30 +26954,32 @@ async def complete_chunked_restore(
     try:
         upload_id = data.upload_id
         mode = data.mode
-        
-        # Verify upload exists
-        if upload_id not in chunked_uploads:
+
+        # Verify upload exists in MongoDB
+        upload_info = await db.chunked_upload_sessions.find_one({"upload_id": upload_id})
+        if not upload_info:
             raise HTTPException(status_code=404, detail="Загрузка не найдена")
-        
-        upload_info = chunked_uploads[upload_id]
-        
+
         # Verify admin matches
         if upload_info["admin"] != admin:
             raise HTTPException(status_code=403, detail="Доступ запрещен")
-        
+
         # Verify all chunks received
-        if len(upload_info["received_chunks"]) != upload_info["total_chunks"]:
-            missing = set(range(upload_info["total_chunks"])) - set(upload_info["received_chunks"])
+        received_chunks = upload_info.get("received_chunks", [])
+        if len(received_chunks) != upload_info["total_chunks"]:
+            missing = set(range(upload_info["total_chunks"])) - set(received_chunks)
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail=f"Отсутствуют чанки: {list(missing)[:10]}... (всего {len(missing)})"
             )
-        
+
+        chunks_dir = upload_info["chunks_dir"]
+
         # Combine chunks into single file
-        combined_path = os.path.join(upload_info["chunks_dir"], "combined.json")
+        combined_path = os.path.join(chunks_dir, "combined.json")
         with open(combined_path, "wb") as outfile:
             for i in range(upload_info["total_chunks"]):
-                chunk_path = os.path.join(upload_info["chunks_dir"], f"chunk_{i:06d}")
+                chunk_path = os.path.join(chunks_dir, f"chunk_{i:06d}")
                 with open(chunk_path, "rb") as chunk_file:
                     outfile.write(chunk_file.read())
         
@@ -26993,7 +27006,7 @@ async def complete_chunked_restore(
         }
         
         # Protected collections that should not be fully replaced
-        protected_collections = ["admin_backups"]
+        protected_collections = ["admin_backups", "chunked_upload_sessions"]
         
         for coll_name, coll_data in collections.items():
             if coll_name in protected_collections:
@@ -27079,10 +27092,10 @@ async def complete_chunked_restore(
             shutil.rmtree(upload_info["chunks_dir"])
         except:
             pass
-        
-        # Remove from tracking
-        del chunked_uploads[upload_id]
-        
+
+        # Remove from MongoDB tracking
+        await db.chunked_upload_sessions.delete_one({"upload_id": upload_id})
+
         logger.info(f"Chunked restore completed for upload {upload_id}: {restore_results['total_documents_restored']} documents restored")
         
         return {
@@ -27107,21 +27120,21 @@ async def cancel_chunked_restore(
 ):
     """Cancel and cleanup a chunked upload"""
     try:
-        if upload_id not in chunked_uploads:
+        # Find upload session in MongoDB
+        upload_info = await db.chunked_upload_sessions.find_one({"upload_id": upload_id})
+        if not upload_info:
             raise HTTPException(status_code=404, detail="Загрузка не найдена")
-        
-        upload_info = chunked_uploads[upload_id]
-        
+
         # Cleanup temp files
         import shutil
         try:
             shutil.rmtree(upload_info["chunks_dir"])
         except:
             pass
-        
-        # Remove from tracking
-        del chunked_uploads[upload_id]
-        
+
+        # Remove from MongoDB tracking
+        await db.chunked_upload_sessions.delete_one({"upload_id": upload_id})
+
         return {"success": True, "message": "Загрузка отменена"}
     except HTTPException:
         raise
@@ -27137,19 +27150,22 @@ async def get_chunked_restore_status(
 ):
     """Get status of a chunked upload"""
     try:
-        if upload_id not in chunked_uploads:
+        # Find upload session in MongoDB
+        upload_info = await db.chunked_upload_sessions.find_one({"upload_id": upload_id})
+        if not upload_info:
             raise HTTPException(status_code=404, detail="Загрузка не найдена")
-        
-        upload_info = chunked_uploads[upload_id]
-        
+
+        received_chunks = upload_info.get("received_chunks", [])
+        total_chunks = upload_info["total_chunks"]
+
         return {
             "upload_id": upload_id,
             "filename": upload_info["filename"],
             "total_size": upload_info["total_size"],
-            "total_chunks": upload_info["total_chunks"],
-            "received_chunks": len(upload_info["received_chunks"]),
-            "progress": round(len(upload_info["received_chunks"]) / upload_info["total_chunks"] * 100, 1),
-            "created_at": upload_info["created_at"]
+            "total_chunks": total_chunks,
+            "received_chunks": len(received_chunks),
+            "progress": round(len(received_chunks) / total_chunks * 100, 1) if total_chunks > 0 else 0,
+            "created_at": upload_info["created_at"].isoformat() if hasattr(upload_info["created_at"], 'isoformat') else upload_info["created_at"]
         }
     except HTTPException:
         raise
@@ -27192,7 +27208,7 @@ async def init_chunked_backup(
             "collections": {}
         }
         
-        excluded_collections = ["admin_backups"]
+        excluded_collections = ["admin_backups", "chunked_upload_sessions"]
         collection_names = await db.list_collection_names()
         
         for coll_name in collection_names:
