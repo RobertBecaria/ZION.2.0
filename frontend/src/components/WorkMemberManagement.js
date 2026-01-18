@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, Shield, Crown, Check, X, AlertTriangle, ChevronDown } from 'lucide-react';
 import { WorkRoleTypes } from '../mock-work';
 
+import { BACKEND_URL } from '../config/api';
 const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, currentUserId, onUpdate, onRemove }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -21,8 +22,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
   const handleQuickAdminToggle = async () => {
     setQuickActionLoading(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}/role`, {
         method: 'PUT',
@@ -50,8 +50,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
   const handleSave = async () => {
     setLoading(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}/role`, {
         method: 'PUT',
@@ -80,8 +79,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/members/${member.user_id}`, {
         method: 'DELETE',

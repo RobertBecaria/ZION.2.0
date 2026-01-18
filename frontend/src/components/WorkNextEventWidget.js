@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { Calendar, Clock, MapPin, X, Users, Bell, CheckCircle, XCircle, HelpCircle, Eye } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config/api';
 const API = `${BACKEND_URL}/api`;
 
 // Separate Modal Component that doesn't re-render with countdown

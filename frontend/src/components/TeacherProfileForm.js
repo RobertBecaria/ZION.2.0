@@ -4,8 +4,8 @@ import {
   X, ChevronDown, Search, User
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function TeacherProfileForm({ organizationId, onClose, onSave, moduleColor = '#ea580c' }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

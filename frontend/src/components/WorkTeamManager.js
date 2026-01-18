@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, X, Briefcase, User, Calendar, AlertCircle, Check, Trash2, Edit } from 'lucide-react';
 
+import { BACKEND_URL } from '../config/api';
 const WorkTeamManager = ({ organizationId, currentMembership, onClose }) => {
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-  const API = `${BACKEND_URL}/api`;
+    const API = `${BACKEND_URL}/api`;
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

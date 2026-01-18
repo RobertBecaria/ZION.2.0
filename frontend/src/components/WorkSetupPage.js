@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Search, Plus, Globe, Lock, MapPin, Calendar, Users, Briefcase, Check, X } from 'lucide-react';
 import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
 
+import { BACKEND_URL } from '../config/api';
 const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinRequest }) => {
   
   const [mode, setMode] = useState(initialMode); // 'choice', 'search', 'create'
@@ -41,8 +42,7 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
     
     setSearching(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
       
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/search`, {
         method: 'POST',
@@ -77,8 +77,7 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
   const handleCreateOrganization = async () => {
     setCreating(true);
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
       
       const response = await fetch(`${BACKEND_URL}/api/work/organizations`, {
         method: 'POST',

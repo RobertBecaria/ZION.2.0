@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
   console.log('WorkDepartmentManager loaded with organizationId:', organizationId);
   

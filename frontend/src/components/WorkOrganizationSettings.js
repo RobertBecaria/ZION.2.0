@@ -6,6 +6,7 @@ import WorkMemberSettings from './WorkMemberSettings';
 import WorkChangeRequestsManager from './WorkChangeRequestsManager';
 import BusinessERICSettings from './BusinessERICSettings';
 
+import { BACKEND_URL } from '../config/api';
 const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveOrganization, currentMembership }) => {
   const [organization, setOrganization] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,8 +62,7 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
 
   const loadOrganization = async () => {
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -103,8 +103,7 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
 
   const loadPendingChangeRequests = async () => {
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       // Load both change requests and join requests
       const [changeResponse, joinResponse] = await Promise.all([
@@ -166,8 +165,7 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
     setError(null);
 
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}`, {
         method: 'PUT',
@@ -201,8 +199,7 @@ const WorkOrganizationSettings = ({ organizationId, onClose, onSuccess, onLeaveO
     setError(null);
 
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/leave`, {
         method: 'POST',

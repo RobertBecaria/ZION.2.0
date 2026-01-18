@@ -4,8 +4,8 @@ import {
   ChevronRight, GraduationCap, User
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
+import { BACKEND_URL } from '../config/api';
 const MyClassesList = ({ selectedSchool, role, onBack, onSelectClass, moduleColor = '#6D28D9' }) => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);

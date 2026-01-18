@@ -10,6 +10,7 @@ import WorkEventsPanel from './WorkEventsPanel';
 import TeacherProfileForm from './TeacherProfileForm';
 import TeacherDirectory from './TeacherDirectory';
 
+import { BACKEND_URL } from '../config/api';
 const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSettings }) => {
   const [organization, setOrganization] = useState(null);
   const [members, setMembers] = useState([]);
@@ -44,8 +45,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     setError(null);
     
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       if (!token) {
         throw new Error('Не авторизован');
@@ -96,8 +96,7 @@ const WorkOrganizationProfile = ({ organizationId, onBack, onInviteMember, onSet
     if (!organizationId || !organization?.user_is_admin) return;
 
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-      const token = localStorage.getItem('zion_token');
+            const token = localStorage.getItem('zion_token');
 
       // Load join requests count
       const response = await fetch(`${BACKEND_URL}/api/work/organizations/${organizationId}/join-requests`, {

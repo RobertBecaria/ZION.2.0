@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL } from '../config/api';
 const API = `${BACKEND_URL}/api`;
 
 function WorkNotificationBell({ organizationId }) {
