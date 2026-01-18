@@ -857,11 +857,27 @@ const AdminDatabaseManagement = () => {
       </div>
 
       {/* Action Buttons */}
+      {/* Backup Progress Bar */}
+      {backupLoading && backupProgress > 0 && (
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-green-500/30 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">{backupStatus}</span>
+            <span className="text-green-400 font-medium">{backupProgress}%</span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-300"
+              style={{ width: `${backupProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
           onClick={handleBackup}
           disabled={backupLoading}
-          className="flex items-center justify-center gap-3 p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:border-green-500/50 transition-all group"
+          className="flex items-center justify-center gap-3 p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:border-green-500/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {backupLoading ? (
             <div className="w-8 h-8 border-3 border-green-500/30 border-t-green-500 rounded-full animate-spin"></div>
@@ -870,13 +886,16 @@ const AdminDatabaseManagement = () => {
           )}
           <div className="text-left">
             <p className="text-white font-semibold text-lg">Создать резервную копию</p>
-            <p className="text-slate-400 text-sm">Скачать JSON-файл со всеми данными</p>
+            <p className="text-slate-400 text-sm">
+              {backupLoading ? backupStatus || 'Загрузка...' : 'Скачать JSON-файл со всеми данными'}
+            </p>
           </div>
         </button>
 
         <button
           onClick={() => setShowRestoreModal(true)}
-          className="flex items-center justify-center gap-3 p-6 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 transition-all group"
+          disabled={backupLoading}
+          className="flex items-center justify-center gap-3 p-6 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Upload className="w-8 h-8 text-cyan-400 group-hover:scale-110 transition-transform" />
           <div className="text-left">
