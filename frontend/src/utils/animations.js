@@ -58,6 +58,23 @@ export const triggerConfetti = (targetElement = document.body, options = {}) => 
 };
 
 /**
+ * HTML Escape utility to prevent XSS attacks
+ * @param {string} str - The string to escape
+ * @returns {string} - The escaped string safe for innerHTML
+ */
+const escapeHtml = (str) => {
+  if (typeof str !== 'string') return str;
+  const htmlEscapes = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char]);
+};
+
+/**
  * Toast Notification System
  * Modern toast notifications with animations
  */
@@ -86,7 +103,7 @@ class ToastManager {
     const id = Date.now() + Math.random();
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     const icons = {
       success: '✓',
       error: '✕',
@@ -94,11 +111,15 @@ class ToastManager {
       warning: '⚠'
     };
 
+    // SECURITY: Escape user-provided content to prevent XSS attacks
+    const safeTitle = escapeHtml(title);
+    const safeMessage = escapeHtml(message);
+
     toast.innerHTML = `
       <div class="toast-icon">${icons[type] || icons.info}</div>
       <div class="toast-content">
-        ${title ? `<div class="toast-title">${title}</div>` : ''}
-        <div class="toast-message">${message}</div>
+        ${safeTitle ? `<div class="toast-title">${safeTitle}</div>` : ''}
+        <div class="toast-message">${safeMessage}</div>
       </div>
       <button class="toast-close" aria-label="Close">✕</button>
     `;
