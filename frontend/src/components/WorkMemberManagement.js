@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Shield, Crown, Check, X, AlertTriangle, ChevronDown } from 'lucide-react';
 import { WorkRoleTypes } from '../mock-work';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, currentUserId, onUpdate, onRemove }) => {
@@ -41,7 +42,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
       onUpdate && onUpdate();
     } catch (error) {
       console.error('Error toggling admin:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setQuickActionLoading(false);
     }
@@ -70,7 +71,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
       onUpdate && onUpdate();
     } catch (error) {
       console.error('Error updating member:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -96,7 +97,7 @@ const WorkMemberManagement = ({ member, organizationId, isCurrentUser, isOwner, 
       onRemove && onRemove();
     } catch (error) {
       console.error('Error removing member:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setLoading(false);
       setShowDeleteConfirm(false);

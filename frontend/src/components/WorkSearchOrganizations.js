@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Building2, MapPin, Users, Globe, Lock, ArrowLeft, Filter, Check, Clock } from 'lucide-react';
 import { Industries, OrganizationTypes } from '../mock-work';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkSearchOrganizations = ({ onBack, onViewProfile, onJoinSuccess }) => {
@@ -84,11 +85,11 @@ const WorkSearchOrganizations = ({ onBack, onViewProfile, onJoinSuccess }) => {
       ));
       
       // Show success message
-      alert(data.message || 'Запрос на вступление отправлен! Администратор организации получит уведомление.');
-      
+      toast.success(data.message || 'Запрос на вступление отправлен! Администратор организации получит уведомление.');
+
     } catch (error) {
       console.error('Request join error:', error);
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setRequestingOrgId(null);
     }

@@ -5,6 +5,7 @@ import UniversalChatLayout from './UniversalChatLayout';
 import FamilyStatusForm from './FamilyStatusForm';
 import ProfileImageUpload from './ProfileImageUpload';
 import FamilySettingsPage from './FamilySettingsPage';
+import { toast } from '../utils/animations';
 
 function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
   const [activeTab, setActiveTab] = useState('wall'); // 'wall' | 'chat' | 'calendar'
@@ -31,7 +32,7 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
       if (response.ok) {
         // Update local state
         setFamily(prev => ({ ...prev, banner_url: base64Image }));
-        alert('✅ Баннер обновлен!');
+        toast.success('Баннер обновлен!');
       } else {
         throw new Error('Failed to upload banner');
       }
@@ -59,7 +60,7 @@ function MyFamilyProfile({ user, familyData, moduleColor = '#059669' }) {
       if (response.ok) {
         // Update local state
         setFamily(prev => ({ ...prev, family_photo_url: base64Image }));
-        alert('✅ Аватар обновлен!');
+        toast.success('Аватар обновлен!');
       } else {
         throw new Error('Failed to upload avatar');
       }

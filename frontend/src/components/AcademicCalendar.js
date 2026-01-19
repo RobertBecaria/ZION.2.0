@@ -3,10 +3,11 @@
  * Calendar view for school events, holidays, and important dates
  */
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Calendar, ChevronLeft, ChevronRight, Plus, X, Clock, MapPin,
   Users
 } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 const EVENT_TYPES = [
   { value: 'HOLIDAY', label: 'Праздник', icon: '🎉', color: '#10B981' },
@@ -124,11 +125,11 @@ const AcademicCalendar = ({ organizationId, schoolRoles, user }) => {
         fetchEvents();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при создании события');
+        toast.error(error.detail || 'Ошибка при создании события');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Ошибка при создании события');
+      toast.error('Ошибка при создании события');
     }
   };
 

@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, X, Calendar } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -103,7 +104,7 @@ const MyThingsItemForm = ({
     if (files.length === 0) return;
     
     if (formData.images.length + files.length > 5) {
-      alert('Максимум 5 изображений');
+      toast.warning('Максимум 5 изображений');
       return;
     }
     
@@ -198,11 +199,11 @@ const MyThingsItemForm = ({
         onSuccess?.(data.item);
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при сохранении');
+        toast.error(error.detail || 'Ошибка при сохранении');
       }
     } catch (error) {
       console.error('Error saving item:', error);
-      alert('Ошибка при сохранении');
+      toast.error('Ошибка при сохранении');
     } finally {
       setLoading(false);
     }

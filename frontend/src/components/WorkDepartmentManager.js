@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
-  console.log('WorkDepartmentManager loaded with organizationId:', organizationId);
-  
   const [departments, setDepartments] = useState([]);
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,15 +17,12 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
   });
 
   useEffect(() => {
-    console.log('WorkDepartmentManager useEffect triggered');
-    console.log('  organizationId:', organizationId);
     fetchDepartments();
     fetchOrganizationMembers();
   }, [organizationId]);
 
   const fetchDepartments = async () => {
     try {
-      console.log('fetchDepartments called for organizationId:', organizationId);
       setLoading(true);
       const token = localStorage.getItem('zion_token');
       const response = await fetch(`${BACKEND_URL}/api/organizations/${organizationId}/departments`, {
@@ -37,15 +32,9 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         }
       });
 
-      console.log('fetchDepartments response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('fetchDepartments data:', data);
         setDepartments(data.data || []);
-        console.log('Departments set to:', data.data || []);
-      } else {
-        console.error('fetchDepartments failed with status:', response.status);
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -108,7 +97,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      alert('Введите название отдела');
+      toast.warning('Введите название отдела');
       return;
     }
 
@@ -130,17 +119,14 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         );
 
         if (response.ok) {
-          alert('Отдел обновлен!');
+          toast.success('Отдел обновлен!');
           await fetchDepartments();
         } else {
           const error = await response.json();
-          alert(error.detail || 'Ошибка при обновлении отдела');
+          toast.error(error.detail || 'Ошибка при обновлении отдела');
         }
       } else {
         // Create new
-        console.log('Creating department with organization ID:', organizationId);
-        console.log('Form data:', formData);
-        
         const response = await fetch(
           `${BACKEND_URL}/api/organizations/${organizationId}/departments`,
           {
@@ -153,22 +139,20 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
           }
         );
 
-        console.log('Response status:', response.status);
         const responseData = await response.json();
-        console.log('Response data:', responseData);
 
         if (response.ok) {
-          alert('Отдел создан!');
+          toast.success('Отдел создан!');
           await fetchDepartments();
         } else {
-          alert(responseData.detail || 'Ошибка при создании отдела');
+          toast.error(responseData.detail || 'Ошибка при создании отдела');
         }
       }
 
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error saving department:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
@@ -188,15 +172,15 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         );
 
         if (response.ok) {
-          alert('Отдел удален');
+          toast.success('Отдел удален');
           await fetchDepartments();
         } else {
           const error = await response.json();
-          alert(error.detail || 'Ошибка при удалении отдела');
+          toast.error(error.detail || 'Ошибка при удалении отдела');
         }
       } catch (error) {
         console.error('Error deleting department:', error);
-        alert('Произошла ошибка');
+        toast.error('Произошла ошибка');
       }
     }
   };

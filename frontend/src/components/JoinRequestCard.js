@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Clock, ThumbsUp, ThumbsDown, CheckCircle } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 const JoinRequestCard = ({ request, onVoteSubmitted }) => {
   const [voting, setVoting] = useState(false);
@@ -24,14 +25,14 @@ const JoinRequestCard = ({ request, onVoteSubmitted }) => {
       if (response.ok) {
         const data = await response.json();
         setVoted(true);
-        alert(data.message);
+        toast.success(data.message);
         onVoteSubmitted();
       } else {
         const errorData = await response.json();
-        alert(errorData.detail || 'Ошибка при голосовании');
+        toast.error(errorData.detail || 'Ошибка при голосовании');
       }
     } catch (err) {
-      alert('Ошибка при голосовании');
+      toast.error('Ошибка при голосовании');
     } finally {
       setVoting(false);
     }

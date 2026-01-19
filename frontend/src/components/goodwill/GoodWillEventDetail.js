@@ -4,6 +4,7 @@ import {
   CheckCircle, HelpCircle, XCircle, Star, MessageCircle, Image,
   QrCode, Bell, BellOff, Twitter, Facebook, Link2, Copy
 } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 // Import subcomponents for better code organization
 import EventReviewsTab from './EventReviewsTab';
@@ -114,7 +115,7 @@ const GoodWillEventDetail = ({
         fetchWallet();
       } else {
         const error = await res.json();
-        alert(error.detail || 'Ошибка при покупке билета');
+        toast.error(error.detail || 'Ошибка при покупке билета');
       }
     } catch (error) {
       console.error('Error purchasing ticket:', error);
@@ -151,7 +152,7 @@ const GoodWillEventDetail = ({
         break;
       case 'copy':
         navigator.clipboard.writeText(shareUrl);
-        alert('Ссылка скопирована!');
+        toast.success('Ссылка скопирована!');
         break;
       default:
         break;
@@ -174,7 +175,7 @@ const GoodWillEventDetail = ({
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setHasReminder(true);
-        alert('Напоминание установлено!');
+        toast.success('Напоминание установлено!');
       }
     } catch (error) {
       console.error('Error toggling reminder:', error);

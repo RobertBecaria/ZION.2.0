@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, UserMinus, X, Search } from 'lucide-react';
-
+import { toast } from '../../utils/animations';
 
 import { BACKEND_URL } from '../../config/api';
 const DepartmentMembersModal = ({
@@ -73,7 +73,7 @@ const DepartmentMembersModal = ({
         if (onRefresh) onRefresh();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при добавлении участника');
+        toast.error(error.detail || 'Ошибка при добавлении участника');
       }
     } catch (error) {
       console.error('Error adding member:', error);
@@ -101,7 +101,7 @@ const DepartmentMembersModal = ({
         if (onRefresh) onRefresh();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при удалении участника');
+        toast.error(error.detail || 'Ошибка при удалении участника');
       }
     } catch (error) {
       console.error('Error removing member:', error);

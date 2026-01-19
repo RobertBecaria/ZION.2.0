@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, MapPin, Globe, Calendar, UserPlus, Heart, ArrowLeft, Briefcase } from 'lucide-react';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function WorkOrganizationPublicProfile({ organizationId, onBack, currentUserId, moduleColor = '#C2410C' }) {
@@ -96,7 +96,7 @@ function WorkOrganizationPublicProfile({ organizationId, onBack, currentUserId, 
       if (response.ok) {
         const data = await response.json();
         setIsFollowing(!isFollowing);
-        alert(data.message);
+        toast.success(data.message);
         // Update follower count
         setOrganization(prev => ({
           ...prev,
@@ -104,11 +104,11 @@ function WorkOrganizationPublicProfile({ organizationId, onBack, currentUserId, 
         }));
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка');
+        toast.error(error.detail || 'Ошибка');
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     } finally {
       setActionLoading(false);
     }
@@ -130,14 +130,14 @@ function WorkOrganizationPublicProfile({ organizationId, onBack, currentUserId, 
       if (response.ok) {
         const data = await response.json();
         setHasJoinRequest(true);
-        alert(data.message || 'Запрос отправлен!');
+        toast.success(data.message || 'Запрос отправлен!');
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при отправке запроса');
+        toast.error(error.detail || 'Ошибка при отправке запроса');
       }
     } catch (error) {
       console.error('Error sending join request:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     } finally {
       setActionLoading(false);
     }

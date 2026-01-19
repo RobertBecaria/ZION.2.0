@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Bot, Users as UsersIcon } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
   const [selectedGender, setSelectedGender] = useState('');
@@ -33,7 +34,7 @@ function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
 
   const handleSubmit = async () => {
     if (!selectedGender) {
-      alert('Пожалуйста, выберите пол');
+      toast.warning('Пожалуйста, выберите пол');
       return;
     }
 
@@ -68,7 +69,7 @@ function GenderUpdateModal({ isOpen, onClose, onUpdate }) {
       }
     } catch (error) {
       console.error('Error updating gender:', error);
-      alert(error.message || 'Ошибка при обновлении. Попробуйте еще раз.');
+      toast.error(error.message || 'Ошибка при обновлении. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }

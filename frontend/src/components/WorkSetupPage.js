@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Search, Plus, Globe, Lock, MapPin, Calendar, Users, Briefcase, Check, X } from 'lucide-react';
 import { OrganizationTypes, OrganizationSizes, Industries } from '../mock-work';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinRequest }) => {
@@ -64,7 +65,7 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
       setSearchResults(data.organizations || []);
     } catch (error) {
       console.error('Search error:', error);
-      alert('Ошибка при поиске организаций');
+      toast.error('Ошибка при поиске организаций');
     } finally {
       setSearching(false);
     }
@@ -94,12 +95,11 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
       }
       
       const data = await response.json();
-      console.log('Organization created:', data);
-      alert('Организация успешно создана!');
+      toast.success('Организация успешно создана!');
       onComplete && onComplete();
     } catch (error) {
       console.error('Create organization error:', error);
-      alert(`Ошибка: ${error.message}`);
+      toast.error(`Ошибка: ${error.message}`);
     } finally {
       setCreating(false);
     }
@@ -107,8 +107,7 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
 
   const handleJoinOrganization = (orgId) => {
     // Mock: Show success and navigate
-    console.log('Joining organization:', orgId);
-    alert('Запрос на присоединение отправлен! (В разработке)');
+    toast.success('Запрос на присоединение отправлен! (В разработке)');
     onJoinRequest && onJoinRequest(orgId);
   };
 

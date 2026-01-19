@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Megaphone, Plus, Filter, AlertCircle, Info, ArrowLeft, X } from 'lucide-react';
 import WorkAnnouncementCard from './WorkAnnouncementCard';
 import WorkAnnouncementComposer from './WorkAnnouncementComposer';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleColor = '#C2410C' }) {
@@ -99,11 +99,11 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
         );
 
         if (response.ok) {
-          alert('Объявление обновлено!');
+          toast.success('Объявление обновлено!');
           await fetchAnnouncements();
         } else {
           const error = await response.json();
-          alert(error.detail || 'Ошибка при обновлении');
+          toast.error(error.detail || 'Ошибка при обновлении');
         }
       } else {
         // Create new
@@ -120,11 +120,11 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
         );
 
         if (response.ok) {
-          alert('Объявление опубликовано!');
+          toast.success('Объявление опубликовано!');
           await fetchAnnouncements();
         } else {
           const error = await response.json();
-          alert(error.detail || 'Ошибка при создании');
+          toast.error(error.detail || 'Ошибка при создании');
         }
       }
 
@@ -132,7 +132,7 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
       setEditingAnnouncement(null);
     } catch (error) {
       console.error('Error saving announcement:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
@@ -157,15 +157,15 @@ function WorkAnnouncementsList({ organizationId, onBack, currentUserId, moduleCo
         );
 
         if (response.ok) {
-          alert('Объявление удалено');
+          toast.success('Объявление удалено');
           await fetchAnnouncements();
         } else {
           const error = await response.json();
-          alert(error.detail || 'Ошибка при удалении');
+          toast.error(error.detail || 'Ошибка при удалении');
         }
       } catch (error) {
         console.error('Error deleting announcement:', error);
-        alert('Произошла ошибка');
+        toast.error('Произошла ошибка');
       }
     }
   };

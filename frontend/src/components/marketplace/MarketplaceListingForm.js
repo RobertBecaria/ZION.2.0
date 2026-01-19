@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Upload, X, Plus, Camera, Bot, Check, Copy, Sparkles } from 'lucide-react';
 import ERICAnalyzeButton from '../eric/ERICAnalyzeButton';
+import { toast } from '../../utils/animations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -120,7 +121,7 @@ const MarketplaceListingForm = ({
     if (files.length === 0) return;
     
     if (formData.images.length + files.length > 10) {
-      alert('Максимум 10 изображений');
+      toast.warning('Максимум 10 изображений');
       return;
     }
     
@@ -168,7 +169,7 @@ const MarketplaceListingForm = ({
   };
 
   const handleAnalysisError = (err) => {
-    alert(err);
+    toast.error(err);
   };
 
   const copyAnalysis = () => {
@@ -248,11 +249,11 @@ const MarketplaceListingForm = ({
         onSuccess?.(data.product);
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при сохранении');
+        toast.error(error.detail || 'Ошибка при сохранении');
       }
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Ошибка при сохранении');
+      toast.error('Ошибка при сохранении');
     } finally {
       setLoading(false);
     }

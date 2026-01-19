@@ -3,6 +3,7 @@ import { Users, Home, Search, Plus } from 'lucide-react';
 import MatchingFamiliesDisplay from './MatchingFamiliesDisplay';
 import FamilyUnitCreation from './FamilyUnitCreation';
 import FamilyUnitDashboard from './FamilyUnitDashboard';
+import { toast } from '../utils/animations';
 
 const FamilyTriggerFlow = ({ user, onUpdateUser }) => {
   const [step, setStep] = useState('loading'); // loading, checking, matches, create, dashboard
@@ -121,7 +122,7 @@ const FamilyTriggerFlow = ({ user, onUpdateUser }) => {
       );
 
       if (response.ok) {
-        alert('Запрос на присоединение отправлен! Ожидайте одобрения от глав семьи.');
+        toast.success('Запрос на присоединение отправлен! Ожидайте одобрения от глав семьи.');
         setStep('create'); // Show create option while waiting
       } else {
         throw new Error('Не удалось отправить запрос');

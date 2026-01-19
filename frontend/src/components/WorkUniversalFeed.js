@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, FileText, Building2, Plus, Calendar, CheckCircle2 } from 'lucide-react';
 import WorkPostCard from './WorkPostCard';
 import WorkTasksPanel from './work/WorkTasksPanel';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkUniversalFeed = ({ currentUserId }) => {
@@ -96,7 +97,7 @@ const WorkUniversalFeed = ({ currentUserId }) => {
       }
     } catch (error) {
       console.error('Create post error:', error);
-      alert('Не удалось создать пост');
+      toast.error('Не удалось создать пост');
     } finally {
       setPosting(false);
     }
@@ -118,7 +119,7 @@ const WorkUniversalFeed = ({ currentUserId }) => {
       }
     } catch (error) {
       console.error('Delete post error:', error);
-      alert('Не удалось удалить пост');
+      toast.error('Не удалось удалить пост');
     }
   };
 

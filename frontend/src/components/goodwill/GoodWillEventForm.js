@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Calendar, MapPin, Clock, Coins, Plus, X, Globe, Image, Youtube, Users, RefreshCw } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -147,7 +148,7 @@ const GoodWillEventForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!organizerProfile) {
-      alert('Сначала создайте профиль организатора');
+      toast.warning('Сначала создайте профиль организатора');
       return;
     }
 
@@ -202,11 +203,11 @@ const GoodWillEventForm = ({
         onEventCreated?.(data.event);
       } else {
         const error = await res.json();
-        alert(error.detail || 'Ошибка при создании мероприятия');
+        toast.error(error.detail || 'Ошибка при создании мероприятия');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Ошибка при создании мероприятия');
+      toast.error('Ошибка при создании мероприятия');
     } finally {
       setSubmitting(false);
     }

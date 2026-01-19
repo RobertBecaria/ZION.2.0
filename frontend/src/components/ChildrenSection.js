@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, X, Edit2, Save } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 const ChildrenSection = ({ user, moduleColor = '#1E40AF' }) => {
   const [children, setChildren] = useState([]);
@@ -100,7 +101,7 @@ const ChildrenSection = ({ user, moduleColor = '#1E40AF' }) => {
     try {
       // Validate required fields
       if (!formData.first_name || !formData.last_name || !formData.date_of_birth) {
-        alert('Пожалуйста, заполните обязательные поля: Имя, Фамилия и Дата Рождения');
+        toast.warning('Пожалуйста, заполните обязательные поля: Имя, Фамилия и Дата Рождения');
         return;
       }
 
@@ -118,16 +119,16 @@ const ChildrenSection = ({ user, moduleColor = '#1E40AF' }) => {
 
       if (response.ok) {
         const result = await response.json();
-        alert('Информация о ребёнке успешно сохранена!');
+        toast.success('Информация о ребёнке успешно сохранена!');
         resetForm();
         fetchChildren(); // Reload the list
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.detail || 'Не удалось сохранить данные'}`);
+        toast.error(`Ошибка: ${error.detail || 'Не удалось сохранить данные'}`);
       }
     } catch (error) {
       console.error('Error saving child:', error);
-      alert('Произошла ошибка при сохранении данных');
+      toast.error('Произошла ошибка при сохранении данных');
     } finally {
       setLoading(false);
     }

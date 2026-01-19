@@ -3,11 +3,12 @@
  * Detailed view of a marketplace product
  */
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   ArrowLeft, Heart, Share2, MapPin, Clock, Eye, Phone, MessageCircle,
   User, Building2, ChevronLeft, ChevronRight, AlertCircle, Coins, Wallet,
   CheckCircle, X
 } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -147,11 +148,11 @@ const MarketplaceProductDetail = ({
           url: window.location.href
         });
       } catch (error) {
-        console.log('Share cancelled');
+        // Share was cancelled or failed
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Ссылка скопирована!');
+      toast.success('Ссылка скопирована!');
     }
   };
 

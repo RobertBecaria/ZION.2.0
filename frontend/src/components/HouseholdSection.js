@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Users, MapPin, Plus, X, Search, Save, Trash2 } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 function HouseholdSection({ user, moduleColor = '#059669' }) {
   const [household, setHousehold] = useState(null);
@@ -74,13 +75,13 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
         setHousehold(data.household);
         setShowCreateForm(false);
         loadHousehold();
-        alert('✅ Домохозяйство создано!');
+        toast.success('Домохозяйство создано!');
       } else {
-        alert('Ошибка создания домохозяйства');
+        toast.error('Ошибка создания домохозяйства');
       }
     } catch (error) {
       console.error('Error creating household:', error);
-      alert('Ошибка создания домохозяйства');
+      toast.error('Ошибка создания домохозяйства');
     }
   };
 
@@ -143,11 +144,11 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
         setSearchQuery('');
         setSearchResults([]);
         setShowAddMember(false);
-        alert('✅ Член домохозяйства добавлен');
+        toast.success('Член домохозяйства добавлен');
       }
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Ошибка добавления члена');
+      toast.error('Ошибка добавления члена');
     }
   };
 
@@ -168,11 +169,11 @@ function HouseholdSection({ user, moduleColor = '#059669' }) {
 
       if (response.ok) {
         loadHousehold();
-        alert('✅ Член домохозяйства удален');
+        toast.success('Член домохозяйства удален');
       }
     } catch (error) {
       console.error('Error removing member:', error);
-      alert('Ошибка удаления члена');
+      toast.error('Ошибка удаления члена');
     }
   };
 

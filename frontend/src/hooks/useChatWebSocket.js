@@ -76,7 +76,7 @@ export const useChatWebSocket = (chatId, options = {}) => {
           // Keep-alive response, do nothing
           break;
         default:
-          console.log('Unknown WebSocket message type:', data.type);
+          // Unknown message type - ignored
       }
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
@@ -103,7 +103,6 @@ export const useChatWebSocket = (chatId, options = {}) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected to chat:', chatId);
         setIsConnected(true);
         setConnectionError(null);
 
@@ -123,7 +122,6 @@ export const useChatWebSocket = (chatId, options = {}) => {
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
 
         // Clear ping interval
@@ -135,7 +133,6 @@ export const useChatWebSocket = (chatId, options = {}) => {
         // Attempt reconnection if not intentionally closed
         if (!isUnmountedRef.current && enabled && event.code !== 1000) {
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('Attempting WebSocket reconnection...');
             if (reconnectRef.current) {
               reconnectRef.current();
             }

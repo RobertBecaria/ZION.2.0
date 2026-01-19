@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Building2, XCircle, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkJoinRequests = ({ onBack, onViewProfile }) => {
@@ -61,7 +62,7 @@ const WorkJoinRequests = ({ onBack, onViewProfile }) => {
       setRequests(prev => prev.filter(req => req.id !== requestId));
     } catch (error) {
       console.error('Cancel request error:', error);
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setCancellingId(null);
     }

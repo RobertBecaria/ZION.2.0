@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Megaphone, AlertCircle, Info, X, Building2, Users } from 'lucide-react';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function WorkAnnouncementComposer({ organizationId, onClose, onSave, editingAnnouncement = null, moduleColor = '#C2410C' }) {
@@ -45,15 +45,15 @@ function WorkAnnouncementComposer({ organizationId, onClose, onSave, editingAnno
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
-      alert('Введите заголовок объявления');
+      toast.warning('Введите заголовок объявления');
       return;
     }
     if (!formData.content.trim()) {
-      alert('Введите текст объявления');
+      toast.warning('Введите текст объявления');
       return;
     }
     if (formData.target_type === 'DEPARTMENTS' && formData.target_departments.length === 0) {
-      alert('Выберите хотя бы один отдел');
+      toast.warning('Выберите хотя бы один отдел');
       return;
     }
 

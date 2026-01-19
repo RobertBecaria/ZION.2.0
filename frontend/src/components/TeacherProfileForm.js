@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, GraduationCap, Users, Award, CheckCircle, 
+import {
+  BookOpen, GraduationCap, Users, Award, CheckCircle,
   X, ChevronDown, Search, User
 } from 'lucide-react';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function TeacherProfileForm({ organizationId, onClose, onSave, moduleColor = '#ea580c' }) {
@@ -98,11 +98,11 @@ function TeacherProfileForm({ organizationId, onClose, onSave, moduleColor = '#e
         onSave?.();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при сохранении профиля');
+        toast.error(error.detail || 'Ошибка при сохранении профиля');
       }
     } catch (error) {
       console.error('Error saving teacher profile:', error);
-      alert('Ошибка при сохранении профиля');
+      toast.error('Ошибка при сохранении профиля');
     } finally {
       setSaving(false);
     }

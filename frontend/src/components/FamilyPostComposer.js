@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Send, Users, Home, Globe, Image, Paperclip, X, Bot, Check, Copy, Sparkles, FileText } from 'lucide-react';
 import ERICAnalyzeButton from './eric/ERICAnalyzeButton';
+import { toast } from '../utils/animations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -53,7 +54,7 @@ const FamilyPostComposer = ({ familyUnit, user, onPostCreated }) => {
       setUploadedMediaIds(prev => [...prev, ...uploadedIds]);
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Ошибка загрузки файлов');
+      toast.error('Ошибка загрузки файлов');
     } finally {
       setUploadingFiles(false);
     }
@@ -71,7 +72,7 @@ const FamilyPostComposer = ({ familyUnit, user, onPostCreated }) => {
   };
 
   const handleAnalysisError = (err) => {
-    alert(err);
+    toast.error(err);
   };
 
   const copyAnalysis = () => {
@@ -120,10 +121,10 @@ const FamilyPostComposer = ({ familyUnit, user, onPostCreated }) => {
         setEricAnalysis(null);
         onPostCreated();
       } else {
-        alert('Не удалось создать пост');
+        toast.error('Не удалось создать пост');
       }
     } catch (err) {
-      alert('Ошибка при создании поста');
+      toast.error('Ошибка при создании поста');
     } finally {
       setPosting(false);
     }

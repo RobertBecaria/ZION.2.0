@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, X, Upload, Loader } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 /**
  * ProfileImageUpload Component
@@ -54,13 +55,13 @@ function ProfileImageUpload({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Пожалуйста, выберите изображение');
+      toast.warning('Пожалуйста, выберите изображение');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Размер файла не должен превышать 5MB');
+      toast.warning('Размер файла не должен превышать 5MB');
       return;
     }
 
@@ -85,7 +86,7 @@ function ProfileImageUpload({
       closeModal();
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Ошибка при загрузке изображения');
+      toast.error('Ошибка при загрузке изображения');
       setIsUploading(false);
     }
   };

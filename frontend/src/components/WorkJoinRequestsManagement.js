@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Clock, Check, X, MessageSquare, AlertCircle } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkJoinRequestsManagement = ({ organizationId, organizationName }) => {
@@ -69,7 +70,7 @@ const WorkJoinRequestsManagement = ({ organizationId, organizationName }) => {
       setRequests(prev => prev.filter(req => req.id !== requestId));
     } catch (error) {
       console.error('Approve error:', error);
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setProcessingId(null);
     }
@@ -109,7 +110,7 @@ const WorkJoinRequestsManagement = ({ organizationId, organizationName }) => {
       setRejectRequestId(null);
     } catch (error) {
       console.error('Reject error:', error);
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setProcessingId(null);
     }

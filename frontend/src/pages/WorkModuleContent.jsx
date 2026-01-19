@@ -198,7 +198,7 @@ const WorkModuleContent = memo(function WorkModuleContent({
         return (
           <MySchoolsList
             onBack={nav.toMySchool}
-            onSchoolClick={(schoolId) => console.log('School clicked:', schoolId)}
+            onSchoolClick={(schoolId) => {}}
           />
         );
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, FileText } from 'lucide-react';
 import WorkPostComposer from './WorkPostComposer';
 import WorkPostCard from './WorkPostCard';
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 const WorkPostFeed = ({ organizationId, organizationName, currentUserId, isAdmin, canPost }) => {
@@ -61,7 +62,7 @@ const WorkPostFeed = ({ organizationId, organizationName, currentUserId, isAdmin
       }
     } catch (error) {
       console.error('Delete post error:', error);
-      alert('Не удалось удалить пост');
+      toast.error('Не удалось удалить пост');
     }
   };
 

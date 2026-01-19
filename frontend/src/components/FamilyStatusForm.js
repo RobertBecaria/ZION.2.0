@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Users, UserPlus, X, Plus, Info } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
   const [loading, setLoading] = useState(false);
@@ -63,7 +64,7 @@ function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
     e.preventDefault();
     
     if (!familyName.trim()) {
-      alert('Пожалуйста, укажите название семьи');
+      toast.warning('Пожалуйста, укажите название семьи');
       return;
     }
 
@@ -141,17 +142,17 @@ function FamilyStatusForm({ user, onFamilyCreated, moduleColor = '#059669' }) {
 
       if (response.ok) {
         const data = await response.json();
-        alert('✅ Профиль семьи успешно создан!');
-        
+        toast.success('Профиль семьи успешно создан!');
+
         // Reload page to show new family profile
         window.location.reload();
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.detail || 'Не удалось создать семью'}`);
+        toast.error(`Ошибка: ${error.detail || 'Не удалось создать семью'}`);
       }
     } catch (error) {
       console.error('Error creating family:', error);
-      alert('Произошла ошибка при создании семьи');
+      toast.error('Произошла ошибка при создании семьи');
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Plus, ChevronLeft, TrendingUp, Calendar, User, FileText, Award } from 'lucide-react';
+import { toast } from '../utils/animations';
 
 const StudentGradebook = ({ selectedSchool, role, onBack }) => {
   const [grades, setGrades] = useState([]);
@@ -169,7 +170,7 @@ const StudentGradebook = ({ selectedSchool, role, onBack }) => {
       );
 
       if (response.ok) {
-        alert('Оценка успешно добавлена!');
+        toast.success('Оценка успешно добавлена!');
         setShowAddGradeModal(false);
         fetchGrades(newGrade.student_id);
         // Reset form
@@ -185,11 +186,11 @@ const StudentGradebook = ({ selectedSchool, role, onBack }) => {
         });
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.detail || 'Не удалось добавить оценку'}`);
+        toast.error(`Ошибка: ${error.detail || 'Не удалось добавить оценку'}`);
       }
     } catch (error) {
       console.error('Error adding grade:', error);
-      alert('Произошла ошибка при добавлении оценки');
+      toast.error('Произошла ошибка при добавлении оценки');
     }
   };
 

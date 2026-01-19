@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Send, X, Trash2, Pause, Play } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 const VoiceRecorder = ({ 
   onSend, 
@@ -89,7 +90,7 @@ const VoiceRecorder = ({
       
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      alert('Не удалось получить доступ к микрофону. Пожалуйста, разрешите доступ.');
+      toast.error('Не удалось получить доступ к микрофону. Пожалуйста, разрешите доступ.');
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, UserPlus, Search, Filter, LayoutGrid, List, ChevronLeft, Edit3, Trash2, MoreHorizontal, TrendingUp, Activity, Clock, Plus, X, UserMinus } from 'lucide-react';
-
+import { toast } from '../utils/animations';
 
 import { BACKEND_URL } from '../config/api';
 function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#C2410C' }) {
@@ -120,11 +120,11 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
         await fetchDepartments(); // Refresh to update member counts
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при добавлении члена');
+        toast.error(error.detail || 'Ошибка при добавлении члена');
       }
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
@@ -149,11 +149,11 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
         await fetchDepartments();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при удалении члена');
+        toast.error(error.detail || 'Ошибка при удалении члена');
       }
     } catch (error) {
       console.error('Error removing member:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
@@ -170,7 +170,7 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
 
   const handleSaveEdit = async () => {
     if (!editFormData.name.trim()) {
-      alert('Введите название отдела');
+      toast.warning('Введите название отдела');
       return;
     }
 
@@ -189,16 +189,16 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
       );
 
       if (response.ok) {
-        alert('Отдел обновлен!');
+        toast.success('Отдел обновлен!');
         setShowEditModal(false);
         await fetchDepartments();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при обновлении отдела');
+        toast.error(error.detail || 'Ошибка при обновлении отдела');
       }
     } catch (error) {
       console.error('Error updating department:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
@@ -219,21 +219,21 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
       );
 
       if (response.ok) {
-        alert('Отдел удален!');
+        toast.success('Отдел удален!');
         await fetchDepartments();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при удалении отдела');
+        toast.error(error.detail || 'Ошибка при удалении отдела');
       }
     } catch (error) {
       console.error('Error deleting department:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 
   const handleInviteMember = async () => {
     if (!inviteEmail.trim()) {
-      alert('Введите email адрес');
+      toast.warning('Введите email адрес');
       return;
     }
 
@@ -252,18 +252,18 @@ function WorkDepartmentManagementPage({ organizationId, onBack, moduleColor = '#
       );
 
       if (response.ok) {
-        alert('Приглашение отправлено!');
+        toast.success('Приглашение отправлено!');
         setInviteEmail('');
         setShowInviteModal(false);
         // Refresh members list
         await fetchOrganizationMembers();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при отправке приглашения');
+        toast.error(error.detail || 'Ошибка при отправке приглашения');
       }
     } catch (error) {
       console.error('Error inviting member:', error);
-      alert('Произошла ошибка');
+      toast.error('Произошла ошибка');
     }
   };
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import {
   Send, Plus, Heart, MessageCircle, User, Calendar, Trash2,
   Image, Paperclip, X, FileText, MoreHorizontal, Smile, ChevronDown, Bot, Check, Copy, Sparkles
 } from 'lucide-react';
 import ERICAnalyzeButton from './eric/ERICAnalyzeButton';
+import { toast } from '../utils/animations';
 
 const JournalUniversalFeed = ({ 
   currentUserId, 
@@ -116,7 +117,7 @@ const JournalUniversalFeed = ({
 
   const handleCreatePost = async () => {
     if (!newPost.trim() || selectedOrg === 'all') {
-      alert('Пожалуйста, выберите школу и введите текст поста');
+      toast.warning('Пожалуйста, выберите школу и введите текст поста');
       return;
     }
 
@@ -148,11 +149,11 @@ const JournalUniversalFeed = ({
         fetchPosts();
       } else {
         const error = await response.json();
-        alert(`Ошибка: ${error.detail || 'Не удалось создать пост'}`);
+        toast.error(`Ошибка: ${error.detail || 'Не удалось создать пост'}`);
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Произошла ошибка при создании поста');
+      toast.error('Произошла ошибка при создании поста');
     } finally {
       setLoading(false);
     }
@@ -229,7 +230,7 @@ const JournalUniversalFeed = ({
       setUploadingFiles([]);
     } catch (error) {
       console.error('Error uploading files:', error);
-      alert(`Ошибка загрузки: ${error.message}`);
+      toast.error(`Ошибка загрузки: ${error.message}`);
       setUploadingFiles([]);
       setSelectedFiles(prev => prev.slice(0, -files.length));
     }
@@ -247,7 +248,7 @@ const JournalUniversalFeed = ({
   };
 
   const handleAnalysisError = (error) => {
-    alert(error);
+    toast.error(error);
   };
 
   const copyAnalysis = () => {
