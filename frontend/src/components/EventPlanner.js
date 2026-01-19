@@ -36,6 +36,7 @@ import UpcomingEventsSidebar from './EventPlanner/UpcomingEventsSidebar';
 
 // Import utility functions
 import { getEventTypeInfo, getCreatorRoleInfo, getCountdown as getCountdownUtil } from './EventPlanner/utils';
+import { toast } from '../utils/animations';
 
 const EventPlanner = ({ 
   organizationId, 
@@ -375,7 +376,7 @@ const EventPlanner = ({
         }
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при обновлении RSVP');
+        toast.error(error.detail || 'Ошибка при обновлении RSVP');
       }
     } catch (error) {
       console.error('Error updating RSVP:', error);
@@ -423,11 +424,11 @@ const EventPlanner = ({
         fetchEvents();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Ошибка при создании события');
+        toast.error(error.detail || 'Ошибка при создании события');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Ошибка при создании события');
+      toast.error('Ошибка при создании события');
     }
   };
 

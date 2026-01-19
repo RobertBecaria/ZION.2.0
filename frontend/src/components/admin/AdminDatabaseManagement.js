@@ -4,6 +4,7 @@ import {
   AlertTriangle, Clock, FileJson, Layers, Archive, History,
   ChevronDown, ChevronUp, X
 } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 // Get backend URL - smart detection for both preview and production
 const getBackendUrl = () => {
@@ -309,7 +310,7 @@ const RestoreModal = ({ onClose, onRestore }) => {
       if (useChunkedUpload) {
         const result = await uploadChunked(file, mode, token);
         setUploadStatus('Восстановление завершено!');
-        alert(`${result.message}\nВосстановлено документов: ${result.results.total_documents_restored}`);
+        toast.success(`${result.message} - Восстановлено документов: ${result.results.total_documents_restored}`);
       } else {
         // Original method for smaller files
         setUploadStatus('Чтение файла...');
@@ -735,18 +736,18 @@ const AdminDatabaseManagement = () => {
       fetchStatus();
       fetchHistory();
       
-      alert(`Резервная копия создана успешно!\nРазмер: ${formatBytes(result.size_bytes)}\nКоллекций: ${result.collections_count}`);
+      toast.success(`Резервная копия создана успешно! Размер: ${formatBytes(result.size_bytes)}, Коллекций: ${result.collections_count}`);
     } catch (err) {
       console.error('Backup error:', err);
       if (err.name === 'AbortError') {
         setError('Превышено время ожидания. База данных слишком большая для экспорта.');
-        alert('Ошибка: Превышено время ожидания (2 минуты). Попробуйте позже или обратитесь к администратору.');
+        toast.error('Превышено время ожидания (2 минуты). Попробуйте позже.');
       } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
         setError('Ошибка сети. Проверьте подключение к интернету и попробуйте снова.');
-        alert('Ошибка сети: Не удалось подключиться к серверу. Проверьте:\n1. Подключение к интернету\n2. Доступность сервера\n3. Попробуйте обновить страницу');
+        toast.error('Ошибка сети: Не удалось подключиться к серверу.');
       } else {
         setError(err.message);
-        alert('Ошибка: ' + err.message);
+        toast.error('Ошибка: ' + err.message);
       }
     } finally {
       setBackupLoading(false);
@@ -781,7 +782,7 @@ const AdminDatabaseManagement = () => {
       fetchStatus();
       fetchHistory();
       
-      alert(`${data.message}\nВосстановлено документов: ${data.results.total_documents_restored}`);
+      toast.success(`${data.message} - Восстановлено документов: ${data.results.total_documents_restored}`);
     } catch (err) {
       throw err;
     }

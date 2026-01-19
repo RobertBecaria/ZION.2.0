@@ -4,6 +4,7 @@ import {
   Edit, Trash2, UserX, UserCheck, Key, Eye, X, Save,
   AlertTriangle, User, Mail, Phone, Calendar, Shield
 } from 'lucide-react';
+import { toast } from '../../utils/animations';
 
 // Get backend URL - smart detection for both preview and production
 const getBackendUrl = () => {
@@ -56,7 +57,7 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
       onUpdate(data.user);
       setEditing(false);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
 
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
-      alert('Пароль должен быть не менее 6 символов');
+      toast.warning('Пароль должен быть не менее 6 символов');
       return;
     }
 
@@ -81,12 +82,12 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
       });
 
       if (!response.ok) throw new Error('Ошибка сброса пароля');
-      
-      alert('Пароль успешно сброшен');
+
+      toast.success('Пароль успешно сброшен');
       setShowResetPassword(false);
       setNewPassword('');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -108,7 +109,7 @@ const UserDetailModal = ({ user, onClose, onUpdate, onDelete }) => {
       onDelete(user.id);
       onClose();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -406,7 +407,7 @@ const AdminUserManagement = () => {
       const data = await response.json();
       setUsers(users.map(u => u.id === userId ? {...u, is_active: data.is_active} : u));
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 

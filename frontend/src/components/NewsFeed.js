@@ -10,6 +10,7 @@ import {
   Plus, Smile
 } from 'lucide-react';
 import { PostItem } from './wall';
+import { toast } from '../utils/animations';
 
 // Visibility options specific to News feed
 const VISIBILITY_OPTIONS = [
@@ -375,11 +376,11 @@ const NewsFeed = ({
         setPosts(prev => prev.filter(p => p.id !== postId));
       } else {
         const data = await response.json();
-        alert(data.detail || 'Не удалось удалить пост');
+        toast.error(data.detail || 'Не удалось удалить пост');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Ошибка при удалении поста');
+      toast.error('Ошибка при удалении поста');
     }
   };
 
