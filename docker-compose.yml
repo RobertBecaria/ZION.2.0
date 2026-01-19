@@ -16,14 +16,16 @@ services:
     container_name: zion-city-app
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "9080:80"
+      - "9443:443"
     environment:
       # Database (local MongoDB)
       - MONGO_URL=mongodb://zion_admin:${MONGO_PASSWORD}@mongodb:27017/zion_city?authSource=admin
       - DB_NAME=zion_city
       
       # Security
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=production
       - CORS_ORIGINS=${CORS_ORIGINS:-https://yourdomain.com}

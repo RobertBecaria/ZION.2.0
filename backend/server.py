@@ -25403,7 +25403,7 @@ MASTER_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
 # Validate admin credentials are configured
 if not MASTER_ADMIN_USERNAME or not MASTER_ADMIN_PASSWORD:
-    logger.warning("ADMIN_USERNAME and ADMIN_PASSWORD environment variables not set. Admin login will be disabled.")
+    print("WARNING: ADMIN_USERNAME and ADMIN_PASSWORD environment variables not set. Admin login will be disabled.")
 
 class AdminLogin(BaseModel):
     username: str

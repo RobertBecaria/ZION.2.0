@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BACKEND_URL } from '../config/api';
 import ReactDOM from 'react-dom';
 import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
 
@@ -12,7 +13,6 @@ const API = `${BACKEND_URL}/api`;
 
 function WorkUpcomingEventsList({ organizationId, maxEvents = 5 }) {
   const [events, setEvents] = useState([]);
-import { BACKEND_URL } from '../config/api';
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
