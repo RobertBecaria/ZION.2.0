@@ -7591,16 +7591,29 @@ async def get_media_file(
     # Check access permissions
     is_public = media_file.get("is_public", False)
     is_profile_picture = media_file.get("source_module") == "profile"
+    is_organization_media = media_file.get("source_module") == "work"  # Org logos/banners should be accessible
     is_owner = current_user_id and media_file.get("user_id") == current_user_id
 
-    # Allow access if: public, profile picture, or owner
-    if not (is_public or is_profile_picture or is_owner):
+    # Check if media is used as organization logo/banner (should be publicly accessible)
+    is_org_logo_or_banner = False
+    if not (is_public or is_profile_picture or is_organization_media or is_owner):
+        # Check if this file_id is used in any organization's logo_url or banner_url
+        media_url_pattern = f"/api/media/{file_id}"
+        org_using_media = await db.work_organizations.find_one({
+            "$or": [
+                {"logo_url": {"$regex": file_id}},
+                {"banner_url": {"$regex": file_id}}
+            ]
+        })
+        is_org_logo_or_banner = org_using_media is not None
+
+    # Allow access if: public, profile picture, organization media, org logo/banner, or owner
+    if not (is_public or is_profile_picture or is_organization_media or is_org_logo_or_banner or is_owner):
         # For non-public media, require authentication
         if not current_user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
         # Check if user has access through context (e.g., same organization, family)
         # For now, allow authenticated users to access media in shared contexts
-        # TODO: Implement fine-grained access control based on media context
 
     file_path = Path(media_file["file_path"])
     if not file_path.exists():
