@@ -94,11 +94,9 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
       }
       
       const data = await response.json();
-      console.log('Organization created:', data);
       alert('Организация успешно создана!');
       onComplete && onComplete();
     } catch (error) {
-      console.error('Create organization error:', error);
       alert(`Ошибка: ${error.message}`);
     } finally {
       setCreating(false);
@@ -106,8 +104,7 @@ const WorkSetupPage = ({ initialMode = 'choice', onBack, onComplete, onJoinReque
   };
 
   const handleJoinOrganization = (orgId) => {
-    // Mock: Show success and navigate
-    console.log('Joining organization:', orgId);
+    // TODO: Implement join organization API call
     alert('Запрос на присоединение отправлен! (В разработке)');
     onJoinRequest && onJoinRequest(orgId);
   };

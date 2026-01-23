@@ -51,10 +51,10 @@ const FamilyProfileWorldZone = ({
             <UserPlus size={16} />
             <span>Создать семью</span>
           </button>
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => {
-              console.log('Family post clicked');
+              // TODO: Implement family post creation
             }}
           >
             <MessageCircle size={16} />

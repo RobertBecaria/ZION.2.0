@@ -82,8 +82,8 @@ const ServicesSearch = ({
           setUserLocation([latitude, longitude]);
           setMapCenter([latitude, longitude]);
         },
-        (error) => {
-          console.log('Geolocation error:', error);
+        () => {
+          // Geolocation unavailable or denied - use default location
         }
       );
     }
@@ -173,8 +173,8 @@ const ServicesSearch = ({
           setUserLocation([latitude, longitude]);
           setMapCenter([latitude, longitude]);
         },
-        (error) => {
-          console.log('Geolocation error:', error);
+        () => {
+          // Geolocation unavailable or denied
         }
       );
     }

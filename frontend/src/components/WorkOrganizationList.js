@@ -23,10 +23,8 @@ const WorkOrganizationList = ({ onOrgClick, onCreateNew, onJoinOrg, onExploreFee
         }
         
         const data = await response.json();
-        console.log('Loaded organizations:', data.organizations?.map(o => ({name: o.name, id: o.id})));
         setOrganizations(data.organizations || []);
       } catch (error) {
-        console.error('Error loading organizations:', error);
         setError(error.message);
       } finally {
         setLoading(false);

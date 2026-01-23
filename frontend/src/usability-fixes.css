@@ -1,0 +1,479 @@
+/* ============================================
+   ZION.CITY USABILITY ENHANCEMENTS
+   Additional UX improvements that complement the skin
+============================================ */
+
+/* ============================================
+   1. SIDEBAR SCROLLING & LAYOUT
+============================================ */
+
+.left-sidebar,
+.right-sidebar {
+  max-height: calc(100vh - var(--zn-header-height, 70px));
+}
+
+/* ============================================
+   2. CONTENT OVERFLOW HANDLING
+============================================ */
+
+/* Ensure long text wraps properly */
+.post-content p,
+.comment-content,
+.message-content,
+.event-description {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Long URLs break properly */
+.post-content a,
+.comment-content a {
+  word-break: break-all;
+}
+
+/* ============================================
+   3. CARD CONTENT FITTING
+============================================ */
+
+.post-item,
+.post-card,
+.widget,
+.card,
+.event-item,
+.event-card,
+.profile-card {
+  height: auto;
+  min-height: 0;
+}
+
+.post-content,
+.event-description,
+.card-content {
+  overflow: visible;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ============================================
+   4. CONTENT AREA FULL WIDTH FIX
+============================================ */
+
+.split-content-layout .main-content-area:only-child {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+.content-area.full-width .main-content-area {
+  flex: 1;
+  max-width: 100%;
+}
+
+/* ============================================
+   5. LIST SPACING
+============================================ */
+
+.post-list,
+.feed-list,
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ============================================
+   6. IMAGE LOADING STATES
+============================================ */
+
+img {
+  background-color: var(--zn-bg-hover, #F8FAFC);
+}
+
+img.loading {
+  opacity: 0;
+}
+
+img.loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Avatar placeholder */
+.avatar-placeholder {
+  background: linear-gradient(135deg, var(--zn-bg-hover, #E5E7EB) 0%, var(--zn-border, #D1D5DB) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--zn-text-muted, #6B7280);
+}
+
+/* ============================================
+   7. SKIP LINK FOR ACCESSIBILITY
+============================================ */
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--zn-primary, #465FFF);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================
+   8. UTILITY CLASSES
+============================================ */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Clickable element base */
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Truncate text */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line truncate */
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Flex utilities */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* Gap utilities */
+.gap-0 { gap: 0; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+.gap-5 { gap: 20px; }
+.gap-6 { gap: 24px; }
+
+/* ============================================
+   9. ACTION BUTTON ROW
+============================================ */
+
+.action-buttons-row,
+.post-actions-row,
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-actions {
+  justify-content: flex-end;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--zn-border, #E4E6EA);
+}
+
+/* ============================================
+   10. ERROR BOUNDARY FALLBACK
+============================================ */
+
+.error-fallback {
+  padding: 32px;
+  text-align: center;
+  background: var(--zn-error-light, #FEF2F2);
+  border: 1px solid #FECACA;
+  border-radius: var(--zn-radius-xl, 16px);
+  margin: 16px;
+}
+
+.error-fallback h3 {
+  color: var(--zn-error, #DC2626);
+  margin-bottom: 8px;
+}
+
+.error-fallback p {
+  color: #7F1D1D;
+  margin-bottom: 16px;
+}
+
+.error-fallback button {
+  background: var(--zn-error, #DC2626);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--zn-radius-lg, 12px);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.error-fallback button:hover {
+  background: #B91C1C;
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   11. RESPONSIVE TOUCH TARGETS
+============================================ */
+
+@media (pointer: coarse) {
+  button,
+  .btn,
+  .nav-module,
+  .profile-btn {
+    min-height: 44px;
+  }
+
+  .close-btn,
+  .icon-btn,
+  .action-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sidebar-nav button {
+    margin-bottom: 4px;
+  }
+}
+
+/* ============================================
+   12. SELECTION STYLING
+============================================ */
+
+::selection {
+  background-color: var(--zn-primary-50, #EEF2FF);
+  color: var(--zn-primary, #465FFF);
+}
+
+.dark ::selection {
+  background-color: rgba(90, 122, 255, 0.3);
+  color: #F8FAFC;
+}
+
+/* ============================================
+   13. SMOOTH SCROLL
+============================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ============================================
+   14. ICON ALIGNMENT
+============================================ */
+
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-text svg {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   15. LINK STYLES
+============================================ */
+
+a {
+  color: var(--zn-primary, #465FFF);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--zn-primary-dark, #3348E0);
+  text-decoration: underline;
+}
+
+/* Don't underline on hover for buttons styled as links */
+a.no-underline:hover,
+button.link:hover {
+  text-decoration: none;
+}
+
+/* ============================================
+   16. TABLE RESPONSIVENESS
+============================================ */
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+/* ============================================
+   17. VISIBILITY UTILITIES
+============================================ */
+
+.hidden {
+  display: none !important;
+}
+
+.invisible {
+  visibility: hidden !important;
+}
+
+.opacity-0 { opacity: 0; }
+.opacity-50 { opacity: 0.5; }
+.opacity-100 { opacity: 1; }
+
+/* ============================================
+   18. TEXT UTILITIES
+============================================ */
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+.text-xs { font-size: 11px; }
+.text-sm { font-size: 13px; }
+.text-base { font-size: 14px; }
+.text-lg { font-size: 16px; }
+.text-xl { font-size: 18px; }
+.text-2xl { font-size: 20px; }
+
+.text-primary { color: var(--zn-text-primary); }
+.text-secondary { color: var(--zn-text-secondary); }
+.text-muted { color: var(--zn-text-muted); }
+.text-success { color: var(--zn-success); }
+.text-warning { color: var(--zn-warning); }
+.text-error { color: var(--zn-error); }
+
+/* ============================================
+   19. SPACING UTILITIES
+============================================ */
+
+.m-0 { margin: 0 !important; }
+.m-1 { margin: 4px !important; }
+.m-2 { margin: 8px !important; }
+.m-3 { margin: 12px !important; }
+.m-4 { margin: 16px !important; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 4px !important; }
+.mt-2 { margin-top: 8px !important; }
+.mt-3 { margin-top: 12px !important; }
+.mt-4 { margin-top: 16px !important; }
+.mt-6 { margin-top: 24px !important; }
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 4px !important; }
+.mb-2 { margin-bottom: 8px !important; }
+.mb-3 { margin-bottom: 12px !important; }
+.mb-4 { margin-bottom: 16px !important; }
+.mb-6 { margin-bottom: 24px !important; }
+
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 4px !important; }
+.p-2 { padding: 8px !important; }
+.p-3 { padding: 12px !important; }
+.p-4 { padding: 16px !important; }
+.p-5 { padding: 20px !important; }
+.p-6 { padding: 24px !important; }
+
+/* ============================================
+   20. BORDER UTILITIES
+============================================ */
+
+.border { border: 1px solid var(--zn-border); }
+.border-0 { border: none !important; }
+.border-t { border-top: 1px solid var(--zn-border); }
+.border-b { border-bottom: 1px solid var(--zn-border); }
+.border-l { border-left: 1px solid var(--zn-border); }
+.border-r { border-right: 1px solid var(--zn-border); }
+
+.rounded { border-radius: var(--zn-radius-md); }
+.rounded-lg { border-radius: var(--zn-radius-lg); }
+.rounded-xl { border-radius: var(--zn-radius-xl); }
+.rounded-full { border-radius: var(--zn-radius-full); }
+.rounded-none { border-radius: 0; }
+
+/* ============================================
+   END USABILITY ENHANCEMENTS
+============================================ */

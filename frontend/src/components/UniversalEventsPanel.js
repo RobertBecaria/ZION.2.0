@@ -142,8 +142,7 @@ function UniversalEventsPanel({
   };
 
   const handleRSVP = async (eventId, status) => {
-    // This would connect to RSVP endpoint
-    console.log('RSVP:', eventId, status);
+    // TODO: This would connect to RSVP endpoint
   };
 
   const resetForm = () => {

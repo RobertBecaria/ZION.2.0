@@ -1,0 +1,17 @@
+.git
+.gitignore
+*.md
+__pycache__
+*.pyc
+.pytest_cache
+node_modules
+.env
+.env.*
+!.env.example
+backups/
+logs/
+*.log
+test_reports/
+*_test.py
+tests/
+.emergent/

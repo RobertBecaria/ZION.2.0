@@ -7,7 +7,7 @@
 # =============================================================================
 # Stage 1: Backend Builder
 # =============================================================================
-FROM python:3.11-slim AS backend-builder
+FROM python:3.11.8-slim AS backend-builder
 
 WORKDIR /app/backend
 
@@ -27,7 +27,7 @@ COPY backend/ .
 # =============================================================================
 # Stage 2: Frontend Builder
 # =============================================================================
-FROM node:18-alpine AS frontend-builder
+FROM node:18.20.4-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -62,7 +62,7 @@ RUN npm run build
 # =============================================================================
 # Stage 3: Production Image
 # =============================================================================
-FROM python:3.11-slim
+FROM python:3.11.8-slim
 
 WORKDIR /app
 
@@ -105,6 +105,9 @@ EXPOSE 80 443
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost/api/health || exit 1
+
+# Run as non-root user for security
+USER www-data
 
 # Start supervisor (manages nginx + gunicorn)
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

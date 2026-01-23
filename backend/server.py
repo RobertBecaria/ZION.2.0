@@ -12,7 +12,7 @@ import json
 import shutil
 import random
 from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import List, Optional, Dict, Any, Set
 import uuid
 from datetime import datetime, timedelta, timezone, date
@@ -29,6 +29,17 @@ import time
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# ============================================================
+# SECURITY: Regex escaping for safe MongoDB queries
+# ============================================================
+
+def safe_regex(pattern: str) -> str:
+    """Escape user input for safe use in MongoDB regex queries.
+
+    Prevents regex injection attacks by escaping special characters.
+    """
+    return re.escape(pattern)
 
 # ============================================================
 # PRODUCTION CONFIGURATION
@@ -219,6 +230,15 @@ async def ensure_indexes():
         await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
         await db.notifications.create_index([("user_id", 1), ("is_read", 1), ("created_at", -1)], background=True)
         await db.agent_conversations.create_index([("user_id", 1), ("updated_at", -1)], background=True)
+
+        # Additional indexes for family and chat performance
+        await db.family_members.create_index([("user_id", 1), ("is_active", 1)], background=True)
+        await db.family_members.create_index([("family_id", 1), ("is_active", 1)], background=True)
+        await db.family_profiles.create_index([("creator_id", 1)], background=True)
+        await db.posts.create_index([("user_id", 1), ("created_at", -1)], background=True)
+        await db.chat_messages.create_index([("group_id", 1), ("created_at", -1)], background=True)
+        await db.notifications.create_index([("user_id", 1), ("read", 1), ("created_at", -1)], background=True)
+
         logger.info("✅ Database indexes verified")
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
@@ -894,6 +914,22 @@ class FamilyPost(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
 
+# === REQUEST MODELS FOR FAMILY ENDPOINTS ===
+
+class AddFamilyMemberRequest(BaseModel):
+    """Request model for adding a family member"""
+    user_id: str = Field(..., min_length=1)
+    relationship: str = Field(default="other")
+    family_role: str = Field(default="MEMBER")
+
+class FamilyPrivacySettingsUpdate(BaseModel):
+    """Request model for updating family privacy settings"""
+    is_private: Optional[bool] = None
+    allow_public_discovery: Optional[bool] = None
+    who_can_see_posts: Optional[str] = None
+    who_can_comment: Optional[str] = None
+    profile_searchability: Optional[str] = None
+
 # === WORK ORGANIZATION SYSTEM MODELS ===
 
 class WorkRole(str, Enum):
@@ -1137,13 +1173,25 @@ class WorkPost(BaseModel):
 
 class UserRegistration(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(
+        min_length=8,
+        description="Password must be at least 8 characters with at least one letter and one number"
+    )
     first_name: str
     last_name: str
     middle_name: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[datetime] = None
     gender: Optional[Gender] = None  # NEW: Gender selection
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not any(c.isalpha() for c in v):
+            raise ValueError('Password must contain at least one letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one number')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -3402,13 +3450,13 @@ async def save_uploaded_file(file: UploadFile, user_id: str) -> MediaFile:
     
     return media_file
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None, token_type: str = "user"):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": token_type})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -3447,11 +3495,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
+        token_type: str = payload.get("type")
         if user_id is None:
+            raise credentials_exception
+        # Verify this is a user token, not an admin token
+        if token_type != "user":
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
-    
+
     user = await get_user_by_id(user_id)
     if user is None:
         raise credentials_exception
@@ -3460,15 +3512,26 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 async def get_user_affiliations(user_id: str):
     """Get all affiliations for a user with detailed information"""
     user_affiliations = await db.user_affiliations.find({"user_id": user_id, "is_active": True}).to_list(100)
-    
+
+    if not user_affiliations:
+        return []
+
+    # Collect all affiliation IDs and fetch in a single query
+    affiliation_ids = [ua["affiliation_id"] for ua in user_affiliations]
+    affiliations_list = await db.affiliations.find({"id": {"$in": affiliation_ids}}).to_list(len(affiliation_ids))
+
+    # Create a lookup map for quick access
+    affiliations_map = {}
+    for aff in affiliations_list:
+        aff.pop("_id", None)
+        affiliations_map[aff["id"]] = aff
+
     affiliations_data = []
     for ua in user_affiliations:
-        affiliation = await db.affiliations.find_one({"id": ua["affiliation_id"]})
+        affiliation = affiliations_map.get(ua["affiliation_id"])
         if affiliation:
-            # Remove MongoDB's _id field to avoid serialization issues
-            affiliation.pop("_id", None)
             ua.pop("_id", None)
-            
+
             affiliations_data.append({
                 "id": ua["id"],
                 "user_role_in_org": ua["user_role_in_org"],
@@ -3477,7 +3540,7 @@ async def get_user_affiliations(user_id: str):
                 "verification_level": ua["verification_level"],
                 "affiliation": affiliation
             })
-    
+
     return affiliations_data
 
 async def find_or_create_affiliation(affiliation_data: AffiliationCreate) -> str:
@@ -3540,45 +3603,101 @@ async def create_auto_family_groups(user_id: str):
 
 async def get_user_family_connections(user_id: str) -> List[str]:
     """Get all family member user IDs for a given user (supports both old families and new family profiles)"""
-    # Get family memberships (works for both old families and new family profiles)
-    family_memberships = await db.family_members.find({
-        "user_id": user_id, 
-        "is_active": True,
-        "invitation_accepted": True  # Only include accepted invitations
-    }).to_list(100)
-    
-    connected_users = set()
-    
-    for membership in family_memberships:
-        # Get all other members of the same family
-        family_members = await db.family_members.find({
-            "family_id": membership["family_id"], 
-            "is_active": True,
-            "invitation_accepted": True
-        }).to_list(100)
-        
-        for member in family_members:
-            connected_users.add(member["user_id"])
-        
-        # Also get users from subscribed families (for family profile system)
-        user_family_ids = [membership["family_id"]]
-        subscriptions = await db.family_subscriptions.find({
-            "subscriber_family_id": {"$in": user_family_ids},
-            "is_active": True,
-            "status": "ACTIVE"
-        }).to_list(100)
-        
-        for sub in subscriptions:
-            # Get members of subscribed family
-            subscribed_family_members = await db.family_members.find({
-                "family_id": sub["target_family_id"],
+    # Use aggregation pipeline to batch fetch all family connections in one query
+    pipeline = [
+        # Match user's family memberships
+        {
+            "$match": {
+                "user_id": user_id,
                 "is_active": True,
                 "invitation_accepted": True
-            }).to_list(100)
-            
-            for member in subscribed_family_members:
+            }
+        },
+        # Lookup all members of the same families
+        {
+            "$lookup": {
+                "from": "family_members",
+                "let": {"family_id": "$family_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$family_id", "$$family_id"]},
+                            "is_active": True,
+                            "invitation_accepted": True
+                        }
+                    },
+                    {"$project": {"user_id": 1}}
+                ],
+                "as": "family_members"
+            }
+        },
+        # Lookup subscriptions for this family
+        {
+            "$lookup": {
+                "from": "family_subscriptions",
+                "let": {"family_id": "$family_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$subscriber_family_id", "$$family_id"]},
+                            "is_active": True,
+                            "status": "ACTIVE"
+                        }
+                    },
+                    {"$project": {"target_family_id": 1}}
+                ],
+                "as": "subscriptions"
+            }
+        },
+        # Unwind subscriptions to lookup their members
+        {
+            "$unwind": {
+                "path": "$subscriptions",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        # Lookup members of subscribed families
+        {
+            "$lookup": {
+                "from": "family_members",
+                "let": {"target_family_id": "$subscriptions.target_family_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$family_id", "$$target_family_id"]},
+                            "is_active": True,
+                            "invitation_accepted": True
+                        }
+                    },
+                    {"$project": {"user_id": 1}}
+                ],
+                "as": "subscribed_family_members"
+            }
+        },
+        # Group and collect all user IDs
+        {
+            "$group": {
+                "_id": None,
+                "direct_members": {"$push": "$family_members"},
+                "subscribed_members": {"$push": "$subscribed_family_members"}
+            }
+        }
+    ]
+
+    result = await db.family_members.aggregate(pipeline).to_list(1)
+
+    connected_users = set()
+    if result:
+        # Flatten and collect all user IDs from direct family members
+        for members_list in result[0].get("direct_members", []):
+            for member in members_list:
                 connected_users.add(member["user_id"])
-    
+
+        # Flatten and collect all user IDs from subscribed family members
+        for members_list in result[0].get("subscribed_members", []):
+            for member in members_list:
+                connected_users.add(member["user_id"])
+
     return list(connected_users)
 
 async def get_user_organization_connections(user_id: str) -> List[str]:
@@ -3626,47 +3745,138 @@ async def get_module_connections(user_id: str, module: str) -> List[str]:
 
 async def get_user_chat_groups(user_id: str):
     """Get all chat groups where user is a member"""
-    memberships = await db.chat_group_members.find({"user_id": user_id, "is_active": True}).to_list(100)
-    
-    groups = []
-    for membership in memberships:
-        group = await db.chat_groups.find_one({"id": membership["group_id"], "is_active": True})
-        if group:
-            # Remove MongoDB _id
-            group.pop("_id", None)
-            membership.pop("_id", None)
-            
-            # Get member count
-            member_count = await db.chat_group_members.count_documents({
-                "group_id": group["id"], 
+    # Use aggregation pipeline to fetch all data in a single query
+    pipeline = [
+        # Match user's memberships
+        {
+            "$match": {
+                "user_id": user_id,
                 "is_active": True
-            })
-            
-            # Get latest message
-            latest_message = await db.chat_messages.find_one(
-                {"group_id": group["id"], "is_deleted": False},
-                sort=[("created_at", -1)]
-            )
-            if latest_message:
-                latest_message.pop("_id", None)
-            
-            # Get unread count (messages not from this user that haven't been read)
-            unread_count = await db.chat_messages.count_documents({
-                "group_id": group["id"],
-                "user_id": {"$ne": user_id},
-                "status": {"$ne": "read"},
-                "is_deleted": False
-            })
-            
-            groups.append({
-                "group": group,
-                "user_role": membership["role"],
-                "member_count": member_count,
-                "latest_message": latest_message,
-                "unread_count": unread_count,
-                "joined_at": membership["joined_at"]
-            })
-    
+            }
+        },
+        # Lookup the chat group details
+        {
+            "$lookup": {
+                "from": "chat_groups",
+                "let": {"group_id": "$group_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$id", "$$group_id"]},
+                            "is_active": True
+                        }
+                    }
+                ],
+                "as": "group_data"
+            }
+        },
+        # Unwind group data (filter out memberships with no active group)
+        {
+            "$unwind": "$group_data"
+        },
+        # Lookup member count for each group
+        {
+            "$lookup": {
+                "from": "chat_group_members",
+                "let": {"group_id": "$group_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$group_id", "$$group_id"]},
+                            "is_active": True
+                        }
+                    },
+                    {"$count": "count"}
+                ],
+                "as": "member_count_data"
+            }
+        },
+        # Lookup latest message for each group
+        {
+            "$lookup": {
+                "from": "chat_messages",
+                "let": {"group_id": "$group_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$group_id", "$$group_id"]},
+                            "is_deleted": False
+                        }
+                    },
+                    {"$sort": {"created_at": -1}},
+                    {"$limit": 1}
+                ],
+                "as": "latest_message_data"
+            }
+        },
+        # Lookup unread count for each group
+        {
+            "$lookup": {
+                "from": "chat_messages",
+                "let": {"group_id": "$group_id"},
+                "pipeline": [
+                    {
+                        "$match": {
+                            "$expr": {"$eq": ["$group_id", "$$group_id"]},
+                            "user_id": {"$ne": user_id},
+                            "status": {"$ne": "read"},
+                            "is_deleted": False
+                        }
+                    },
+                    {"$count": "count"}
+                ],
+                "as": "unread_count_data"
+            }
+        },
+        # Project final shape
+        {
+            "$project": {
+                "_id": 0,
+                "group": {
+                    "$mergeObjects": [
+                        "$group_data",
+                        {"_id": "$$REMOVE"}
+                    ]
+                },
+                "user_role": "$role",
+                "member_count": {
+                    "$ifNull": [
+                        {"$arrayElemAt": ["$member_count_data.count", 0]},
+                        0
+                    ]
+                },
+                "latest_message": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$latest_message_data"}, 0]},
+                        "then": {
+                            "$mergeObjects": [
+                                {"$arrayElemAt": ["$latest_message_data", 0]},
+                                {"_id": "$$REMOVE"}
+                            ]
+                        },
+                        "else": None
+                    }
+                },
+                "unread_count": {
+                    "$ifNull": [
+                        {"$arrayElemAt": ["$unread_count_data.count", 0]},
+                        0
+                    ]
+                },
+                "joined_at": "$joined_at"
+            }
+        }
+    ]
+
+    groups = await db.chat_group_members.aggregate(pipeline).to_list(100)
+
+    # Clean up any remaining _id fields from nested documents
+    for group_data in groups:
+        if group_data.get("group"):
+            group_data["group"].pop("_id", None)
+        if group_data.get("latest_message"):
+            group_data["latest_message"].pop("_id", None)
+
     return groups
 
 # === NEW FAMILY SYSTEM HELPER FUNCTIONS ===
@@ -3674,13 +3884,19 @@ async def get_user_chat_groups(user_id: str):
 async def find_matching_family_units(address_street: str, address_city: str, address_country: str, last_name: str, phone: Optional[str] = None) -> List[Dict]:
     """Intelligent matching system to find existing family units"""
     matches = []
-    
+
+    # Escape user input to prevent NoSQL injection via regex
+    escaped_street = re.escape(address_street)
+    escaped_city = re.escape(address_city)
+    escaped_country = re.escape(address_country)
+    escaped_last_name = re.escape(last_name)
+
     # Build query - must match address + last name
     query = {
-        "address_street": {"$regex": f".*{address_street}.*", "$options": "i"},
-        "address_city": {"$regex": f".*{address_city}.*", "$options": "i"},
-        "address_country": {"$regex": f".*{address_country}.*", "$options": "i"},
-        "family_surname": {"$regex": f".*{last_name}.*", "$options": "i"},
+        "address_street": {"$regex": f".*{escaped_street}.*", "$options": "i"},
+        "address_city": {"$regex": f".*{escaped_city}.*", "$options": "i"},
+        "address_country": {"$regex": f".*{escaped_country}.*", "$options": "i"},
+        "family_surname": {"$regex": f".*{escaped_last_name}.*", "$options": "i"},
         "is_active": True
     }
     
@@ -4964,13 +5180,16 @@ async def search_users_basic(
     try:
         if len(query) < 2:
             return {"users": []}
-        
+
+        # Escape user input to prevent NoSQL injection via regex
+        escaped_query = re.escape(query)
+
         # Search in users collection
         users = await db.users.find({
             "$or": [
-                {"name": {"$regex": query, "$options": "i"}},
-                {"surname": {"$regex": query, "$options": "i"}},
-                {"email": {"$regex": query, "$options": "i"}}
+                {"name": {"$regex": escaped_query, "$options": "i"}},
+                {"surname": {"$regex": escaped_query, "$options": "i"}},
+                {"email": {"$regex": escaped_query, "$options": "i"}}
             ]
         }).limit(10).to_list(10)
         
@@ -5053,7 +5272,7 @@ async def get_family_members_list(
 @api_router.post("/family/{family_id}/members")
 async def add_family_member(
     family_id: str,
-    data: dict,
+    data: AddFamilyMemberRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Add a member to the family"""
@@ -5068,9 +5287,10 @@ async def add_family_member(
         if not membership:
             raise HTTPException(status_code=403, detail="Not a family member")
         
-        # Get user data
-        user_id = data.get("user_id")
-        relationship = data.get("relationship", "other")
+        # Get user data from validated request
+        user_id = data.user_id
+        relationship = data.relationship
+        family_role = data.family_role
         
         # Check if user exists
         member_user = await db.users.find_one({"id": user_id})
@@ -5092,7 +5312,7 @@ async def add_family_member(
             "id": str(uuid.uuid4()),
             "family_id": family_id,
             "user_id": user_id,
-            "family_role": "MEMBER",
+            "family_role": family_role,
             "relationship": relationship,
             "is_creator": False,
             "is_active": True,
@@ -5111,8 +5331,8 @@ async def add_family_member(
         # Return member with user info
         member_response = {
             "id": new_member["id"],
-            "name": member_user.get("name", ""),
-            "surname": member_user.get("surname", ""),
+            "name": member_user.get("first_name", ""),
+            "surname": member_user.get("last_name", ""),
             "relationship": relationship
         }
         
@@ -5193,7 +5413,7 @@ async def remove_family_member(
 @api_router.put("/family/{family_id}/privacy")
 async def update_family_privacy_settings(
     family_id: str,
-    data: dict,
+    data: FamilyPrivacySettingsUpdate,
     current_user: User = Depends(get_current_user)
 ):
     """Update family privacy settings"""
@@ -5204,22 +5424,22 @@ async def update_family_privacy_settings(
             "user_id": current_user.id,
             "is_active": True
         })
-        
+
         if not membership:
             raise HTTPException(status_code=403, detail="Not a family member")
-        
-        # Prepare privacy settings update
+
+        # Prepare privacy settings update from validated request
         privacy_fields = {}
-        if "is_private" in data:
-            privacy_fields["is_private"] = data["is_private"]
-        if "allow_public_discovery" in data:
-            privacy_fields["allow_public_discovery"] = data["allow_public_discovery"]
-        if "who_can_see_posts" in data:
-            privacy_fields["who_can_see_posts"] = data["who_can_see_posts"]
-        if "who_can_comment" in data:
-            privacy_fields["who_can_comment"] = data["who_can_comment"]
-        if "profile_searchability" in data:
-            privacy_fields["profile_searchability"] = data["profile_searchability"]
+        if data.is_private is not None:
+            privacy_fields["is_private"] = data.is_private
+        if data.allow_public_discovery is not None:
+            privacy_fields["allow_public_discovery"] = data.allow_public_discovery
+        if data.who_can_see_posts is not None:
+            privacy_fields["who_can_see_posts"] = data.who_can_see_posts
+        if data.who_can_comment is not None:
+            privacy_fields["who_can_comment"] = data.who_can_comment
+        if data.profile_searchability is not None:
+            privacy_fields["profile_searchability"] = data.profile_searchability
         
         privacy_fields["updated_at"] = datetime.now(timezone.utc)
         
@@ -6811,7 +7031,9 @@ async def get_user_contacts(
     query = {"id": {"$ne": current_user.id}}
     
     if search:
-        search_regex = {"$regex": search, "$options": "i"}
+        # Escape user input to prevent NoSQL injection via regex
+        escaped_search = re.escape(search)
+        search_regex = {"$regex": escaped_search, "$options": "i"}
         query["$or"] = [
             {"first_name": search_regex},
             {"last_name": search_regex},
@@ -6887,17 +7109,20 @@ async def search_direct_chat_messages(
         "participant_ids": current_user.id,
         "is_active": True
     })
-    
+
     if not chat:
         raise HTTPException(status_code=403, detail="Not authorized to search this chat")
-    
+
+    # Escape user input to prevent NoSQL injection via regex
+    escaped_query = re.escape(query)
+
     # Search messages
     messages = await db.chat_messages.find({
         "direct_chat_id": chat_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": escaped_query, "$options": "i"},
         "is_deleted": False
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
+
     # Add sender info
     for message in messages:
         message.pop("_id", None)
@@ -6909,10 +7134,10 @@ async def search_direct_chat_messages(
                 "last_name": sender.last_name,
                 "profile_picture": sender.profile_picture
             }
-    
+
     total = await db.chat_messages.count_documents({
         "direct_chat_id": chat_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": escaped_query, "$options": "i"},
         "is_deleted": False
     })
     
@@ -6937,17 +7162,20 @@ async def search_group_chat_messages(
         "user_id": current_user.id,
         "is_active": True
     })
-    
+
     if not membership:
         raise HTTPException(status_code=403, detail="Not a member of this group")
-    
+
+    # Escape user input to prevent NoSQL injection via regex
+    escaped_query = re.escape(query)
+
     # Search messages
     messages = await db.chat_messages.find({
         "group_id": group_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": escaped_query, "$options": "i"},
         "is_deleted": False
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    
+
     # Add sender info
     for message in messages:
         message.pop("_id", None)
@@ -6959,10 +7187,10 @@ async def search_group_chat_messages(
                 "last_name": sender.last_name,
                 "profile_picture": sender.profile_picture
             }
-    
+
     total = await db.chat_messages.count_documents({
         "group_id": group_id,
-        "content": {"$regex": query, "$options": "i"},
+        "content": {"$regex": escaped_query, "$options": "i"},
         "is_deleted": False
     })
     
@@ -7622,11 +7850,12 @@ async def get_media_file(
     is_org_logo_or_banner = False
     if not (is_public or is_profile_picture or is_organization_media or is_owner):
         # Check if this file_id is used in any organization's logo_url or banner_url
-        media_url_pattern = f"/api/media/{file_id}"
+        # Escape file_id to prevent NoSQL injection via regex
+        escaped_file_id = re.escape(file_id)
         org_using_media = await db.work_organizations.find_one({
             "$or": [
-                {"logo_url": {"$regex": file_id}},
-                {"banner_url": {"$regex": file_id}}
+                {"logo_url": {"$regex": escaped_file_id}},
+                {"banner_url": {"$regex": escaped_file_id}}
             ]
         })
         is_org_logo_or_banner = org_using_media is not None
@@ -9375,20 +9604,22 @@ async def search_work_organizations(
     try:
         # Build search query
         search_query = {"allow_public_discovery": True}
-        
-        # Name search
+
+        # Name search - escape user input to prevent NoSQL injection
         if search_data.get("query"):
+            escaped_query = re.escape(search_data["query"])
             search_query["$or"] = [
-                {"name": {"$regex": search_data["query"], "$options": "i"}},
-                {"description": {"$regex": search_data["query"], "$options": "i"}}
+                {"name": {"$regex": escaped_query, "$options": "i"}},
+                {"description": {"$regex": escaped_query, "$options": "i"}}
             ]
-        
+
         # Filters
         if search_data.get("industry"):
             search_query["industry"] = search_data["industry"]
-        
+
         if search_data.get("city"):
-            search_query["address_city"] = {"$regex": search_data["city"], "$options": "i"}
+            escaped_city = re.escape(search_data["city"])
+            search_query["address_city"] = {"$regex": escaped_city, "$options": "i"}
         
         if search_data.get("organization_type"):
             search_query["organization_type"] = search_data["organization_type"]
@@ -17750,10 +17981,13 @@ async def search_users(
     """Search users by name"""
     if len(query) < 2:
         return {"users": []}
-    
+
+    # Escape user input to prevent NoSQL injection via regex
+    escaped_query = re.escape(query)
+
     # Search by first_name or last_name (case-insensitive)
-    search_regex = {"$regex": query, "$options": "i"}
-    
+    search_regex = {"$regex": escaped_query, "$options": "i"}
+
     users = await db.users.find(
         {
             "$and": [
@@ -19821,13 +20055,15 @@ async def get_service_listings(
     """Search and filter service listings"""
     try:
         query = {"status": ServiceStatus.ACTIVE}
-        
+
         if category_id:
             query["category_id"] = category_id
         if subcategory_id:
             query["subcategory_id"] = subcategory_id
         if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+            # Escape user input to prevent NoSQL injection via regex
+            escaped_city = re.escape(city)
+            query["city"] = {"$regex": escaped_city, "$options": "i"}
         if min_rating:
             query["rating"] = {"$gte": min_rating}
         if price_min is not None:
@@ -19838,9 +20074,11 @@ async def get_service_listings(
                 {"price_from": {"$lte": price_max}}
             ]
         if search:
+            # Escape user input to prevent NoSQL injection via regex
+            escaped_search = re.escape(search)
             query["$or"] = [
-                {"name": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
+                {"name": {"$regex": escaped_search, "$options": "i"}},
+                {"description": {"$regex": escaped_search, "$options": "i"}},
                 {"tags": {"$in": [search.lower()]}}
             ]
         
@@ -20853,18 +21091,22 @@ async def get_marketplace_products(
         query = {"status": ProductStatus.ACTIVE}
         
         if search:
+            # Escape user input to prevent NoSQL injection via regex
+            escaped_search = re.escape(search)
             query["$or"] = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
+                {"title": {"$regex": escaped_search, "$options": "i"}},
+                {"description": {"$regex": escaped_search, "$options": "i"}},
                 {"tags": {"$in": [search.lower()]}}
             ]
-        
+
         if category:
             query["category"] = category
         if subcategory:
             query["subcategory"] = subcategory
         if city:
-            query["city"] = {"$regex": city, "$options": "i"}
+            # Escape user input to prevent NoSQL injection via regex
+            escaped_city = re.escape(city)
+            query["city"] = {"$regex": escaped_city, "$options": "i"}
         if condition:
             query["condition"] = condition
         if seller_type:
@@ -21156,13 +21398,15 @@ async def get_inventory_items(
             query["category"] = category
         
         if search:
+            # Escape user input to prevent NoSQL injection via regex
+            escaped_search = re.escape(search)
             query["$or"] = [
-                {"name": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}},
-                {"brand": {"$regex": search, "$options": "i"}},
-                {"model": {"$regex": search, "$options": "i"}}
+                {"name": {"$regex": escaped_search, "$options": "i"}},
+                {"description": {"$regex": escaped_search, "$options": "i"}},
+                {"brand": {"$regex": escaped_search, "$options": "i"}},
+                {"model": {"$regex": escaped_search, "$options": "i"}}
             ]
-        
+
         items = await db.inventory_items.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
         
         # Get summary by category
@@ -23351,11 +23595,13 @@ async def list_interest_groups(
     if category_id:
         query["category_id"] = category_id
     if search:
+        # Escape user input to prevent NoSQL injection via regex
+        escaped_search = re.escape(search)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"name": {"$regex": escaped_search, "$options": "i"}},
+            {"description": {"$regex": escaped_search, "$options": "i"}}
         ]
-    
+
     groups = await db.interest_groups.find(query, {"_id": 0}).sort("members_count", -1).skip(offset).limit(limit).to_list(limit)
     total = await db.interest_groups.count_documents(query)
     
@@ -23561,11 +23807,15 @@ async def list_events(
     if category_id:
         query["category_id"] = category_id
     if city:
-        query["city"] = {"$regex": city, "$options": "i"}
+        # Escape user input to prevent NoSQL injection via regex
+        escaped_city = re.escape(city)
+        query["city"] = {"$regex": escaped_city, "$options": "i"}
     if search:
+        # Escape user input to prevent NoSQL injection via regex
+        escaped_search = re.escape(search)
         query["$and"] = query.get("$and", []) + [{"$or": [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"title": {"$regex": escaped_search, "$options": "i"}},
+            {"description": {"$regex": escaped_search, "$options": "i"}}
         ]}]
     if status:
         query["status"] = status
@@ -25401,9 +25651,12 @@ async def get_business_analytics(
 MASTER_ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "")
 MASTER_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
-# Validate admin credentials are configured
+# Validate admin credentials are configured - CRITICAL: Enforce on startup
 if not MASTER_ADMIN_USERNAME or not MASTER_ADMIN_PASSWORD:
-    print("WARNING: ADMIN_USERNAME and ADMIN_PASSWORD environment variables not set. Admin login will be disabled.")
+    raise RuntimeError("CRITICAL: ADMIN_USERNAME and ADMIN_PASSWORD environment variables must be set for production security.")
+
+# Hash the admin password on startup using bcrypt for secure comparison
+MASTER_ADMIN_PASSWORD_HASH = pwd_context.hash(MASTER_ADMIN_PASSWORD)
 
 class AdminLogin(BaseModel):
     username: str
@@ -25466,12 +25719,16 @@ async def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(
 @api_router.post("/admin/login", response_model=AdminToken)
 async def admin_login(login_data: AdminLogin):
     """Admin login endpoint"""
-    if login_data.username != MASTER_ADMIN_USERNAME or login_data.password != MASTER_ADMIN_PASSWORD:
+    # Use constant-time comparison for username and bcrypt verification for password
+    username_valid = login_data.username == MASTER_ADMIN_USERNAME
+    password_valid = pwd_context.verify(login_data.password, MASTER_ADMIN_PASSWORD_HASH)
+
+    if not username_valid or not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя пользователя или пароль"
         )
-    
+
     access_token = create_admin_token(MASTER_ADMIN_USERNAME, timedelta(hours=24))
     return AdminToken(
         access_token=access_token,
@@ -25619,7 +25876,7 @@ async def get_admin_users(
         
         # Search filter
         if search:
-            search_regex = {"$regex": search, "$options": "i"}
+            search_regex = {"$regex": safe_regex(search), "$options": "i"}
             query["$or"] = [
                 {"email": search_regex},
                 {"first_name": search_regex},
@@ -26334,9 +26591,9 @@ async def get_all_transactions(
         # Search by transaction code or user
         if search:
             query["$or"] = [
-                {"code": {"$regex": search, "$options": "i"}},
-                {"id": {"$regex": search, "$options": "i"}},
-                {"description": {"$regex": search, "$options": "i"}}
+                {"code": {"$regex": safe_regex(search), "$options": "i"}},
+                {"id": {"$regex": safe_regex(search), "$options": "i"}},
+                {"description": {"$regex": safe_regex(search), "$options": "i"}}
             ]
         
         # Filter by type
@@ -27527,6 +27784,22 @@ app.add_middleware(
 # GZip compression middleware for responses > 500 bytes
 from starlette.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# Request body size limit middleware (10MB default, configurable)
+MAX_REQUEST_BODY_SIZE = int(os.environ.get('MAX_REQUEST_BODY_SIZE', 10 * 1024 * 1024))  # 10MB default
+
+@app.middleware("http")
+async def limit_request_body_size(request: Request, call_next):
+    """Middleware to limit request body size for security."""
+    content_length = request.headers.get("content-length")
+    if content_length:
+        if int(content_length) > MAX_REQUEST_BODY_SIZE:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=413,
+                content={"detail": f"Request body too large. Maximum size is {MAX_REQUEST_BODY_SIZE // (1024 * 1024)}MB"}
+            )
+    return await call_next(request)
 
 # ============================================================
 # LOGGING CONFIGURATION

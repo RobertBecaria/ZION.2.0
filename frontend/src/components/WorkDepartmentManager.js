@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, Edit3, Trash2, Plus, UserPlus, X } from 'lucide-react';
-
+import { Building2, Users, Edit3, Trash2, Plus, X } from 'lucide-react';
+import logger from '../utils/logger';
 
 import { BACKEND_URL } from '../config/api';
+
 function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C' }) {
-  console.log('WorkDepartmentManager loaded with organizationId:', organizationId);
-  
+  logger.debug('WorkDepartmentManager loaded with organizationId:', organizationId);
+
   const [departments, setDepartments] = useState([]);
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,15 +20,14 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
   });
 
   useEffect(() => {
-    console.log('WorkDepartmentManager useEffect triggered');
-    console.log('  organizationId:', organizationId);
+    logger.debug('WorkDepartmentManager useEffect triggered, organizationId:', organizationId);
     fetchDepartments();
     fetchOrganizationMembers();
   }, [organizationId]);
 
   const fetchDepartments = async () => {
     try {
-      console.log('fetchDepartments called for organizationId:', organizationId);
+      logger.api(`/api/organizations/${organizationId}/departments`, 'GET');
       setLoading(true);
       const token = localStorage.getItem('zion_token');
       const response = await fetch(`${BACKEND_URL}/api/organizations/${organizationId}/departments`, {
@@ -37,18 +37,17 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         }
       });
 
-      console.log('fetchDepartments response status:', response.status);
-      
+      logger.debug('fetchDepartments response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('fetchDepartments data:', data);
+        logger.debug('fetchDepartments data:', data);
         setDepartments(data.data || []);
-        console.log('Departments set to:', data.data || []);
       } else {
-        console.error('fetchDepartments failed with status:', response.status);
+        logger.error('fetchDepartments failed with status:', response.status);
       }
     } catch (error) {
-      console.error('Error fetching departments:', error);
+      logger.error('Error fetching departments:', error);
     } finally {
       setLoading(false);
     }
@@ -69,19 +68,19 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         setOrganizationMembers(data.members || []);
       }
     } catch (error) {
-      console.error('Error fetching organization members:', error);
+      logger.error('Error fetching organization members:', error);
     }
   };
 
   const colorOptions = [
-    { color: '#1D4ED8', name: 'Синий' },
-    { color: '#059669', name: 'Зеленый' },
-    { color: '#7E22CE', name: 'Фиолетовый' },
-    { color: '#A16207', name: 'Желтый' },
-    { color: '#BE185D', name: 'Розовый' },
-    { color: '#DC2626', name: 'Красный' },
-    { color: '#EA580C', name: 'Оранжевый' },
-    { color: '#0891B2', name: 'Голубой' }
+    { color: '#1D4ED8', name: 'Blue' },
+    { color: '#059669', name: 'Green' },
+    { color: '#7E22CE', name: 'Purple' },
+    { color: '#A16207', name: 'Yellow' },
+    { color: '#BE185D', name: 'Pink' },
+    { color: '#DC2626', name: 'Red' },
+    { color: '#EA580C', name: 'Orange' },
+    { color: '#0891B2', name: 'Cyan' }
   ];
 
   const handleCreate = () => {
@@ -114,7 +113,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
 
     try {
       const token = localStorage.getItem('zion_token');
-      
+
       if (editingDepartment) {
         // Update existing
         const response = await fetch(
@@ -138,9 +137,9 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
         }
       } else {
         // Create new
-        console.log('Creating department with organization ID:', organizationId);
-        console.log('Form data:', formData);
-        
+        logger.debug('Creating department with organization ID:', organizationId);
+        logger.debug('Form data:', formData);
+
         const response = await fetch(
           `${BACKEND_URL}/api/organizations/${organizationId}/departments`,
           {
@@ -153,9 +152,9 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
           }
         );
 
-        console.log('Response status:', response.status);
+        logger.debug('Response status:', response.status);
         const responseData = await response.json();
-        console.log('Response data:', responseData);
+        logger.debug('Response data:', responseData);
 
         if (response.ok) {
           alert('Отдел создан!');
@@ -167,7 +166,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
 
       setShowCreateModal(false);
     } catch (error) {
-      console.error('Error saving department:', error);
+      logger.error('Error saving department:', error);
       alert('Произошла ошибка');
     }
   };
@@ -195,7 +194,7 @@ function WorkDepartmentManager({ organizationId, onClose, moduleColor = '#C2410C
           alert(error.detail || 'Ошибка при удалении отдела');
         }
       } catch (error) {
-        console.error('Error deleting department:', error);
+        logger.error('Error deleting department:', error);
         alert('Произошла ошибка');
       }
     }

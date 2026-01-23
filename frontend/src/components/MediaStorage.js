@@ -133,8 +133,6 @@ const MediaStorage = ({
         const frontendModule = selectedModuleFilter === 'all' ? activeModule : selectedModuleFilter;
         const backendModule = getBackendModule(frontendModule);
         
-        console.log(`Uploading file ${file.name} - Frontend module: ${frontendModule}, Backend module: ${backendModule}`);
-        
         const formData = new FormData();
         formData.append('file', file);
         formData.append('source_module', backendModule);
@@ -159,8 +157,6 @@ const MediaStorage = ({
       
       // Refresh media list after upload
       await fetchMedia();
-      
-      console.log(`Successfully uploaded ${uploadedFiles.length} files`);
       
       // 🎉 Trigger confetti celebration for successful uploads!
       if (uploadedFiles.length > 0) {

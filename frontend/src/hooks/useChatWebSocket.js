@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { BACKEND_URL } from '../config/api';
+import logger from '../utils/logger';
 
 const WS_RECONNECT_DELAY = 3000;
 const WS_PING_INTERVAL = 30000;
@@ -76,10 +77,10 @@ export const useChatWebSocket = (chatId, options = {}) => {
           // Keep-alive response, do nothing
           break;
         default:
-          console.log('Unknown WebSocket message type:', data.type);
+          logger.debug('Unknown WebSocket message type:', data.type);
       }
     } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
+      logger.error('Error parsing WebSocket message:', error);
     }
   }, [onMessage, onTyping, onStatus, onOnline]);
 
@@ -103,7 +104,7 @@ export const useChatWebSocket = (chatId, options = {}) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected to chat:', chatId);
+        logger.debug('WebSocket connected to chat:', chatId);
         setIsConnected(true);
         setConnectionError(null);
 
@@ -118,12 +119,12 @@ export const useChatWebSocket = (chatId, options = {}) => {
       ws.onmessage = handleMessage;
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        logger.error('WebSocket error:', error);
         setConnectionError('Connection error');
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
+        logger.debug('WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
 
         // Clear ping interval
@@ -135,7 +136,7 @@ export const useChatWebSocket = (chatId, options = {}) => {
         // Attempt reconnection if not intentionally closed
         if (!isUnmountedRef.current && enabled && event.code !== 1000) {
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('Attempting WebSocket reconnection...');
+            logger.debug('Attempting WebSocket reconnection...');
             if (reconnectRef.current) {
               reconnectRef.current();
             }
@@ -143,7 +144,7 @@ export const useChatWebSocket = (chatId, options = {}) => {
         }
       };
     } catch (error) {
-      console.error('Failed to create WebSocket:', error);
+      logger.error('Failed to create WebSocket:', error);
       setConnectionError('Failed to connect');
     }
   }, [chatId, enabled, getWebSocketUrl, handleMessage]);

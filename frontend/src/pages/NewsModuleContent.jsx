@@ -94,7 +94,7 @@ const NewsModuleContent = memo(function NewsModuleContent({
           user={user}
           moduleColor={moduleColor}
           onBack={handleBackFromProfile}
-          onOpenChat={(person) => console.log('Open chat with', person)}
+          onOpenChat={(person) => { /* TODO: Implement open chat */ }}
         />
       );
     }
@@ -107,7 +107,7 @@ const NewsModuleContent = memo(function NewsModuleContent({
           moduleColor={moduleColor}
           initialTab={getFriendsInitialTab()}
           onBack={nav.toFeed}
-          onOpenChat={(person) => console.log('Open chat with', person)}
+          onOpenChat={(person) => { /* TODO: Implement open chat */ }}
         />
       );
     }

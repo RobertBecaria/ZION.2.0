@@ -1,10 +1,11 @@
 /**
  * RightSidebar / WorldZone Component
  * Right sidebar with context-specific widgets and filters
- * Refactored from App.js to improve code organization
+ * Refactored to use AppContext instead of prop drilling
  */
 import React from 'react';
 import { Eye } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 import { getModuleByKey, getSidebarTintStyle } from '../../config/moduleConfig';
 
 // World Zone Components
@@ -24,53 +25,56 @@ import WorkCalendarWidget from '../WorkCalendarWidget';
 import WorkDepartmentNavigator from '../WorkDepartmentNavigator';
 import WorkAnnouncementsWidget from '../WorkAnnouncementsWidget';
 
-const RightSidebar = ({
-  // Core state
-  activeModule,
-  activeView,
-  user,
-  currentModule,
-  sidebarTintStyle,
-  
-  // Family module
-  activeFilters,
-  setActiveFilters,
-  userFamily,
-  setActiveView,
-  
-  // Journal module
-  schoolRoles,
-  journalSchoolFilter,
-  setJournalSchoolFilter,
-  journalAudienceFilter,
-  setJournalAudienceFilter,
-  selectedSchool,
-  setSelectedSchool,
-  schoolRole,
-  
-  // Organizations module
-  selectedOrganizationId,
-  setSelectedOrganizationId,
-  activeDepartmentId,
-  setActiveDepartmentId,
-  setShowDepartmentManager,
-  departmentRefreshTrigger,
-  myOrganizations,
-  
-  // Media module
-  mediaStats,
-  selectedModuleFilter,
-  setSelectedModuleFilter,
-  
-  // Chat
-  chatGroups,
-  activeGroup,
-  handleGroupSelect,
-  handleCreateGroup,
-  activeDirectChat,
-  setActiveDirectChat,
-  fetchChatGroups
-}) => {
+const RightSidebar = () => {
+  // Get all needed state from context
+  const {
+    // Core state
+    activeModule,
+    activeView,
+    setActiveView,
+    user,
+    currentModule,
+    sidebarTintStyle,
+
+    // Family module
+    activeFilters,
+    setActiveFilters,
+    userFamily,
+
+    // Journal module
+    schoolRoles,
+    journalSchoolFilter,
+    setJournalSchoolFilter,
+    journalAudienceFilter,
+    setJournalAudienceFilter,
+    selectedSchool,
+    setSelectedSchool,
+    schoolRole,
+
+    // Organizations module
+    selectedOrganizationId,
+    setSelectedOrganizationId,
+    activeDepartmentId,
+    setActiveDepartmentId,
+    setShowDepartmentManager,
+    departmentRefreshTrigger,
+    myOrganizations,
+
+    // Media module
+    mediaStats,
+    selectedModuleFilter,
+    setSelectedModuleFilter,
+
+    // Chat
+    chatGroups,
+    activeGroup,
+    handleGroupSelect,
+    handleCreateGroup,
+    activeDirectChat,
+    setActiveDirectChat,
+    fetchChatGroups
+  } = useAppContext();
+
   // Use provided currentModule or get it from activeModule
   const moduleData = currentModule || getModuleByKey(activeModule);
   const tintStyle = sidebarTintStyle || getSidebarTintStyle(moduleData.color);
@@ -83,7 +87,7 @@ const RightSidebar = ({
           <h3>Мировая Зона</h3>
         </div>
       )}
-      
+
       {/* JOURNAL Module - Feed View Filters */}
       {activeModule === 'journal' && (activeView === 'wall' || activeView === 'feed') && (
         <JournalWorldZone
@@ -96,7 +100,7 @@ const RightSidebar = ({
           onOpenEventPlanner={() => setActiveView('event-planner')}
         />
       )}
-      
+
       {/* JOURNAL Module - School Selected Navigation */}
       {activeModule === 'journal' && selectedSchool && (
         <JournalWorldZone
@@ -112,7 +116,7 @@ const RightSidebar = ({
           }}
         />
       )}
-      
+
       {/* WALL and FEED Views - Wall-specific widgets (Family module only) */}
       {activeModule === 'family' && (activeView === 'wall' || activeView === 'feed') && (
         <FamilyWorldZone
@@ -135,17 +139,17 @@ const RightSidebar = ({
         />
       )}
 
-      {/* Public View Button - Only when viewing "МОЯ СЕМЬЯ" */}
+      {/* Public View Button - Only when viewing "MY FAMILY" */}
       {activeModule === 'family' && userFamily && activeView === 'my-family-profile' && (
         <div className="widget public-view-widget">
           <div className="widget-header">
             <Eye size={16} />
             <span>Публичный просмотр</span>
           </div>
-          <button 
+          <button
             className="public-view-button"
             onClick={() => setActiveView('family-public-view')}
-            style={{ 
+            style={{
               backgroundColor: activeView === 'family-public-view' ? moduleData.color : 'white',
               color: activeView === 'family-public-view' ? 'white' : moduleData.color,
               borderColor: moduleData.color
