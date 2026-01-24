@@ -4,12 +4,13 @@
  * Uses shared wall components for post display and interactions
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Users, Globe, Lock, UserCheck, Image, Link2, 
+import {
+  Users, Globe, Lock, UserCheck, Image, Link2,
   MessageCircle, Send, ChevronDown, X, Loader2,
   Plus, Smile
 } from 'lucide-react';
 import { PostItem } from './wall';
+import LightboxModal from './LightboxModal';
 
 // Visibility options specific to News feed
 const VISIBILITY_OPTIONS = [
@@ -68,7 +69,12 @@ const NewsFeed = ({
   const [expandedComments, setExpandedComments] = useState({});
   const [postComments, setPostComments] = useState({});
   const [newComments, setNewComments] = useState({});
-  
+
+  // Lightbox state for full-size image viewing
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -580,6 +586,33 @@ const NewsFeed = ({
     }
   };
 
+  // Lightbox handlers for full-size image viewing
+  const handleImageClick = (imageUrl, allImages = [], index = 0) => {
+    setLightboxImage(imageUrl);
+    setLightboxImages(allImages.length > 0 ? allImages : [imageUrl]);
+    setLightboxIndex(index);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+    setLightboxImages([]);
+    setLightboxIndex(0);
+  };
+
+  const nextImage = () => {
+    if (lightboxIndex < lightboxImages.length - 1) {
+      setLightboxIndex(lightboxIndex + 1);
+      setLightboxImage(lightboxImages[lightboxIndex + 1]);
+    }
+  };
+
+  const prevImage = () => {
+    if (lightboxIndex > 0) {
+      setLightboxIndex(lightboxIndex - 1);
+      setLightboxImage(lightboxImages[lightboxIndex - 1]);
+    }
+  };
+
   // Utility functions
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -874,6 +907,7 @@ const NewsFeed = ({
                 onCommentLike={handleCommentLike}
                 onCommentEdit={handleCommentEdit}
                 onCommentDelete={handleCommentDelete}
+                onImageClick={handleImageClick}
                 onPostEdit={handleEdit}
                 onPostDelete={handleDelete}
                 formatDate={formatDate}
@@ -896,6 +930,16 @@ const NewsFeed = ({
           </>
         )}
       </div>
+
+      {/* Lightbox Modal for full-size image viewing */}
+      <LightboxModal
+        lightboxImage={lightboxImage}
+        lightboxImages={lightboxImages}
+        lightboxIndex={lightboxIndex}
+        closeLightbox={closeLightbox}
+        nextImage={nextImage}
+        prevImage={prevImage}
+      />
     </div>
   );
 };

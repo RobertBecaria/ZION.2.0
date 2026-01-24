@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { FileText, Share2, Download, ZoomIn, Play } from 'lucide-react';
+import { FileText, Share2, Download, ZoomIn, Play, ImageOff } from 'lucide-react';
 import { extractYouTubeId } from './utils/postUtils';
 
 function PostMedia({ post, backendUrl, onImageClick }) {
   const [playingVideo, setPlayingVideo] = useState(null);
+  const [failedImages, setFailedImages] = useState({});
+
+  // Handle image load error
+  const handleImageError = (mediaId) => {
+    setFailedImages(prev => ({ ...prev, [mediaId]: true }));
+  };
   
   // Helper to get media URL - handles both object format and string ID format
   const getMediaUrl = (media) => {
@@ -46,30 +52,41 @@ function PostMedia({ post, backendUrl, onImageClick }) {
             return (
               <div key={mediaId} className="media-item">
                 {isImage(media) ? (
-                  <div 
-                    className="image-container"
-                    onClick={() => {
-                      if (onImageClick) {
-                        const postImages = post.media_files.map(m => getMediaUrl(m));
-                        onImageClick(mediaUrl, postImages, index);
-                      }
-                    }}
-                  >
-                    <img 
-                      src={mediaUrl}
-                      alt={media.original_filename || 'Изображение'}
-                      className="media-image clickable-image"
-                      loading="lazy"
-                    />
-                    <div className="image-overlay">
-                      <ZoomIn size={20} color="white" />
+                  failedImages[mediaId] ? (
+                    <div className="image-error-placeholder">
+                      <ImageOff size={32} color="#9CA3AF" />
+                      <span>Не удалось загрузить изображение</span>
                     </div>
-                    {index === 3 && post.media_files.length > 4 && (
-                      <div className="more-overlay">
-                        +{post.media_files.length - 4}
+                  ) : (
+                    <div
+                      className="image-container"
+                      onClick={() => {
+                        if (onImageClick) {
+                          const postImages = post.media_files
+                            .filter((m, i) => !failedImages[typeof m === 'string' ? m : (m.id || i)])
+                            .map(m => getMediaUrl(m));
+                          const adjustedIndex = postImages.indexOf(mediaUrl);
+                          onImageClick(mediaUrl, postImages, adjustedIndex >= 0 ? adjustedIndex : 0);
+                        }
+                      }}
+                    >
+                      <img
+                        src={mediaUrl}
+                        alt={media.original_filename || 'Изображение'}
+                        className="media-image clickable-image"
+                        loading="lazy"
+                        onError={() => handleImageError(mediaId)}
+                      />
+                      <div className="image-overlay">
+                        <ZoomIn size={20} color="white" />
                       </div>
-                    )}
-                  </div>
+                      {index === 3 && post.media_files.length > 4 && (
+                        <div className="more-overlay">
+                          +{post.media_files.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div className="media-document">
                     <FileText size={24} />
@@ -248,7 +265,24 @@ function PostMedia({ post, backendUrl, onImageClick }) {
           background: rgba(0, 0, 0, 0.3);
           opacity: 1;
         }
-        
+
+        .image-error-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #f3f4f6;
+          gap: 8px;
+        }
+
+        .image-error-placeholder span {
+          font-size: 12px;
+          color: #9CA3AF;
+          text-align: center;
+        }
+
         .post-media-gallery .more-overlay {
           position: absolute;
           inset: 0;
