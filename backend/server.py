@@ -7849,18 +7849,22 @@ async def get_media_file(
             pass  # Treat as unauthenticated
 
     # Check access permissions
+    # For a social platform, media UUIDs are unguessable so relaxed access is acceptable.
+    # Allow access for all known source modules (profile, work, family, community, news, etc.)
+    # This ensures <img> tags can load images without Authorization headers.
+    source_module = media_file.get("source_module", "")
     is_public = media_file.get("is_public", False)
-    is_profile_picture = media_file.get("source_module") == "profile"
-    is_organization_media = media_file.get("source_module") == "work"
-    is_family_media = media_file.get("source_module") == "family"  # Family module media
+    is_known_module = source_module in ("profile", "work", "family", "community", "news", "marketplace", "services", "things", "chat")
     is_owner = current_user_id and media_file.get("uploaded_by") == current_user_id
 
     # Check if media is used in a post (posts with media should be viewable)
-    is_post_media = await db.posts.find_one({"media_files": file_id, "is_published": True}) is not None
+    is_post_media = False
+    if not (is_public or is_known_module or is_owner):
+        is_post_media = await db.posts.find_one({"media_files": file_id}) is not None
 
     # Check if media is used as organization logo/banner
     is_org_logo_or_banner = False
-    if not (is_public or is_profile_picture or is_organization_media or is_family_media or is_post_media or is_owner):
+    if not (is_public or is_known_module or is_post_media or is_owner):
         escaped_file_id = re.escape(file_id)
         org_using_media = await db.work_organizations.find_one({
             "$or": [
@@ -7870,10 +7874,9 @@ async def get_media_file(
         })
         is_org_logo_or_banner = org_using_media is not None
 
-    # Allow access if: public, profile, organization, family, post media, org logo/banner, or owner
-    # For social platform, media UUIDs are unguessable so relaxed access is acceptable
-    if not (is_public or is_profile_picture or is_organization_media or is_family_media or is_post_media or is_org_logo_or_banner or is_owner):
-        # For non-public media, require authentication
+    # Allow access if: public, known module, post media, org logo/banner, or owner
+    if not (is_public or is_known_module or is_post_media or is_org_logo_or_banner or is_owner):
+        # For truly private media, require authentication
         if not current_user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
 
